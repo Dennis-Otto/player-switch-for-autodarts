@@ -12,6 +12,13 @@ the next release, or lists the pull requests when there is none.
   circle, the popup carries the browser's language, and the labels read "Remember
   password" / "Stop remembering" and "Remove account".
 
+## [0.1.1](https://github.com/Dennis-Otto/player-switch-for-autodarts/compare/v0.1.0...v0.1.1) (2026-10-15)
+
+
+### Bug fixes
+
+* **popup:** hide the password form and account menu until asked for ([#4](https://github.com/Dennis-Otto/player-switch-for-autodarts/issues/4)) ([84ffac1](https://github.com/Dennis-Otto/player-switch-for-autodarts/commit/84ffac1005690496a3877d86a5c3bc1dc412e84a))
+
 ## 0.1.0 (2026-10-15)
 
 - Switch between saved Autodarts accounts on a shared display with one tap: the
