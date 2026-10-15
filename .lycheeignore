@@ -1,2 +1,6 @@
 # Links that the link check of this repository skips, one regular expression per
 # line, each with its reason above it. The rules of every repository are in lychee.toml.
+
+# The German website is built from docs/index.de.md and exists once this is merged
+# and the Docs workflow has published it; a pull request can't reach it yet.
+^https://dennis-otto\.github\.io/player-switch-for-autodarts/de/

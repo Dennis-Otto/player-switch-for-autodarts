@@ -19,6 +19,6 @@ PUBLISH_TO = "none"
 # The Chrome Web Store, to which publish-store.yml delivers every release: the OAuth
 # client and the refresh token of the developer account are the secrets of this
 # environment. The IDs of the item and of the publisher are the repository variables
-# CWS_EXTENSION_ID and CWS_PUBLISHER_ID, set by hand as README.md describes.
+# CWS_EXTENSION_ID and CWS_PUBLISHER_ID, set by hand as docs/releases.md describes.
 [environments.chrome-web-store]
 secrets = ["CWS_CLIENT_ID", "CWS_CLIENT_SECRET", "CWS_REFRESH_TOKEN"]

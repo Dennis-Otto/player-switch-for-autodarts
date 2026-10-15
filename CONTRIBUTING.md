@@ -59,7 +59,7 @@ python3 -m venv .venv-docs
 
 ## Releases
 
-The release bot keeps a pull request titled `chore: release x.y.z` with the next version, up to date with `main` and decided anew with every merge. Its section of the changelog is the text of Unreleased; without one, it lists the pull requests. Merging it creates the release with its package, SBOM and signed provenance, and delivers it to npm. A release of dependency updates merges and publishes itself.
+The release bot keeps a pull request titled `chore: release x.y.z` with the next version, up to date with `main` and decided anew with every merge. Its section of the changelog is the text of Unreleased; without one, it lists the pull requests. Merging it creates the release with its package, SBOM and signed provenance; how it then reaches the Chrome Web Store is described in [docs/releases.md](docs/releases.md). A release of dependency updates merges and publishes itself.
 
 A line `Release-As: 2.0.0-beta.1` in the description of a pull request sets the version of the next release, for a prerelease for example. A prerelease keeps the text of Unreleased for the release that follows it.
 

@@ -9,8 +9,8 @@ name: Chrome Web Store
 # carries the version of the release, uploads the zip with the Chrome Web Store API
 # and submits it for review. The OAuth client and the refresh token of the developer
 # account are the secrets of the environment chrome-web-store, the IDs of the item
-# and of the publisher the variables CWS_EXTENSION_ID and CWS_PUBLISHER_ID; README.md
-# describes the one-time set-up. A version that the store has already, under review
+# and of the publisher the variables CWS_EXTENSION_ID and CWS_PUBLISHER_ID;
+# docs/releases.md describes the one-time set-up. A version that the store has already, under review
 # or published, is left alone.
 
 on:
@@ -121,13 +121,13 @@ jobs:
           missing=0
           for secret in CWS_CLIENT_ID CWS_CLIENT_SECRET CWS_REFRESH_TOKEN; do
             if [[ -z "${!secret}" ]]; then
-              echo "::error::The secret $secret of the environment chrome-web-store is missing; README.md says how to set it."
+              echo "::error::The secret $secret of the environment chrome-web-store is missing; docs/releases.md says how to set it."
               missing=1
             fi
           done
           for variable in CWS_EXTENSION_ID CWS_PUBLISHER_ID; do
             if [[ -z "${!variable}" ]]; then
-              echo "::error::The variable $variable is missing; README.md says how to set it."
+              echo "::error::The variable $variable is missing; docs/releases.md says how to set it."
               missing=1
             fi
           done
