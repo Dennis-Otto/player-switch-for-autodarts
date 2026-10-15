@@ -1,0 +1,261 @@
+name: Chrome Web Store
+
+# Delivers each release to the Chrome Web Store, where Google reviews it and then
+# publishes it. The release bot publishes a release with the GITHUB_TOKEN, whose
+# events start no workflow, so this one starts after every run of the Release
+# workflow and takes the release that the run published; a release published by hand
+# starts it directly, and so does a start by hand with a tag. It builds the upload
+# zip from the tag with scripts/package-extension.sh, checks that the manifest
+# carries the version of the release, uploads the zip with the Chrome Web Store API
+# and submits it for review. The OAuth client and the refresh token of the developer
+# account are the secrets of the environment chrome-web-store, the IDs of the item
+# and of the publisher the variables CWS_EXTENSION_ID and CWS_PUBLISHER_ID; README.md
+# describes the one-time set-up. A version that the store has already, under review
+# or published, is left alone.
+
+on:
+  release:
+    types: [published]
+  workflow_run:
+    workflows: [Release]
+    types: [completed]
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: The tag of the release; empty for the latest
+        required: false
+
+permissions: {}
+
+concurrency:
+  group: chrome-web-store
+  cancel-in-progress: false
+
+jobs:
+  release:
+    name: the release to deliver
+    # A failed run of the Release workflow published no release.
+    if: github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    outputs:
+      tag: ${{ steps.release.outputs.tag }}
+    steps:
+      - name: Record the network traffic of the job
+        uses: step-security/harden-runner@e14015d583714f6e62063499dc959a02595150a1 # v2.21.1
+        with:
+          egress-policy: audit
+      - name: Find the release
+        id: release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          EVENT: ${{ github.event_name }}
+          RELEASE_TAG: ${{ github.event.release.tag_name }}
+          RUN_STARTED: ${{ github.event.workflow_run.run_started_at }}
+          INPUT_TAG: ${{ inputs.tag }}
+        run: |
+          set -euo pipefail
+          case "$EVENT" in
+            release) tag="$RELEASE_TAG" ;;
+            workflow_dispatch) tag="${INPUT_TAG:-$(gh release view --json tagName --jq .tagName)}" ;;
+            workflow_run)
+              # The release that the run of the Release workflow published, if any.
+              tag="$(gh api "repos/$GH_REPO/releases?per_page=20" |
+                jq -r --arg since "$RUN_STARTED" \
+                  '[.[] | select(.draft == false and .published_at >= $since)] | first | .tag_name // empty')"
+              ;;
+          esac
+          if [[ -z "$tag" ]]; then
+            echo "The run of the Release workflow published no release." | tee -a "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+          state="$(gh release view "$tag" --json isDraft,isPrerelease \
+            --jq 'if .isDraft then "draft" elif .isPrerelease then "prerelease" else "release" end')"
+          case "$state" in
+            draft)
+              echo "::error::The release $tag is still a draft."
+              exit 1
+              ;;
+            prerelease)
+              # A prerelease is for the testers who take one; the store gets releases only.
+              echo "The prerelease $tag stays off the store." | tee -a "$GITHUB_STEP_SUMMARY"
+              exit 0
+              ;;
+          esac
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+          echo "The release $tag goes to the Chrome Web Store." >> "$GITHUB_STEP_SUMMARY"
+
+  store:
+    name: deliver to the Chrome Web Store
+    needs: release
+    if: needs.release.outputs.tag != ''
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment:
+      name: chrome-web-store
+      url: https://chromewebstore.google.com/detail/${{ vars.CWS_EXTENSION_ID }}
+    permissions:
+      contents: read
+    env:
+      TAG: ${{ needs.release.outputs.tag }}
+      # The item in the Chrome Web Store API: https://developer.chrome.com/docs/webstore/api
+      ITEM: https://chromewebstore.googleapis.com/v2/publishers/${{ vars.CWS_PUBLISHER_ID }}/items/${{ vars.CWS_EXTENSION_ID }}
+      UPLOAD: https://chromewebstore.googleapis.com/upload/v2/publishers/${{ vars.CWS_PUBLISHER_ID }}/items/${{ vars.CWS_EXTENSION_ID }}:upload
+    steps:
+      - name: Record the network traffic of the job
+        uses: step-security/harden-runner@e14015d583714f6e62063499dc959a02595150a1 # v2.21.1
+        with:
+          egress-policy: audit
+      - name: Check the set-up of the environment
+        env:
+          CWS_CLIENT_ID: ${{ secrets.CWS_CLIENT_ID }}
+          CWS_CLIENT_SECRET: ${{ secrets.CWS_CLIENT_SECRET }}
+          CWS_REFRESH_TOKEN: ${{ secrets.CWS_REFRESH_TOKEN }}
+          CWS_EXTENSION_ID: ${{ vars.CWS_EXTENSION_ID }}
+          CWS_PUBLISHER_ID: ${{ vars.CWS_PUBLISHER_ID }}
+        run: |
+          missing=0
+          for secret in CWS_CLIENT_ID CWS_CLIENT_SECRET CWS_REFRESH_TOKEN; do
+            if [[ -z "${!secret}" ]]; then
+              echo "::error::The secret $secret of the environment chrome-web-store is missing; README.md says how to set it."
+              missing=1
+            fi
+          done
+          for variable in CWS_EXTENSION_ID CWS_PUBLISHER_ID; do
+            if [[ -z "${!variable}" ]]; then
+              echo "::error::The variable $variable is missing; README.md says how to set it."
+              missing=1
+            fi
+          done
+          exit "$missing"
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ needs.release.outputs.tag }}
+          persist-credentials: false
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version-file: .nvmrc
+          # No cache in a job that publishes: a poisoned cache could reach the store.
+          package-manager-cache: false
+      - name: Build the upload zip of the release
+        id: zip
+        run: |
+          set -euo pipefail
+          npm ci --ignore-scripts
+          # The contents of extension/ with the manifest at the root of the zip, without
+          # source maps, as the store wants them.
+          bash scripts/package-extension.sh
+          version="${TAG#v}"
+          manifest="$(jq -r .version extension/manifest.json)"
+          zip="dist/player-switch-for-autodarts-$manifest.zip"
+          packaged="$(unzip -p "$zip" manifest.json | jq -r .version)"
+          if [[ "$manifest" != "$version" || "$packaged" != "$version" ]]; then
+            echo "::error::The manifest has version $manifest, the zip version $packaged; the release is $version."
+            exit 1
+          fi
+          echo "zip=$zip" >> "$GITHUB_OUTPUT"
+          echo "The zip $zip carries the version $version." >> "$GITHUB_STEP_SUMMARY"
+      - name: Sign in to the Chrome Web Store API
+        env:
+          CWS_CLIENT_ID: ${{ secrets.CWS_CLIENT_ID }}
+          CWS_CLIENT_SECRET: ${{ secrets.CWS_CLIENT_SECRET }}
+          CWS_REFRESH_TOKEN: ${{ secrets.CWS_REFRESH_TOKEN }}
+        run: |
+          set -euo pipefail
+          umask 077
+          # An access token of an hour from the refresh token. It goes into a file of the
+          # job for the steps below, so that it is in no log and no environment.
+          response="$RUNNER_TEMP/token.json"
+          curl --fail-with-body --silent --show-error --retry 3 --retry-connrefused \
+            --connect-timeout 15 --max-time 60 --output "$response" \
+            --data-urlencode "client_id=$CWS_CLIENT_ID" \
+            --data-urlencode "client_secret=$CWS_CLIENT_SECRET" \
+            --data-urlencode "refresh_token=$CWS_REFRESH_TOKEN" \
+            --data-urlencode grant_type=refresh_token \
+            https://oauth2.googleapis.com/token ||
+            { cat "$response"; echo "::error::Google issued no access token; the refresh token may have expired."; exit 1; }
+          token="$(jq -r '.access_token // empty' "$response")"
+          rm -f "$response"
+          if [[ -z "$token" ]]; then
+            echo "::error::Google's answer holds no access token."
+            exit 1
+          fi
+          echo "::add-mask::$token"
+          printf 'Authorization: Bearer %s\n' "$token" > "$RUNNER_TEMP/authorization"
+      - name: Look up the versions that the store has
+        id: store
+        run: |
+          set -euo pipefail
+          response="$RUNNER_TEMP/status.json"
+          curl --fail-with-body --silent --show-error --retry 3 --retry-connrefused \
+            --connect-timeout 15 --max-time 60 --output "$response" \
+            --header @"$RUNNER_TEMP/authorization" "$ITEM:fetchStatus" ||
+            { cat "$response"; echo "::error::The store didn't tell the status of the item."; exit 1; }
+          published="$(jq -r '[.publishedItemRevisionStatus.distributionChannels[]?.crxVersion] | first // "none"' "$response")"
+          submitted="$(jq -r '[.submittedItemRevisionStatus.distributionChannels[]?.crxVersion] | first // "none"' "$response")"
+          echo "The store has the version $published published and $submitted under review." | tee -a "$GITHUB_STEP_SUMMARY"
+          version="${TAG#v}"
+          if [[ "$published" == "$version" || "$submitted" == "$version" ]]; then
+            echo "The store has $version already; nothing to upload." | tee -a "$GITHUB_STEP_SUMMARY"
+            echo "upload=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "upload=true" >> "$GITHUB_OUTPUT"
+          fi
+      - name: Upload the zip
+        if: steps.store.outputs.upload == 'true'
+        env:
+          ZIP: ${{ steps.zip.outputs.zip }}
+        run: |
+          set -euo pipefail
+          response="$RUNNER_TEMP/upload.json"
+          curl --fail-with-body --silent --show-error --retry 3 --retry-connrefused \
+            --connect-timeout 15 --max-time 600 --output "$response" \
+            --header @"$RUNNER_TEMP/authorization" --request POST --upload-file "$ZIP" "$UPLOAD" ||
+            { cat "$response"; echo "::error::The store refused the upload of $ZIP."; exit 1; }
+          state="$(jq -r '.uploadState // empty' "$response")"
+          # The store may go on processing the upload after its answer; the status of the
+          # item says when it is done.
+          for _ in $(seq 1 20); do
+            [[ "$state" == IN_PROGRESS || "$state" == UPLOAD_IN_PROGRESS ]] || break
+            sleep 15
+            curl --fail-with-body --silent --show-error --retry 3 --retry-connrefused \
+              --connect-timeout 15 --max-time 60 --output "$response" \
+              --header @"$RUNNER_TEMP/authorization" "$ITEM:fetchStatus" ||
+              { cat "$response"; echo "::error::The store didn't tell the status of the upload."; exit 1; }
+            state="$(jq -r '.lastAsyncUploadState // empty' "$response")"
+          done
+          if [[ "$state" != SUCCEEDED ]]; then
+            cat "$response"
+            echo "::error::The upload of $ZIP ended in the state ${state:-unknown}."
+            exit 1
+          fi
+          echo "The store took the upload of $ZIP." | tee -a "$GITHUB_STEP_SUMMARY"
+      - name: Submit the release for review
+        if: steps.store.outputs.upload == 'true'
+        run: |
+          set -euo pipefail
+          response="$RUNNER_TEMP/publish.json"
+          curl --fail-with-body --silent --show-error --retry 3 --retry-connrefused \
+            --connect-timeout 15 --max-time 120 --output "$response" \
+            --header @"$RUNNER_TEMP/authorization" --header 'Content-Type: application/json' \
+            --request POST --data '{}' "$ITEM:publish" ||
+            { cat "$response"; echo "::error::The store refused to publish the release $TAG."; exit 1; }
+          jq -r '.warningInfo.warnings[]? | "::warning::\(.reason): \(.description)"' "$response"
+          state="$(jq -r '.state // empty' "$response")"
+          case "$state" in
+            PENDING_REVIEW)
+              echo "The release $TAG is submitted; Google publishes it after its review." | tee -a "$GITHUB_STEP_SUMMARY"
+              ;;
+            STAGED | PUBLISHED | PUBLISHED_TO_TESTERS)
+              echo "The release $TAG is in the state $state." | tee -a "$GITHUB_STEP_SUMMARY"
+              ;;
+            *)
+              cat "$response"
+              echo "::error::The submission of the release $TAG ended in the state ${state:-unknown}."
+              exit 1
+              ;;
+          esac
