@@ -1,105 +1,94 @@
+<div align="center">
+
+<img src="https://raw.githubusercontent.com/Dennis-Otto/player-switch-for-autodarts/main/extension/icons/icon-128.png" alt="Player Switch logo" width="96" height="96">
+
 # Player Switch for Autodarts
 
+**One shared Autodarts display, everyone on their own account, one tap to switch.**
+
+[![Documentation](https://img.shields.io/badge/docs-website-526CFE.svg?logo=materialformkdocs&logoColor=white)](https://dennis-otto.github.io/player-switch-for-autodarts/)
+[![Latest release](https://img.shields.io/github/v/release/Dennis-Otto/player-switch-for-autodarts?label=release)](https://github.com/Dennis-Otto/player-switch-for-autodarts/releases)
 [![CI](https://github.com/Dennis-Otto/player-switch-for-autodarts/actions/workflows/ci.yml/badge.svg)](https://github.com/Dennis-Otto/player-switch-for-autodarts/actions/workflows/ci.yml)
+[![Coverage 100 %](https://img.shields.io/badge/coverage-100%25-brightgreen.svg)](https://github.com/Dennis-Otto/player-switch-for-autodarts/blob/main/CONTRIBUTING.md#tests)
 [![CodeQL](https://github.com/Dennis-Otto/player-switch-for-autodarts/actions/workflows/codeql.yml/badge.svg)](https://github.com/Dennis-Otto/player-switch-for-autodarts/actions/workflows/codeql.yml)
+[![Secret scan](https://github.com/Dennis-Otto/player-switch-for-autodarts/actions/workflows/secret-scan.yml/badge.svg)](https://github.com/Dennis-Otto/player-switch-for-autodarts/actions/workflows/secret-scan.yml)
+[![SBOM](https://github.com/Dennis-Otto/player-switch-for-autodarts/actions/workflows/sbom.yml/badge.svg)](https://github.com/Dennis-Otto/player-switch-for-autodarts/actions/workflows/sbom.yml)
 [![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/Dennis-Otto/player-switch-for-autodarts/badge)](https://scorecard.dev/viewer/?uri=github.com/Dennis-Otto/player-switch-for-autodarts)
 [![REUSE](https://api.reuse.software/badge/github.com/Dennis-Otto/player-switch-for-autodarts)](https://api.reuse.software/info/github.com/Dennis-Otto/player-switch-for-autodarts)
-[![License: MIT](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
+[![Sponsor](https://img.shields.io/badge/sponsor-%E2%99%A5-db61a2?logo=githubsponsors&logoColor=white)](https://github.com/sponsors/Dennis-Otto)
 
-A Chrome extension that switches between Autodarts accounts on a shared touch
-display with one tap, without signing in again. Everyone in the house plays under
-their own account; a tap on a tile puts that account on the board.
+[**Documentation**](https://dennis-otto.github.io/player-switch-for-autodarts/) · [**Deutsche Anleitung**](https://dennis-otto.github.io/player-switch-for-autodarts/de/) · [Quick start](#quick-start) · [Changelog](https://github.com/Dennis-Otto/player-switch-for-autodarts/blob/main/CHANGELOG.md) · [💛 Sponsor](https://github.com/sponsors/Dennis-Otto)
 
-> **Status: prototype.** The way it keeps a session is not an official Autodarts
-> interface, so a change on their side can stop it until the extension is adjusted.
+<img src="https://raw.githubusercontent.com/Dennis-Otto/player-switch-for-autodarts/main/docs/images/popup.png" alt="The popup: a list of players with the one playing highlighted and a tile to add an account, and next to it the manage view of an account with the options to remember its password or remove it" width="760">
 
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="docs/images/popup-dark.png" />
-  <img alt="The popup: a grid of players with the one playing highlighted, and the manage view with the password and remove options" src="docs/images/popup.png" width="640" />
-</picture>
+</div>
+
+Every guide is on the [documentation website](https://dennis-otto.github.io/player-switch-for-autodarts/), in English and [German](https://dennis-otto.github.io/player-switch-for-autodarts/de/).
+
+<sub>💛 If Player Switch is useful to you, you can [support its development](https://github.com/sponsors/Dennis-Otto).</sub>
+
+## Why
+
+- **One tap, no typing.** The display in the hallway, the club or the pub is shared, but everyone plays under their own Autodarts account. A tap on a tile puts that account on the board.
+- **Nobody gets signed out.** The account that steps aside keeps its session parked, so a tap brings it straight back. No password, no sign-in page.
+- **Ready days later.** Autodarts rotates its session tokens; the extension renews every parked account in the background, so a saved account still works next week.
+- **Private by design.** Everything stays in the browser on that computer and goes only to Autodarts. No analytics, no server of ours, nothing sent anywhere else.
 
 ## How it works
 
-Autodarts Play keeps the signed-in session as a single value in the browser (a
-rotating refresh token in `localStorage`). The extension keeps that value per
-account and swaps it when you switch:
+Autodarts Play keeps the signed-in session as a single value in the browser (a rotating refresh token in `localStorage`). The extension keeps that value per account and swaps it when you switch:
 
-- **Switching** parks the session of the account that was playing, writes the
-  chosen account's session into the page and reloads. No password is typed.
-- **The account that steps aside is not signed out at Autodarts.** Its session
-  stays valid so a tap brings it straight back. "Switching away" only takes it off
-  the page.
-- **Parked sessions are kept fresh.** Because the token rotates, the extension
-  renews each parked account's token in the background, so it still works days
-  later.
-- **Password fallback (optional).** If you let the extension remember an account's
-  password, it signs that account in again automatically should its token ever
-  stop working. Accounts that use Google or Apple to sign in can't use this.
+- **Switching** parks the session of the account that was playing, writes the chosen account's session into the page and reloads.
+- **The account that steps aside is not signed out at Autodarts.** Its session stays valid; "switching away" only takes it off the page.
+- **Parked sessions are kept fresh.** Because the token rotates, the extension renews each parked account's token in the background.
+- **Password fallback, optional.** If you let the extension remember an account's password, it signs that account back in by itself should its token ever stop working. Accounts that sign in with Google or Apple can't use this.
 
-## Install
+The account logic lives in [`src/`](src/) with every line tested; [`extension/`](extension/) is the Manifest V3 wiring, and only [`extension/content.js`](extension/content.js) touches the page's stored session. [Decision 0002](docs/decisions/0002-swap-the-session-not-the-login.md) records why it works this way.
 
-### From the Chrome Web Store
+## Quick start
 
-Once the listing is live, install it in one click from its store page (the link
-goes here after the first release). Updates then arrive on their own.
+### Install
 
-### Unpacked, from the source
+**From the Chrome Web Store** — once the listing is live, install it in one click from its store page; updates then arrive on their own. The link goes here when it is.
+
+**Unpacked, from the source:**
 
 ```sh
 npm ci
 npm run build
 ```
 
-Then in Chrome: open `chrome://extensions`, turn on **Developer mode**, choose
-**Load unpacked** and pick the `extension/` folder of this repository.
+Then in Chrome open `chrome://extensions`, turn on **Developer mode**, choose **Load unpacked** and pick the `extension/` folder of this repository.
 
-The account logic — renewing tokens, the password fallback, the account list — is
-written and tested in [`src/`](src/). Only
-[`extension/content.js`](extension/content.js) touches the page's stored session,
-reading and writing the refresh token under `autodarts_refresh_token`.
+### Add the players
 
-## Use it
-
-1. Open [play.autodarts.com](https://play.autodarts.com) and sign in as the first
-   person.
+1. Open [play.autodarts.com](https://play.autodarts.com) and sign in as the first person.
 2. Open the extension and choose **Save account**.
 3. Choose **Add account**, sign in as the next person, and save that one too.
-4. From then on, a tap on a tile switches accounts. **Manage accounts** reveals
-   the per-account options.
+4. From then on, a tap on a tile switches accounts. **Manage accounts** shows the options of each account.
 
-Optionally, under **Manage accounts**, choose **Remember password** so the
-extension can sign an account back in on its own. See [SECURITY.md](SECURITY.md)
-and the [privacy policy](docs/privacy.md) for what that stores.
+### Remember a password (optional)
+
+Under **Manage accounts**, choose **Remember password** for an account, and the extension signs it back in on its own if its session ever stops working. The password stays on that computer and is sent only to Autodarts; [SECURITY.md](SECURITY.md) and the [privacy policy](docs/privacy.md) say exactly what is stored.
+
+## Good to know
+
+- The way the extension keeps a session is not an official Autodarts interface. A change on Autodarts' side can stop it until the extension is adjusted, and how long a parked token stays valid is up to Autodarts.
+- It is built for a display that the people of a household, club or venue share and trust: anyone at that display can switch to any saved account, which is the point.
 
 ## Publish to the Chrome Web Store
 
-A full one-click publish isn't possible for the first listing: the Chrome Web Store
-needs a one-time developer account (a one-off US$5 fee), the listing details and a
-review. After that it is close to one command.
+The first listing needs a one-time developer account (a one-off US$5 fee), the listing details and a review. After that it is close to one command.
 
-1. Build the upload package:
-
-   ```sh
-   bash scripts/package-extension.sh
-   ```
-
-   This writes `dist/player-switch-for-autodarts-<version>.zip` with the manifest
-   at its root.
-2. At the [Chrome Web Store Developer Dashboard](https://chrome.google.com/webstore/devconsole),
-   create the item, upload the zip, and fill in the listing (the texts in
-   [`store/`](store/) are ready to paste) and the [privacy policy](docs/privacy.md)
-   URL.
+1. Build the upload package: `bash scripts/package-extension.sh` writes `dist/player-switch-for-autodarts-<version>.zip` with the manifest at its root.
+2. At the [Chrome Web Store Developer Dashboard](https://chrome.google.com/webstore/devconsole), create the item, upload the zip, and fill in the listing (the texts in [`store/`](store/) are ready to paste, the screenshots are in [`docs/images/`](docs/images/)) and the privacy policy URL.
 3. Submit for review.
 
-For later versions, publishing can be automated in CI with the Chrome Web Store
-API, so merging a release uploads and submits the new zip on its own; that needs
-your store API credentials and is a planned follow-up.
+For later versions, publishing can be automated in CI with the Chrome Web Store API, so that merging a release uploads and submits the new zip on its own; that needs the store's API credentials and is a planned follow-up.
 
 ## Development
 
-Every change goes through a pull request whose title follows
-[Conventional Commits](https://www.conventionalcommits.org/), with signed-off
-commits (`git commit -s`). The checks of the CI run locally with
+Every change goes through a pull request whose title follows [Conventional Commits](https://www.conventionalcommits.org/), with signed-off commits (`git commit -s`). The checks of the CI run locally with
 
 ```sh
 bash scripts/check.sh
@@ -109,10 +98,8 @@ bash scripts/check.sh
 
 ## Support and security
 
-Questions and problems: see [SUPPORT.md](SUPPORT.md). Report vulnerabilities
-privately, as [SECURITY.md](SECURITY.md) describes.
+Questions and problems: see [SUPPORT.md](SUPPORT.md). Report vulnerabilities privately, as [SECURITY.md](SECURITY.md) describes.
 
 ## License
 
-MIT; see [LICENSE](LICENSE). Every file names its license in the machine-readable
-form of [REUSE](https://reuse.software).
+MIT; see [LICENSE](LICENSE). Every file names its license in the machine-readable form of [REUSE](https://reuse.software). Not affiliated with Autodarts.

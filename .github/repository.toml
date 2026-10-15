@@ -3,9 +3,9 @@
 # https://github.com/Dennis-Otto/repo-blueprint#settings
 
 [repository]
-description = "A Chrome extension that switches between Autodarts accounts on a shared touch display with one tap, without signing in again."
-homepage = ""
-topics = ["autodarts", "darts", "chrome-extension", "browser-extension", "manifest-v3"]
+description = "Chrome extension for a shared Autodarts display: everyone plays under their own account and a tap on a tile switches players. Sessions are parked and kept fresh, so nobody signs in again; an optional remembered password signs an account back in by itself. Everything stays on the computer."
+homepage = "https://dennis-otto.github.io/player-switch-for-autodarts/"
+topics = ["autodarts", "darts", "dartboard", "chrome-extension", "browser-extension", "chrome", "google-chrome", "manifest-v3", "account-switcher", "account-switching", "multi-account", "shared-display", "kiosk", "touchscreen", "session-management", "typescript"]
 has_issues = true
 has_discussions = true
 has_projects = false
