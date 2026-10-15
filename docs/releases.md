@@ -31,4 +31,33 @@ The first listing is done by hand, once:
 
 ## Later versions
 
-A new version is a new upload of the package of its release, which Google reviews again and then publishes. Automatic publishing on every release, through the Chrome Web Store API, is being added: a workflow that builds the package of the release, uploads it and submits it, with the store's credentials in the environment `chrome-web-store`. Its set-up will be described here once it is in place.
+Every release after the first reaches the store on its own: the workflow [`publish-store.yml`](https://github.com/Dennis-Otto/player-switch-for-autodarts/blob/main/.github/workflows/publish-store.yml) starts after every run of the Release workflow, and by hand under *Actions → Chrome Web Store* with a tag. It takes the latest published release and asks the store which version it has; a version that the store has already, under review or published, ends the run with a note. Otherwise it builds the package from the tag of the release, checks that the manifest carries the version of the release, keeps the package as an artifact of the run for 30 days, so that what went to the store can be looked at later, uploads it with the Chrome Web Store API and submits it for review. Google reviews each version again and publishes it after the review; a prerelease stays off the store. The workflow needs this one-time set-up:
+
+1. In the [Google Cloud Console](https://console.cloud.google.com/), create a project and enable the **Chrome Web Store API** for it.
+2. Under **APIs & Services → OAuth consent screen**, create the consent screen as an external app with your own address as a test user, then set its publishing status to **In production**: while it stays in testing, Google expires every refresh token after seven days.
+3. Under **Credentials**, create an **OAuth client ID** of the type **Desktop app** and note its client ID and client secret.
+4. Get a refresh token with the scope `https://www.googleapis.com/auth/chromewebstore`: open this address in the browser, signed in as the developer, and allow the access (Google warns about an unverified app; your own app is fine):
+
+    ```text
+    https://accounts.google.com/o/oauth2/v2/auth?client_id=CLIENT_ID&redirect_uri=http://localhost:1&response_type=code&scope=https://www.googleapis.com/auth/chromewebstore&access_type=offline&prompt=consent
+    ```
+
+    The browser then lands on an address `http://localhost:1/?code=…` that nothing answers; copy the `code` from it and exchange it within a few minutes:
+
+    ```sh
+    curl https://oauth2.googleapis.com/token -d client_id=CLIENT_ID -d client_secret=CLIENT_SECRET -d code=CODE -d grant_type=authorization_code -d redirect_uri=http://localhost:1
+    ```
+
+    The answer holds the `refresh_token`.
+5. In the [Developer Dashboard](https://chrome.google.com/webstore/devconsole), note the **item ID**, the 32 letters in the address of the item, and the **publisher ID** under **Publisher → Settings**, and turn on 2-step verification for the account, which Google requires for publishing by API.
+6. Set the three secrets in the environment `chrome-web-store`, which the settings bot creates from [`repository.project.toml`](https://github.com/Dennis-Otto/player-switch-for-autodarts/blob/main/.github/repository.project.toml), and the two IDs as variables of the repository:
+
+    ```sh
+    gh secret set CWS_CLIENT_ID --env chrome-web-store
+    gh secret set CWS_CLIENT_SECRET --env chrome-web-store
+    gh secret set CWS_REFRESH_TOKEN --env chrome-web-store
+    gh variable set CWS_EXTENSION_ID --body ITEM_ID
+    gh variable set CWS_PUBLISHER_ID --body PUBLISHER_ID
+    ```
+
+While a version is still under review, the store takes no new one. Wait for the review, or cancel the submission in the dashboard, and then start the workflow by hand with the tag of the release. The package is not attached to the GitHub release: a release is immutable once published, and only the isolated build of the release workflow could add a file with its signed provenance; the artifact of the run holds it instead. [Decision 0003](decisions/0003-deliver-each-release-to-the-chrome-web-store.md) records the reasons.
