@@ -33,6 +33,11 @@
   box-sizing: border-box;
 }
 
+/* An author display rule would otherwise cancel the hidden attribute. */
+[hidden] {
+  display: none !important;
+}
+
 body {
   width: 340px;
   margin: 0;
@@ -142,6 +147,15 @@ body.managing .tile:hover {
   background: var(--accent-soft);
   object-fit: cover;
   flex: none;
+}
+
+.avatar.initial {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--accent);
+  font-weight: 600;
+  font-size: 17px;
 }
 
 .names {
