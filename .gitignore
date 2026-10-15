@@ -37,3 +37,6 @@ credentials*.json
 
 # The extension code compiled from src/
 /extension/lib/
+
+# Playwright MCP snapshots
+/.playwright-mcp/

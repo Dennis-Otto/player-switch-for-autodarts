@@ -13,6 +13,11 @@ their own account; a tap on a tile puts that account on the board.
 > **Status: prototype.** The way it keeps a session is not an official Autodarts
 > interface, so a change on their side can stop it until the extension is adjusted.
 
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/images/popup-dark.png" />
+  <img alt="The popup: a grid of players with the one playing highlighted, and the manage view with the password and remove options" src="docs/images/popup.png" width="640" />
+</picture>
+
 ## How it works
 
 Autodarts Play keeps the signed-in session as a single value in the browser (a
