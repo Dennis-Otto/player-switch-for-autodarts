@@ -35,10 +35,10 @@
     "message": "Passwort merken"
   },
   "forgetPassword": {
-    "message": "Passwort vergessen"
+    "message": "Passwort nicht mehr merken"
   },
   "remove": {
-    "message": "Entfernen"
+    "message": "Konto entfernen"
   },
   "removeConfirm": {
     "message": "$NAME$ von diesem Display entfernen? Zum Wiederherstellen einfach neu anmelden.",

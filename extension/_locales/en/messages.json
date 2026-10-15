@@ -38,7 +38,7 @@
     "message": "Forget password"
   },
   "remove": {
-    "message": "Remove"
+    "message": "Remove account"
   },
   "removeConfirm": {
     "message": "Remove $NAME$ from this display? Sign in again to add the account back.",

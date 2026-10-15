@@ -6,6 +6,12 @@ the next release, or lists the pull requests when there is none.
 
 ## Unreleased
 
+- The password form and the account menu no longer show all the time: they appear
+  only under "Manage accounts" and only after a tap on "Remember password".
+- An account without a picture at Autodarts shows its initial instead of an empty
+  circle, the popup carries the browser's language, and the labels read "Remember
+  password" / "Stop remembering" and "Remove account".
+
 ## 0.1.0 (2026-10-15)
 
 - Switch between saved Autodarts accounts on a shared display with one tap: the

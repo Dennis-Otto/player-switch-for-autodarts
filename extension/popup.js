@@ -24,8 +24,11 @@ function showStatus(text, isError = false) {
   statusBar.hidden = text === "";
 }
 
-/** Sends one request to the service worker and renders the view it answers with. */
-async function send(action, extra = {}) {
+/**
+ * Sends one request to the service worker and renders the view it answers with.
+ * `signInHint` is what to say when the account has to sign in again.
+ */
+async function send(action, extra = {}, signInHint = null) {
   const reply = await chrome.runtime.sendMessage({ type: "popup", action, ...extra });
   if (reply === undefined) {
     showStatus(t("error"), true);
@@ -36,7 +39,7 @@ async function send(action, extra = {}) {
   } else if (reply.error !== undefined) {
     showStatus(t("error"), true);
   } else if (reply.ok === false) {
-    showStatus(reply.reason === "unreachable" ? t("unreachable") : extra.signInHint ?? t("error"), true);
+    showStatus(reply.reason === "unreachable" ? t("unreachable") : (signInHint ?? t("error")), true);
   }
   if (reply.view !== undefined) {
     render(reply.view);
@@ -62,6 +65,12 @@ function tile(profile) {
   const avatar = node.querySelector(".avatar");
   if (profile.picture !== null) {
     avatar.src = profile.picture;
+  } else {
+    // No picture at Autodarts: show the initial instead of an empty image.
+    const initial = document.createElement("span");
+    initial.className = "avatar initial";
+    initial.textContent = (profile.name || profile.username).trim().charAt(0).toUpperCase();
+    avatar.replaceWith(initial);
   }
   node.querySelector(".name").textContent = profile.name;
   node.querySelector(".username").textContent = profile.username;
@@ -85,7 +94,7 @@ function tile(profile) {
       return;
     }
     showStatus(t("switching", profile.name));
-    void send("switch", { id: profile.id, signInHint: t("switchSignIn", profile.name) });
+    void send("switch", { id: profile.id }, t("switchSignIn", profile.name));
   });
 
   const form = node.querySelector(".remember");
@@ -141,5 +150,6 @@ document.querySelector("#add").addEventListener("click", () => {
   void send("signout");
 });
 
+document.documentElement.lang = chrome.i18n.getUILanguage();
 translate(document);
 void send("view");
