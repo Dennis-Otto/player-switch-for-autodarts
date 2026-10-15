@@ -5,10 +5,9 @@ _commit: v0.8.8
 _src_path: gh:Dennis-Otto/repo-blueprint
 author: Dennis Otto
 copyright: 2026 Dennis Otto
-description: A Chrome extension that switches between Autodarts accounts on a shared
-    touch display with one tap, without signing in again.
+description: "Chrome extension for a shared Autodarts display: everyone plays under their own account and a tap on a tile switches players. Sessions are parked and kept fresh, so nobody signs in again; an optional remembered password signs an account back in by itself. Everything stays on the computer."
 discussions: true
-homepage: ''
+homepage: https://dennis-otto.github.io/player-switch-for-autodarts/
 languages:
 - javascript-typescript
 license: MIT
@@ -19,4 +18,4 @@ project_type: node-package
 sample_code: true
 sponsor: Dennis-Otto
 successor: false
-topics: autodarts,darts,chrome-extension,browser-extension,manifest-v3
+topics: autodarts,darts,dartboard,chrome-extension,browser-extension,chrome,google-chrome,manifest-v3,account-switcher,account-switching,multi-account,shared-display,kiosk,touchscreen,session-management,typescript
