@@ -51,9 +51,9 @@ provenance.
 - A release reaches the store minutes after it is published; Google's review still
   decides when the users get it.
 - The secrets live in the environment `chrome-web-store`, which only `main` may use;
-  the IDs are variables of the repository. The page *Releases* has the set-up. The refresh
-  token lasts as long as the consent screen of the Google Cloud project is in
-  production; in testing, it expires after seven days.
+  the IDs are variables of the repository. The page *Releases* has the set-up. The
+  refresh token lasts as long as the consent screen of the Google Cloud project is
+  in production; in testing, it expires after seven days.
 - While a version is under review, the store takes no new one; after the review or
   a cancellation, the workflow is started by hand with the tag.
 - The upload zip is in the store only, not on the GitHub release; attaching it with
