@@ -10,10 +10,8 @@ A Chrome extension that switches between Autodarts accounts on a shared touch
 display with one tap, without signing in again. Everyone in the house plays under
 their own account; a tap on a tile puts that account on the board.
 
-> **Status: prototype.** It needs three lines from you before it works (see
-> [The one gap you fill in](#the-one-gap-you-fill-in)), and the way it keeps a
-> session is not an official Autodarts interface, so a change on their side can
-> stop it until the extension is adjusted.
+> **Status: prototype.** The way it keeps a session is not an official Autodarts
+> interface, so a change on their side can stop it until the extension is adjusted.
 
 ## How it works
 
@@ -43,17 +41,10 @@ npm run build
 Then in Chrome: open `chrome://extensions`, turn on **Developer mode**, choose
 **Load unpacked** and pick the `extension/` folder of this repository.
 
-## The one gap you fill in
-
-One file, [`extension/content.js`](extension/content.js), reads and writes the
-session inside the Autodarts page. Three lines there are left blank on purpose and
-marked `GAP 1 of 3` … `GAP 3 of 3`; fill each in with the line shown in its
-comment (a `localStorage` get, set and remove under the key
-`autodarts_refresh_token`). Then reload the extension and the Autodarts tab.
-
-Everything else — renewing tokens, the password fallback, the account list — is
-written and tested in [`src/`](src/); `content.js` is the only place that touches
-the page's stored session, which is why that part is yours to complete.
+The account logic — renewing tokens, the password fallback, the account list — is
+written and tested in [`src/`](src/). Only
+[`extension/content.js`](extension/content.js) touches the page's stored session,
+reading and writing the refresh token under `autodarts_refresh_token`.
 
 ## Use it
 

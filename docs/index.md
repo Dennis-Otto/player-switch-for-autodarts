@@ -10,7 +10,7 @@ the background. An optional "remember password" signs an account back in by itse
 if its session ever stops working.
 
 - **Get started:** the [README](https://github.com/Dennis-Otto/player-switch-for-autodarts#readme)
-  explains how to install the extension unpacked and the one small gap you fill in.
+  explains how to install the extension unpacked.
 - **How and why it works this way:** see
   [the decision record](decisions/0002-swap-the-session-not-the-login.md).
 - **What it stores and the risks:** see [the security design](security.md).

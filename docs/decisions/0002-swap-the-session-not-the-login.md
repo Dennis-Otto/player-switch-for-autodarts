@@ -43,4 +43,4 @@ rejected as awkward at a touch display, with a separate window per person.
 - A stored token, and an optional stored password, sit in `chrome.storage.local` on
   a trusted shared computer; see [the security design](../security.md).
 - Only `extension/content.js` touches the page's stored session, which keeps the
-  sensitive surface to one small, clearly marked file.
+  sensitive surface to one small file.
