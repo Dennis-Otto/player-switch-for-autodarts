@@ -1,0 +1,196 @@
+:root {
+  --bg: #ffffff;
+  --fg: #1a1c23;
+  --muted: #5c606e;
+  --line: #e2e4ea;
+  --accent: #526cfe;
+  --accent-fg: #ffffff;
+  --danger: #c23a3a;
+  color-scheme: light dark;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #15171e;
+    --fg: #eceef4;
+    --muted: #a0a4b2;
+    --line: #2a2d38;
+    --accent: #8aa0ff;
+    --accent-fg: #15171e;
+    --danger: #ff7a7a;
+  }
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  width: 320px;
+  margin: 0;
+  padding: 12px;
+  font: 14px/1.4 system-ui, sans-serif;
+  background: var(--bg);
+  color: var(--fg);
+}
+
+header h1 {
+  margin: 0;
+  font-size: 15px;
+}
+
+#status {
+  margin: 2px 0 10px;
+  min-height: 1.2em;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+}
+
+.profile {
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.switch {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 10px;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.switch:hover {
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+}
+
+.profile.active .switch {
+  background: color-mix(in srgb, var(--accent) 20%, transparent);
+}
+
+.avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--line);
+  object-fit: cover;
+  flex: none;
+}
+
+.names {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.name {
+  font-weight: 600;
+}
+
+.username {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.badge {
+  margin-left: auto;
+  padding: 2px 7px;
+  border-radius: 999px;
+  font-size: 11px;
+  background: var(--danger);
+  color: var(--accent-fg);
+}
+
+.profile.active .badge:not([hidden]) {
+  background: var(--accent);
+}
+
+.menu {
+  border-top: 1px solid var(--line);
+  padding: 8px 10px;
+  display: grid;
+  gap: 8px;
+}
+
+.actions {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.remember {
+  display: grid;
+  gap: 6px;
+}
+
+input {
+  padding: 6px 8px;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  background: var(--bg);
+  color: inherit;
+  font: inherit;
+}
+
+button {
+  border-radius: 7px;
+  cursor: pointer;
+}
+
+.menu button,
+footer button,
+#unsaved button {
+  padding: 6px 10px;
+  border: 1px solid var(--line);
+  background: transparent;
+  color: inherit;
+  font: inherit;
+}
+
+.remember button[type="submit"],
+#adopt {
+  border-color: var(--accent);
+  background: var(--accent);
+  color: var(--accent-fg);
+}
+
+.remove {
+  color: var(--danger);
+}
+
+#unsaved {
+  margin-top: 10px;
+  padding: 10px;
+  border: 1px dashed var(--line);
+  border-radius: 10px;
+  display: grid;
+  gap: 8px;
+}
+
+#unsaved p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+footer {
+  margin-top: 12px;
+}
+
+footer button {
+  width: 100%;
+}

@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Player Switch for Autodarts</title>
+    <link rel="stylesheet" href="popup.css" />
+  </head>
+  <body>
+    <header>
+      <h1>Player Switch</h1>
+      <p id="status" role="status"></p>
+    </header>
+    <ul id="profiles" aria-label="Accounts"></ul>
+    <section id="unsaved" hidden>
+      <p>An account is signed in on the page but not saved here yet.</p>
+      <button type="button" id="adopt">Save this account</button>
+    </section>
+    <footer>
+      <button type="button" id="add">Add another account</button>
+    </footer>
+    <template id="profile-template">
+      <li class="profile">
+        <button type="button" class="switch">
+          <img class="avatar" alt="" />
+          <span class="names"><span class="name"></span><span class="username"></span></span>
+          <span class="badge" hidden></span>
+        </button>
+        <div class="menu">
+          <form class="remember" hidden>
+            <input type="text" class="cred-username" autocomplete="off" placeholder="Username or email" />
+            <input type="password" class="cred-password" autocomplete="off" placeholder="Password" />
+            <button type="submit">Save password</button>
+          </form>
+          <div class="actions">
+            <button type="button" class="toggle-remember"></button>
+            <button type="button" class="remove">Remove</button>
+          </div>
+        </div>
+      </li>
+    </template>
+    <script type="module" src="popup.js"></script>
+  </body>
+</html>

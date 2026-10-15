@@ -1,5 +1,19 @@
 # Player Switch for Autodarts
 
-A Chrome extension that switches between Autodarts accounts on a shared touch display with one tap, without signing in again.
+A Chrome extension that switches between Autodarts accounts on a shared touch
+display with one tap, without signing in again. Everyone in the house plays under
+their own account; a tap on a tile puts that account on the board.
 
-This is the start of the website of Player Switch for Autodarts. MkDocs builds it from the pages in `docs/`, as `mkdocs.yml` says, and every change of `main` publishes it on GitHub Pages. Replace this page with the guide for the users, and give every further page its place in the menu, `nav` in `mkdocs.yml`. German pages sit next to their English ones, such as `index.de.md` beside `index.md`, as `mkdocs.yml` shows.
+The account that steps aside is not signed out at Autodarts — its session is parked
+so a tap brings it straight back, and the extension keeps parked sessions fresh in
+the background. An optional "remember password" signs an account back in by itself
+if its session ever stops working.
+
+- **Get started:** the [README](https://github.com/Dennis-Otto/player-switch-for-autodarts#readme)
+  explains how to install the extension unpacked and the one small gap you fill in.
+- **How and why it works this way:** see
+  [the decision record](decisions/0002-swap-the-session-not-the-login.md).
+- **What it stores and the risks:** see [the security design](security.md).
+
+This is a prototype, and it relies on an interface Autodarts does not publish, so a
+change on their side can stop it working until the extension is adjusted.

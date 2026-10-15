@@ -34,3 +34,6 @@ credentials*.json
 /dist/
 /coverage/
 *.tgz
+
+# The extension code compiled from src/
+/extension/lib/

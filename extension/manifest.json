@@ -1,0 +1,28 @@
+{
+  "manifest_version": 3,
+  "name": "Player Switch for Autodarts",
+  "version": "0.0.0",
+  "description": "Switch between Autodarts accounts on a shared display with one tap, without signing in again.",
+  "icons": {
+    "16": "icons/icon-16.png",
+    "48": "icons/icon-48.png",
+    "128": "icons/icon-128.png"
+  },
+  "action": {
+    "default_title": "Player Switch for Autodarts",
+    "default_popup": "popup.html"
+  },
+  "background": {
+    "service_worker": "background.js",
+    "type": "module"
+  },
+  "content_scripts": [
+    {
+      "matches": ["https://play.autodarts.com/*", "https://play.autodarts.io/*"],
+      "js": ["content.js"],
+      "run_at": "document_start"
+    }
+  ],
+  "permissions": ["storage", "alarms", "tabs"],
+  "host_permissions": ["https://play.autodarts.com/*", "https://play.autodarts.io/*", "https://api.autodarts.com/*"]
+}
