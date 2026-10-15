@@ -10,6 +10,13 @@ the next release, or lists the pull requests when there is none.
   uploads it and submits it for review, and Google publishes it once the review
   passes.
 
+## [0.2.0](https://github.com/Dennis-Otto/player-switch-for-autodarts/compare/v0.1.1...v0.2.0) (2026-10-15)
+
+
+### Features
+
+* **ci:** publish each release to the Chrome Web Store ([#9](https://github.com/Dennis-Otto/player-switch-for-autodarts/issues/9)) ([3fb0bf5](https://github.com/Dennis-Otto/player-switch-for-autodarts/commit/3fb0bf59ef2416a9b580c8939130957e1ea57214))
+
 ## [0.1.1](https://github.com/Dennis-Otto/player-switch-for-autodarts/compare/v0.1.0...v0.1.1) (2026-10-15)
 
 - The password form and the account menu no longer show all the time: they appear
