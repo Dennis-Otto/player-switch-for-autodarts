@@ -1,0 +1,38 @@
+{
+  "name": "player-switch-for-autodarts",
+  "version": "0.0.0",
+  "description": "A Chrome extension that switches between Autodarts accounts on a shared touch display with one tap, without signing in again.",
+  "homepage": "https://github.com/Dennis-Otto/player-switch-for-autodarts#readme",
+  "bugs": {
+    "url": "https://github.com/Dennis-Otto/player-switch-for-autodarts/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Dennis-Otto/player-switch-for-autodarts.git"
+  },
+  "license": "MIT",
+  "author": "Dennis Otto",
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "engines": {
+    "node": ">=24"
+  },
+  "scripts": {
+    "build": "tsc --project tsconfig.build.json",
+    "typecheck": "tsc --project tsconfig.json",
+    "test": "node --test --experimental-test-coverage --test-coverage-include=\"src/**\" --test-coverage-lines=100 --test-coverage-branches=100 --test-coverage-functions=100 \"test/**/*.test.ts\""
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.0",
+    "fast-check": "^4.10.2",
+    "typescript": "^7.0.2"
+  }
+}

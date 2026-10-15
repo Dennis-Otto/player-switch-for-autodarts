@@ -1,0 +1,53 @@
+name: Dependabot maintenance
+
+# Dependabot keeps only the Features of the dev container (dependabot.yml); Renovate
+# merges its own updates, those of actions pinned to a commit of a branch included.
+# Routine updates merge on their own once every required check passes; a major
+# update waits for the maintainer. Updates of runtime dependencies are committed as
+# fix(deps) and so lead to a patch release (see release.yml).
+
+on:
+  pull_request_target:
+    types:
+      - opened
+      - reopened
+      - synchronize
+      - ready_for_review
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  auto-merge:
+    name: Queue verified routine update
+    if: >-
+      !github.event.repository.fork &&
+      github.event.pull_request.user.login == 'dependabot[bot]' &&
+      github.event.pull_request.head.repo.full_name == github.repository
+    permissions:
+      contents: write
+      pull-requests: write
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Record the network traffic of the job
+        uses: step-security/harden-runner@e14015d583714f6e62063499dc959a02595150a1 # v2.21.1
+        with:
+          egress-policy: audit
+      # Do not check out or execute pull request code in this privileged workflow.
+      - name: Read verified Dependabot metadata
+        id: metadata
+        uses: dependabot/fetch-metadata@25dd0e34f4fe68f24cc83900b1fe3fe149efef98 # v3.1.0
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Enable automatic squash merge for patch and minor updates
+        if: >-
+          steps.metadata.outputs.update-type == 'version-update:semver-patch' ||
+          steps.metadata.outputs.update-type == 'version-update:semver-minor'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_URL: ${{ github.event.pull_request.html_url }}
+          PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: gh pr merge --auto --squash --match-head-commit "$PR_HEAD_SHA" "$PR_URL"

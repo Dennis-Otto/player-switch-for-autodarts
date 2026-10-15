@@ -1,0 +1,40 @@
+name: CI (node)
+
+# Node: the locked packages of package-lock.json and the checks of
+# scripts/check.sh, the same ones that run locally. The Node version comes from
+# .nvmrc. https://github.com/Dennis-Otto/repo-blueprint
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.run_id }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  check:
+    name: check (node)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Record the network traffic of the job
+        uses: step-security/harden-runner@e14015d583714f6e62063499dc959a02595150a1 # v2.21.1
+        with:
+          egress-policy: audit
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - name: Install the locked packages
+        run: npm ci --ignore-scripts
+      - name: Run the checks
+        run: bash scripts/check.sh

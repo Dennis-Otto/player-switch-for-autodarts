@@ -1,0 +1,22 @@
+# The answers of the blueprint (https://github.com/Dennis-Otto/repo-blueprint);
+# `copier update` reads them to bring the repository up to the latest release.
+# Change them only with `copier update --data name=value`.
+_commit: v0.8.8
+_src_path: gh:Dennis-Otto/repo-blueprint
+author: Dennis Otto
+copyright: 2026 Dennis Otto
+description: A Chrome extension that switches between Autodarts accounts on a shared
+    touch display with one tap, without signing in again.
+discussions: true
+homepage: ''
+languages:
+- javascript-typescript
+license: MIT
+owner: Dennis-Otto
+project_name: Player Switch for Autodarts
+project_slug: player-switch-for-autodarts
+project_type: node-package
+sample_code: true
+sponsor: Dennis-Otto
+successor: false
+topics: autodarts,darts,chrome-extension,browser-extension,manifest-v3
