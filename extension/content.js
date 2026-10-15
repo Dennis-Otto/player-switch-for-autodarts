@@ -18,15 +18,12 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
 
   switch (message.action) {
     case "read": {
-      // GAP 1 of 3 — replace `null` with the stored token:
-      //   const token = window.localStorage.getItem(SESSION_KEY);
-      const token = null;
+      const token = window.localStorage.getItem(SESSION_KEY);
       sendResponse({ token });
       return false;
     }
     case "write": {
-      // GAP 2 of 3 — store the token the extension hands over:
-      //   window.localStorage.setItem(SESSION_KEY, message.token);
+      window.localStorage.setItem(SESSION_KEY, message.token);
       void SESSION_KEY;
       void message.token;
       sendResponse({ ok: true });
@@ -35,8 +32,7 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
       return false;
     }
     case "clear": {
-      // GAP 3 of 3 — remove the stored token:
-      //   window.localStorage.removeItem(SESSION_KEY);
+      window.localStorage.removeItem(SESSION_KEY);
       sendResponse({ ok: true });
       window.location.reload();
       return false;
