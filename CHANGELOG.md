@@ -6,6 +6,8 @@ the next release, or lists the pull requests when there is none.
 
 ## Unreleased
 
+## 0.1.0 (2026-10-15)
+
 - Switch between saved Autodarts accounts on a shared display with one tap: the
   extension parks each account's session, keeps parked sessions fresh in the
   background, and can optionally remember a password to sign an account back in.
