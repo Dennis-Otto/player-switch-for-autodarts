@@ -1,0 +1,89 @@
+{
+  "extName": {
+    "message": "Player Switch for Autodarts",
+    "description": "Der Name der Erweiterung."
+  },
+  "extDescription": {
+    "message": "Wechsle an einem gemeinsamen Display mit einem Tipp zwischen Autodarts-Konten, ohne dich neu anzumelden.",
+    "description": "Die Beschreibung der Erweiterung, höchstens 132 Zeichen."
+  },
+  "title": {
+    "message": "Wer spielt?"
+  },
+  "manage": {
+    "message": "Konten verwalten"
+  },
+  "done": {
+    "message": "Fertig"
+  },
+  "playing": {
+    "message": "Spielt"
+  },
+  "needsSignIn": {
+    "message": "Neu anmelden"
+  },
+  "addAccount": {
+    "message": "Konto hinzufügen"
+  },
+  "unsavedText": {
+    "message": "Auf Autodarts ist jemand angemeldet, der hier noch nicht gespeichert ist."
+  },
+  "saveAccount": {
+    "message": "Konto speichern"
+  },
+  "rememberPassword": {
+    "message": "Passwort merken"
+  },
+  "forgetPassword": {
+    "message": "Passwort vergessen"
+  },
+  "remove": {
+    "message": "Entfernen"
+  },
+  "removeConfirm": {
+    "message": "$NAME$ von diesem Display entfernen? Zum Wiederherstellen einfach neu anmelden.",
+    "placeholders": { "name": { "content": "$1" } }
+  },
+  "passwordTitle": {
+    "message": "Passwort für $NAME$",
+    "placeholders": { "name": { "content": "$1" } }
+  },
+  "passwordHint": {
+    "message": "Wird nur genutzt, wenn die gespeicherte Anmeldung nicht mehr geht. Es bleibt auf diesem Computer und geht nur an Autodarts."
+  },
+  "usernameLabel": {
+    "message": "Benutzername oder E-Mail"
+  },
+  "passwordLabel": {
+    "message": "Passwort"
+  },
+  "save": {
+    "message": "Speichern"
+  },
+  "cancel": {
+    "message": "Abbrechen"
+  },
+  "switching": {
+    "message": "Wechsle zu $NAME$ …",
+    "placeholders": { "name": { "content": "$1" } }
+  },
+  "switchSignIn": {
+    "message": "$NAME$ muss sich neu anmelden: einmal auf Autodarts anmelden und das Konto speichern, oder das Passwort merken.",
+    "placeholders": { "name": { "content": "$1" } }
+  },
+  "unreachable": {
+    "message": "Autodarts ist gerade nicht erreichbar. Bitte gleich nochmal versuchen."
+  },
+  "noPage": {
+    "message": "Öffne oder lade play.autodarts.com in einem Tab neu und versuche es dann nochmal."
+  },
+  "empty": {
+    "message": "Noch keine Konten. Melde dich auf play.autodarts.com an und speichere das Konto dann hier."
+  },
+  "addHint": {
+    "message": "Abgemeldet. Melde dich auf Autodarts mit dem nächsten Konto an und öffne das hier dann wieder zum Speichern."
+  },
+  "error": {
+    "message": "Etwas ist schiefgelaufen. Bitte nochmal versuchen."
+  }
+}

@@ -35,30 +35,54 @@ export function sessionResponse(id: string, refreshToken: string): Response {
   });
 }
 
+/** What a fake page refuses to do, as a page without the extension's script would. */
+export type PageFailure = "read" | "write" | "clear";
+
 export class FakePage implements PagePort {
   token: string | null;
   readonly writes: string[] = [];
   clears = 0;
+  readonly failing: ReadonlySet<PageFailure>;
 
-  constructor(token: string | null = null) {
+  constructor(token: string | null = null, failing: PageFailure[] = []) {
     this.token = token;
+    this.failing = new Set(failing);
   }
 
   readToken(): Promise<string | null> {
+    if (this.failing.has("read")) {
+      return Promise.reject(new Error("no page"));
+    }
     return Promise.resolve(this.token);
   }
 
   writeToken(token: string): Promise<void> {
+    if (this.failing.has("write")) {
+      return Promise.reject(new Error("no page"));
+    }
     this.token = token;
     this.writes.push(token);
     return Promise.resolve();
   }
 
   clearToken(): Promise<void> {
+    if (this.failing.has("clear")) {
+      return Promise.reject(new Error("no page"));
+    }
     this.token = null;
     this.clears += 1;
     return Promise.resolve();
   }
+}
+
+/** A fetch that counts its calls, to show that no token was spent. */
+export function counting(fetcher: Fetch): Fetch & { calls: number } {
+  const wrapped = ((url: string, init: RequestInit) => {
+    wrapped.calls += 1;
+    return fetcher(url, init);
+  }) as Fetch & { calls: number };
+  wrapped.calls = 0;
+  return wrapped;
 }
 
 export class FakeStore implements Store {

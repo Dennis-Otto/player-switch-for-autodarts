@@ -3,24 +3,44 @@
 
 const profiles = document.querySelector("#profiles");
 const template = document.querySelector("#profile-template");
-const status = document.querySelector("#status");
+const statusBar = document.querySelector("#status");
 const unsaved = document.querySelector("#unsaved");
+const manageButton = document.querySelector("#manage");
 
-function say(text) {
-  status.textContent = text;
+const t = (key, substitution) => chrome.i18n.getMessage(key, substitution);
+
+let managing = false;
+
+/** Fills every element that carries a data-i18n key with its translated text. */
+function translate(root) {
+  for (const element of root.querySelectorAll("[data-i18n]")) {
+    element.textContent = t(element.dataset.i18n);
+  }
+}
+
+function showStatus(text, isError = false) {
+  statusBar.textContent = text;
+  statusBar.classList.toggle("is-error", isError);
+  statusBar.hidden = text === "";
 }
 
 /** Sends one request to the service worker and renders the view it answers with. */
 async function send(action, extra = {}) {
   const reply = await chrome.runtime.sendMessage({ type: "popup", action, ...extra });
-  if (reply === undefined || reply.error !== undefined) {
-    say("Something went wrong. Is an Autodarts tab open?");
+  if (reply === undefined) {
+    showStatus(t("error"), true);
     return;
   }
-  if (reply.ok === false) {
-    say("That account could not be signed in. Add its password below, or sign in once.");
+  if (reply.error === "noPage") {
+    showStatus(t("noPage"), true);
+  } else if (reply.error !== undefined) {
+    showStatus(t("error"), true);
+  } else if (reply.ok === false) {
+    showStatus(reply.reason === "unreachable" ? t("unreachable") : extra.signInHint ?? t("error"), true);
   }
-  render(reply.view);
+  if (reply.view !== undefined) {
+    render(reply.view);
+  }
 }
 
 function render(view) {
@@ -29,14 +49,15 @@ function render(view) {
     profiles.append(tile(profile));
   }
   unsaved.hidden = !view.unsaved;
-  if (view.profiles.length === 0 && !view.unsaved) {
-    say("No accounts yet. Sign in on play.autodarts.com, then open this and save it.");
+  if (view.profiles.length === 0 && !view.unsaved && !statusBar.classList.contains("is-error")) {
+    showStatus(t("empty"));
   }
 }
 
 function tile(profile) {
   const node = template.content.firstElementChild.cloneNode(true);
   node.classList.toggle("active", profile.active);
+  translate(node);
 
   const avatar = node.querySelector(".avatar");
   if (profile.picture !== null) {
@@ -45,29 +66,41 @@ function tile(profile) {
   node.querySelector(".name").textContent = profile.name;
   node.querySelector(".username").textContent = profile.username;
 
-  const badge = node.querySelector(".badge");
+  const chip = node.querySelector(".chip");
   if (profile.active) {
-    badge.textContent = "Playing";
-    badge.hidden = false;
+    chip.textContent = t("playing");
+    chip.classList.add("playing");
+    chip.hidden = false;
   } else if (profile.needsSignIn) {
-    badge.textContent = "Needs sign-in";
-    badge.hidden = false;
+    chip.textContent = t("needsSignIn");
+    chip.classList.add("warn");
+    chip.hidden = false;
   }
 
-  node.querySelector(".switch").addEventListener("click", () => {
-    say(`Switching to ${profile.name}…`);
-    void send("switch", { id: profile.id });
+  const menu = node.querySelector(".menu");
+  menu.hidden = !managing;
+
+  node.querySelector(".tile").addEventListener("click", () => {
+    if (managing || profile.active) {
+      return;
+    }
+    showStatus(t("switching", profile.name));
+    void send("switch", { id: profile.id, signInHint: t("switchSignIn", profile.name) });
   });
 
   const form = node.querySelector(".remember");
   const toggle = node.querySelector(".toggle-remember");
-  toggle.textContent = profile.remembersPassword ? "Forget password" : "Remember password";
+  toggle.textContent = profile.remembersPassword ? t("forgetPassword") : t("rememberPassword");
   toggle.addEventListener("click", () => {
     if (profile.remembersPassword) {
       void send("forgetPassword", { id: profile.id });
     } else {
       form.hidden = !form.hidden;
     }
+  });
+
+  node.querySelector(".cancel-remember").addEventListener("click", () => {
+    form.hidden = true;
   });
 
   form.addEventListener("submit", (event) => {
@@ -81,20 +114,32 @@ function tile(profile) {
   });
 
   node.querySelector(".remove").addEventListener("click", () => {
-    void send("removeAccount", { id: profile.id });
+    if (window.confirm(t("removeConfirm", profile.name))) {
+      void send("removeAccount", { id: profile.id });
+    }
   });
 
   return node;
 }
 
+manageButton.addEventListener("click", () => {
+  managing = !managing;
+  document.body.classList.toggle("managing", managing);
+  manageButton.textContent = managing ? t("done") : t("manage");
+  for (const menu of profiles.querySelectorAll(".menu")) {
+    menu.hidden = !managing;
+  }
+});
+
 document.querySelector("#adopt").addEventListener("click", () => {
-  say("Saving the account signed in now…");
+  showStatus("");
   void send("adopt");
 });
 
 document.querySelector("#add").addEventListener("click", () => {
-  say("Signing out so you can sign in as another account…");
+  showStatus(t("addHint"));
   void send("signout");
 });
 
+translate(document);
 void send("view");

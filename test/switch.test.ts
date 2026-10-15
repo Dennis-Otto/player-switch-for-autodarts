@@ -18,7 +18,14 @@ import {
   switchTo,
   syncFromPage,
 } from "../src/switch.ts";
-import { FakePage, FakeStore, jsonResponse, router, sessionResponse } from "./helpers.ts";
+import {
+  counting,
+  FakePage,
+  FakeStore,
+  jsonResponse,
+  router,
+  sessionResponse,
+} from "./helpers.ts";
 
 const ada: Identity = { id: "a", username: "ada", name: "Ada", picture: null };
 const bob: Identity = { id: "b", username: "bob", name: "Bob", picture: null };
@@ -125,6 +132,38 @@ test("switchTo can't sign in when the stored password is refused", async () => {
   const store = new FakeStore(state);
   const result = await switchTo(deps(store, new FakePage(null), router({ login: rejected })), "a");
   assert.equal(result.ok, false);
+});
+
+test("switchTo spends no token when the page is not there", async () => {
+  const store = new FakeStore(park(EMPTY, ada, "ta", 0));
+  const fetcher = counting(router({ refresh: () => Promise.resolve(sessionResponse("a", "fa")) }));
+  await assert.rejects(switchTo(deps(store, new FakePage(null, ["read"]), fetcher), "a"));
+  assert.equal(fetcher.calls, 0);
+  assert.equal(find(store.state, "a")?.token, "ta");
+});
+
+test("switchTo keeps the renewed token when the page can't take it", async () => {
+  const store = new FakeStore(setActive(park(EMPTY, ada, "ta", 0), bob));
+  const page = new FakePage("pb", ["write"]);
+  const fetcher = router({ refresh: () => Promise.resolve(sessionResponse("a", "fa")) });
+  await assert.rejects(switchTo(deps(store, page, fetcher), "a"));
+  assert.equal(find(store.state, "a")?.token, "fa");
+  assert.equal(store.state.activeId, "b");
+  assert.equal(page.token, "pb");
+});
+
+test("adoptCurrentSession keeps the renewed token when the page can't take it", async () => {
+  const store = new FakeStore(EMPTY);
+  const page = new FakePage("in-page", ["write"]);
+  const fetcher = router({ refresh: () => Promise.resolve(sessionResponse("a", "fresh")) });
+  await assert.rejects(adoptCurrentSession(deps(store, page, fetcher)));
+  assert.equal(find(store.state, "a")?.token, "fresh");
+});
+
+test("signOutForNewAccount keeps the session when the page can't let go", async () => {
+  const store = new FakeStore(setActive(EMPTY, ada));
+  await assert.rejects(signOutForNewAccount(deps(store, new FakePage("pa", ["clear"]), router())));
+  assert.equal(find(store.state, "a")?.token, "pa");
 });
 
 test("adoptCurrentSession claims the session in the page and keeps it signed in", async () => {

@@ -21,9 +21,9 @@ import {
   deactivate,
   endSession,
   find,
+  park,
   parked,
   type Profile,
-  setActive,
   type State,
   stash,
 } from "./state.ts";
@@ -118,7 +118,7 @@ export async function syncFromPage(deps: Deps): Promise<State> {
  * written straight back, so the page stays signed in.
  */
 export async function adoptCurrentSession(deps: Deps): Promise<State> {
-  const state = await deps.store.load();
+  let state = await deps.store.load();
   const token = await deps.page.readToken();
   if (token === null) {
     return commit(deps, deactivate(state));
@@ -133,8 +133,11 @@ export async function adoptCurrentSession(deps: Deps): Promise<State> {
     }
     throw error;
   }
+  // The page's token is spent now: keep the fresh one before the page can fail.
+  const identity = readIdentity(session.accessToken);
+  state = await commit(deps, park(state, identity, session.refreshToken, deps.now()));
   await deps.page.writeToken(session.refreshToken);
-  return commit(deps, setActive(state, readIdentity(session.accessToken)));
+  return commit(deps, activate(state, identity.id));
 }
 
 /** How a switch ended, for the popup to show. */
@@ -142,6 +145,8 @@ export interface SwitchResult {
   state: State;
   /** False when the account could not be brought onto the page. */
   ok: boolean;
+  /** Why it failed: the account must sign in again, or Autodarts was unreachable. */
+  reason?: "signin" | "unreachable";
 }
 
 /**
@@ -154,20 +159,23 @@ export async function switchTo(deps: Deps, id: string): Promise<SwitchResult> {
   if (target === undefined || state.activeId === id) {
     return { state, ok: true };
   }
+  // Reading the page first: without a page, the switch fails before a token is spent.
+  const outgoing = await deps.page.readToken();
   const renewal = await renew(deps, target);
   if (renewal.kind === "unreachable") {
-    return { state, ok: false };
+    return { state, ok: false, reason: "unreachable" };
   }
   if (renewal.kind === "rejected") {
-    return { state: await commit(deps, endSession(state, id)), ok: false };
+    return { state: await commit(deps, endSession(state, id)), ok: false, reason: "signin" };
   }
-  const outgoing = await deps.page.readToken();
+  // The old token is spent now: keep the fresh one before the page can fail.
+  const identity = readIdentity(renewal.session.accessToken);
+  state = await commit(deps, park(state, identity, renewal.session.refreshToken, deps.now()));
   if (outgoing !== null && state.activeId !== null) {
     state = stash(state, state.activeId, outgoing, deps.now());
   }
   await deps.page.writeToken(renewal.session.refreshToken);
-  const identity = readIdentity(renewal.session.accessToken);
-  return { state: await commit(deps, activate(setActive(state, identity), id)), ok: true };
+  return { state: await commit(deps, activate(state, identity.id)), ok: true };
 }
 
 /**
@@ -178,7 +186,8 @@ export async function signOutForNewAccount(deps: Deps): Promise<State> {
   let state = await deps.store.load();
   const outgoing = await deps.page.readToken();
   if (outgoing !== null && state.activeId !== null) {
-    state = stash(state, state.activeId, outgoing, deps.now());
+    // Keep the session before the page lets go of it.
+    state = await commit(deps, stash(state, state.activeId, outgoing, deps.now()));
   }
   await deps.page.clearToken();
   return commit(deps, deactivate(state));

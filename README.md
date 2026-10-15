@@ -31,7 +31,14 @@ account and swaps it when you switch:
   password, it signs that account in again automatically should its token ever
   stop working. Accounts that use Google or Apple to sign in can't use this.
 
-## Install (unpacked)
+## Install
+
+### From the Chrome Web Store
+
+Once the listing is live, install it in one click from its store page (the link
+goes here after the first release). Updates then arrive on their own.
+
+### Unpacked, from the source
 
 ```sh
 npm ci
@@ -50,13 +57,38 @@ reading and writing the refresh token under `autodarts_refresh_token`.
 
 1. Open [play.autodarts.com](https://play.autodarts.com) and sign in as the first
    person.
-2. Open the extension and choose **Save this account**.
-3. Choose **Add another account**, sign in as the next person, and save that one
-   too.
-4. From then on, a tap on a tile switches accounts.
+2. Open the extension and choose **Save account**.
+3. Choose **Add account**, sign in as the next person, and save that one too.
+4. From then on, a tap on a tile switches accounts. **Manage accounts** reveals
+   the per-account options.
 
-Optionally, open an account's menu and **Remember password** so the extension can
-sign it back in on its own. See [SECURITY.md](SECURITY.md) for what that stores.
+Optionally, under **Manage accounts**, choose **Remember password** so the
+extension can sign an account back in on its own. See [SECURITY.md](SECURITY.md)
+and the [privacy policy](docs/privacy.md) for what that stores.
+
+## Publish to the Chrome Web Store
+
+A full one-click publish isn't possible for the first listing: the Chrome Web Store
+needs a one-time developer account (a one-off US$5 fee), the listing details and a
+review. After that it is close to one command.
+
+1. Build the upload package:
+
+   ```sh
+   bash scripts/package-extension.sh
+   ```
+
+   This writes `dist/player-switch-for-autodarts-<version>.zip` with the manifest
+   at its root.
+2. At the [Chrome Web Store Developer Dashboard](https://chrome.google.com/webstore/devconsole),
+   create the item, upload the zip, and fill in the listing (the texts in
+   [`store/`](store/) are ready to paste) and the [privacy policy](docs/privacy.md)
+   URL.
+3. Submit for review.
+
+For later versions, publishing can be automated in CI with the Chrome Web Store
+API, so merging a release uploads and submits the new zip on its own; that needs
+your store API credentials and is a planned follow-up.
 
 ## Development
 

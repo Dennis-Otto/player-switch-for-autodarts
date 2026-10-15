@@ -1,0 +1,89 @@
+{
+  "extName": {
+    "message": "Player Switch for Autodarts",
+    "description": "The name of the extension."
+  },
+  "extDescription": {
+    "message": "Switch between Autodarts accounts on a shared display with one tap, without signing in again.",
+    "description": "The description of the extension, at most 132 characters."
+  },
+  "title": {
+    "message": "Who's playing?"
+  },
+  "manage": {
+    "message": "Manage accounts"
+  },
+  "done": {
+    "message": "Done"
+  },
+  "playing": {
+    "message": "Playing"
+  },
+  "needsSignIn": {
+    "message": "Sign in again"
+  },
+  "addAccount": {
+    "message": "Add account"
+  },
+  "unsavedText": {
+    "message": "Someone is signed in on Autodarts who isn't saved here yet."
+  },
+  "saveAccount": {
+    "message": "Save account"
+  },
+  "rememberPassword": {
+    "message": "Remember password"
+  },
+  "forgetPassword": {
+    "message": "Forget password"
+  },
+  "remove": {
+    "message": "Remove"
+  },
+  "removeConfirm": {
+    "message": "Remove $NAME$ from this display? Sign in again to add the account back.",
+    "placeholders": { "name": { "content": "$1" } }
+  },
+  "passwordTitle": {
+    "message": "Password for $NAME$",
+    "placeholders": { "name": { "content": "$1" } }
+  },
+  "passwordHint": {
+    "message": "Only used when the saved sign-in stops working. It stays on this computer and goes only to Autodarts."
+  },
+  "usernameLabel": {
+    "message": "Username or email"
+  },
+  "passwordLabel": {
+    "message": "Password"
+  },
+  "save": {
+    "message": "Save"
+  },
+  "cancel": {
+    "message": "Cancel"
+  },
+  "switching": {
+    "message": "Switching to $NAME$…",
+    "placeholders": { "name": { "content": "$1" } }
+  },
+  "switchSignIn": {
+    "message": "$NAME$ has to sign in again: sign in once on Autodarts and save the account, or remember the password.",
+    "placeholders": { "name": { "content": "$1" } }
+  },
+  "unreachable": {
+    "message": "Autodarts can't be reached right now. Try again in a moment."
+  },
+  "noPage": {
+    "message": "Open or reload play.autodarts.com in a tab, then try again."
+  },
+  "empty": {
+    "message": "No accounts yet. Sign in on play.autodarts.com, then save the account here."
+  },
+  "addHint": {
+    "message": "Signed out. Sign in on Autodarts with the next account, then open this again to save it."
+  },
+  "error": {
+    "message": "Something went wrong. Please try again."
+  }
+}
