@@ -7,3 +7,4 @@ Copy [the template](0000-template.md) to the next free number and describe the d
 | Record | Decision | Status |
 | --- | --- | --- |
 | [0001](0001-record-decisions.md) | Record the decisions that shape the project | accepted |
+| [0002](0002-swap-the-session-not-the-login.md) | Switch accounts by swapping the stored session | accepted |

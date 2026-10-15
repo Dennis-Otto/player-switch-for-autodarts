@@ -9,6 +9,9 @@
       "bump-minor-pre-major": true,
       "bump-patch-for-minor-pre-major": false,
       "draft": true,
+      "extra-files": [
+        { "type": "json", "path": "extension/manifest.json", "jsonpath": "$.version" }
+      ],
       "force-tag-creation": true,
       "pull-request-title-pattern": "chore: release ${version}",
       "pull-request-header": "The next release: its version follows from the titles of the pull requests merged since the last one (fix: a patch, feat: a minor, ! or BREAKING CHANGE: a major version), and its notes from what CHANGELOG.md says under Unreleased. Merging this pull request publishes it.\n",

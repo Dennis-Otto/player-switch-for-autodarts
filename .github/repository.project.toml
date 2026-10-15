@@ -10,3 +10,8 @@
 # An environment of this project and the secrets it needs:
 # [environments.deploy]
 # secrets = ["DEPLOY_TOKEN"]
+
+# A browser extension is loaded unpacked or from a zip, not published to npm, so the
+# release bot builds and signs the release but delivers it nowhere.
+[variables]
+PUBLISH_TO = "none"
