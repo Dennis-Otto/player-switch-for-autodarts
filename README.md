@@ -43,7 +43,7 @@ Autodarts Play keeps the signed-in session as a single value in the browser (a r
 - **Parked sessions are kept fresh.** Because the token rotates, the extension renews each parked account's token in the background.
 - **Password fallback, optional.** If you let the extension remember an account's password, it signs that account back in by itself should its token ever stop working. Accounts that sign in with Google or Apple can't use this.
 
-The account logic lives in [`src/`](src/) with every line tested; [`extension/`](extension/) is the Manifest V3 wiring, and only [`extension/content.js`](extension/content.js) touches the page's stored session. [Decision 0002](docs/decisions/0002-swap-the-session-not-the-login.md) records why it works this way.
+[Decision 0002](docs/decisions/0002-swap-the-session-not-the-login.md) records why it works this way, and the [security design](docs/security.md) says what is stored and which risks remain.
 
 ## Quick start
 
@@ -76,25 +76,9 @@ Under **Manage accounts**, choose **Remember password** for an account, and the 
 - The way the extension keeps a session is not an official Autodarts interface. A change on Autodarts' side can stop it until the extension is adjusted, and how long a parked token stays valid is up to Autodarts.
 - It is built for a display that the people of a household, club or venue share and trust: anyone at that display can switch to any saved account, which is the point.
 
-## Publish to the Chrome Web Store
-
-The first listing needs a one-time developer account (a one-off US$5 fee), the listing details and a review. After that it is close to one command.
-
-1. Build the upload package: `bash scripts/package-extension.sh` writes `dist/player-switch-for-autodarts-<version>.zip` with the manifest at its root.
-2. At the [Chrome Web Store Developer Dashboard](https://chrome.google.com/webstore/devconsole), create the item, upload the zip, and fill in the listing (the texts in [`store/`](store/) are ready to paste, the screenshots are in [`docs/images/`](docs/images/)) and the privacy policy URL.
-3. Submit for review.
-
-For later versions, publishing can be automated in CI with the Chrome Web Store API, so that merging a release uploads and submits the new zip on its own; that needs the store's API credentials and is a planned follow-up.
-
 ## Development
 
-Every change goes through a pull request whose title follows [Conventional Commits](https://www.conventionalcommits.org/), with signed-off commits (`git commit -s`). The checks of the CI run locally with
-
-```sh
-bash scripts/check.sh
-```
-
-[CONTRIBUTING.md](CONTRIBUTING.md) explains the set-up and the rules.
+Contributions are welcome. [CONTRIBUTING.md](CONTRIBUTING.md) has the rules and the checks, [docs/development.md](docs/development.md) explains how the code is laid out and how to run the extension from the source, and [docs/releases.md](docs/releases.md) how a release reaches the Chrome Web Store.
 
 ## Support and security
 

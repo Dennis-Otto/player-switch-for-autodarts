@@ -37,4 +37,6 @@ nav:
   - Home: index.md
   - Security design: security.md
   - Privacy: privacy.md
+  - Development: development.md
+  - Releases: releases.md
   - Decisions: decisions/README.md
