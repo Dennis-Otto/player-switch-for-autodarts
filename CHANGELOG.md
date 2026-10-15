@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.1.0 (2026-10-15)
+
+
+### Features
+
+* switch between Autodarts accounts from the extension ([#1](https://github.com/Dennis-Otto/player-switch-for-autodarts/issues/1)) ([6dc51ef](https://github.com/Dennis-Otto/player-switch-for-autodarts/commit/6dc51efefb35293110a47207ef2538ab01981652))
+
+## Changelog
+
 All notable changes, by release. Each pull request that changes something for
 users describes it under Unreleased. The release bot makes that text the section of
 the next release, or lists the pull requests when there is none.
