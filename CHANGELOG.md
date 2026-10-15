@@ -6,6 +6,8 @@ the next release, or lists the pull requests when there is none.
 
 ## Unreleased
 
+## [0.2.0](https://github.com/Dennis-Otto/player-switch-for-autodarts/compare/v0.1.1...v0.2.0) (2026-10-15)
+
 - Each release now reaches the Chrome Web Store on its own: the release workflow
   uploads it and submits it for review, and Google publishes it once the review
   passes.
