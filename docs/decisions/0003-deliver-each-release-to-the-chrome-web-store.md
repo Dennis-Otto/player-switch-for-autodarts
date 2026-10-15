@@ -23,10 +23,10 @@ nowhere (`PUBLISH_TO = none`). Three limits shape the automation:
 ## Options
 
 1. **Upload by hand** after every release, as for 0.1.0.
-2. **A workflow of the project** that starts after the Release workflow, and on a
-   release published by hand, builds the zip from the tag, and calls the Chrome Web
-   Store API with `curl`, with an OAuth client and a refresh token of the developer
-   account as the secrets of an environment.
+2. **A workflow of the project** that starts after the Release workflow, or by
+   hand, builds the zip from the tag, keeps it as an artifact of the run, and calls
+   the Chrome Web Store API with `curl`, with an OAuth client and a refresh token of
+   the developer account as the secrets of an environment.
 3. **A third-party action** that uploads to the store.
 4. **A service account** of Google Cloud as the identity of the workflow, instead of
    a refresh token of the developer's account.
@@ -37,10 +37,10 @@ Option 2. The upload is four requests, which `curl` and `jq` make without anothe
 dependency that would hold the credentials of the store (against option 3). A
 refresh token is the way that Google documents and takes minutes to set up; a
 service account (option 4) remains an option should the token prove a burden. The
-workflow starts after the Release workflow and looks up which release that run
-published, so that it also follows the releases of the bot; before it uploads, it
-asks the store which version is published or under review, so that a second start
-for the same release does nothing.
+workflow starts after the Release workflow, so that it follows the releases of the
+bot, takes the latest published release and asks the store first which version it
+has; a run that finds the release in the store already, under review or published,
+does nothing.
 
 The zip stays off the GitHub release for now: no file can join an immutable release,
 and only the isolated build of the release workflow could attach one with its signed
@@ -56,5 +56,6 @@ provenance.
   in production; in testing, it expires after seven days.
 - While a version is under review, the store takes no new one; after the review or
   a cancellation, the workflow is started by hand with the tag.
-- The upload zip is in the store only, not on the GitHub release; attaching it with
-  provenance needs a step in the isolated build.
+- The upload zip is in the store and, for 30 days, in the artifact of the run, not on
+  the GitHub release; attaching it there with its provenance needs a step in the
+  isolated build, which belongs to the blueprint.

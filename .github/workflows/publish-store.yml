@@ -3,19 +3,18 @@ name: Chrome Web Store
 # Delivers each release to the Chrome Web Store, where Google reviews it and then
 # publishes it. The release bot publishes a release with the GITHUB_TOKEN, whose
 # events start no workflow, so this one starts after every run of the Release
-# workflow and takes the release that the run published; a release published by hand
-# starts it directly, and so does a start by hand with a tag. It builds the upload
-# zip from the tag with scripts/package-extension.sh, checks that the manifest
-# carries the version of the release, uploads the zip with the Chrome Web Store API
-# and submits it for review. The OAuth client and the refresh token of the developer
+# workflow that a push or a start by hand began, and by hand with a tag. It takes
+# the latest published release and asks the store which version it has; a version
+# that the store has already, under review or published, ends the run with a note.
+# Otherwise it builds the upload zip from the tag with scripts/package-extension.sh,
+# checks that the manifest carries the version of the release, keeps the zip as an
+# artifact of the run for 30 days, uploads it with the Chrome Web Store API and
+# submits it for review. The OAuth client and the refresh token of the developer
 # account are the secrets of the environment chrome-web-store, the IDs of the item
 # and of the publisher the variables CWS_EXTENSION_ID and CWS_PUBLISHER_ID;
-# docs/releases.md describes the one-time set-up. A version that the store has already, under review
-# or published, is left alone.
+# docs/releases.md describes the one-time set-up.
 
 on:
-  release:
-    types: [published]
   workflow_run:
     workflows: [Release]
     types: [completed]
@@ -35,42 +34,41 @@ concurrency:
 jobs:
   release:
     name: the release to deliver
-    # A failed run of the Release workflow published no release.
-    if: github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success'
+    # A failed run of the Release workflow published no release, and its hourly runs
+    # from the schedule publish none either.
+    if: >-
+      github.event_name != 'workflow_run' ||
+      (github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.event != 'schedule')
     runs-on: ubuntu-latest
     timeout-minutes: 5
+    # The secrets of the store, to ask it; the delivery below is the deployment.
+    environment:
+      name: chrome-web-store
+      deployment: false
     permissions:
       contents: read
+    env:
+      # The item in the Chrome Web Store API: https://developer.chrome.com/docs/webstore/api
+      ITEM: https://chromewebstore.googleapis.com/v2/publishers/${{ vars.CWS_PUBLISHER_ID }}/items/${{ vars.CWS_EXTENSION_ID }}
     outputs:
-      tag: ${{ steps.release.outputs.tag }}
+      tag: ${{ steps.store.outputs.tag }}
     steps:
       - name: Record the network traffic of the job
         uses: step-security/harden-runner@e14015d583714f6e62063499dc959a02595150a1 # v2.21.1
         with:
           egress-policy: audit
-      - name: Find the release
+      - name: Find the latest release
         id: release
         env:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
-          EVENT: ${{ github.event_name }}
-          RELEASE_TAG: ${{ github.event.release.tag_name }}
-          RUN_STARTED: ${{ github.event.workflow_run.run_started_at }}
           INPUT_TAG: ${{ inputs.tag }}
         run: |
           set -euo pipefail
-          case "$EVENT" in
-            release) tag="$RELEASE_TAG" ;;
-            workflow_dispatch) tag="${INPUT_TAG:-$(gh release view --json tagName --jq .tagName)}" ;;
-            workflow_run)
-              # The release that the run of the Release workflow published, if any.
-              tag="$(gh api "repos/$GH_REPO/releases?per_page=20" |
-                jq -r --arg since "$RUN_STARTED" \
-                  '[.[] | select(.draft == false and .published_at >= $since)] | first | .tag_name // empty')"
-              ;;
-          esac
+          # The latest release: published, no draft, no prerelease.
+          tag="${INPUT_TAG:-$(gh release view --json tagName --jq .tagName 2>/dev/null || true)}"
           if [[ -z "$tag" ]]; then
-            echo "The run of the Release workflow published no release." | tee -a "$GITHUB_STEP_SUMMARY"
+            echo "The repository has no release yet." | tee -a "$GITHUB_STEP_SUMMARY"
             exit 0
           fi
           state="$(gh release view "$tag" --json isDraft,isPrerelease \
@@ -87,30 +85,8 @@ jobs:
               ;;
           esac
           echo "tag=$tag" >> "$GITHUB_OUTPUT"
-          echo "The release $tag goes to the Chrome Web Store." >> "$GITHUB_STEP_SUMMARY"
-
-  store:
-    name: deliver to the Chrome Web Store
-    needs: release
-    if: needs.release.outputs.tag != ''
-    runs-on: ubuntu-latest
-    timeout-minutes: 15
-    environment:
-      name: chrome-web-store
-      url: https://chromewebstore.google.com/detail/${{ vars.CWS_EXTENSION_ID }}
-    permissions:
-      contents: read
-    env:
-      TAG: ${{ needs.release.outputs.tag }}
-      # The item in the Chrome Web Store API: https://developer.chrome.com/docs/webstore/api
-      ITEM: https://chromewebstore.googleapis.com/v2/publishers/${{ vars.CWS_PUBLISHER_ID }}/items/${{ vars.CWS_EXTENSION_ID }}
-      UPLOAD: https://chromewebstore.googleapis.com/upload/v2/publishers/${{ vars.CWS_PUBLISHER_ID }}/items/${{ vars.CWS_EXTENSION_ID }}:upload
-    steps:
-      - name: Record the network traffic of the job
-        uses: step-security/harden-runner@e14015d583714f6e62063499dc959a02595150a1 # v2.21.1
-        with:
-          egress-policy: audit
       - name: Check the set-up of the environment
+        if: steps.release.outputs.tag != ''
         env:
           CWS_CLIENT_ID: ${{ secrets.CWS_CLIENT_ID }}
           CWS_CLIENT_SECRET: ${{ secrets.CWS_CLIENT_SECRET }}
@@ -132,6 +108,78 @@ jobs:
             fi
           done
           exit "$missing"
+      - name: Sign in to the Chrome Web Store API
+        if: steps.release.outputs.tag != ''
+        env:
+          CWS_CLIENT_ID: ${{ secrets.CWS_CLIENT_ID }}
+          CWS_CLIENT_SECRET: ${{ secrets.CWS_CLIENT_SECRET }}
+          CWS_REFRESH_TOKEN: ${{ secrets.CWS_REFRESH_TOKEN }}
+        run: |
+          set -euo pipefail
+          umask 077
+          # An access token of an hour from the refresh token. It goes into a file of the
+          # job for the steps below, so that it is in no log and no environment.
+          response="$RUNNER_TEMP/token.json"
+          curl --fail-with-body --silent --show-error --retry 3 --retry-connrefused \
+            --connect-timeout 15 --max-time 60 --output "$response" \
+            --data-urlencode "client_id=$CWS_CLIENT_ID" \
+            --data-urlencode "client_secret=$CWS_CLIENT_SECRET" \
+            --data-urlencode "refresh_token=$CWS_REFRESH_TOKEN" \
+            --data-urlencode grant_type=refresh_token \
+            https://oauth2.googleapis.com/token ||
+            { cat "$response"; echo "::error::Google issued no access token; the refresh token may have expired."; exit 1; }
+          token="$(jq -r '.access_token // empty' "$response")"
+          rm -f "$response"
+          if [[ -z "$token" ]]; then
+            echo "::error::Google's answer holds no access token."
+            exit 1
+          fi
+          echo "::add-mask::$token"
+          printf 'Authorization: Bearer %s\n' "$token" > "$RUNNER_TEMP/authorization"
+      - name: Ask the store which version it has
+        id: store
+        if: steps.release.outputs.tag != ''
+        env:
+          TAG: ${{ steps.release.outputs.tag }}
+        run: |
+          set -euo pipefail
+          response="$RUNNER_TEMP/status.json"
+          curl --fail-with-body --silent --show-error --retry 3 --retry-connrefused \
+            --connect-timeout 15 --max-time 60 --output "$response" \
+            --header @"$RUNNER_TEMP/authorization" "$ITEM:fetchStatus" ||
+            { cat "$response"; echo "::error::The store didn't tell the status of the item."; exit 1; }
+          # The version that is published, and the one that was submitted since.
+          published="$(jq -r '.publishedItemRevisionStatus | (.distributionChannels[0].crxVersion // "none") + " (" + (.state // "none") + ")"' "$response")"
+          submitted="$(jq -r '.submittedItemRevisionStatus | (.distributionChannels[0].crxVersion // "none") + " (" + (.state // "none") + ")"' "$response")"
+          echo "The store has the version $published and the submission $submitted." | tee -a "$GITHUB_STEP_SUMMARY"
+          version="${TAG#v}"
+          if [[ "$published" == "$version ("* || "$submitted" == "$version ("* ]]; then
+            echo "The store has $version already; nothing to deliver." | tee -a "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+          echo "The release $TAG goes to the Chrome Web Store." >> "$GITHUB_STEP_SUMMARY"
+
+  store:
+    name: deliver to the Chrome Web Store
+    needs: release
+    if: needs.release.outputs.tag != ''
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment:
+      name: chrome-web-store
+      url: https://chromewebstore.google.com/detail/${{ vars.CWS_EXTENSION_ID }}
+    permissions:
+      contents: read
+    env:
+      TAG: ${{ needs.release.outputs.tag }}
+      ITEM: https://chromewebstore.googleapis.com/v2/publishers/${{ vars.CWS_PUBLISHER_ID }}/items/${{ vars.CWS_EXTENSION_ID }}
+      UPLOAD: https://chromewebstore.googleapis.com/upload/v2/publishers/${{ vars.CWS_PUBLISHER_ID }}/items/${{ vars.CWS_EXTENSION_ID }}:upload
+    steps:
+      - name: Record the network traffic of the job
+        uses: step-security/harden-runner@e14015d583714f6e62063499dc959a02595150a1 # v2.21.1
+        with:
+          egress-policy: audit
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: ${{ needs.release.outputs.tag }}
@@ -159,6 +207,15 @@ jobs:
           fi
           echo "zip=$zip" >> "$GITHUB_OUTPUT"
           echo "The zip $zip carries the version $version." >> "$GITHUB_STEP_SUMMARY"
+      # What went to the store, to look at later; the release itself is immutable and
+      # takes no file after it is published.
+      - name: Keep the zip as an artifact of the run
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: chrome-web-store-${{ needs.release.outputs.tag }}
+          path: ${{ steps.zip.outputs.zip }}
+          if-no-files-found: error
+          retention-days: 30
       - name: Sign in to the Chrome Web Store API
         env:
           CWS_CLIENT_ID: ${{ secrets.CWS_CLIENT_ID }}
@@ -167,8 +224,7 @@ jobs:
         run: |
           set -euo pipefail
           umask 077
-          # An access token of an hour from the refresh token. It goes into a file of the
-          # job for the steps below, so that it is in no log and no environment.
+          # The same sign-in as above: a job can't hand a token to another one.
           response="$RUNNER_TEMP/token.json"
           curl --fail-with-body --silent --show-error --retry 3 --retry-connrefused \
             --connect-timeout 15 --max-time 60 --output "$response" \
@@ -186,27 +242,7 @@ jobs:
           fi
           echo "::add-mask::$token"
           printf 'Authorization: Bearer %s\n' "$token" > "$RUNNER_TEMP/authorization"
-      - name: Look up the versions that the store has
-        id: store
-        run: |
-          set -euo pipefail
-          response="$RUNNER_TEMP/status.json"
-          curl --fail-with-body --silent --show-error --retry 3 --retry-connrefused \
-            --connect-timeout 15 --max-time 60 --output "$response" \
-            --header @"$RUNNER_TEMP/authorization" "$ITEM:fetchStatus" ||
-            { cat "$response"; echo "::error::The store didn't tell the status of the item."; exit 1; }
-          published="$(jq -r '[.publishedItemRevisionStatus.distributionChannels[]?.crxVersion] | first // "none"' "$response")"
-          submitted="$(jq -r '[.submittedItemRevisionStatus.distributionChannels[]?.crxVersion] | first // "none"' "$response")"
-          echo "The store has the version $published published and $submitted under review." | tee -a "$GITHUB_STEP_SUMMARY"
-          version="${TAG#v}"
-          if [[ "$published" == "$version" || "$submitted" == "$version" ]]; then
-            echo "The store has $version already; nothing to upload." | tee -a "$GITHUB_STEP_SUMMARY"
-            echo "upload=false" >> "$GITHUB_OUTPUT"
-          else
-            echo "upload=true" >> "$GITHUB_OUTPUT"
-          fi
       - name: Upload the zip
-        if: steps.store.outputs.upload == 'true'
         env:
           ZIP: ${{ steps.zip.outputs.zip }}
         run: |
@@ -235,7 +271,6 @@ jobs:
           fi
           echo "The store took the upload of $ZIP." | tee -a "$GITHUB_STEP_SUMMARY"
       - name: Submit the release for review
-        if: steps.store.outputs.upload == 'true'
         run: |
           set -euo pipefail
           response="$RUNNER_TEMP/publish.json"
