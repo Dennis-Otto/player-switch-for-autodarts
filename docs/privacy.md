@@ -31,6 +31,11 @@ between accounts — the same requests the Autodarts website itself makes. It op
 no other connection, contacts no analytics or tracking service, and the developer
 receives no data from it.
 
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="images/diagrams/data-flow.dark.svg">
+  <img src="images/diagrams/data-flow.svg" alt="Where the data goes: Everything stays in the browser on this computer. The popup and the switcher ask the service worker, which keeps a token per account, a password only when one is remembered, the settings of the button, the time of the last renewal and until when a new account is being added in chrome.storage.local. It moves a session in and out of the Autodarts page only through content.js, the one script that reads or writes the session in the page's localStorage. To renew a token, sign in with a password or end a session, it talks to api.autodarts.com over HTTPS, the same service the Autodarts page itself uses. Nothing goes anywhere else: no server of the developer, no analytics, no other site; Help and Report a problem only open a page in a new tab.">
+</picture>
+
 "Help" and "Report a problem" in the popup and on the welcome page open the website
 of the extension and its bug form on GitHub in a new tab. The bug form is filled in
 with the version of the extension and the name and major version of the browser,

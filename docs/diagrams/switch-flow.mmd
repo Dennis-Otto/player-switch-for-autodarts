@@ -1,0 +1,31 @@
+---
+config:
+  flowchart:
+    wrappingWidth: 400
+---
+flowchart TB
+    accTitle: What a tap on a player does
+    accDescr: Ada plays, and a tap on Bob switches. The extension renews Bob's session at Autodarts with his parked token or, when Autodarts refuses the token, with his remembered password. When that fails, the page stays as it is and no token is lost: Bob has to sign in again when Autodarts refused him, and a tap later tries again when Autodarts couldn't be reached. Otherwise the extension saves Bob's fresh token, parks Ada's session from the page, still valid at Autodarts, writes Bob's session into the page and reloads it, and every other Autodarts tab reloads as Bob.
+
+    tap["Ada plays,<br>a tap on Bob"]
+    renew["Renew Bob's session<br>at Autodarts: with his<br>parked token, or with<br>his remembered password<br>when the token is refused"]
+    stays["The page stays as it is,<br>no token is lost<br>refused: Bob signs in again<br>no answer: tap again later"]
+    save["Save Bob's fresh token"]
+    park["Park Ada's session<br>from the page; it stays<br>valid at Autodarts"]
+    write["Write Bob's session<br>into the page, reload it"]
+    others["Every other Autodarts tab<br>reloads as Bob"]
+
+    tap --> renew
+    renew -- "renewed" --> save
+    save --> park --> write --> others
+    renew -. "not renewed" .-> stays
+    others ~~~ stays
+
+    classDef bot fill:#526cfe2e,stroke:#526cfe,stroke-width:2px
+    classDef done fill:#16a34a2e,stroke:#16a34a,stroke-width:2px
+    classDef person fill:#f59e0b2e,stroke:#f59e0b,stroke-width:2px
+    classDef failed fill:#dc26262e,stroke:#dc2626,stroke-width:2px
+    class tap person
+    class renew,save,park,write bot
+    class others done
+    class stays failed

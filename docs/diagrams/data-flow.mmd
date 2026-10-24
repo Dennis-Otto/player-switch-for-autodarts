@@ -1,0 +1,34 @@
+---
+config:
+  flowchart:
+    wrappingWidth: 400
+---
+flowchart TB
+    accTitle: Where the data goes
+    accDescr: Everything stays in the browser on this computer. The popup and the switcher ask the service worker, which keeps a token per account, a password only when one is remembered, the settings of the button, the time of the last renewal and until when a new account is being added in chrome.storage.local. It moves a session in and out of the Autodarts page only through content.js, the one script that reads or writes the session in the page's localStorage. To renew a token, sign in with a password or end a session, it talks to api.autodarts.com over HTTPS, the same service the Autodarts page itself uses. Nothing goes anywhere else: no server of the developer, no analytics, no other site; Help and Report a problem only open a page in a new tab.
+
+    subgraph computer ["The browser on this computer"]
+        direction TB
+        ui["The popup<br>and the switcher<br>pages of the extension"]
+        worker["The service worker<br>switches, renews, signs in"]
+        storage[("chrome.storage.local<br>a token per account,<br>a password if remembered,<br>the button's settings,<br>the last renewal")]
+        page["The Autodarts page<br>its session in<br>localStorage, touched<br>only by content.js"]
+        storage <--> worker
+        ui -- "a tap" --> worker
+        worker -- "a session" --> page
+    end
+    api["api.autodarts.com<br>renews a token, signs in,<br>ends a session"]
+    nobody["Nobody else<br>no server of the developer,<br>no analytics, no other site"]
+
+    worker -- "HTTPS" --> api
+    page --> api
+    api ~~~ nobody
+
+    classDef bot fill:#526cfe2e,stroke:#526cfe,stroke-width:2px
+    classDef done fill:#16a34a2e,stroke:#16a34a,stroke-width:2px
+    classDef person fill:#f59e0b2e,stroke:#f59e0b,stroke-width:2px
+    classDef failed fill:#dc26262e,stroke:#dc2626,stroke-width:2px
+    class ui,page person
+    class worker,storage bot
+    class api done
+    class nobody failed
