@@ -61,3 +61,7 @@ Productivity
 ## Single purpose
 
 Switch the signed-in Autodarts account on a shared display without signing in again.
+
+## Images
+
+The screenshots (1280×800) and the promo tiles (440×280 and 1400×560) of this listing are the `.en` files in [`images/`](images/), rendered by `bash scripts/screenshots.sh`; [the release guide](../docs/releases.md#the-images-of-the-store) says which slot of the dashboard takes which file.

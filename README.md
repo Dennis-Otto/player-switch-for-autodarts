@@ -19,7 +19,10 @@
 
 [**Documentation**](https://dennis-otto.github.io/player-switch-for-autodarts/) · [**Deutsche Anleitung**](https://dennis-otto.github.io/player-switch-for-autodarts/de/) · [Quick start](#quick-start) · [Changelog](https://github.com/Dennis-Otto/player-switch-for-autodarts/blob/main/CHANGELOG.md) · [💛 Sponsor](https://github.com/sponsors/Dennis-Otto)
 
-<img src="https://raw.githubusercontent.com/Dennis-Otto/player-switch-for-autodarts/main/docs/images/popup.png" alt="The popup: a list of players with the one playing highlighted and a tile to add an account, and next to it the manage view of an account with the options to remember its password or remove it" width="760">
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/Dennis-Otto/player-switch-for-autodarts/main/docs/images/switch.dark.gif">
+  <img src="https://raw.githubusercontent.com/Dennis-Otto/player-switch-for-autodarts/main/docs/images/switch.gif" alt="The popup of Player Switch: Mia Keller is playing; a tap on Jonas Berg shows “Switching to Jonas Berg…”, and then Jonas Berg is playing." width="396">
+</picture>
 
 </div>
 
@@ -105,6 +108,11 @@ A board display often runs in fullscreen (F11) or as a kiosk (`chrome --kiosk`),
 - **Private:** the players open in a page of the extension, in a frame of its own, so the scripts of the Autodarts page can't read the saved accounts.
 
 <picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/images/switcher.dark.png">
+  <img src="docs/images/switcher.png" alt="The switcher over a match on a board display: the players in large tiles with the keys 1 to 4, Mia Keller playing, with Manage accounts, Add account and a button that closes it.">
+</picture>
+
+<picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/images/diagrams/switch-from-the-page.dark.svg">
   <img src="docs/images/diagrams/switch-from-the-page.svg" alt="Switch players from the Autodarts page: In fullscreen or kiosk mode, a tap on the round button in a corner of the Autodarts page, or the keyboard shortcut, opens the switcher over the page. It is a page of the extension in a frame, so the page can't read the accounts. A tap on a player, or the keys 1 to 9, switches; on a match page the switcher asks first, before any token is spent, and the page reloads as the chosen player.">
 </picture>
@@ -112,6 +120,11 @@ A board display often runs in fullscreen (F11) or as a kiosk (`chrome --kiosk`),
 ### Remember a password (optional)
 
 Under **Manage accounts**, choose **Remember password** for an account, and the extension signs it back in on its own if its session ever stops working. The password stays on that computer and is sent only to Autodarts; [SECURITY.md](SECURITY.md) and the [privacy policy](docs/privacy.md) say exactly what is stored.
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/images/manage.dark.png">
+  <img src="docs/images/manage.png" alt="Manage accounts in the popup: each account with Remember password or Forget password and Remove account, and for each parked account when it was last renewed, such as “Renewed 2 hours ago”." width="396">
+</picture>
 
 ## Good to know
 

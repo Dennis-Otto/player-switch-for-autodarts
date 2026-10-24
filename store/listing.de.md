@@ -67,3 +67,7 @@ Produktivität
 
 Das angemeldete Autodarts-Konto an einem gemeinsamen Display wechseln, ohne sich
 neu anzumelden.
+
+## Bilder
+
+Die Screenshots (1280×800) und die Werbekacheln (440×280 und 1400×560) dieses Eintrags sind die `.de`-Dateien in [`images/`](images/), gerendert von `bash scripts/screenshots.sh`; [die Release-Anleitung](../docs/releases.md#the-images-of-the-store) sagt, welcher Platz im Dashboard welche Datei nimmt.

@@ -7,10 +7,10 @@ How the code is laid out, how to run the extension from the source, and what the
 | Where | What |
 | --- | --- |
 | `src/` | The account logic, in TypeScript, without the browser: `autodarts.ts` talks to Autodarts' sign-in service (renew, sign in, end a session, read who a session belongs to), `state.ts` keeps the saved accounts and which one plays, `switch.ts` is the switch itself, with the page, the storage, the clock, `fetch` and the queue passed in, `queue.ts` the queue that runs one change of the accounts at a time, `tabs.ts` finds the Autodarts tab that a switch talks to, reloads the others and opens Autodarts when no tab is open, `health.ts` decides when the renewal runs and what the toolbar badge and the popup say about it, `page.ts` the decisions of the switcher in the page: its settings, what its button shows, whether a match runs in the page and which tile a key picks, and `onboarding.ts` when the welcome page opens and what the bug report carries. Every line, branch and function runs in a test. |
-| `test/` | The tests of `src/`, with fakes for the page, the tabs of the browser, the storage and Autodarts. The `*.property.test.ts` files are [property-based tests](#property-based-tests), which run the code on many generated inputs. |
+| `test/` | The tests of `src/`, with fakes for the page, the tabs of the browser, the storage and Autodarts. The `*.property.test.ts` files are [property-based tests](#property-based-tests), which run the code on many generated inputs. `test/harness/` is the stage of the [pictures](#pictures): the real popup and switcher with a stand-in for Chrome. |
 | `extension/` | The loadable extension, Manifest V3: `background.js` wires the browser to the logic, `players.js` shows the players and their accounts for both the popup (`popup.html`, `popup.css`, `popup.js`) and the switcher in the page (`switcher.html`, `switcher.css`, `switcher.js`), `options.html` with `options.css` and `options.js` is the options page, `welcome.html` with `welcome.css` and `welcome.js` the welcome page of the install, `support.js` points the links to the help and to a bug report in the popup and the welcome page, `content.js` runs in the Autodarts page, is the only code that reads or writes the page's stored session and shows the button and the frame of the switcher there, `_locales/` holds the English and German texts. `extension/lib/` is built from `src/` and not committed. |
-| `store/` | The texts of the Chrome Web Store listing. |
-| `scripts/` | `check.sh` runs every check, `check-project.sh` the ones of this project (the manifest version against the release, the two languages against each other and against the texts that the pages use, the files the manifest names, and the template of a tile in the switcher against the popup's), `package-extension.sh` builds the store package. |
+| `store/` | The texts of the Chrome Web Store listing, and in `store/images/` its pictures. |
+| `scripts/` | `check.sh` runs every check, `check-project.sh` the ones of this project (the manifest version against the release, the two languages against each other and against the texts that the pages use, the files the manifest names, and the template of a tile in the switcher against the popup's), `package-extension.sh` builds the store package, `screenshots.sh` renders the [pictures](#pictures). |
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="images/diagrams/architecture.dark.svg">
@@ -76,6 +76,28 @@ npm run build
 ```
 
 Then in Chrome open `chrome://extensions`, turn on **Developer mode**, choose **Load unpacked** and pick the `extension/` folder. After a change, build again and reload the extension there; a change of `content.js` also needs a reload of the Autodarts tab.
+
+## Pictures
+
+Every picture of the extension in the README, on this website and in the Chrome Web Store comes from its real pages, rendered by a script, so a change of the popup never leaves an old picture behind:
+
+```sh
+bash scripts/screenshots.sh
+```
+
+It needs Docker and Node. It builds `extension/lib/` from `src/`, then the headless Chromium of the pinned Playwright image opens `test/harness/stage.html`, which shows the real `popup.html` or `switcher.html` in a frame. `test/harness/chrome-stub.js` stands in for Chrome there: it reads the texts of `extension/_locales/` and answers the requests of `players.js` as the service worker does, with four made-up accounts and generated pictures, no real people. `test/harness/capture.py` takes each picture at a fixed size, scale, color scheme and language, with the Inter font and no network, so two runs give the same pixels:
+
+- `docs/images/switch.gif`: a tap that switches players, for the README and the home page; `manage.png`: **Manage accounts**; `switcher.png`: the switcher over a match on a board display. Each also `.dark`, for a dark theme, and in German, `.de` and `.de.dark`.
+- `store/images/`: the screenshots and the promo tiles of the store, in English (`.en`) and German (`.de`); [the release guide](releases.md#the-images-of-the-store) says where each goes.
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="images/diagrams/how-the-pictures-are-made.dark.svg">
+  <img src="images/diagrams/how-the-pictures-are-made.svg" alt="How the pictures are made: scripts/screenshots.sh builds the extension and starts the pinned Playwright image with the repository read-only. Inside, run.sh installs the Inter font and the tools, and capture.py opens the stage in Chromium. The stage shows the real popup or switcher of the extension in a frame, with a stand-in for Chrome and made-up accounts; every file comes from the repository and no request leaves the browser. capture.py takes each picture at a fixed size, scale, scheme and language and writes the GIF, and the pictures leave the container as an archive, into docs/images and store/images. After a change of main, every release and every week, the screenshot bot runs the script and opens a pull request with the pictures whose pixels changed.">
+</picture>
+
+After a change of `main` that touches a file of `.github/screenshots-paths.txt`, such as the popup, its texts or the harness, after every release and every week, the screenshot bot runs the script and opens a pull request with the pictures whose pixels changed. To see what a change of yours changes, run the script and then `python3 .github/blueprint.py screenshots restore`, which gives every picture that looks the same its committed file back.
+
+The stage works without the script too, for a look at the popup in a plain browser or for a test of it: a driver loads `chrome-stub.js` before the scripts of each page, as Playwright's `add_init_script()` does, serves the repository and opens `test/harness/stage.html?layout=frame&lang=de`, or `extension/popup.html?lang=de&accounts=2` alone. `window.harness.hold()` keeps the next request of the popup waiting until `harness.release()`, to catch a moment such as "Switching to …".
 
 ## Checks
 
