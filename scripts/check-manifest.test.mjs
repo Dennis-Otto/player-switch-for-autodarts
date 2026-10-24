@@ -4,7 +4,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { test } from "node:test";
 
-import { checkManifest, DESCRIPTION_MAX, NAME_MAX, pngSize, WHY } from "./check-manifest.mjs";
+import { CHROME_MIN, checkManifest, DESCRIPTION_MAX, NAME_MAX, pngSize, WHY } from "./check-manifest.mjs";
 
 const POLICY =
   "default-src 'self'; script-src 'self'; object-src 'none'; img-src 'self' https: data:; connect-src https://api.example.com";
@@ -15,7 +15,7 @@ function manifest() {
     manifest_version: 3,
     name: "__MSG_extName__",
     description: "__MSG_extDescription__",
-    minimum_chrome_version: "120",
+    minimum_chrome_version: "140",
     homepage_url: "https://example.org/",
     icons: { 16: "icons/icon-16.png", 48: "icons/icon-48.png" },
     content_scripts: [{ matches: ["https://play.autodarts.com/*"], js: ["content.js"] }],
@@ -116,6 +116,15 @@ test("a new host fails, and a listing that names a host the manifest lacks fails
   const problems = check({ manifest: added });
   assert.ok(problems.some((problem) => /asks for the host https:\/\/\*\/\*/.test(problem)), problems.join("\n"));
 
+  for (const everywhere of ["<all_urls>", "*://*/*"]) {
+    const wide = manifest();
+    wide.host_permissions.push(everywhere);
+    const found = check({ manifest: wide });
+    const all = found.join("\n");
+    assert.ok(found.some((problem) => problem.includes(`asks for the host ${everywhere}`)), all);
+    assert.ok(found.some((problem) => problem.includes(`doesn't justify the access to ${everywhere}`)), all);
+  }
+
   const stale = LISTING.replace("• alarms", "• Host access to play.autodarts.io.\n• alarms");
   findsOne(check({ listings: { "store/listing.en.md": stale } }), /justifies the access to play\.autodarts\.io/);
   const missing = LISTING.replace(" and api.example.com", "");
@@ -168,7 +177,7 @@ test("the content security policy must be there, run only the own scripts and co
   };
   findsOne(policy(POLICY.replace("script-src 'self'", "script-src 'self' https://cdn.example.com")), /script-src 'self'/);
   findsOne(policy(POLICY.replace("script-src 'self'; ", "")), /must say "script-src 'self'", not "script-src "/);
-  findsOne(policy(POLICY.replace("default-src 'self'", "default-src *")), /default-src 'self' 'none'/);
+  findsOne(policy(POLICY.replace("default-src 'self'", "default-src *")), /must say "default-src 'self'" or "default-src 'none'", not "default-src \*"/);
   findsOne(policy(POLICY.replace("object-src 'none'", "object-src 'self'")), /object-src 'none'/);
   findsOne(policy(`${POLICY} https://example.org`), /connect to https:\/\/example\.org, which is no host/);
   findsOne(policy(POLICY.replace("; connect-src https://api.example.com", "")), /has no connect-src/);
@@ -180,6 +189,10 @@ test("the minimum version of Chrome and the homepage must be there", () => {
   const old = manifest();
   delete old.minimum_chrome_version;
   findsOne(check({ manifest: old }), /no minimum_chrome_version/);
+
+  const older = manifest();
+  older.minimum_chrome_version = String(CHROME_MIN - 1);
+  findsOne(check({ manifest: older }), /setAccessLevel work only from 140/);
 
   const nowhere = manifest();
   nowhere.homepage_url = "http://example.org/";

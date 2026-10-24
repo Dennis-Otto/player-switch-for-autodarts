@@ -107,7 +107,7 @@ die gespeicherte Sitzung der Seite berührt, ist `extension/content.js`.
 | Die Skripte der Autodarts-Seite lesen die gespeicherten Konten aus dem Wechsler | Der Wechsler ist eine Seite der Erweiterung in einem Rahmen eines anderen Ursprungs, in einem geschlossenen Shadow Root; das Content-Skript bekommt vom Service Worker nur den Spieler auf dem Knopf |
 | Ein Wechsel während eines Matches beendet es unerwartet | Auf einer Match-Seite lehnt der Service Worker einen Wechsel oder eine Abmeldung ab, bis die Person bestätigt, bevor er einen Token verbraucht |
 | Eine Änderung fügt eine Berechtigung oder einen Host hinzu, und nach dem Update schaltet Chrome die Erweiterung auf einem Kiosk-Display ab, bis jemand die neue Warnung annimmt | `scripts/check-manifest.mjs` lässt `scripts/check.sh` scheitern, solange `store/permissions.json` die Berechtigung nicht mit ihrem Grund erlaubt und nicht beide Store-Einträge sie begründen. Es lehnt auch `externally_connectable` ab, optionale Berechtigungen, ein Content-Skript in der Welt der Seite und eine Content Security Policy, die Skripte von anderswo ausführt |
-| Ein älterer Browser installiert die Erweiterung und scheitert dann im Betrieb | Das Manifest verlangt Chrome 120 oder neuer (`minimum_chrome_version`), die erste Version mit allem, was der Code nutzt |
+| Ein älterer Browser installiert die Erweiterung und scheitert dann im Betrieb | Das Manifest verlangt Chrome 140 oder neuer (`minimum_chrome_version`), die erste Version, in der `chrome.storage.local.setAccessLevel` die Konten vor dem Content-Script verbirgt; `scripts/check-manifest.mjs` scheitert an einer niedrigeren |
 
 ## Verbleibende Risiken
 

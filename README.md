@@ -70,7 +70,7 @@ Over days and weeks, a saved account moves between these states:
 
 ### Install
 
-**From the Chrome Web Store** — once the listing is live, install it in one click from its store page; updates then arrive on their own. The link goes here when it is. It needs Google Chrome 120 or newer, or a browser built on Chromium 120 or newer, such as Microsoft Edge.
+**From the Chrome Web Store** — once the listing is live, install it in one click from its store page; updates then arrive on their own. The link goes here when it is. It needs Google Chrome 140 or newer, or a browser built on Chromium 140 or newer, such as Microsoft Edge.
 
 **Unpacked, from the source:**
 

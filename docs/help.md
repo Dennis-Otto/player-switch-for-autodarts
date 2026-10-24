@@ -182,7 +182,7 @@ Each browser profile on each computer keeps accounts of its own, and nothing is 
 
 ### Which browsers does it work in?
 
-It is made for Google Chrome 120 or newer, on Windows, macOS, Linux and ChromeOS. Browsers built on Chromium install it from the Chrome Web Store as well, such as Chromium on a Raspberry Pi or Microsoft Edge. Use a normal window of a browser profile: Chrome runs no extension in a guest window, and one in an incognito window only when you allow it.
+It is made for Google Chrome 140 or newer, on Windows, macOS, Linux and ChromeOS. Browsers built on Chromium install it from the Chrome Web Store as well, such as Chromium on a Raspberry Pi or Microsoft Edge. Use a normal window of a browser profile: Chrome runs no extension in a guest window, and one in an incognito window only when you allow it.
 
 ### Remove everything
 

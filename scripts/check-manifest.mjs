@@ -16,6 +16,12 @@
 // Run by scripts/check-project.sh; scripts/check-manifest.test.mjs tests it. No dependencies.
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 
+/**
+ * The oldest Chrome that the extension may name: the first one in which
+ * chrome.storage.local.setAccessLevel works, which keeps the accounts from the content script.
+ */
+export const CHROME_MIN = 140;
+
 /** The limits of the Chrome Web Store for the name and the short description. */
 export const NAME_MAX = 75;
 export const DESCRIPTION_MAX = 132;
@@ -50,6 +56,12 @@ function directives(policy) {
 
 /** The origin that a host permission such as https://api.autodarts.com/* grants. */
 const originOf = (pattern) => pattern.replace(/\/\*$/, "");
+
+/** The host that a host permission grants, or the pattern itself when it names no single host, such as <all_urls>. */
+function hostOf(pattern) {
+  const origin = originOf(pattern);
+  return URL.canParse(origin) ? new URL(origin).host : pattern;
+}
 
 /** The text of a section of a listing, from its heading to the next one. */
 function section(text, heading) {
@@ -142,7 +154,7 @@ function checkPolicy(problems, manifest) {
     const sources = parsed.get(name);
     if (sources === undefined || sources.length === 0 || sources.some((source) => !allowed.includes(source))) {
       problems.push(
-        `The content security policy of extension/manifest.json must say "${name} ${allowed.join(" ")}", not "${name} ${sources?.join(" ") ?? ""}".`,
+        `The content security policy of extension/manifest.json must say ${allowed.map((source) => `"${name} ${source}"`).join(" or ")}, not "${name} ${sources?.join(" ") ?? ""}".`,
       );
     }
   };
@@ -178,6 +190,12 @@ function checkDetails(problems, manifest, locales, imageSize) {
     problems.push(
       "extension/manifest.json names no minimum_chrome_version; an older Chrome installs the extension and then fails as " +
         "it runs. docs/development.md says which version the code needs.",
+    );
+  } else if (Number(manifest.minimum_chrome_version) < CHROME_MIN) {
+    problems.push(
+      `extension/manifest.json names minimum_chrome_version ${manifest.minimum_chrome_version}, but Chrome makes ` +
+        `chrome.storage.local.setAccessLevel work only from ${CHROME_MIN}; an older Chrome lets the script in the ` +
+        `Autodarts page read every saved account. Name ${CHROME_MIN} or newer.`,
     );
   }
   if (!/^https:\/\//.test(manifest.homepage_url ?? "")) {
@@ -217,7 +235,7 @@ const JUSTIFICATIONS = /^## (?:Permission justifications|Begründung der Berecht
 /** The store listings: their short descriptions, and that they justify exactly what the manifest asks for. */
 function checkListings(problems, manifest, listings) {
   const permissions = manifest.permissions ?? [];
-  const hosts = (manifest.host_permissions ?? []).map((pattern) => new URL(originOf(pattern)).host);
+  const hosts = (manifest.host_permissions ?? []).map(hostOf);
   const pages = (manifest.web_accessible_resources ?? []).flatMap((entry) => entry.resources ?? []);
   for (const [file, text] of Object.entries(listings)) {
     const short = section(text, SHORT_DESCRIPTION)?.trim();

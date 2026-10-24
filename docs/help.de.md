@@ -182,7 +182,7 @@ Jedes Browserprofil auf jedem Computer behält seine eigenen Konten, und nichts 
 
 ### In welchen Browsern geht es?
 
-Die Erweiterung ist für Google Chrome 120 oder neuer gemacht, unter Windows, macOS, Linux und ChromeOS. Browser, die auf Chromium aufbauen, installieren sie ebenso aus dem Chrome Web Store, etwa Chromium auf einem Raspberry Pi oder Microsoft Edge. Nutze ein normales Fenster eines Browserprofils: Chrome führt in einem Gastfenster keine Erweiterung aus, und in einem Inkognitofenster nur, wenn du es erlaubst.
+Die Erweiterung ist für Google Chrome 140 oder neuer gemacht, unter Windows, macOS, Linux und ChromeOS. Browser, die auf Chromium aufbauen, installieren sie ebenso aus dem Chrome Web Store, etwa Chromium auf einem Raspberry Pi oder Microsoft Edge. Nutze ein normales Fenster eines Browserprofils: Chrome führt in einem Gastfenster keine Erweiterung aus, und in einem Inkognitofenster nur, wenn du es erlaubst.
 
 ### Alles entfernen
 

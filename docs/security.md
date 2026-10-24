@@ -101,7 +101,7 @@ stored session is `extension/content.js`.
 | The scripts of the Autodarts page read the saved accounts out of the switcher | The switcher is a page of the extension in a frame of another origin, inside a closed shadow root; the content script gets only the player on the button from the service worker |
 | A switch during a match ends it by surprise | On a match page, the service worker refuses a switch or a sign-out until the person confirms, before it spends a token |
 | A change adds a permission or a host, and after the update Chrome disables the extension on a kiosk display until someone accepts the new warning | `scripts/check-manifest.mjs` fails `scripts/check.sh` unless `store/permissions.json` allows the permission with its reason and both store listings justify it. It also refuses `externally_connectable`, optional permissions, a content script in the world of the page and a content security policy that runs scripts from elsewhere |
-| An older browser installs the extension and then fails as it runs | The manifest asks for Chrome 120 or newer (`minimum_chrome_version`), the first version with every feature that the code uses |
+| An older browser installs the extension and then fails as it runs | The manifest asks for Chrome 140 or newer (`minimum_chrome_version`), the first version in which `chrome.storage.local.setAccessLevel` keeps the accounts from the content script; `scripts/check-manifest.mjs` fails on a lower one |
 
 ## Residual risks
 
