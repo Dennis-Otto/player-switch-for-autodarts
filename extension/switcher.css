@@ -65,7 +65,8 @@ h1 {
   color: var(--accent);
 }
 
-#status {
+#status,
+#problem {
   font-size: 15px;
 }
 
@@ -119,6 +120,7 @@ h1 {
 }
 
 .key {
+  display: block;
   position: absolute;
   top: 10px;
   left: 12px;

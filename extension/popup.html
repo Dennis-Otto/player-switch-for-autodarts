@@ -3,39 +3,42 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Player Switch for Autodarts</title>
+    <title data-i18n="extName">Player Switch for Autodarts</title>
     <link rel="stylesheet" href="popup.css" />
   </head>
-  <body>
+  <body class="popup">
     <header>
       <h1 data-i18n="title">Who's playing?</h1>
-      <button type="button" id="manage" class="link" data-i18n="manage">Manage accounts</button>
+      <button type="button" id="manage" class="link" aria-pressed="false" data-i18n="manage">Manage accounts</button>
     </header>
 
-    <p id="status" role="status" aria-live="polite" hidden></p>
-    <button type="button" id="open-page" class="primary" data-i18n="openPage" hidden>Open Autodarts</button>
+    <main>
+      <p id="status" role="status" aria-live="polite"></p>
+      <p id="problem" role="alert"></p>
+      <button type="button" id="open-page" class="primary" data-i18n="openPage" hidden>Open Autodarts</button>
 
-    <section id="update-hint" class="notice" hidden>
-      <p data-i18n="updateHintText">Autodarts may have changed how it signs in. Check for an update of Player Switch.</p>
-      <a href="https://github.com/Dennis-Otto/player-switch-for-autodarts/issues" target="_blank" rel="noopener noreferrer" data-i18n="updateHintLink">Known problems and updates</a>
-    </section>
+      <section id="update-hint" class="notice" hidden>
+        <p data-i18n="updateHintText">Autodarts may have changed how it signs in. Check for an update of Player Switch.</p>
+        <a href="https://github.com/Dennis-Otto/player-switch-for-autodarts/issues" target="_blank" rel="noopener noreferrer" data-i18n="updateHintLink">Known problems and updates</a>
+      </section>
 
-    <section id="adding" class="waiting" hidden>
-      <p data-i18n="addingText">Sign in on Autodarts with the new player. The account is saved by itself.</p>
-      <button type="button" id="stop-adding" class="link" data-i18n="cancel">Cancel</button>
-    </section>
+      <section id="adding" class="waiting" hidden>
+        <p data-i18n="addingText">Sign in on Autodarts with the new player. The account is saved by itself.</p>
+        <button type="button" id="stop-adding" class="link" data-i18n="cancel">Cancel</button>
+      </section>
 
-    <ul id="profiles" data-i18n-label="accounts" aria-label="Accounts"></ul>
+      <ul id="profiles" data-i18n-label="accounts" aria-label="Accounts"></ul>
 
-    <section id="unsaved" hidden>
-      <p data-i18n="unsavedText">Someone is signed in on Autodarts who isn't saved here yet.</p>
-      <button type="button" id="adopt" class="primary" data-i18n="saveAccount">Save account</button>
-    </section>
+      <section id="unsaved" hidden>
+        <p data-i18n="unsavedText">Someone is signed in on Autodarts who isn't saved here yet.</p>
+        <button type="button" id="adopt" class="primary" data-i18n="saveAccount">Save account</button>
+      </section>
 
-    <button type="button" id="add" class="ghost">
-      <span class="plus" aria-hidden="true">+</span>
-      <span data-i18n="addAccount">Add account</span>
-    </button>
+      <button type="button" id="add" class="ghost">
+        <span class="plus" aria-hidden="true">+</span>
+        <span data-i18n="addAccount">Add account</span>
+      </button>
+    </main>
 
     <footer>
       <button type="button" id="settings" class="link" data-i18n="settings">Settings</button>
@@ -53,12 +56,12 @@
           </span>
           <span class="chip" hidden></span>
         </button>
-        <div class="menu" hidden>
+        <div class="menu" role="group" hidden>
           <p class="renewed" hidden></p>
           <p class="renewal-failing" hidden></p>
           <div class="actions">
             <button type="button" class="link toggle-remember"></button>
-            <button type="button" class="link danger remove" data-i18n="remove">Remove</button>
+            <button type="button" class="link danger remove" data-i18n="remove">Remove account</button>
           </div>
           <form class="remember" hidden>
             <p class="hint" data-i18n="passwordHint"></p>
@@ -72,7 +75,7 @@
             </label>
             <div class="form-actions">
               <button type="button" class="link cancel-remember" data-i18n="cancel">Cancel</button>
-              <button type="submit" class="primary" data-i18n="save">Save</button>
+              <button type="submit" class="primary save-remember" data-i18n="save">Save</button>
             </div>
           </form>
         </div>

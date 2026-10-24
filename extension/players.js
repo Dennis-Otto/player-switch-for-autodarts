@@ -11,8 +11,9 @@ export const t = (key, substitution) => chrome.i18n.getMessage(key, substitution
 const language = t("locale");
 
 /**
- * Fills every element that carries a data-i18n key with its translated text, and
- * gives every one with a data-i18n-label key its translated name for screen readers.
+ * Fills every element that carries a data-i18n key with its translated text, the
+ * <title> of the page as well, and gives every one with a data-i18n-label key its
+ * translated name for screen readers.
  */
 export function translate(root) {
   for (const element of root.querySelectorAll("[data-i18n]")) {
@@ -41,6 +42,9 @@ export function confirmDialog({ title, text, confirm, cancel }) {
   dialog.setAttribute("aria-labelledby", heading.id);
   dialog.setAttribute("aria-describedby", body.id);
 
+  // The control that had the focus gets it back as the dialog closes, also when the
+  // page has drawn something new behind it.
+  const opener = document.activeElement;
   const form = document.createElement("form");
   form.method = "dialog";
   form.className = "form-actions";
@@ -61,6 +65,9 @@ export function confirmDialog({ title, text, confirm, cancel }) {
   return new Promise((resolve) => {
     dialog.addEventListener("close", () => {
       dialog.remove();
+      if (opener?.isConnected) {
+        opener.focus();
+      }
       resolve(dialog.returnValue === "confirm");
     });
     dialog.showModal();
@@ -78,7 +85,16 @@ function confirmMatch() {
 }
 
 // The controls that send a request to the service worker.
-const REQUEST_CONTROLS = ".tile, .toggle-remember, .remove, .remember [type=submit], #adopt, #add, #open-page, #stop-adding";
+const REQUEST_CONTROLS = ".tile, .toggle-remember, .remove, .save-remember, #adopt, #add, #open-page, #stop-adding";
+
+// The controls of a tile, so that the focus comes back to the same one when the tiles
+// are drawn anew after a request.
+const TILE_CONTROLS = [".tile", ".toggle-remember", ".remove", ".cred-username", ".cred-password", ".cancel-remember", ".save-remember"];
+
+/** Whether the person can reach an element: it is in the page, shown and not inert. */
+function reachable(element) {
+  return element?.isConnected === true && element.closest("[hidden], [inert]") === null;
+}
 
 /** Sets an ARIA state that is true or absent. */
 function mark(element, attribute, on) {
@@ -114,22 +130,27 @@ function avatarOf(profile, image) {
 export function mountPlayers({ numbered = false, onRender = () => {} } = {}) {
   const profiles = document.querySelector("#profiles");
   const template = document.querySelector("#profile-template");
+  // What happens, read out politely, and what went wrong, read out at once. Both stay
+  // in the page, empty and out of sight when there is nothing to say, so that a screen
+  // reader already knows them when a message arrives.
   const statusBar = document.querySelector("#status");
+  const problemBar = document.querySelector("#problem");
   const unsaved = document.querySelector("#unsaved");
   const manageButton = document.querySelector("#manage");
   const updateHint = document.querySelector("#update-hint");
   // "Open Autodarts", which only the popup has: the switcher is in an Autodarts page.
   const openPageButton = document.querySelector("#open-page");
   const adding = document.querySelector("#adding");
+  const addButton = document.querySelector("#add");
 
   let managing = false;
   // True while a request is with the service worker: the page then takes no other tap.
   let busy = false;
 
+  /** Shows a message, an error in the region that is read out at once; "" clears both. */
   function showStatus(text, isError = false) {
-    statusBar.textContent = text;
-    statusBar.classList.toggle("is-error", isError);
-    statusBar.hidden = text === "";
+    statusBar.textContent = isError ? "" : text;
+    problemBar.textContent = isError ? text : "";
   }
 
   /**
@@ -198,6 +219,9 @@ export function mountPlayers({ numbered = false, onRender = () => {} } = {}) {
     } else if (typeof reply.saved === "string") {
       // A new account signed in before the page could tell; it was saved just now.
       showStatus(t("savedAccount", reply.saved));
+    } else {
+      // Done: the tiles show how it ended, so "Switching to …" goes.
+      showStatus("");
     }
     // "Open Autodarts" shows while no Autodarts tab answers; an answer that doesn't say
     // leaves it as it is. It stays hidden for an account that has to sign in again: the
@@ -212,6 +236,7 @@ export function mountPlayers({ numbered = false, onRender = () => {} } = {}) {
   }
 
   function render(view) {
+    const before = focusBefore();
     profiles.replaceChildren();
     view.profiles.forEach((profile, index) => {
       profiles.append(tile(profile, index));
@@ -219,18 +244,74 @@ export function mountPlayers({ numbered = false, onRender = () => {} } = {}) {
     unsaved.hidden = !view.unsaved;
     adding.hidden = view.adding !== true;
     updateHint.hidden = view.updateHint !== true;
-    if (view.profiles.length === 0 && !view.unsaved && !view.adding && !statusBar.classList.contains("is-error")) {
+    if (view.profiles.length === 0 && !view.unsaved && !view.adding && problemBar.textContent === "") {
       showStatus(t("empty"));
     }
+    restoreFocus(before);
     onRender();
+  }
+
+  /** Where the focus is before the tiles are drawn anew, to bring it back after. */
+  function focusBefore() {
+    const element = document.activeElement;
+    const item = element?.closest("#profiles > .profile") ?? null;
+    if (item === null) {
+      return { element, id: null, index: -1, control: null };
+    }
+    return {
+      element,
+      id: item.dataset.id,
+      index: [...profiles.children].indexOf(item),
+      control: TILE_CONTROLS.find((selector) => element.matches(selector)) ?? null,
+    };
+  }
+
+  /** The tile of the player who plays, or "Add account" when nobody does. */
+  function home() {
+    const active = profiles.querySelector(".profile.active .tile");
+    return reachable(active) ? active : addButton;
+  }
+
+  /**
+   * Gives the focus back after the tiles were drawn anew, so that a keyboard or a
+   * screen reader keeps its place: to the same control of the same account, to the
+   * account in its place when it was removed, or to a control nearby when that one
+   * went away, such as the form after its password was saved.
+   */
+  function restoreFocus({ element, id, index, control }) {
+    if (element === null || element === document.body) {
+      return;
+    }
+    if (id === null) {
+      if (!reachable(element)) {
+        // "Cancel" of adding leads back to "Add account", any other control that went
+        // away, such as "Save account", to the player who plays now.
+        (element.id === "stop-adding" ? addButton : home()).focus();
+      }
+      return;
+    }
+    const items = [...profiles.children];
+    const item = items.find((candidate) => candidate.dataset.id === id) ?? items[Math.min(index, items.length - 1)];
+    const target = [control, managing ? ".toggle-remember" : ".tile"]
+      .map((selector) => (selector === null ? null : (item?.querySelector(selector) ?? null)))
+      .find((candidate) => reachable(candidate));
+    (target ?? home()).focus();
   }
 
   function tile(profile, index) {
     const node = template.content.firstElementChild.cloneNode(true);
     node.classList.toggle("active", profile.active);
+    node.dataset.id = profile.id;
     translate(node);
 
     const button = node.querySelector(".tile");
+    // The tile of the player who plays is the current one: a tap on it changes nothing.
+    // While the accounts are managed, a tap on a tile changes nothing either, so the
+    // tiles step aside, and the actions below each one carry its name.
+    if (profile.active) {
+      button.setAttribute("aria-current", "true");
+    }
+    button.inert = managing;
     avatarOf(profile, node.querySelector(".avatar"));
     node.querySelector(".name").textContent = profile.name;
     node.querySelector(".username").textContent = profile.username;
@@ -256,6 +337,7 @@ export function mountPlayers({ numbered = false, onRender = () => {} } = {}) {
 
     const menu = node.querySelector(".menu");
     menu.hidden = !managing;
+    menu.setAttribute("aria-label", profile.name);
 
     // Shows in the manage view that the renewal of a parked session works, or since
     // when it fails, while the extension keeps trying.
@@ -289,11 +371,15 @@ export function mountPlayers({ numbered = false, onRender = () => {} } = {}) {
         void send("forgetPassword", { id: profile.id });
       } else {
         form.hidden = !form.hidden;
+        if (!form.hidden) {
+          form.querySelector(".cred-username").focus();
+        }
       }
     });
 
     node.querySelector(".cancel-remember").addEventListener("click", () => {
       form.hidden = true;
+      toggle.focus();
     });
 
     form.addEventListener("submit", (event) => {
@@ -324,12 +410,17 @@ export function mountPlayers({ numbered = false, onRender = () => {} } = {}) {
     return node;
   }
 
+  // "Manage accounts" is a toggle with a name that stays: pressed, it shows the actions
+  // of every account, and pressed again, the tiles.
   manageButton.addEventListener("click", () => {
     managing = !managing;
     document.body.classList.toggle("managing", managing);
-    manageButton.textContent = managing ? t("done") : t("manage");
+    manageButton.setAttribute("aria-pressed", String(managing));
     for (const menu of profiles.querySelectorAll(".menu")) {
       menu.hidden = !managing;
+    }
+    for (const button of profiles.querySelectorAll(".tile")) {
+      button.inert = managing;
     }
   });
 
@@ -351,7 +442,7 @@ export function mountPlayers({ numbered = false, onRender = () => {} } = {}) {
 
   // The page signs out, and the account that signs in next is saved by itself: the
   // notice of #adding says so, as long as the extension waits for it.
-  document.querySelector("#add").addEventListener("click", () => {
+  addButton.addEventListener("click", () => {
     if (busy) {
       return;
     }

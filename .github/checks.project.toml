@@ -38,15 +38,23 @@
 problem = """A check of this extension alone failed, and its line in the output names the
 file and the message: the version in `extension/manifest.json` differs from the one of
 the release bot, a message of `extension/_locales/` is missing in a language or used
-nowhere, a file that the manifest names is missing, or the help, `docs/help.md` and
-`docs/help.de.md`, doesn't quote a message that tells a player about a problem."""
+nowhere, a text or an `aria-label` in a page differs from its English message, a file
+that the manifest names is missing, the help, `docs/help.md` and `docs/help.de.md`,
+doesn't quote a message that tells a player about a problem, or the test of the popup
+in a browser, `test/harness/a11y.mjs`, found a problem of accessibility: a rule of
+axe-core, a control smaller than 44 by 44 pixels, a text smaller than 12 pixels, a
+button text that breaks, or the focus in the wrong place after an action."""
 why = """The store ships the manifest with its version, Chrome shows a missing message as
 an empty text, and a player who searches the help for the words on the screen has to
-find them there, in both languages."""
+find them there, in both languages. The popup is used with a finger on a touch
+display, with a keyboard and with a screen reader, which loses its place when the
+focus falls back to the page."""
 fix = """Do what the line says. A new message goes into the list `explained` of
 `scripts/check-help.mjs` when it reports a problem or asks a player to act, with an
 entry in both help pages that quotes it word for word, and into the list `plain`
-otherwise. Then run the checks again:"""
+otherwise. A failed test of the popup names the view and the element; `npm run
+test:a11y` runs it alone, in the Chrome or Edge of your computer. Then run the checks
+again:"""
 commands = ["bash scripts/check-project.sh"]
 docs = "docs/development.md"
 autofix = """What a message means and what a player does about it needs a person who
