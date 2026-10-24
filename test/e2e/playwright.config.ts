@@ -22,7 +22,9 @@ export default defineConfig({
   fullyParallel: true,
   forbidOnly: ci,
   // A failure is a finding: a test that passes only on its second try has found a
-  // race of the extension, so no test runs twice.
+  // race of the extension, so Playwright tries no test twice. In the CI, the
+  // flaky-test bot of the blueprint runs a failed job once more and reports a test
+  // that passes then as flaky, in its issue.
   retries: 0,
   reporter: ci
     ? [["github"], ["list"], ["html", { open: "never", outputFolder: report }]]
