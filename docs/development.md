@@ -6,7 +6,7 @@ How the code is laid out, how to run the extension from the source, and what the
 
 | Where | What |
 | --- | --- |
-| `src/` | The account logic, in TypeScript, without the browser: `autodarts.ts` talks to Autodarts' sign-in service (renew, sign in, end a session, read who a session belongs to), `state.ts` keeps the saved accounts and which one plays, `switch.ts` is the switch itself, with the page, the storage, the clock, `fetch` and the queue passed in, and `queue.ts` the queue that runs one change of the accounts at a time. Every line, branch and function runs in a test. |
+| `src/` | The account logic, in TypeScript, without the browser: `autodarts.ts` talks to Autodarts' sign-in service (renew, sign in, end a session, read who a session belongs to), `state.ts` keeps the saved accounts and which one plays, `switch.ts` is the switch itself, with the page, the storage, the clock, `fetch` and the queue passed in, `queue.ts` the queue that runs one change of the accounts at a time, and `health.ts` decides when the renewal runs and what the toolbar badge and the popup say about it. Every line, branch and function runs in a test. |
 | `test/` | The tests of `src/`, with fakes for the page, the storage and Autodarts. The `*.property.test.ts` files are [property-based tests](#property-based-tests), which run the code on many generated inputs. |
 | `extension/` | The loadable extension, Manifest V3: `background.js` wires the browser to the logic, `popup.html`, `popup.css` and `popup.js` are the popup, `content.js` runs in the Autodarts page and is the only code that reads or writes the page's stored session, `_locales/` holds the English and German texts. `extension/lib/` is built from `src/` and not committed. |
 | `store/` | The texts of the Chrome Web Store listing. |
@@ -24,6 +24,17 @@ Because a token works only once, two changes of the accounts must never run side
 </picture>
 
 The tests in `test/switch.test.ts` run these races against a fake Autodarts that rotates every token it renews and refuses a token that comes back.
+
+### The renewal keeps going
+
+Chrome [may clear an alarm when the browser restarts](https://developer.chrome.com/docs/extensions/reference/api/alarms), and a display that is switched off at night misses the renewal that was due. So `background.js` doesn't rely on the alarm alone: each start of the service worker asks `planStart` of `health.ts` what to do, with the alarm, the record of the last renewal and the clock. A missing alarm is set again for the time the next run is due, and a renewal that is a period overdue, or that never ran, runs straight away. `chrome.runtime.onStartup` and `onInstalled` wake the service worker for it, and the run that the alarm starts and the one of a start share one turn.
+
+Each run records its time only when Autodarts answered for every parked account, so a start without a network catches up at the next start, and it sets the next run 15 minutes later in that case, 12 hours later otherwise. The time of every attempt is kept as well, and a start does not catch up when the last attempt is less than 15 minutes ago, so an account that Autodarts keeps failing for does not renew everyone at each wake-up of the service worker; the retry alarm comes instead. Names and times on the badge and in the popup use the language of the extension's texts, not the browser's, so a line never mixes two languages. When one run turns away every parked account, at least two, the record keeps that as a suspected change at Autodarts, and the popup suggests an update of the extension while an account still has to sign in again; a run that renews an account clears it. The toolbar badge follows every change of the saved accounts and counts those that have to sign in again. Each of these decisions is a function of `health.ts` with the clock passed in, and `test/health.test.ts` runs them with a clock that stands still.
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="images/diagrams/how-the-renewal-keeps-going.dark.svg">
+  <img src="images/diagrams/how-the-renewal-keeps-going.svg" alt="How the renewal keeps going: Each start of the service worker, after a start of the browser, an update or any other event, checks the alarm and the time of the last renewal. A missing alarm is set again, and a renewal that is a period overdue runs straight away. Each run renews the parked accounts one at a time, records the time when Autodarts answered for every account, and sets the next run 12 hours later, or 15 minutes later when Autodarts could not be reached. The toolbar badge counts the accounts that have to sign in again, and when one run turns at least two accounts and all of them away, the popup suggests an update of the extension.">
+</picture>
 
 ## Run it from the source
 

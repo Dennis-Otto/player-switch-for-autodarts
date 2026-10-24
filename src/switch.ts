@@ -21,6 +21,7 @@ import {
   refreshSession,
   signIn,
 } from "./autodarts.ts";
+import type { RunCounts } from "./health.ts";
 import type { Queue } from "./queue.ts";
 import {
   activate,
@@ -242,35 +243,48 @@ async function signOut(deps: Deps): Promise<State> {
   return commit(deps, deactivate(state));
 }
 
+/** How a renewal of the parked sessions ended: the accounts, and how each one went. */
+export interface RefreshRun extends RunCounts {
+  state: State;
+}
+
+/** What became of one account in a renewal; "skipped" when a switch took it meanwhile. */
+type Outcome = keyof RunCounts | "skipped";
+
 /**
  * Keeps every parked session fresh, so a stored account can play at any time. An
  * account whose token has died and that has no stored sign-in is marked as needing
  * one; a temporary problem leaves the account untouched for the next run.
  *
  * Each account takes a turn of its own in the queue, so a tap waits for one renewal at
- * most, and each fresh token is saved as soon as it arrives.
+ * most, and each fresh token is saved as soon as it arrives. The counts tell the
+ * service worker whether to try again soon and whether Autodarts turned everyone away.
  */
-export async function refreshParked(deps: Deps): Promise<State> {
-  let state = await deps.queue(() => deps.store.load());
-  for (const { id } of parked(state)) {
-    state = await deps.queue(() => refreshOne(deps, id));
+export async function refreshParked(deps: Deps): Promise<RefreshRun> {
+  const run: RefreshRun = { state: await deps.queue(() => deps.store.load()), renewed: 0, rejected: 0, unreachable: 0 };
+  for (const { id } of parked(run.state)) {
+    const { state, outcome } = await deps.queue(() => refreshOne(deps, id));
+    run.state = state;
+    if (outcome !== "skipped") {
+      run[outcome] += 1;
+    }
   }
-  return state;
+  return run;
 }
 
-async function refreshOne(deps: Deps, id: string): Promise<State> {
+async function refreshOne(deps: Deps, id: string): Promise<{ state: State; outcome: Outcome }> {
   const state = await deps.store.load();
   // A switch may have run since the list was made: renew only what is still parked.
   const profile = parked(state).find((candidate) => candidate.id === id);
   if (profile === undefined) {
-    return state;
+    return { state, outcome: "skipped" };
   }
   const renewal = await renew(deps, profile);
   if (renewal.kind === "ok") {
-    return commit(deps, stash(state, id, renewal.session.refreshToken, deps.now()));
+    return { state: await commit(deps, stash(state, id, renewal.session.refreshToken, deps.now())), outcome: "renewed" };
   }
   if (renewal.kind === "rejected") {
-    return commit(deps, endSession(state, id));
+    return { state: await commit(deps, endSession(state, id)), outcome: "rejected" };
   }
-  return state;
+  return { state, outcome: "unreachable" };
 }

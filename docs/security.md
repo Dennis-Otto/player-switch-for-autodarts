@@ -23,6 +23,10 @@ and never leaves it except to Autodarts itself:
   token stops working. It is stored as plain text in `chrome.storage.local`, like
   the token, and is sent only to `api.autodarts.com/auth/v1/login`. Leave it off,
   and no password is ever stored.
+- **When the renewal last ran,** and whether Autodarts turned every parked account
+  away in it, so that the extension catches up on a renewal it missed while the
+  computer was off and can suggest an update of itself. This holds no token and no
+  name.
 
 The extension signs in only through Autodarts' own auth service. It never reads a
 token or a password from any other site, and the only code that touches the page's

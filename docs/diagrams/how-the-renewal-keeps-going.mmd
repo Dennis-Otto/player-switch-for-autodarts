@@ -1,0 +1,32 @@
+---
+config:
+  flowchart:
+    wrappingWidth: 400
+---
+flowchart TB
+    accTitle: How the renewal keeps going
+    accDescr: Each start of the service worker, after a start of the browser, an update or any other event, checks the alarm and the time of the last renewal. A missing alarm is set again, and a renewal that is a period overdue runs straight away. Each run renews the parked accounts one at a time, records the time when Autodarts answered for every account, and sets the next run 12 hours later, or 15 minutes later when Autodarts could not be reached. The toolbar badge counts the accounts that have to sign in again, and when one run turns at least two accounts and all of them away, the popup suggests an update of the extension.
+
+    start["The service worker starts<br>browser start, update or any event"]
+    check{"Is the alarm there,<br>and did the last renewal run<br>less than 12 hours ago?"}
+    alarm["Set the alarm again<br>for when the next run is due"]
+    run["Renew the parked accounts<br>one at a time in the queue"]
+    record["Record the time, if Autodarts<br>answered for every account"]
+    next["Set the next run:<br>in 12 hours, or in 15 minutes<br>when Autodarts was unreachable"]
+    badge["The toolbar badge counts<br>who has to sign in again"]
+    hint["Every account turned away, at least two:<br>the popup suggests an update"]
+
+    start --> check
+    check -- "the alarm is missing" --> alarm
+    check -- "overdue" --> run
+    alarm -.-> run
+    run --> record --> next
+    run --> badge
+    record --> hint
+
+    classDef bot fill:#526cfe2e,stroke:#526cfe,stroke-width:2px
+    classDef done fill:#16a34a2e,stroke:#16a34a,stroke-width:2px
+    classDef person fill:#f59e0b2e,stroke:#f59e0b,stroke-width:2px
+    class run bot
+    class next done
+    class badge,hint person

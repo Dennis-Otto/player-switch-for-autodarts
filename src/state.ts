@@ -35,6 +35,8 @@ export interface ProfileView extends Identity {
   active: boolean;
   needsSignIn: boolean;
   remembersPassword: boolean;
+  /** When the extension last renewed the parked session, or null while none is parked. */
+  renewedAt: number | null;
 }
 
 export interface View {
@@ -198,6 +200,7 @@ export function parked(state: State): Profile[] {
 }
 
 export function toView(state: State, pageHasSession: boolean): View {
+  const renewing = new Set(parked(state).map((profile) => profile.id));
   return {
     profiles: state.profiles.map((profile) => ({
       id: profile.id,
@@ -207,6 +210,8 @@ export function toView(state: State, pageHasSession: boolean): View {
       needsSignIn: profile.needsSignIn,
       remembersPassword: profile.credentials !== null,
       active: profile.id === state.activeId,
+      // The page renews the session of the account that plays; only a parked one is ours.
+      renewedAt: renewing.has(profile.id) ? profile.refreshedAt : null,
     })),
     unsaved: pageHasSession && state.activeId === null,
   };
