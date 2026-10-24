@@ -70,7 +70,7 @@ Over days and weeks, a saved account moves between these states:
 
 ### Install
 
-**From the Chrome Web Store** — once the listing is live, install it in one click from its store page; updates then arrive on their own. The link goes here when it is.
+**From the Chrome Web Store** — once the listing is live, install it in one click from its store page; updates then arrive on their own. The link goes here when it is. It needs Google Chrome 120 or newer, or a browser built on Chromium 120 or newer, such as Microsoft Edge.
 
 **Unpacked, from the source:**
 
@@ -81,7 +81,7 @@ npm run build
 
 Then in Chrome open `chrome://extensions`, turn on **Developer mode**, choose **Load unpacked** and pick the `extension/` folder of this repository.
 
-The extension asks only for access to the Autodarts sites, its own storage, a timer for the renewal and the right to run its own script in the Autodarts tabs after an update. It can't read the address or title of your other tabs, or your browsing history.
+The extension asks only for access to `play.autodarts.com` and `api.autodarts.com`, its own storage, a timer for the renewal and the right to run its own script in the Autodarts tabs after an update. It can't read the address or title of your other tabs, or your browsing history. Its content security policy lets it connect to `api.autodarts.com` alone, and the script that it runs in the Autodarts page can't read the saved accounts; the [security design](docs/security.md#trust-boundaries) has the details.
 
 ### Add the players
 

@@ -8,7 +8,8 @@ it handles. It is short because the extension collects almost nothing.
 
 Everything the extension keeps stays in the browser on your own computer, in the
 extension's local storage (`chrome.storage.local`). It is never sent to the
-developer or to any third party.
+developer or to any third party. Only the extension itself can read it, not the
+Autodarts page, and not the script that the extension runs in that page.
 
 - **An Autodarts session token for each saved account**, so an account can play
   again without signing in. The extension renews these tokens with Autodarts.
@@ -35,6 +36,8 @@ between accounts — the same requests the Autodarts website itself makes. The p
 and the switcher also show each player's picture from the address Autodarts gives
 for it, as the Autodarts website does. The extension opens no other connection,
 contacts no analytics or tracking service, and the developer receives no data from it.
+Its content security policy lets it connect to `api.autodarts.com` alone, so the
+browser itself blocks any other connection.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="images/diagrams/data-flow.dark.svg">

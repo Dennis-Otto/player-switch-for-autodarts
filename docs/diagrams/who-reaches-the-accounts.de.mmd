@@ -1,0 +1,38 @@
+---
+config:
+  flowchart:
+    wrappingWidth: 400
+---
+flowchart TB
+    accTitle: Wer an die gespeicherten Konten kommt
+    accDescr: Die gespeicherten Konten mit ihren Tokens und gemerkten Passwörtern liegen in chrome.storage.local, das nur die eigenen Kontexte der Erweiterung lesen können, der Service Worker und ihre Seiten: das Popup, die Optionsseite und der Wechsler in seinem Rahmen. content.js läuft in der Autodarts-Seite und kann den Speicher nicht lesen. Es darf den Service Worker nur fragen, was sein Knopf zeigt, nimmt Anfragen nur von dieser Erweiterung an und schreibt in die Sitzung der Seite nur einen Token. Der Service Worker nimmt eine Anfrage, die Konten zu sehen oder zu ändern, nur von einer Seite dieser Erweiterung an. Seine Content Security Policy lässt ihn nur mit api.autodarts.com verbinden, und der Browser sperrt jeden anderen Host.
+
+    subgraph extension ["Die eigenen Kontexte der Erweiterung"]
+        direction TB
+        ui["Das Popup, die Optionsseite<br>und der Wechsler in seinem Rahmen"]
+        worker["Der Service Worker<br>wechselt, erneuert, meldet an"]
+        storage[("chrome.storage.local<br>Tokens und gemerkte<br>Passwörter")]
+        ui -- "eine Anfrage von einer<br>Seite der Erweiterung" --> worker
+        worker <--> storage
+    end
+    subgraph page ["Die Autodarts-Seite, play.autodarts.com"]
+        direction TB
+        content["content.js<br>kein Zugriff auf den Speicher"]
+        session["Die Sitzung der Seite<br>im localStorage"]
+        content <--> session
+    end
+    api["api.autodarts.com<br>der eine Host, mit dem sich<br>die Erweiterung verbindet"]
+    other["Jeder andere Host<br>gesperrt von der Content<br>Security Policy"]
+
+    worker <-- "ein Token zum Lesen<br>oder Schreiben; content.js<br>darf nur fragen, was<br>sein Knopf zeigt" --> content
+    worker -- "HTTPS" --> api
+    worker -. "gesperrt" .-x other
+
+    classDef bot fill:#526cfe2e,stroke:#526cfe,stroke-width:2px
+    classDef done fill:#16a34a2e,stroke:#16a34a,stroke-width:2px
+    classDef person fill:#f59e0b2e,stroke:#f59e0b,stroke-width:2px
+    classDef failed fill:#dc26262e,stroke:#dc2626,stroke-width:2px
+    class ui,content,session person
+    class worker,storage bot
+    class api done
+    class other failed

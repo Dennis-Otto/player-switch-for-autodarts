@@ -1,0 +1,38 @@
+---
+config:
+  flowchart:
+    wrappingWidth: 400
+---
+flowchart TB
+    accTitle: Who reaches the saved accounts
+    accDescr: The saved accounts, with their tokens and remembered passwords, sit in chrome.storage.local, which only the extension's own contexts can read, the service worker and its pages: the popup, the options page and the switcher in its frame. content.js runs inside the Autodarts page and can't read the storage. It may ask the service worker only what its button shows, takes requests only from this extension and writes into the page's session only a token. The service worker takes a request to see or change the accounts only from a page of this extension. Its content security policy lets it connect to api.autodarts.com alone, and the browser blocks any other host.
+
+    subgraph extension ["The extension's own contexts"]
+        direction TB
+        ui["The popup, the options page<br>and the switcher in its frame"]
+        worker["The service worker<br>switches, renews, signs in"]
+        storage[("chrome.storage.local<br>tokens and remembered<br>passwords")]
+        ui -- "a request from a page<br>of the extension" --> worker
+        worker <--> storage
+    end
+    subgraph page ["The Autodarts page, play.autodarts.com"]
+        direction TB
+        content["content.js<br>no access to the storage"]
+        session["The page's session<br>in localStorage"]
+        content <--> session
+    end
+    api["api.autodarts.com<br>the one host the<br>extension connects to"]
+    other["Any other host<br>blocked by the content<br>security policy"]
+
+    worker <-- "a token to read<br>or to write; content.js<br>may only ask what<br>its button shows" --> content
+    worker -- "HTTPS" --> api
+    worker -. "blocked" .-x other
+
+    classDef bot fill:#526cfe2e,stroke:#526cfe,stroke-width:2px
+    classDef done fill:#16a34a2e,stroke:#16a34a,stroke-width:2px
+    classDef person fill:#f59e0b2e,stroke:#f59e0b,stroke-width:2px
+    classDef failed fill:#dc26262e,stroke:#dc2626,stroke-width:2px
+    class ui,content,session person
+    class worker,storage bot
+    class api done
+    class other failed
