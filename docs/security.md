@@ -28,6 +28,11 @@ and never leaves it except to Autodarts itself:
   away in it, so that the extension catches up on a renewal it missed while the
   computer was off and can suggest an update of itself. This holds no token and no
   name.
+- **Only after going back to an older version: a copy of the saved accounts** that
+  a newer version stored in a format this one can't read, under `accounts.backup`,
+  with their tokens and remembered passwords. This version never saves over such
+  accounts; the copy is a second safeguard. It is deleted as soon as a version that
+  reads the accounts runs again, and with the extension.
 
 The extension signs in only through Autodarts' own auth service. It never reads a
 token or a password from any other site, and the only code that touches the page's

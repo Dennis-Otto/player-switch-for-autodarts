@@ -22,6 +22,10 @@ developer or to any third party.
   when it may need an update.
 - **Until when a new account is being added**, for ten minutes after "Add account"
   or the install, so that the next sign-in on Autodarts is saved by itself.
+- **Only after going back to an older version of the extension: a copy of the
+  saved accounts** that the newer version stored in a format the older one can't
+  read, so that they can't get lost. It is deleted as soon as a version that reads
+  them runs again, and when you remove the extension.
 
 ## Where data is sent
 

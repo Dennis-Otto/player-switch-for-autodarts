@@ -69,7 +69,7 @@ export const EMPTY: State = { profiles: [], activeId: null, addingUntil: null };
 
 /**
  * The version of the format in which the extension stores the accounts. The releases
- * up to 0.3.0 stored the same fields without a version; they count as version 1.
+ * up to 0.2.0 stored the same fields without a version; they count as version 1.
  */
 export const STATE_VERSION = 1;
 

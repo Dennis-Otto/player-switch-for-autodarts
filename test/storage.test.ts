@@ -39,6 +39,14 @@ class FakeArea implements StorageArea {
     }
     return Promise.resolve();
   }
+
+  remove(keys: string[]): Promise<void> {
+    this.writes += 1;
+    for (const key of keys) {
+      this.data.delete(key);
+    }
+    return Promise.resolve();
+  }
 }
 
 const ada = { id: "a", username: "ada", name: "Ada", picture: null };
@@ -109,6 +117,20 @@ test("a changed value that the store doesn't know replaces the copy of the one b
   assert.match(error.message, /doesn't know/);
   assert.equal(area.data.get(BACKUP_KEY), "garbled");
   assert.equal(area.data.get(ACCOUNTS_KEY), "garbled");
+});
+
+test("the copy goes once the stored accounts are in a format the store reads again", async () => {
+  const area = new FakeArea({ [ACCOUNTS_KEY]: NEWER });
+  const store = createStore(area);
+  await assert.rejects(store.load(), UnknownStateError);
+  assert.equal(area.data.has(BACKUP_KEY), true);
+  // A version that reads both formats wrote the accounts back in this one.
+  area.data.set(ACCOUNTS_KEY, { version: STATE_VERSION, ...parkedAda });
+  assert.deepEqual(await store.load(), parkedAda);
+  assert.equal(area.data.has(BACKUP_KEY), false, "no copy of a token or a password is left behind");
+  const writes = area.writes;
+  await store.load();
+  assert.equal(area.writes, writes, "with no copy left, a reading writes nothing");
 });
 
 test("accountsIn shows the stored accounts, and none while their format is unknown", () => {

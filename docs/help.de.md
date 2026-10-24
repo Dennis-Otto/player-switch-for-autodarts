@@ -102,6 +102,22 @@ und das Popup und die Spieler auf der Autodarts-Seite sagen:
 
 **Was du tust:** Nichts. Die Erweiterung erneuert jedes geparkte Konto alle 12 Stunden, solange der Browser läuft. Liegt die Zeit viel länger zurück, war der Computer aus oder im Ruhezustand: Die Erneuerung holt das nach, sobald der Browser wieder startet oder der Computer aufwacht. [Bereit halten](shared-display.md#keep-it-ready) sagt, was das für ein Display heißt, das tagelang aus ist.
 
+### Erneuern klappt nicht {#renewal-failing}
+
+> Erneuern klappt seit 22.10.2026, 21:15 nicht; es wird weiter versucht.
+
+**Was es bedeutet:** Unter **Konten verwalten** steht, dass die Erweiterung Autodarts seit diesem Zeitpunkt bei keinem Versuch erreicht hat, um die geparkte Sitzung dieses Kontos zu erneuern. Die Sitzung selbst bleibt gespeichert; Autodarts hat sie nicht abgelehnt.
+
+**Was du tust:** Prüfe, ob der Computer online ist und [Autodarts](https://play.autodarts.com) sich öffnet. Die Erweiterung versucht es alle 15 Minuten wieder, und die Zeile verschwindet mit der ersten Erneuerung, die klappt. Lehnt Autodarts die Sitzung später ab, zeigt die Kachel **Neu anmelden**; siehe [Neu anmelden](#sign-in-again).
+
+### Gespeicherte Konten aus einer neueren Version {#newer-version}
+
+> Die gespeicherten Konten stammen aus einer neueren Version von Player Switch. Aktualisiere die Erweiterung, um sie zu nutzen; diese Version lässt sie unverändert.
+
+**Was es bedeutet:** Eine neuere Version der Erweiterung hat die Konten in einem Format gespeichert, das diese ältere Version nicht lesen kann, etwa nach dem Wechsel zurück auf eine ältere Version oder nach der Installation einer älteren Kopie aus dem Quellcode. Diese Version ändert und löscht sie nicht: Sie behält sie, wie sie sind, dazu eine Kopie, und zeigt kein Konto, bis wieder eine Version läuft, die sie lesen kann.
+
+**Was du tust:** Aktualisiere die Erweiterung wie unter [Autodarts hat vielleicht geändert, wie die Anmeldung funktioniert](#sign-in-changed). Sobald die neuere Version läuft, sind alle Konten wieder da. Entferne die Erweiterung nicht, um die Meldung loszuwerden: Das löscht auch die gespeicherten Konten, und jeder Spieler muss sich neu anmelden.
+
 ### Noch keine Konten {#no-accounts}
 
 > Noch keine Konten. Wähle „Konto hinzufügen“ und melde dich auf Autodarts an: Jedes Konto wird von selbst gespeichert.

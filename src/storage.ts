@@ -8,6 +8,7 @@
  * wrote before the extension went back to an older one, is therefore never saved
  * over: the store keeps a copy of it under BACKUP_KEY, and every reading and change of
  * the accounts fails with UnknownStateError, until a version that knows it is back.
+ * As soon as the stored value is one this version reads again, the copy is deleted.
  */
 import { EMPTY, readStored, type State, toStored } from "./state.ts";
 import type { Store } from "./switch.ts";
@@ -21,6 +22,7 @@ export const BACKUP_KEY = "accounts.backup";
 export interface StorageArea {
   get(keys: string[]): Promise<Record<string, unknown>>;
   set(items: Record<string, unknown>): Promise<void>;
+  remove(keys: string[]): Promise<void>;
 }
 
 /** The stored accounts are in a format that this version of the extension doesn't know. */
@@ -47,6 +49,12 @@ export function createStore(area: StorageArea): AccountStore {
         await area.set({ [BACKUP_KEY]: data[ACCOUNTS_KEY] });
       }
       throw new UnknownStateError();
+    }
+    if (BACKUP_KEY in data) {
+      // A value that this version reads was saved after the copy, so it supersedes the
+      // copy. The copy may hold tokens and passwords of accounts removed since, so it
+      // goes: a removed account leaves nothing behind. Every later version keeps this rule.
+      await area.remove([BACKUP_KEY]);
     }
     return stored;
   }
