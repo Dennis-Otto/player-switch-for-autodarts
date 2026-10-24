@@ -82,14 +82,17 @@
     "placeholders": { "name": { "content": "$1" } }
   },
   "switchSignIn": {
-    "message": "$NAME$ muss sich neu anmelden: einmal auf Autodarts anmelden und das Konto speichern, oder das Passwort merken.",
+    "message": "$NAME$ muss sich neu anmelden: über „Konto hinzufügen“ einmal auf Autodarts anmelden, oder das Passwort merken.",
     "placeholders": { "name": { "content": "$1" } }
   },
   "unreachable": {
     "message": "Autodarts ist gerade nicht erreichbar. Bitte gleich nochmal versuchen."
   },
   "noPage": {
-    "message": "Öffne oder lade play.autodarts.com in einem Tab neu und versuche es dann nochmal."
+    "message": "Autodarts hat in keinem Tab geantwortet. Öffne Autodarts und versuche es dann nochmal."
+  },
+  "openPage": {
+    "message": "Autodarts öffnen"
   },
   "empty": {
     "message": "Noch keine Konten. Melde dich auf play.autodarts.com an und speichere das Konto dann hier."

@@ -33,6 +33,10 @@ receives no data from it.
 
 - It does not collect analytics, usage statistics or telemetry.
 - It does not read or store anything from sites other than Autodarts.
+- It can't read the address or title of your other tabs, or your browsing history.
+  It asks for no `tabs` permission, so the browser gives it the address of a tab only
+  for the Autodarts sites, and it asks only for the tabs that have Autodarts open, so
+  a switch can happen in the one in front and the others can reload.
 - It does not share or sell any data.
 
 ## Your control

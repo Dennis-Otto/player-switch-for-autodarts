@@ -94,6 +94,11 @@ h1 {
   color: var(--warn);
 }
 
+#open-page {
+  width: 100%;
+  margin: 0 0 12px;
+}
+
 /* Every account was turned away at once: the extension may need an update. */
 .notice {
   margin: 0 0 12px;

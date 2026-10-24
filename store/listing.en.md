@@ -39,7 +39,6 @@ Not affiliated with Autodarts.
 ## Permission justifications
 
 • storage — to keep your saved accounts and their sessions on your computer.
-• tabs — to find your open Autodarts tab so a switch takes effect there.
 • alarms — to renew parked sessions in the background so they stay ready.
 • scripting — to bring the button of a new version into the Autodarts tabs that are
   already open when the extension updates, so a display in kiosk mode keeps working
@@ -50,7 +49,9 @@ Not affiliated with Autodarts.
   over the page. It is a page of the extension in a frame, so the scripts of the
   Autodarts page can't read the saved accounts out of it.
 • Host access to autodarts.com — to sign in, renew a session and move it between
-  accounts, the same requests the Autodarts website makes.
+  accounts, the same requests the Autodarts website makes, and to find the open
+  Autodarts tabs, so a switch takes effect in the one in front and the others
+  reload. The extension can't read the address or title of any other tab.
 
 ## Category
 

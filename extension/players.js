@@ -78,7 +78,7 @@ function confirmMatch() {
 }
 
 // The controls that send a request to the service worker.
-const REQUEST_CONTROLS = ".tile, .toggle-remember, .remove, .remember [type=submit], #adopt, #add";
+const REQUEST_CONTROLS = ".tile, .toggle-remember, .remove, .remember [type=submit], #adopt, #add, #open-page";
 
 /** Sets an ARIA state that is true or absent. */
 function mark(element, attribute, on) {
@@ -117,6 +117,8 @@ export function mountPlayers({ numbered = false, onRender = () => {} } = {}) {
   const unsaved = document.querySelector("#unsaved");
   const manageButton = document.querySelector("#manage");
   const updateHint = document.querySelector("#update-hint");
+  // "Open Autodarts", which only the popup has: the switcher is in an Autodarts page.
+  const openPageButton = document.querySelector("#open-page");
 
   let managing = false;
   // True while a request is with the service worker: the page then takes no other tap.
@@ -189,6 +191,13 @@ export function mountPlayers({ numbered = false, onRender = () => {} } = {}) {
       showStatus(t("error"), true);
     } else if (reply.ok === false) {
       showStatus(reply.reason === "unreachable" ? t("unreachable") : (signInHint ?? t("error")), true);
+    }
+    // "Open Autodarts" shows while no Autodarts tab answers; an answer that doesn't say
+    // leaves it as it is. It stays hidden for an account that has to sign in again: the
+    // page there is still signed in as the player before, and signing out in it would end
+    // that session, which "Add account" parks first.
+    if (openPageButton !== null && reply.page !== undefined) {
+      openPageButton.hidden = reply.page;
     }
     if (reply.view !== undefined) {
       render(reply.view);
@@ -316,6 +325,14 @@ export function mountPlayers({ numbered = false, onRender = () => {} } = {}) {
     }
     showStatus("");
     void send("adopt");
+  });
+
+  openPageButton?.addEventListener("click", () => {
+    if (busy) {
+      return;
+    }
+    showStatus("");
+    void send("openPage");
   });
 
   document.querySelector("#add").addEventListener("click", () => {

@@ -1,0 +1,26 @@
+---
+config:
+  flowchart:
+    wrappingWidth: 400
+---
+flowchart TB
+    accTitle: How a tap finds its Autodarts tab
+    accDescr: A tap on a player goes to the Autodarts tab shown in the window used last, then to a tab shown in another window, then to the tab shown most recently. When no tab answers, the extension reloads the tab in front, or opens Autodarts behind the popup when no tab is open, and waits until the page has renewed the session it started with. Then it switches there, and every other Autodarts tab reloads with the new player.
+
+    tap["A tap on Bob"]
+    rank["Order the Autodarts tabs<br>1. shown in the window used last<br>2. shown in another window<br>3. shown most recently"]
+    answers{"Does a tab answer?"}
+    prepare["Reload the tab in front,<br>or open Autodarts behind the popup<br>when no tab is open"]
+    settle["Wait until the page has renewed<br>the session it started with"]
+    switch["Park Ada's session and<br>write Bob's into that tab"]
+    others["Reload every other Autodarts tab,<br>so none plays on as Ada"]
+
+    tap --> rank --> answers
+    answers -- yes --> switch
+    answers -- no --> prepare --> settle --> switch
+    switch --> others
+
+    classDef bot fill:#526cfe2e,stroke:#526cfe,stroke-width:2px
+    classDef done fill:#16a34a2e,stroke:#16a34a,stroke-width:2px
+    class rank,prepare,settle bot
+    class others done

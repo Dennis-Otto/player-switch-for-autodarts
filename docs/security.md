@@ -57,6 +57,9 @@ stored session is `extension/content.js`.
 | A stale token is reused and locks an account out | The extension always keeps the token the server last returned (rotation) and renews parked tokens in the background; every change of the accounts runs one at a time in one queue of the service worker, so a double tap or the renewal never sends the same token twice |
 | A password is stored when it wasn't wanted | A password is kept only after an explicit "Remember password"; it is off by default and can be forgotten again |
 | The page's session is touched by surprise | Only `content.js` reads or writes it, only under the key `autodarts_refresh_token`, only on `play.autodarts.com` |
+| A switch lands in a hidden tab, or another Autodarts tab plays on as the account before and spends its token | A switch goes to the Autodarts tab shown in the window used last, and every other Autodarts tab reloads once the session in the page has changed, so no tab keeps the account before in memory |
+| A page that starts renews its session while the extension parks it | With no tab that answers, the extension opens or reloads one and waits until the page has renewed the session it started with, so it parks the fresh token of the player before and not a spent one |
+| The extension sees more of the browser than it needs | It asks for no `tabs` permission: it finds the Autodarts tabs through its host access and asks only for them, and the browser gives it the address and title of no other tab |
 | The scripts of the Autodarts page read the saved accounts out of the switcher | The switcher is a page of the extension in a frame of another origin, inside a closed shadow root; the content script gets only the player on the button from the service worker |
 | A switch during a match ends it by surprise | On a match page, the service worker refuses a switch or a sign-out until the person confirms, before it spends a token |
 

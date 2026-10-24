@@ -1,4 +1,4 @@
-// The service worker: it wires the real browser (storage, the Autodarts tab, the
+// The service worker: it wires the real browser (storage, the Autodarts tabs, the
 // clock and fetch) to the logic in lib/, which is built from src/ and fully tested.
 // It holds no account logic of its own — only the wiring. Every read and change of
 // the accounts goes through lib/switch.js, which runs them one at a time in the queue
@@ -29,6 +29,7 @@ import {
   switchTo,
   syncFromPage,
 } from "./lib/switch.js";
+import { createPage, NoPageError, rankTabs, showPage, withPage } from "./lib/tabs.js";
 
 const TAB_MATCHES = ["https://play.autodarts.com/*", "https://play.autodarts.io/*"];
 const STORAGE_KEY = "accounts";
@@ -41,14 +42,6 @@ const BADGE_TEXT_COLOR = "#ffffff";
 // How long a request to Autodarts may take. The account changes wait for each other,
 // so one request that never ends would hold up every tap after it.
 const REQUEST_TIMEOUT_MS = 20_000;
-
-/** Thrown when there is no Autodarts tab with the content script to talk to. */
-class NoPageError extends Error {
-  constructor() {
-    super("no Autodarts page");
-    this.name = "NoPageError";
-  }
-}
 
 const t = (key, substitution) => chrome.i18n.getMessage(key, substitution);
 
@@ -64,14 +57,33 @@ const store = {
 
 const withId = (tabs) => tabs.filter((tab) => typeof tab.id === "number");
 
+// The Autodarts tabs. The host access of the manifest lets the query filter tabs by
+// their address, so the extension needs no "tabs" permission, which would let it read
+// the address of every tab.
+const tabs = {
+  query: () => chrome.tabs.query({ url: TAB_MATCHES }),
+  focusedWindow: () =>
+    chrome.windows.getLastFocused().then(
+      (window) => window.id,
+      () => undefined,
+    ),
+  send: (tabId, request) => chrome.tabs.sendMessage(tabId, request, { frameId: 0 }),
+  reload: (tabId) => chrome.tabs.reload(tabId),
+  open: (url, active) => chrome.tabs.create({ url, active }),
+  async focus(tab) {
+    await chrome.tabs.update(tab.id, { active: true });
+    await chrome.windows.update(tab.windowId, { focused: true });
+  },
+  wait: (ms) => new Promise((resolve) => setTimeout(resolve, ms)),
+};
+
 /**
- * The Autodarts tab that a request of the toolbar popup is for: the one in front in
- * the window last used, or else one in front in any window, or else the first.
+ * The Autodarts tab that a request of the toolbar popup is for: the one that
+ * lib/tabs.js sends a switch to first, the tab in front in the window used last.
  */
 async function findTab() {
-  const [front] = withId(await chrome.tabs.query({ url: TAB_MATCHES, active: true, lastFocusedWindow: true }));
-  const tabs = withId(await chrome.tabs.query({ url: TAB_MATCHES }));
-  return front ?? tabs.find((tab) => tab.active) ?? tabs[0];
+  const [all, focused] = await Promise.all([tabs.query(), tabs.focusedWindow()]);
+  return rankTabs(all, focused)[0];
 }
 
 /**
@@ -89,40 +101,9 @@ async function loadHealth() {
   return parseHealth(data[HEALTH_KEY]);
 }
 
-async function pageMessage(tab, action, extra = {}) {
-  if (tab === undefined) {
-    throw new NoPageError();
-  }
-  try {
-    return await chrome.tabs.sendMessage(tab.id, { type: "page", action, ...extra });
-  } catch {
-    // The tab is there but the content script isn't ready (e.g. still loading).
-    throw new NoPageError();
-  }
-}
-
-/**
- * The page of one Autodarts tab. `pick` finds the tab when the page is first used, and
- * every later use goes to the same tab.
- */
-function pageOf(pick) {
-  let chosen = null;
-  const tab = () => {
-    chosen ??= pick();
-    return chosen;
-  };
-  return {
-    async readToken() {
-      const reply = await pageMessage(await tab(), "read");
-      return reply !== null && typeof reply.token === "string" ? reply.token : null;
-    },
-    async writeToken(token) {
-      await pageMessage(await tab(), "write", { token });
-    },
-    async clearToken() {
-      await pageMessage(await tab(), "clear");
-    },
-  };
+/** The page of a request: its tab first, and the tab in front when that one is gone. */
+async function pageFor(tab) {
+  return createPage(tabs, (await tab)?.id);
 }
 
 // What every change of the accounts shares; each one adds the page of its tab.
@@ -134,16 +115,20 @@ const shared = {
 };
 
 /**
- * A switch, or the sign-out for a new account, reloads the page and so ends a match
- * that runs there. Before it spends a token, it asks the person, through the popup or
- * the switcher, unless the request carries their yes.
+ * A switch, or the sign-out for a new account, reloads the page, and every other
+ * Autodarts tab with it, and so ends a match that runs in any of them. Before it
+ * spends a token, it asks the person, through the popup or the switcher, unless the
+ * request carries their yes.
  */
 async function mustAskFirst(tab, message) {
-  return mustConfirm((await tab)?.url, message.confirmed);
+  const all = await tabs.query().catch(() => []);
+  return [await tab, ...all].some((candidate) => mustConfirm(candidate?.url, message.confirmed));
 }
 
+// Each answer says in `page` whether an Autodarts tab answered, when the action asked
+// one, so the popup knows when to offer "Open Autodarts".
 async function runAction(message, tab) {
-  const deps = { ...shared, page: pageOf(() => tab) };
+  const deps = { ...shared, page: await pageFor(tab) };
   switch (message.action) {
     case "view":
       // A missing page here is normal (the popup may be open with no Autodarts tab).
@@ -153,24 +138,34 @@ async function runAction(message, tab) {
         if (!(error instanceof NoPageError)) {
           throw error;
         }
+        return { ok: true, page: false };
       }
-      return { ok: true };
+      return { ok: true, page: true };
     case "switch": {
       if (await mustAskFirst(tab, message)) {
         return { ok: false, reason: "match" };
       }
-      const { ok, reason } = await switchTo(deps, message.id);
-      return { ok, reason };
+      // With no Autodarts tab that answers, the switch opens one and goes on there.
+      const { ok, reason } = await withPage(
+        tabs,
+        () => switchTo(deps, message.id),
+        (result) => result.ok,
+      );
+      return { ok, reason, page: true };
     }
     case "adopt":
       await adoptCurrentSession(deps);
-      return { ok: true };
+      return { ok: true, page: true };
     case "signout":
       if (await mustAskFirst(tab, message)) {
         return { ok: false, reason: "match" };
       }
-      await signOutForNewAccount(deps);
-      return { ok: true };
+      // The new player signs in on the page, so a page opens when none answers.
+      await withPage(tabs, () => signOutForNewAccount(deps));
+      return { ok: true, page: true };
+    case "openPage":
+      await showPage(tabs);
+      return { ok: true, page: true };
     case "remember":
       await edit(deps, (state) =>
         rememberCredentials(state, message.id, { username: message.username, password: message.password }),
@@ -189,7 +184,7 @@ async function runAction(message, tab) {
 
 /** The view of the popup, and whether it should suggest an update of the extension. */
 async function popupView(tab) {
-  const [view, health] = await Promise.all([readView({ ...shared, page: pageOf(() => tab) }), loadHealth()]);
+  const [view, health] = await Promise.all([readView({ ...shared, page: await pageFor(tab) }), loadHealth()]);
   return { ...view, updateHint: suggestsUpdate(health, view.profiles) };
 }
 
@@ -199,7 +194,7 @@ async function handlePopup(message, tab) {
     return { ...result, view: await popupView(tab) };
   } catch (error) {
     if (error instanceof NoPageError) {
-      return { error: "noPage", view: await popupView(tab) };
+      return { error: "noPage", page: false, view: await popupView(tab) };
     }
     return { error: "error", view: await popupView(tab) };
   }
@@ -296,7 +291,7 @@ let refreshing = null;
 function refresh() {
   refreshing ??= (async () => {
     try {
-      const run = await refreshParked({ ...shared, page: pageOf(findTab) });
+      const run = await refreshParked({ ...shared, page: createPage(tabs) });
       const now = shared.now();
       await chrome.storage.local.set({ [HEALTH_KEY]: recordRun(await loadHealth(), run, now) });
       await scheduleRefresh(nextRunAt(run, now));
