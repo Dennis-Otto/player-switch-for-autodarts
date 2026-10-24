@@ -11,8 +11,6 @@ body {
     display: grid;
     place-items: center;
     width: auto;
-    min-height: 100vh;
-    /* biome-ignore lint/suspicious/noDuplicateProperties: 100vh is the fallback for a browser without the dvh unit. */
     min-height: 100dvh;
     padding: 24px max(16px, env(safe-area-inset-right)) 24px
         max(16px, env(safe-area-inset-left));

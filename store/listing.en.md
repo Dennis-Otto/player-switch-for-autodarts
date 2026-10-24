@@ -46,16 +46,19 @@ Not affiliated with Autodarts.
 • alarms — to renew parked sessions in the background so they stay ready.
 • scripting — to bring the button of a new version into the Autodarts tabs that are
   already open when the extension updates, so a display in kiosk mode keeps working
-  without a reload. It runs only the extension's own script, only on play.autodarts.com
-  and play.autodarts.io.
-• Web-accessible resource switcher.html, for play.autodarts.com and
-  play.autodarts.io only — the players that the button on the Autodarts page shows
-  over the page. It is a page of the extension in a frame, so the scripts of the
-  Autodarts page can't read the saved accounts out of it.
-• Host access to autodarts.com — to sign in, renew a session and move it between
-  accounts, the same requests the Autodarts website makes, and to find the open
-  Autodarts tabs, so a switch takes effect in the one in front and the others
-  reload. The extension can't read the address or title of any other tab.
+  without a reload. It runs only the extension's own script, only on
+  play.autodarts.com.
+• Web-accessible resource switcher.html, for play.autodarts.com only — the players
+  that the button on the Autodarts page shows over the page. It is a page of the
+  extension in a frame, so the scripts of the Autodarts page can't read the saved
+  accounts out of it.
+• Host access to play.autodarts.com — to move a session into the Autodarts page and
+  out of it, to show the button there, and to find the open Autodarts tabs, so a
+  switch takes effect in the one in front and the others reload. The extension can't
+  read the address or title of any other tab.
+• Host access to api.autodarts.com — to sign in, renew a session and end it, the
+  same requests the Autodarts website makes. The extension connects to no other
+  server, and its content security policy enforces that.
 
 ## Homepage and support URLs
 

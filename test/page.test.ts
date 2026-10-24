@@ -125,11 +125,14 @@ test("toButtonView shows no player when none of the saved accounts plays", () =>
   );
 });
 
-test("isPlayPage knows both addresses of Autodarts Play and nothing else", () => {
+test("isPlayPage knows the address of Autodarts Play and nothing else", () => {
+  assert.deepEqual(PLAY_ORIGINS, ["https://play.autodarts.com"]);
   for (const origin of PLAY_ORIGINS) {
     assert.ok(isPlayPage(`${origin}/`));
     assert.ok(isPlayPage(`${origin}/matches/1`));
   }
+  // play.autodarts.io only forwards to play.autodarts.com, so no page of it ever shows.
+  assert.ok(!isPlayPage("https://play.autodarts.io/"));
   assert.ok(!isPlayPage("https://autodarts.com/"));
   assert.ok(!isPlayPage("https://play.autodarts.com.example.org/"));
   assert.ok(!isPlayPage("http://play.autodarts.com/"));
@@ -143,7 +146,7 @@ test("isMatchPage knows a match that runs", () => {
       "https://play.autodarts.com/matches/0b5a1c2d-0000-4000-8000-000000000001",
     ),
   );
-  assert.ok(isMatchPage("https://play.autodarts.io/matches/abc/"));
+  assert.ok(isMatchPage("https://play.autodarts.com/matches/abc/"));
   assert.ok(isMatchPage("https://play.autodarts.com/matches/abc?board=1#x"));
 });
 
