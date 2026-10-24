@@ -214,19 +214,19 @@ switch (layout) {
     shot.append(board(4));
     break;
   case "store": {
-    const number = ["1", "2", "3"].includes(setup.get("slide"))
-      ? setup.get("slide")
-      : "1";
-    const visual = {
-      1: () => popup(3),
-      2: () => {
-        openManage();
-        return popup(2);
-      },
+    const slide = Number(setup.get("slide"));
+    const number = slide === 2 || slide === 3 ? slide : 1;
+    let visual;
+    if (number === 1) {
+      visual = popup(3);
+    } else if (number === 2) {
+      openManage();
+      visual = popup(2);
+    } else {
       // Three players fill one row of the smaller display.
-      3: () => make("div", "screen", board(3)),
-    }[number]();
-    shot.className = number === "3" ? "store wide" : "store";
+      visual = make("div", "screen", board(3));
+    }
+    shot.className = number === 3 ? "store wide" : "store";
     shot.append(
       copy(TEXTS.slides[number]),
       visual,
