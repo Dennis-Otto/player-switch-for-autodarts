@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 
 import {
+  failingSince,
   badge,
   type Health,
   isOverdue,
@@ -199,4 +200,15 @@ test("renewedAgo says it in days after that", () => {
 
 test("renewedAgo counts a time ahead of the clock as now", () => {
   assert.equal(renewedAgo(NOW + HOUR, NOW, "en"), "this minute");
+});
+
+test("failingSince names the day and the time when the renewal began to fail, in the language of the popup", () => {
+  // Versions of ICU differ in the space before "PM", a narrow one or a plain one.
+  assert.equal(failingSince(NOW, "en", "UTC").replace(/\s/gu, " "), "Oct 24, 2026, 8:00 PM");
+  assert.equal(failingSince(NOW, "de", "Europe/Berlin"), "24.10.2026, 22:00");
+});
+
+test("failingSince takes the time zone of the computer when none is named", () => {
+  const local = new Intl.DateTimeFormat("de", { dateStyle: "medium", timeStyle: "short" }).format(NOW);
+  assert.equal(failingSince(NOW, "de"), local);
 });

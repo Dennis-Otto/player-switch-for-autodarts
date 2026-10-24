@@ -33,6 +33,7 @@ import {
   activate,
   deactivate,
   endSession,
+  failRenewal,
   find,
   isAdding,
   park,
@@ -342,7 +343,8 @@ type Outcome = keyof RunCounts | "skipped";
 /**
  * Keeps every parked session fresh, so a stored account can play at any time. An
  * account whose token has died and that has no stored sign-in is marked as needing
- * one; a temporary problem leaves the account untouched for the next run.
+ * one; a temporary problem keeps its session for the next run and marks since when
+ * its renewal fails, until a renewal works again.
  *
  * Each account takes a turn of its own in the queue, so a tap waits for one renewal at
  * most, and each fresh token is saved as soon as it arrives. The counts tell the
@@ -374,5 +376,7 @@ async function refreshOne(deps: Deps, id: string): Promise<{ state: State; outco
   if (renewal.kind === "rejected") {
     return { state: await commit(deps, endSession(state, id)), outcome: "rejected" };
   }
-  return { state, outcome: "unreachable" };
+  // The session stays for the next try, and the account shows since when renewing fails.
+  const failing = failRenewal(state, id, deps.now());
+  return { state: failing === state ? state : await commit(deps, failing), outcome: "unreachable" };
 }

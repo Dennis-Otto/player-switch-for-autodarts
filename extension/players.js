@@ -2,7 +2,7 @@
 // both show them: one module, so the two can't drift apart. It holds no account logic:
 // it asks the service worker for a view and sends it the person's taps. All the
 // thinking happens in the worker and in lib/.
-import { renewedAgo } from "./lib/health.js";
+import { failingSince, renewedAgo } from "./lib/health.js";
 import { initialOf, tileForKey } from "./lib/page.js";
 
 export const t = (key, substitution) => chrome.i18n.getMessage(key, substitution);
@@ -189,6 +189,8 @@ export function mountPlayers({ numbered = false, onRender = () => {} } = {}) {
     }
     if (reply.error === "noPage") {
       showStatus(t("noPage"), true);
+    } else if (reply.error === "unknownFormat") {
+      showStatus(t("unknownFormat"), true);
     } else if (reply.error !== undefined) {
       showStatus(t("error"), true);
     } else if (reply.ok === false) {
@@ -255,11 +257,17 @@ export function mountPlayers({ numbered = false, onRender = () => {} } = {}) {
     const menu = node.querySelector(".menu");
     menu.hidden = !managing;
 
-    // Shows in the manage view that the renewal of a parked session works.
+    // Shows in the manage view that the renewal of a parked session works, or since
+    // when it fails, while the extension keeps trying.
     if (profile.renewedAt !== null) {
       const renewed = node.querySelector(".renewed");
       renewed.textContent = t("renewed", renewedAgo(profile.renewedAt, Date.now(), language));
       renewed.hidden = false;
+    }
+    if (profile.renewalFailingSince !== null) {
+      const failing = node.querySelector(".renewal-failing");
+      failing.textContent = t("renewalFailing", failingSince(profile.renewalFailingSince, language));
+      failing.hidden = false;
     }
 
     button.addEventListener("click", () => {

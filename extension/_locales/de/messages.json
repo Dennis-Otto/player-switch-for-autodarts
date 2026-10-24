@@ -43,6 +43,10 @@
     "message": "Erneuert $WHEN$",
     "placeholders": { "when": { "content": "$1" } }
   },
+  "renewalFailing": {
+    "message": "Erneuern klappt seit $WHEN$ nicht; es wird weiter versucht.",
+    "placeholders": { "when": { "content": "$1" } }
+  },
   "updateHintText": {
     "message": "Autodarts hat vielleicht geändert, wie die Anmeldung funktioniert. Schau, ob es ein Update von Player Switch gibt."
   },
@@ -106,6 +110,9 @@
   },
   "noPage": {
     "message": "Autodarts hat in keinem Tab geantwortet. Öffne Autodarts und versuche es dann nochmal."
+  },
+  "unknownFormat": {
+    "message": "Die gespeicherten Konten stammen aus einer neueren Version von Player Switch. Aktualisiere die Erweiterung, um sie zu nutzen; diese Version lässt sie unverändert."
   },
   "openPage": {
     "message": "Autodarts öffnen"

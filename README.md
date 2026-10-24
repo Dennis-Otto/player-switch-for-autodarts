@@ -46,7 +46,7 @@ Autodarts Play keeps the signed-in session as a single value in the browser (a r
 
 - **Switching** parks the session of the account that was playing, writes the chosen account's session into the page and reloads.
 - **The account that steps aside is not signed out at Autodarts.** Its session stays valid; "switching away" only takes it off the page.
-- **Parked sessions are kept fresh.** Because the token rotates, the extension renews each parked account's token in the background, every 12 hours. Each time the browser starts, it checks that the renewal is still scheduled, and when the computer was off while a renewal was due, it renews straight away. "Manage accounts" shows for each parked account when it was last renewed.
+- **Parked sessions are kept fresh.** Because the token rotates, the extension renews each parked account's token in the background, every 12 hours. Each time the browser starts, it checks that the renewal is still scheduled, and when the computer was off while a renewal was due, it renews straight away. "Manage accounts" shows for each parked account when it was last renewed, and since when renewing it fails while Autodarts can't be reached.
 - **You see who needs attention.** When an account has to sign in again, the toolbar icon shows how many, and its tooltip names them, so nobody finds out only when they want to play. If Autodarts turns every saved account away at once, the popup says that Autodarts may have changed how it signs in and links to the known problems and updates.
 - **One change at a time.** A token works only once, so a second tap while a switch is on its way is ignored, and the renewal in the background waits for the switch. A double tap can't sign the previous player out.
 - **The tab in front.** A switch happens on the Autodarts tab you're looking at, and every other Autodarts tab reloads with the new player, so none plays on as the one before. With no Autodarts tab open, a tap opens Autodarts and switches there.
@@ -117,6 +117,7 @@ Under **Manage accounts**, choose **Remember password** for an account, and the 
 
 - The way the extension keeps a session is not an official Autodarts interface. A change on Autodarts' side can stop it until the extension is adjusted, and how long a parked token stays valid is up to Autodarts. When Autodarts turns every saved account away in one renewal, the popup tells you to look for an update of the extension rather than sign everyone in again.
 - It is built for a display that the people of a household, club or venue share and trust: anyone at that display can switch to any saved account, which is the point.
+- The saved accounts carry the version of their format. Going back to an older version of the extension never wipes accounts that a newer one saved: the older one leaves them untouched, keeps a copy, and the popup asks you to update.
 
 ## Development
 

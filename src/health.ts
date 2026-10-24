@@ -191,3 +191,13 @@ export function renewedAgo(renewedAt: number, now: number, locale: string): stri
   }
   return format.format(-Math.floor(elapsed / DAY), "day");
 }
+
+/**
+ * Since when the renewal of a parked session fails, as "Manage accounts" shows it: a
+ * date and a time in the language of the popup, such as "Oct 22, 2026, 9:15 PM", in
+ * the time zone of the computer, unless a test names one.
+ */
+export function failingSince(since: number, locale: string, timeZone?: string): string {
+  const zone = timeZone === undefined ? {} : { timeZone };
+  return new Intl.DateTimeFormat(locale, { dateStyle: "medium", timeStyle: "short", ...zone }).format(since);
+}
