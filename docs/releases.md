@@ -63,7 +63,7 @@ Every run writes a table into its summary: the release, the version that the sto
 | The submission of the release was cancelled in the dashboard | A note. A start by hand with the tag submits it again. |
 | Google rejected an earlier version | A warning, and delivers the release. |
 | Google warned the item | Fails, and still delivers a release that the store lacks, as it may be the fix. |
-| Google took the item down | Fails, and delivers nothing. |
+| Google took the item down | Fails, and delivers nothing; a start by hand with the tag of the fixing release delivers it. |
 | It has a higher version than the release | Fails: the store takes only a version above its own. |
 
 The days of a review count from the artifact of the delivery, or from the release of the version when it went to the store another way. The workflow needs this one-time set-up:
@@ -102,7 +102,7 @@ A failed run names the reason and the fix in its summary and in an annotation, a
 - **Google turned the refresh token away** (`invalid_grant`): [renew it](#renew-the-refresh-token).
 - **Google doesn't know the OAuth client**: set `CWS_CLIENT_ID` and `CWS_CLIENT_SECRET` again from **Credentials** of the Google Cloud project (steps 3 and 6).
 - **Rejected**: the mail of Google and the [Developer Dashboard](https://chrome.google.com/webstore/devconsole) say why. Fix the cause and release a new version; when only the listing or the privacy practices had to change, change them in the dashboard and start the workflow by hand with the tag, which submits the same version again.
-- **Warned or taken down**: the dashboard says which policy and until when. Fix it there or with a new release, and ask for a review.
+- **Warned or taken down**: the dashboard says which policy and until when. Fix it there or with a new release, and ask for a review. A warned item gets the new release from the daily run; for a taken-down item, start the workflow by hand with the tag of the fixing release.
 - **In review for more than 7 days**: look in the dashboard whether Google asks for anything, or contact the support of the Chrome Web Store. A new permission makes a review take longer.
 - **A higher version in the store**: a version went to the store by hand without its release; release a version above it.
 

@@ -247,6 +247,18 @@ test("an item that Google took down fails the run and gets nothing", () => {
   assert.match(decision.errors[0] ?? "", /took the item down/);
 });
 
+test("a tag given by hand delivers the fix of a taken-down item, and the run still fails", () => {
+  const decision = decide(
+    input({ status: status({ takenDown: true }), explicit: true }),
+  );
+  assert.deepEqual(outcome(decision), {
+    deliver: true,
+    errors: 1,
+    warnings: 0,
+  });
+  assert.match(decision.errors[0] ?? "", /start this workflow by hand/);
+});
+
 test("a warned item fails the run, and still gets the release that may fix it", () => {
   const decision = decide(input({ status: status({ warned: true }) }));
   assert.deepEqual(outcome(decision), {

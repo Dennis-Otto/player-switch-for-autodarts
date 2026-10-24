@@ -43,7 +43,7 @@ export interface Input {
   readonly status: StoreStatus;
   /** The tag of the release, such as v1.2.3. */
   readonly tag: string;
-  /** The tag was given by hand, which delivers a rejected or cancelled version again. */
+  /** The tag was given by hand, which delivers a rejected or cancelled version again, or the fix of a taken-down item. */
   readonly explicit: boolean;
   /** When the submitted version went to the store, if known. */
   readonly submittedAt: Date | undefined;
@@ -135,9 +135,10 @@ export const decide = (input: Input): Decision => {
 
   if (status.takenDown) {
     errors.push(
-      "Google took the item down for a violation of its policies, and no version reaches the users until it is fixed. The Developer Dashboard says why: fix it there and ask for a new review.",
+      "Google took the item down for a violation of its policies, and no version reaches the users until it is fixed. The Developer Dashboard says why: fix it there, or release the fix and start this workflow by hand with its tag, and ask for a new review.",
     );
-    return result(false);
+    // The daily run leaves a taken-down item alone; a tag given by hand delivers its fix.
+    if (!explicit) return result(false);
   }
   if (status.warned) {
     errors.push(
