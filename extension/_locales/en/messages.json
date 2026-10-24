@@ -45,6 +45,11 @@
     "description": "When the extension last renewed the parked session of an account. $WHEN$ is a relative time, such as '3 hours ago'.",
     "placeholders": { "when": { "content": "$1" } }
   },
+  "renewalFailing": {
+    "message": "Renewal failing since $WHEN$; it keeps trying.",
+    "description": "Since when the extension can't renew the parked session of an account because Autodarts doesn't answer; it tries again every 15 minutes. $WHEN$ is a date and a time, such as 'Oct 22, 2026, 9:15 PM'.",
+    "placeholders": { "when": { "content": "$1" } }
+  },
   "updateHintText": {
     "message": "Autodarts may have changed how it signs in. Check for an update of Player Switch."
   },
@@ -108,6 +113,10 @@
   },
   "noPage": {
     "message": "Autodarts didn't answer in a tab. Open Autodarts, then try again."
+  },
+  "unknownFormat": {
+    "message": "Your saved accounts come from a newer version of Player Switch. Update the extension to use them; this version leaves them untouched.",
+    "description": "Shown when the stored accounts are in a format that this version of the extension doesn't know, such as after going back to an older version."
   },
   "openPage": {
     "message": "Open Autodarts"

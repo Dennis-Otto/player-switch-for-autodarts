@@ -102,6 +102,22 @@ and the popup and the players on the Autodarts page say:
 
 **What to do:** nothing. The extension renews every parked account every 12 hours while the browser runs. A time much longer ago means that the computer was off or asleep: the renewal catches up as the browser starts again or the computer wakes. [Keep it ready](shared-display.md#keep-it-ready) says what that means for a display that is off for days.
 
+### Renewal failing since {#renewal-failing}
+
+> Renewal failing since Oct 22, 2026, 9:15 PM; it keeps trying.
+
+**What it means:** under **Manage accounts**, the extension could not reach Autodarts to renew the parked session of this account, every time since that moment. The session itself is still kept; it has not been turned away.
+
+**What to do:** check that the computer is online and that [Autodarts](https://play.autodarts.com) opens. The extension tries again every 15 minutes, and the line goes away with the first renewal that works. Should Autodarts turn the session away later, the tile says **Sign in again**; see [Sign in again](#sign-in-again).
+
+### Saved accounts from a newer version {#newer-version}
+
+> Your saved accounts come from a newer version of Player Switch. Update the extension to use them; this version leaves them untouched.
+
+**What it means:** a newer version of the extension saved the accounts in a format that this older version can't read, for example after going back to an older version or after installing an older copy from the source. This version neither changes nor wipes them: it keeps them as they are, plus a copy, and shows no account until a version that reads them is back.
+
+**What to do:** update the extension, as under [Autodarts may have changed how it signs in](#sign-in-changed). Once the newer version runs, every account is there again. Don't remove the extension to get rid of the message: that deletes the saved accounts too, and every player has to sign in again.
+
 ### No accounts yet {#no-accounts}
 
 > No accounts yet. Choose Add account and sign in on Autodarts: each account is saved by itself.

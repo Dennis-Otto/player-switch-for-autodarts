@@ -8,6 +8,10 @@
  * A fake Autodarts rotates the refresh tokens as the real one does: a renewed token
  * is spent. Whatever happens, the extension keeps the rule of `switch.ts` and loses
  * no session that it could still use.
+ *
+ * The evenings run one action after the other. The last tests let taps and the
+ * renewal overlap instead, as a double tap or the alarm during a switch do, with the
+ * scheduler of fast-check picking the order in which Autodarts and the page answer.
  */
 import assert from "node:assert/strict";
 import { test } from "node:test";
@@ -15,7 +19,7 @@ import { test } from "node:test";
 import fc from "fast-check";
 
 import { AuthError, type Fetch } from "../src/autodarts.ts";
-import { createQueue } from "../src/queue.ts";
+import { createQueue, type Queue } from "../src/queue.ts";
 import {
   find,
   forget,
@@ -528,4 +532,54 @@ test("a switch between saved accounts plays the account and parks the one before
       }
     }),
   );
+});
+
+/** A page that answers every request. */
+const answering = fc.constant<PageFailure[]>([]);
+
+/** What the extension may do at the same time: taps in the popup or the switcher, and the renewal. */
+const overlapping = fc.oneof(
+  { weight: 4, arbitrary: fc.record({ kind: fc.constant("switch" as const), id: account, failing: answering }) },
+  { weight: 1, arbitrary: fc.record({ kind: fc.constant("adopt" as const), failing: answering }) },
+  { weight: 1, arbitrary: fc.record({ kind: fc.constant("signOut" as const), failing: answering }) },
+  { weight: 2, arbitrary: fc.record({ kind: fc.constant("refresh" as const) }) },
+);
+
+/**
+ * Taps and renewals that overlap, while each answer of Autodarts and of the page
+ * comes back in an order that the scheduler picks: no refresh token is sent twice,
+ * and every account keeps a session it can play with. `queue` makes the queue of
+ * the extension.
+ */
+function overlapsAreSafe(queue: () => Queue) {
+  return fc.asyncProperty(fc.scheduler(), fc.array(overlapping, { minLength: 2, maxLength: 6 }), async (s, steps) => {
+    const w = world();
+    w.deps.queue = queue();
+    await saveEveryAccount(w);
+    await switchTo(w.deps, "a");
+    assert.deepEqual(usable(w), new Set(ACCOUNTS));
+    const sentBefore = w.autodarts.renewed.length;
+    w.deps.fetcher = s.scheduleFunction(w.autodarts.fetch);
+    w.deps.page = {
+      readToken: s.scheduleFunction(() => w.page.readToken()),
+      writeToken: s.scheduleFunction((token: string) => w.page.writeToken(token)),
+      clearToken: s.scheduleFunction(() => w.page.clearToken()),
+    };
+    await s.waitFor(Promise.all(steps.map((step) => run(w, step))));
+    const sent = w.autodarts.renewed.slice(sentBefore);
+    assert.equal(new Set(sent).size, sent.length, `a refresh token was sent twice: ${sent.join(", ")}`);
+    assert.deepEqual(usable(w), new Set(ACCOUNTS), "an account lost its session");
+    assertSound(w);
+  });
+}
+
+test("taps and the renewal that overlap, in any order, spend no token twice and lose no session", async () => {
+  await fc.assert(overlapsAreSafe(createQueue));
+});
+
+test("without the queue, the overlap test finds a token spent twice, as on the code before the queue", async () => {
+  // Every operation runs at once, as before the queue came.
+  const unqueued: Queue = (task) => task();
+  const details = await fc.check(overlapsAreSafe(() => unqueued), { seed: 28, numRuns: 100 });
+  assert.ok(details.failed, "no order of the overlapping taps broke a promise");
 });

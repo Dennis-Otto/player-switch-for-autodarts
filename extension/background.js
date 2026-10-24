@@ -4,7 +4,8 @@
 // the accounts goes through lib/switch.js, which runs them one at a time in the queue
 // below, so a double tap or the background renewal can't spend a token twice. When
 // to renew, and what the toolbar icon says, lib/health.js decides; when the welcome
-// page opens, lib/onboarding.js.
+// page opens, lib/onboarding.js. lib/storage.js keeps the accounts, and never saves
+// over accounts in a format that this version doesn't know.
 //
 // The popup and the switcher in the Autodarts page (switcher.html) send it the same
 // requests; content.js asks it what the button in the page shows, and it relays the
@@ -21,7 +22,8 @@ import {
 import { welcomes } from "./lib/onboarding.js";
 import { isPlayPage, mustConfirm, SETTINGS_KEY, toButtonView } from "./lib/page.js";
 import { createQueue } from "./lib/queue.js";
-import { forget, forgetCredentials, parseState, rememberCredentials } from "./lib/state.js";
+import { EMPTY, forget, forgetCredentials, rememberCredentials, toView } from "./lib/state.js";
+import { ACCOUNTS_KEY, accountsIn, createStore, UnknownStateError } from "./lib/storage.js";
 import {
   adoptCurrentSession,
   adoptNewSignIn,
@@ -37,7 +39,7 @@ import {
 import { createPage, NoPageError, rankTabs, settleTab, showPage, withPage } from "./lib/tabs.js";
 
 const TAB_MATCHES = ["https://play.autodarts.com/*", "https://play.autodarts.io/*"];
-const STORAGE_KEY = "accounts";
+const STORAGE_KEY = ACCOUNTS_KEY;
 // How the renewal went, beside the accounts: see lib/health.js.
 const HEALTH_KEY = "health";
 const REFRESH_ALARM = "refresh-parked";
@@ -59,15 +61,13 @@ const REQUEST_TIMEOUT_MS = 20_000;
 
 const t = (key, substitution) => chrome.i18n.getMessage(key, substitution);
 
-const store = {
-  async load() {
-    const data = await chrome.storage.local.get(STORAGE_KEY);
-    return parseState(data[STORAGE_KEY]);
-  },
-  async save(state) {
-    await chrome.storage.local.set({ [STORAGE_KEY]: state });
-  },
-};
+const store = createStore(chrome.storage.local);
+
+/**
+ * Writes a failure of the service worker to its console, which `chrome://extensions`
+ * shows, instead of dropping it, so that a renewal that keeps failing leaves a trace.
+ */
+const logFailure = (what) => (error) => console.error(`Player Switch: ${what} failed.`, error);
 
 const withId = (tabs) => tabs.filter((tab) => typeof tab.id === "number");
 
@@ -208,22 +208,32 @@ async function popupView(tab) {
   return { ...view, updateHint: suggestsUpdate(health, view.profiles) };
 }
 
+/** The view of the popup after a failure: with no account when the accounts can't be read. */
+function viewAfter(tab) {
+  return popupView(tab).catch(() => ({ ...toView(EMPTY, false, 0), updateHint: false }));
+}
+
 async function handlePopup(message, tab) {
   try {
     const result = await runAction(message, tab);
     return { ...result, view: await popupView(tab) };
   } catch (error) {
     if (error instanceof NoPageError) {
-      return { error: "noPage", page: false, view: await popupView(tab) };
+      return { error: "noPage", page: false, view: await viewAfter(tab) };
     }
-    return { error: "error", view: await popupView(tab) };
+    if (error instanceof UnknownStateError) {
+      // The accounts of a newer version stay as they are, and the popup says why.
+      return { error: "unknownFormat", view: await viewAfter(tab) };
+    }
+    logFailure(`the request "${message.action}"`)(error);
+    return { error: "error", view: await viewAfter(tab) };
   }
 }
 
 /** What the button in the page shows: the settings, and the player without a session. */
 async function buttonView() {
   const data = await chrome.storage.local.get([STORAGE_KEY, SETTINGS_KEY]);
-  return toButtonView(parseState(data[STORAGE_KEY]), data[SETTINGS_KEY]);
+  return toButtonView(accountsIn(data), data[SETTINGS_KEY]);
 }
 
 /** Tells the content script of an Autodarts tab something; a tab without one has no say. */
@@ -278,7 +288,7 @@ async function redrawButtons() {
 // A change of the settings or of the accounts redraws the button in every Autodarts tab.
 chrome.storage.onChanged.addListener((changes, area) => {
   if (area === "local" && (SETTINGS_KEY in changes || STORAGE_KEY in changes)) {
-    redrawButtons().catch(() => {});
+    redrawButtons().catch(logFailure("redrawing the button in the page"));
   }
 });
 
@@ -333,7 +343,7 @@ async function confirmSaved(name) {
   confirmingUntil = Date.now() + SAVED_BADGE_MS;
   setTimeout(() => {
     confirmingUntil = 0;
-    showBadge().catch(() => {});
+    showBadge().catch(logFailure("the badge"));
   }, SAVED_BADGE_MS);
   // A check mark, white on green.
   await setBadge("\u2713", SAVED_COLOR, t("badgeSaved", name));
@@ -422,7 +432,7 @@ function ensureRenewal() {
   started ??= (async () => {
     const [alarm, health] = await Promise.all([chrome.alarms.get(REFRESH_ALARM), loadHealth()]);
     // The badge must not hold up the renewal, nor a failure of it stop the renewal.
-    showBadge().catch(() => {});
+    showBadge().catch(logFailure("the badge"));
     const plan = planStart(alarm !== undefined, health, shared.now());
     if (plan.alarmAt !== null) {
       await scheduleRefresh(plan.alarmAt);
@@ -430,48 +440,51 @@ function ensureRenewal() {
     if (plan.refreshNow) {
       await refresh();
     }
-  })().catch(() => {});
+  })().catch(logFailure("the check of the renewal at the start"));
   return started;
 }
 
 // Every change of the accounts, from the popup or the renewal, updates the badge.
 chrome.storage.onChanged.addListener((changes, area) => {
   if (area === "local" && STORAGE_KEY in changes) {
-    showBadge().catch(() => {});
+    showBadge().catch(logFailure("the badge"));
   }
 });
 
 // An Autodarts page that finished loading may hold the session of a new sign-in.
 chrome.tabs.onUpdated.addListener((_tabId, change, tab) => {
   if (change.status === "complete" && isPlayPage(tab.url)) {
-    pickUp(tab).catch(() => {});
+    pickUp(tab).catch(logFailure("saving a new sign-in"));
   }
 });
 
 // A closed tab may have held the session that the "+" stood for.
 chrome.tabs.onRemoved.addListener(() => {
   if (badgeText === "+") {
-    showBadge().catch(() => {});
+    showBadge().catch(logFailure("the badge"));
   }
 });
 
 chrome.alarms.onAlarm.addListener((alarm) => {
   if (alarm.name === REFRESH_ALARM) {
-    refresh().catch(() => {});
+    refresh().catch(logFailure("the renewal of the parked sessions"));
   }
 });
 
 // The browser starts, or the extension is installed or updated: these wake the
 // service worker, whose start then runs the check below. Only the install opens the
-// welcome page.
+// welcome page; an update stores the accounts in the format of the new version.
 chrome.runtime.onStartup.addListener(ensureRenewal);
 chrome.runtime.onInstalled.addListener((details) => {
+  if (details.reason === "update") {
+    shared.queue(() => store.migrate()).catch(logFailure("bringing the saved accounts up to date"));
+  }
   void ensureRenewal();
   if (details.reason === "install" || details.reason === "update") {
-    injectIntoOpenTabs().catch(() => {});
+    injectIntoOpenTabs().catch(logFailure("adding the button to the open Autodarts tabs"));
   }
   if (welcomes(details.reason)) {
-    welcome().catch(() => {});
+    welcome().catch(logFailure("the welcome"));
   }
 });
 

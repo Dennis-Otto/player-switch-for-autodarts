@@ -26,6 +26,10 @@ Entwickler oder an Dritte.
 - **Bis wann gerade ein neues Konto hinzugefügt wird**, zehn Minuten lang nach
   „Konto hinzufügen“ oder der Installation, damit die nächste Anmeldung auf Autodarts
   von selbst gespeichert wird.
+- **Nur nach dem Wechsel zurück auf eine ältere Version der Erweiterung: eine Kopie
+  der gespeicherten Konten**, die die neuere Version in einem Format gespeichert hat,
+  das die ältere nicht lesen kann, damit sie nicht verloren gehen. Sie wird gelöscht,
+  sobald wieder eine Version läuft, die sie liest, und wenn du die Erweiterung entfernst.
 
 ## Wohin Daten gehen
 

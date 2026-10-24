@@ -23,6 +23,7 @@ const ada: Profile = {
   token: null,
   needsSignIn: false,
   refreshedAt: null,
+  renewalFailedAt: null,
   credentials: { username: "ada", password: "secret" },
 };
 const bob: Profile = { ...ada, id: "b", username: "bob", name: "Bob", picture: null, token: "t-bob", credentials: null };
