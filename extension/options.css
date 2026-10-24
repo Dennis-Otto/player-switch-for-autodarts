@@ -3,93 +3,97 @@
 @import url("popup.css");
 
 body {
-  width: auto;
-  min-width: 320px;
-  max-width: 560px;
-  background: transparent;
+    width: auto;
+    min-width: 320px;
+    max-width: 560px;
+    background: transparent;
 }
 
 main {
-  display: grid;
-  gap: 20px;
+    display: grid;
+    gap: 20px;
 }
 
 section {
-  display: grid;
-  gap: 10px;
+    display: grid;
+    gap: 10px;
 }
 
 h2 {
-  margin: 0;
-  font-size: 15px;
-  font-weight: 650;
+    margin: 0;
+    font-size: 15px;
+    font-weight: 650;
 }
 
 .check {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  color: var(--fg);
-  font-size: 14px;
-  cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: var(--fg);
+    font-size: 14px;
+    cursor: pointer;
 }
 
 .check input {
-  padding: 0;
-  width: 18px;
-  height: 18px;
-  margin: 0;
-  accent-color: var(--accent);
+    padding: 0;
+    width: 18px;
+    height: 18px;
+    margin: 0;
+    accent-color: var(--accent);
 }
 
 fieldset {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 8px 16px;
-  margin: 0;
-  padding: 12px 14px;
-  border: 1px solid var(--line);
-  border-radius: 12px;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px 16px;
+    margin: 0;
+    padding: 12px 14px;
+    border: 1px solid var(--line);
+    border-radius: 12px;
 }
 
 fieldset:disabled .check {
-  opacity: 0.55;
-  cursor: default;
+    opacity: 0.55;
+    cursor: default;
 }
 
 legend {
-  padding: 0 4px;
-  color: var(--muted);
-  font-size: 12px;
+    padding: 0 4px;
+    color: var(--muted);
+    font-size: 12px;
 }
 
 dl {
-  display: grid;
-  grid-template-columns: 1fr auto;
-  gap: 6px 16px;
-  margin: 0;
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 6px 16px;
+    margin: 0;
 }
 
 dd {
-  margin: 0;
-  color: var(--muted);
+    margin: 0;
+    color: var(--muted);
 }
 
 kbd {
-  padding: 2px 7px;
-  border: 1px solid var(--line);
-  border-radius: 6px;
-  background: var(--card);
-  color: var(--fg);
-  font: 600 12px/1.4 ui-monospace, "Cascadia Mono", "Segoe UI Mono", monospace;
+    padding: 2px 7px;
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    background: var(--card);
+    color: var(--fg);
+    font:
+        600 12px / 1.4 ui-monospace,
+        "Cascadia Mono",
+        "Segoe UI Mono",
+        monospace;
 }
 
 #shortcuts {
-  justify-self: start;
-  padding-left: 0;
+    justify-self: start;
+    padding-left: 0;
 }
 
 #saved {
-  min-height: 1.45em;
-  margin: 0;
+    min-height: 1.45em;
+    margin: 0;
 }

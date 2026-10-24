@@ -8,7 +8,10 @@ import { t } from "./players.js";
  * versions of the extension and the browser alone.
  */
 export function linkSupport(root) {
-  const browser = browserName(navigator.userAgentData?.brands, navigator.userAgent);
+  const browser = browserName(
+    navigator.userAgentData?.brands,
+    navigator.userAgent,
+  );
   const report = reportUrl(chrome.runtime.getManifest().version, browser);
   for (const link of root.querySelectorAll("[data-link=help]")) {
     link.href = t("helpUrl");

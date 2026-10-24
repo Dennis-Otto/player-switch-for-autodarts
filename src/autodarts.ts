@@ -88,17 +88,27 @@ async function postSession(
  * Renews a session. Autodarts rotates the refresh token: from now on only the one
  * in the result is valid, so the caller keeps it before anything else.
  */
-export function refreshSession(fetcher: Fetch, refreshToken: string): Promise<Session> {
+export function refreshSession(
+  fetcher: Fetch,
+  refreshToken: string,
+): Promise<Session> {
   return postSession(fetcher, "/refresh", { refresh_token: refreshToken });
 }
 
 /** Signs in with a username and a password, the fallback when a token no longer works. */
-export function signIn(fetcher: Fetch, username: string, password: string): Promise<Session> {
+export function signIn(
+  fetcher: Fetch,
+  username: string,
+  password: string,
+): Promise<Session> {
   return postSession(fetcher, "/login", { username, password });
 }
 
 /** Ends a session at Autodarts; a session that can't be ended expires by itself. */
-export async function revokeSession(fetcher: Fetch, refreshToken: string): Promise<void> {
+export async function revokeSession(
+  fetcher: Fetch,
+  refreshToken: string,
+): Promise<void> {
   try {
     await fetcher(`${AUTH_BASE}/logout`, {
       method: "POST",
@@ -122,13 +132,21 @@ export function readIdentity(accessToken: string): Identity {
   let claims: unknown;
   try {
     const binary = atob(payload.replaceAll("-", "+").replaceAll("_", "/"));
-    const bytes = Uint8Array.from(binary, (character) => character.charCodeAt(0));
+    const bytes = Uint8Array.from(binary, (character) =>
+      character.charCodeAt(0),
+    );
     claims = JSON.parse(new TextDecoder().decode(bytes));
   } catch {
-    throw new AuthError("unreachable", "The claims of the access token are unreadable");
+    throw new AuthError(
+      "unreachable",
+      "The claims of the access token are unreadable",
+    );
   }
   if (typeof claims !== "object" || claims === null) {
-    throw new AuthError("unreachable", "The claims of the access token are unreadable");
+    throw new AuthError(
+      "unreachable",
+      "The claims of the access token are unreadable",
+    );
   }
   const text = (key: string): string => {
     const value: unknown = (claims as Record<string, unknown>)[key];

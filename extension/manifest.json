@@ -40,28 +40,17 @@
         "https://play.autodarts.com/*",
         "https://play.autodarts.io/*"
       ],
-      "js": [
-        "content.js"
-      ],
+      "js": ["content.js"],
       "run_at": "document_start"
     }
   ],
   "web_accessible_resources": [
     {
-      "resources": [
-        "switcher.html"
-      ],
-      "matches": [
-        "https://play.autodarts.com/*",
-        "https://play.autodarts.io/*"
-      ]
+      "resources": ["switcher.html"],
+      "matches": ["https://play.autodarts.com/*", "https://play.autodarts.io/*"]
     }
   ],
-  "permissions": [
-    "storage",
-    "alarms",
-    "scripting"
-  ],
+  "permissions": ["storage", "alarms", "scripting"],
   "host_permissions": [
     "https://play.autodarts.com/*",
     "https://play.autodarts.io/*",

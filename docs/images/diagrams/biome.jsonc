@@ -1,0 +1,12 @@
+// The pictures in this folder are drawn by scripts/diagrams.sh from the sources in
+// docs/diagrams/, so Biome neither lints nor formats them: a finding in a picture can
+// only be fixed in its drawing, and the next drawing would undo a fix by hand. This
+// file belongs to the project and stays out of the website (exclude_docs in
+// mkdocs.yml). It can go once the blueprint's biome.jsonc leaves the drawn diagrams
+// out itself: https://github.com/Dennis-Otto/repo-blueprint/issues/423
+{
+  "root": false,
+  "linter": { "enabled": false },
+  "formatter": { "enabled": false },
+  "assist": { "enabled": false }
+}

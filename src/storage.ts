@@ -28,7 +28,9 @@ export interface StorageArea {
 /** The stored accounts are in a format that this version of the extension doesn't know. */
 export class UnknownStateError extends Error {
   constructor() {
-    super("The saved accounts are in a format that this version of the extension doesn't know.");
+    super(
+      "The saved accounts are in a format that this version of the extension doesn't know.",
+    );
     this.name = "UnknownStateError";
   }
 }
@@ -45,7 +47,9 @@ export function createStore(area: StorageArea): AccountStore {
     const stored = readStored(data[ACCOUNTS_KEY]);
     if (stored.kind === "unknown") {
       // The copy is written once, and again only when the value changed since.
-      if (JSON.stringify(data[ACCOUNTS_KEY]) !== JSON.stringify(data[BACKUP_KEY])) {
+      if (
+        JSON.stringify(data[ACCOUNTS_KEY]) !== JSON.stringify(data[BACKUP_KEY])
+      ) {
         await area.set({ [BACKUP_KEY]: data[ACCOUNTS_KEY] });
       }
       throw new UnknownStateError();

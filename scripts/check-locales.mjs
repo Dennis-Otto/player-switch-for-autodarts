@@ -24,10 +24,17 @@ for (const key of deKeys) {
   }
 }
 
-// Where a key is asked for: t("key") in a script, data-i18n="key" for a text and
+// Where a key is asked for: t("key") in a script, also with the key on a line of its
+// own as Biome breaks a long call, data-i18n="key" for a text and
 // data-i18n-label="key" for a name in a page, __MSG_key__ in the manifest.
-const patterns = [/\bt\("([A-Za-z]+)"/g, /\bdata-i18n(?:-label)?="([A-Za-z]+)"/g, /__MSG_([A-Za-z]+)__/g];
-const files = readdirSync(root).filter((name) => /\.(?:html|js)$/.test(name) || name === "manifest.json");
+const patterns = [
+  /\bt\(\s*"([A-Za-z]+)"/g,
+  /\bdata-i18n(?:-label)?="([A-Za-z]+)"/g,
+  /__MSG_([A-Za-z]+)__/g,
+];
+const files = readdirSync(root).filter(
+  (name) => /\.(?:html|js)$/.test(name) || name === "manifest.json",
+);
 const used = new Map();
 for (const file of files) {
   const source = text(file);
@@ -44,7 +51,9 @@ for (const [key, file] of used) {
 }
 for (const key of enKeys) {
   if (!used.has(key)) {
-    problems.push(`the message "${key}" is used nowhere; remove it from both languages`);
+    problems.push(
+      `the message "${key}" is used nowhere; remove it from both languages`,
+    );
   }
 }
 
@@ -54,4 +63,6 @@ if (problems.length > 0) {
   }
   process.exit(1);
 }
-console.log(`Both languages define the same ${enKeys.size} messages, and the ${files.length} files of the extension use every one.`);
+console.log(
+  `Both languages define the same ${enKeys.size} messages, and the ${files.length} files of the extension use every one.`,
+);

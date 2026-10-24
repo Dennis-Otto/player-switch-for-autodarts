@@ -22,9 +22,9 @@ import {
   type AuthError,
   type Fetch,
   type Identity,
-  type Session,
   readIdentity,
   refreshSession,
+  type Session,
   signIn,
 } from "./autodarts.ts";
 import type { RunCounts } from "./health.ts";
@@ -36,9 +36,9 @@ import {
   failRenewal,
   find,
   isAdding,
+  type Profile,
   park,
   parked,
-  type Profile,
   type State,
   startAdding,
   stash,
@@ -93,7 +93,9 @@ async function attempt(request: Promise<Session>): Promise<Renewal | null> {
   } catch (error) {
     // A problem that may pass is reported as such; a refusal falls through so the
     // next way of signing in can be tried.
-    return (error as AuthError).kind === "unreachable" ? { kind: "unreachable" } : null;
+    return (error as AuthError).kind === "unreachable"
+      ? { kind: "unreachable" }
+      : null;
   }
 }
 
@@ -110,7 +112,11 @@ async function renew(deps: Deps, profile: Profile): Promise<Renewal> {
   }
   if (profile.credentials !== null) {
     const result = await attempt(
-      signIn(deps.fetcher, profile.credentials.username, profile.credentials.password),
+      signIn(
+        deps.fetcher,
+        profile.credentials.username,
+        profile.credentials.password,
+      ),
     );
     if (result !== null) {
       return result;
@@ -157,7 +163,10 @@ export function readView(deps: Deps): Promise<View> {
  * Changes the saved accounts without the page or the network, such as remembering a
  * password or removing an account.
  */
-export function edit(deps: Deps, change: (state: State) => State): Promise<State> {
+export function edit(
+  deps: Deps,
+  change: (state: State) => State,
+): Promise<State> {
   return deps.queue(async () => commit(deps, change(await deps.store.load())));
 }
 
@@ -182,7 +191,11 @@ export function adoptCurrentSession(deps: Deps): Promise<State> {
  * it is rotates the token, the fresh token is written straight back. A session that
  * Autodarts turns away leaves the page; `identity` is then null.
  */
-async function claim(deps: Deps, loaded: State, token: string): Promise<{ state: State; identity: Identity | null }> {
+async function claim(
+  deps: Deps,
+  loaded: State,
+  token: string,
+): Promise<{ state: State; identity: Identity | null }> {
   let session: Session;
   try {
     session = await refreshSession(deps.fetcher, token);
@@ -200,7 +213,10 @@ async function claim(deps: Deps, loaded: State, token: string): Promise<{ state:
   }
   // The page's token is spent now: keep the fresh one before the page can fail.
   const identity = readIdentity(session.accessToken);
-  const state = await commit(deps, park(loaded, identity, session.refreshToken, deps.now()));
+  const state = await commit(
+    deps,
+    park(loaded, identity, session.refreshToken, deps.now()),
+  );
   await deps.page.writeToken(session.refreshToken);
   return { state: await commit(deps, activate(state, identity.id)), identity };
 }
@@ -226,11 +242,20 @@ export type PickUp =
  * started with, since a token sent a second time ends the session, and answers false
  * while a match runs, which saving the session would end with a reload.
  */
-export function adoptNewSignIn(deps: Deps, ready: () => Promise<boolean> = () => Promise.resolve(true)): Promise<PickUp> {
+export function adoptNewSignIn(
+  deps: Deps,
+  ready: () => Promise<boolean> = () => Promise.resolve(true),
+): Promise<PickUp> {
   return deps.queue(async (): Promise<PickUp> => {
     const state = await deps.store.load();
     if (!isAdding(state, deps.now())) {
-      return { kind: "idle", state: state.addingUntil === null ? state : await commit(deps, stopAdding(state)) };
+      return {
+        kind: "idle",
+        state:
+          state.addingUntil === null
+            ? state
+            : await commit(deps, stopAdding(state)),
+      };
     }
     if (!(await ready())) {
       return { kind: "waiting", state };
@@ -300,11 +325,18 @@ async function bringOn(deps: Deps, id: string): Promise<SwitchResult> {
     return { state, ok: false, reason: "unreachable" };
   }
   if (renewal.kind === "rejected") {
-    return { state: await commit(deps, endSession(state, id)), ok: false, reason: "signin" };
+    return {
+      state: await commit(deps, endSession(state, id)),
+      ok: false,
+      reason: "signin",
+    };
   }
   // The old token is spent now: keep the fresh one before the page can fail.
   const identity = readIdentity(renewal.session.accessToken);
-  state = await commit(deps, park(state, identity, renewal.session.refreshToken, deps.now()));
+  state = await commit(
+    deps,
+    park(state, identity, renewal.session.refreshToken, deps.now()),
+  );
   if (outgoing !== null && state.activeId !== null) {
     state = stash(state, state.activeId, outgoing, deps.now());
   }
@@ -326,10 +358,16 @@ async function signOut(deps: Deps): Promise<State> {
   const outgoing = await deps.page.readToken();
   if (outgoing !== null && state.activeId !== null) {
     // Keep the session before the page lets go of it.
-    state = await commit(deps, stash(state, state.activeId, outgoing, deps.now()));
+    state = await commit(
+      deps,
+      stash(state, state.activeId, outgoing, deps.now()),
+    );
   }
   await deps.page.clearToken();
-  return commit(deps, startAdding(deactivate(state), deps.now() + ADD_WINDOW_MS));
+  return commit(
+    deps,
+    startAdding(deactivate(state), deps.now() + ADD_WINDOW_MS),
+  );
 }
 
 /** How a renewal of the parked sessions ended: the accounts, and how each one went. */
@@ -351,7 +389,12 @@ type Outcome = keyof RunCounts | "skipped";
  * service worker whether to try again soon and whether Autodarts turned everyone away.
  */
 export async function refreshParked(deps: Deps): Promise<RefreshRun> {
-  const run: RefreshRun = { state: await deps.queue(() => deps.store.load()), renewed: 0, rejected: 0, unreachable: 0 };
+  const run: RefreshRun = {
+    state: await deps.queue(() => deps.store.load()),
+    renewed: 0,
+    rejected: 0,
+    unreachable: 0,
+  };
   for (const { id } of parked(run.state)) {
     const { state, outcome } = await deps.queue(() => refreshOne(deps, id));
     run.state = state;
@@ -362,7 +405,10 @@ export async function refreshParked(deps: Deps): Promise<RefreshRun> {
   return run;
 }
 
-async function refreshOne(deps: Deps, id: string): Promise<{ state: State; outcome: Outcome }> {
+async function refreshOne(
+  deps: Deps,
+  id: string,
+): Promise<{ state: State; outcome: Outcome }> {
   const state = await deps.store.load();
   // A switch may have run since the list was made: renew only what is still parked.
   const profile = parked(state).find((candidate) => candidate.id === id);
@@ -371,12 +417,24 @@ async function refreshOne(deps: Deps, id: string): Promise<{ state: State; outco
   }
   const renewal = await renew(deps, profile);
   if (renewal.kind === "ok") {
-    return { state: await commit(deps, stash(state, id, renewal.session.refreshToken, deps.now())), outcome: "renewed" };
+    return {
+      state: await commit(
+        deps,
+        stash(state, id, renewal.session.refreshToken, deps.now()),
+      ),
+      outcome: "renewed",
+    };
   }
   if (renewal.kind === "rejected") {
-    return { state: await commit(deps, endSession(state, id)), outcome: "rejected" };
+    return {
+      state: await commit(deps, endSession(state, id)),
+      outcome: "rejected",
+    };
   }
   // The session stays for the next try, and the account shows since when renewing fails.
   const failing = failRenewal(state, id, deps.now());
-  return { state: failing === state ? state : await commit(deps, failing), outcome: "unreachable" };
+  return {
+    state: failing === state ? state : await commit(deps, failing),
+    outcome: "unreachable",
+  };
 }

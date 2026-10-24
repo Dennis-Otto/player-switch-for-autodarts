@@ -5,7 +5,8 @@
 import { failingSince, renewedAgo } from "./lib/health.js";
 import { initialOf, tileForKey } from "./lib/page.js";
 
-export const t = (key, substitution) => chrome.i18n.getMessage(key, substitution);
+export const t = (key, substitution) =>
+  chrome.i18n.getMessage(key, substitution);
 // The language of the texts that show, so that names and times read the same: the
 // browser may run in a language the extension has no texts for.
 const language = t("locale");
@@ -78,7 +79,8 @@ function confirmMatch() {
 }
 
 // The controls that send a request to the service worker.
-const REQUEST_CONTROLS = ".tile, .toggle-remember, .remove, .remember [type=submit], #adopt, #add, #open-page, #stop-adding";
+const REQUEST_CONTROLS =
+  ".tile, .toggle-remember, .remove, .remember [type=submit], #adopt, #add, #open-page, #stop-adding";
 
 /** Sets an ARIA state that is true or absent. */
 function mark(element, attribute, on) {
@@ -100,7 +102,9 @@ function avatarOf(profile, image) {
   }
   image.src = profile.picture;
   // A picture that doesn't load shows the initial as well.
-  image.addEventListener("error", () => image.replaceWith(initial), { once: true });
+  image.addEventListener("error", () => image.replaceWith(initial), {
+    once: true,
+  });
 }
 
 /**
@@ -194,7 +198,12 @@ export function mountPlayers({ numbered = false, onRender = () => {} } = {}) {
     } else if (reply.error !== undefined) {
       showStatus(t("error"), true);
     } else if (reply.ok === false) {
-      showStatus(reply.reason === "unreachable" ? t("unreachable") : (signInHint ?? t("error")), true);
+      showStatus(
+        reply.reason === "unreachable"
+          ? t("unreachable")
+          : (signInHint ?? t("error")),
+        true,
+      );
     } else if (typeof reply.saved === "string") {
       // A new account signed in before the page could tell; it was saved just now.
       showStatus(t("savedAccount", reply.saved));
@@ -219,7 +228,12 @@ export function mountPlayers({ numbered = false, onRender = () => {} } = {}) {
     unsaved.hidden = !view.unsaved;
     adding.hidden = view.adding !== true;
     updateHint.hidden = view.updateHint !== true;
-    if (view.profiles.length === 0 && !view.unsaved && !view.adding && !statusBar.classList.contains("is-error")) {
+    if (
+      view.profiles.length === 0 &&
+      !view.unsaved &&
+      !view.adding &&
+      !statusBar.classList.contains("is-error")
+    ) {
       showStatus(t("empty"));
     }
     onRender();
@@ -261,12 +275,18 @@ export function mountPlayers({ numbered = false, onRender = () => {} } = {}) {
     // when it fails, while the extension keeps trying.
     if (profile.renewedAt !== null) {
       const renewed = node.querySelector(".renewed");
-      renewed.textContent = t("renewed", renewedAgo(profile.renewedAt, Date.now(), language));
+      renewed.textContent = t(
+        "renewed",
+        renewedAgo(profile.renewedAt, Date.now(), language),
+      );
       renewed.hidden = false;
     }
     if (profile.renewalFailingSince !== null) {
       const failing = node.querySelector(".renewal-failing");
-      failing.textContent = t("renewalFailing", failingSince(profile.renewalFailingSince, language));
+      failing.textContent = t(
+        "renewalFailing",
+        failingSince(profile.renewalFailingSince, language),
+      );
       failing.hidden = false;
     }
 
@@ -280,7 +300,9 @@ export function mountPlayers({ numbered = false, onRender = () => {} } = {}) {
 
     const form = node.querySelector(".remember");
     const toggle = node.querySelector(".toggle-remember");
-    toggle.textContent = profile.remembersPassword ? t("forgetPassword") : t("rememberPassword");
+    toggle.textContent = profile.remembersPassword
+      ? t("forgetPassword")
+      : t("rememberPassword");
     toggle.addEventListener("click", () => {
       if (busy) {
         return;
@@ -370,7 +392,14 @@ export function mountPlayers({ numbered = false, onRender = () => {} } = {}) {
     document.addEventListener("keydown", (event) => {
       // A key is a player only outside the forms, the open dialogs and the manage mode.
       const typing = event.target instanceof HTMLInputElement;
-      if (busy || managing || typing || event.altKey || event.ctrlKey || event.metaKey) {
+      if (
+        busy ||
+        managing ||
+        typing ||
+        event.altKey ||
+        event.ctrlKey ||
+        event.metaKey
+      ) {
         return;
       }
       if (document.querySelector("dialog[open]") !== null) {

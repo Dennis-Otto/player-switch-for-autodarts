@@ -3,215 +3,221 @@
 @import url("popup.css");
 
 html {
-  /* The frame stays see-through around the panel; the body dims the page. */
-  background: transparent;
+    /* The frame stays see-through around the panel; the body dims the page. */
+    background: transparent;
 }
 
 body {
-  display: grid;
-  place-items: center;
-  width: auto;
-  min-height: 100vh;
-  min-height: 100dvh;
-  padding: 24px max(16px, env(safe-area-inset-right)) 24px max(16px, env(safe-area-inset-left));
-  background: rgb(8 10 16 / 0.62);
-  font-size: 16px;
+    display: grid;
+    place-items: center;
+    width: auto;
+    min-height: 100vh;
+    /* biome-ignore lint/suspicious/noDuplicateProperties: 100vh is the fallback for a browser without the dvh unit. */
+    min-height: 100dvh;
+    padding: 24px max(16px, env(safe-area-inset-right)) 24px
+        max(16px, env(safe-area-inset-left));
+    background: rgb(8 10 16 / 0.62);
+    font-size: 16px;
 }
 
 .panel {
-  width: min(880px, 100%);
-  max-height: calc(100dvh - 48px);
-  overflow: auto;
-  padding: 24px;
-  border-radius: 22px;
-  background: var(--bg);
-  box-shadow: 0 24px 64px rgb(0 0 0 / 0.35);
+    width: min(880px, 100%);
+    max-height: calc(100dvh - 48px);
+    overflow: auto;
+    padding: 24px;
+    border-radius: 22px;
+    background: var(--bg);
+    box-shadow: 0 24px 64px rgb(0 0 0 / 0.35);
 }
 
 header {
-  align-items: center;
-  margin-bottom: 18px;
+    align-items: center;
+    margin-bottom: 18px;
 }
 
 h1 {
-  font-size: 24px;
+    font-size: 24px;
 }
 
 .header-actions {
-  display: flex;
-  align-items: center;
-  gap: 12px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
 }
 
 .link {
-  font-size: 15px;
-  padding: 8px;
+    font-size: 15px;
+    padding: 8px;
 }
 
 .close {
-  display: grid;
-  place-items: center;
-  width: 48px;
-  height: 48px;
-  border: 1px solid var(--line);
-  border-radius: 50%;
-  background: var(--card);
-  color: var(--fg);
-  cursor: pointer;
+    display: grid;
+    place-items: center;
+    width: 48px;
+    height: 48px;
+    border: 1px solid var(--line);
+    border-radius: 50%;
+    background: var(--card);
+    color: var(--fg);
+    cursor: pointer;
 }
 
 .close:hover {
-  border-color: var(--accent);
-  color: var(--accent);
+    border-color: var(--accent);
+    color: var(--accent);
 }
 
 #status {
-  font-size: 15px;
+    font-size: 15px;
 }
 
 #profiles {
-  grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
-  gap: 14px;
+    grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+    gap: 14px;
 }
 
 .profile {
-  border-radius: 18px;
+    border-radius: 18px;
 }
 
 .tile {
-  position: relative;
-  flex-direction: column;
-  justify-content: center;
-  gap: 10px;
-  min-height: 190px;
-  padding: 22px 14px 18px;
-  text-align: center;
-  touch-action: manipulation;
+    position: relative;
+    flex-direction: column;
+    justify-content: center;
+    gap: 10px;
+    min-height: 190px;
+    padding: 22px 14px 18px;
+    text-align: center;
+    touch-action: manipulation;
 }
 
 .avatar {
-  width: 84px;
-  height: 84px;
+    width: 84px;
+    height: 84px;
 }
 
 .avatar.initial {
-  font-size: 34px;
+    font-size: 34px;
 }
 
 .names {
-  flex: none;
-  align-items: center;
-  width: 100%;
+    flex: none;
+    align-items: center;
+    width: 100%;
 }
 
 .name {
-  max-width: 100%;
-  font-size: 18px;
+    max-width: 100%;
+    font-size: 18px;
 }
 
 .username {
-  max-width: 100%;
-  font-size: 13px;
+    max-width: 100%;
+    font-size: 13px;
 }
 
 .chip {
-  font-size: 12px;
+    font-size: 12px;
 }
 
 .key {
-  position: absolute;
-  top: 10px;
-  left: 12px;
-  min-width: 26px;
-  padding: 2px 7px;
-  border: 1px solid var(--line);
-  border-radius: 7px;
-  background: var(--bg);
-  color: var(--muted);
-  font: 600 13px/1.4 ui-monospace, "Cascadia Mono", "Segoe UI Mono", monospace;
+    position: absolute;
+    top: 10px;
+    left: 12px;
+    min-width: 26px;
+    padding: 2px 7px;
+    border: 1px solid var(--line);
+    border-radius: 7px;
+    background: var(--bg);
+    color: var(--muted);
+    font:
+        600 13px / 1.4 ui-monospace,
+        "Cascadia Mono",
+        "Segoe UI Mono",
+        monospace;
 }
 
 .menu {
-  padding: 12px 14px;
+    padding: 12px 14px;
 }
 
 .actions {
-  flex-wrap: wrap;
+    flex-wrap: wrap;
 }
 
 input {
-  padding: 12px;
-  font-size: 16px;
+    padding: 12px;
+    font-size: 16px;
 }
 
 .primary {
-  padding: 12px 18px;
-  font-size: 16px;
+    padding: 12px 18px;
+    font-size: 16px;
 }
 
 .ghost {
-  margin-top: 16px;
-  padding: 16px;
-  font-size: 16px;
+    margin-top: 16px;
+    padding: 16px;
+    font-size: 16px;
 }
 
 #unsaved {
-  margin-top: 16px;
+    margin-top: 16px;
 }
 
 .waiting {
-  font-size: 15px;
+    font-size: 15px;
 }
 
 #unsaved p {
-  font-size: 15px;
+    font-size: 15px;
 }
 
 #keys {
-  margin-top: 16px;
-  text-align: center;
+    margin-top: 16px;
+    text-align: center;
 }
 
 /* A low screen, such as a tablet across: smaller tiles, so more of them fit. */
 @media (max-height: 600px) {
-  body {
-    padding-top: 12px;
-    padding-bottom: 12px;
-  }
+    body {
+        padding-top: 12px;
+        padding-bottom: 12px;
+    }
 
-  .panel {
-    max-height: calc(100dvh - 24px);
-    padding: 18px;
-  }
+    .panel {
+        max-height: calc(100dvh - 24px);
+        padding: 18px;
+    }
 
-  #profiles {
-    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
-  }
+    #profiles {
+        grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    }
 
-  .tile {
-    min-height: 150px;
-    padding: 16px 12px 14px;
-  }
+    .tile {
+        min-height: 150px;
+        padding: 16px 12px 14px;
+    }
 
-  .avatar {
-    width: 64px;
-    height: 64px;
-  }
+    .avatar {
+        width: 64px;
+        height: 64px;
+    }
 }
 
 /* Without a keyboard, as on a touch screen, the keys are of no use. */
 @media (hover: none) and (pointer: coarse) {
-  .key,
-  #keys {
-    display: none;
-  }
+    .key,
+    #keys {
+        display: none;
+    }
 }
 
 dialog.confirm {
-  max-width: 440px;
-  padding: 24px;
+    max-width: 440px;
+    padding: 24px;
 }
 
 dialog.confirm h2 {
-  font-size: 20px;
+    font-size: 20px;
 }

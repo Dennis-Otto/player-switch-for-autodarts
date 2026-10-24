@@ -5,7 +5,8 @@
  */
 
 /** The repository of the extension, where its issues and bug form are. */
-export const REPOSITORY = "https://github.com/Dennis-Otto/player-switch-for-autodarts";
+export const REPOSITORY =
+  "https://github.com/Dennis-Otto/player-switch-for-autodarts";
 
 /**
  * Whether the welcome page opens for this reason of `chrome.runtime.onInstalled`: once,
@@ -29,7 +30,10 @@ const GREASE = /not.a.brand/i;
  * own brand before that of Chromium, and, where the browser lists no brands, the version
  * of Chrome in its user agent. Nothing else of the browser goes into the report.
  */
-export function browserName(brands: readonly Brand[] | undefined, userAgent: string): string {
+export function browserName(
+  brands: readonly Brand[] | undefined,
+  userAgent: string,
+): string {
   const known = (brands ?? []).filter(({ brand }) => !GREASE.test(brand));
   const named = known.find(({ brand }) => brand !== "Chromium") ?? known[0];
   if (named !== undefined) {
@@ -44,6 +48,10 @@ export function browserName(brands: readonly Brand[] | undefined, userAgent: str
  * browser, and with nothing else: no account, no address and no log.
  */
 export function reportUrl(version: string, browser: string): string {
-  const query = new URLSearchParams({ template: "bug_report.yml", version, browser });
+  const query = new URLSearchParams({
+    template: "bug_report.yml",
+    version,
+    browser,
+  });
   return `${REPOSITORY}/issues/new?${query.toString()}`;
 }

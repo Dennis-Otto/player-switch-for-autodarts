@@ -9,13 +9,21 @@
 import type { State } from "./state.ts";
 
 /** The origins of Autodarts Play, where the extension runs; the manifest lists the same. */
-export const PLAY_ORIGINS: readonly string[] = ["https://play.autodarts.com", "https://play.autodarts.io"];
+export const PLAY_ORIGINS: readonly string[] = [
+  "https://play.autodarts.com",
+  "https://play.autodarts.io",
+];
 
 /** The key under which the extension keeps the settings of the page in its storage. */
 export const SETTINGS_KEY = "pageSettings";
 
 /** The corners of the page where the button can sit, the default first. */
-export const CORNERS = ["bottom-right", "bottom-left", "top-right", "top-left"] as const;
+export const CORNERS = [
+  "bottom-right",
+  "bottom-left",
+  "top-right",
+  "top-left",
+] as const;
 
 export type Corner = (typeof CORNERS)[number];
 
@@ -28,7 +36,10 @@ export interface PageSettings {
 }
 
 /** The button shows, at the bottom right, until a person chooses otherwise. */
-export const DEFAULT_SETTINGS: PageSettings = { showButton: true, corner: CORNERS[0] };
+export const DEFAULT_SETTINGS: PageSettings = {
+  showButton: true,
+  corner: CORNERS[0],
+};
 
 /** What the button in the page shows of the player: their picture or initial, and their name. */
 export interface ButtonPlayer {
@@ -58,7 +69,10 @@ export function parseSettings(stored: unknown): PageSettings {
   }
   const { showButton, corner } = stored as Record<string, unknown>;
   return {
-    showButton: typeof showButton === "boolean" ? showButton : DEFAULT_SETTINGS.showButton,
+    showButton:
+      typeof showButton === "boolean"
+        ? showButton
+        : DEFAULT_SETTINGS.showButton,
     corner: isCorner(corner) ? corner : DEFAULT_SETTINGS.corner,
   };
 }
@@ -68,19 +82,33 @@ export function parseSettings(stored: unknown): PageSettings {
  * or of the username when the name is empty, in capitals; a question mark when both
  * are empty. A character outside the basic plane, such as an emoji, stays whole.
  */
-export function initialOf(identity: { name: string; username: string }): string {
+export function initialOf(identity: {
+  name: string;
+  username: string;
+}): string {
   const source = identity.name.trim() || identity.username.trim();
   const [first] = source;
   return first === undefined ? "?" : first.toUpperCase();
 }
 
 /** What the button shows: the settings, and the account that plays, without its session. */
-export function toButtonView(state: State, storedSettings: unknown): ButtonView {
-  const active = state.profiles.find((profile) => profile.id === state.activeId);
+export function toButtonView(
+  state: State,
+  storedSettings: unknown,
+): ButtonView {
+  const active = state.profiles.find(
+    (profile) => profile.id === state.activeId,
+  );
   return {
     settings: parseSettings(storedSettings),
     player:
-      active === undefined ? null : { name: active.name, picture: active.picture, initial: initialOf(active) },
+      active === undefined
+        ? null
+        : {
+            name: active.name,
+            picture: active.picture,
+            initial: initialOf(active),
+          },
   };
 }
 
@@ -104,7 +132,11 @@ export function isPlayPage(url: string | undefined): boolean {
  */
 export function isMatchPage(url: string | undefined): boolean {
   const parsed = parse(url);
-  return parsed !== null && PLAY_ORIGINS.includes(parsed.origin) && /^\/matches\/[^/]+/.test(parsed.pathname);
+  return (
+    parsed !== null &&
+    PLAY_ORIGINS.includes(parsed.origin) &&
+    /^\/matches\/[^/]+/.test(parsed.pathname)
+  );
 }
 
 /**
@@ -112,7 +144,10 @@ export function isMatchPage(url: string | undefined): boolean {
  * page shows a match that runs, and the person hasn't confirmed yet that it may end.
  * Only a confirmation of `true` counts.
  */
-export function mustConfirm(url: string | undefined, confirmed: unknown): boolean {
+export function mustConfirm(
+  url: string | undefined,
+  confirmed: unknown,
+): boolean {
   return confirmed !== true && isMatchPage(url);
 }
 
