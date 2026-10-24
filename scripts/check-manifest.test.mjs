@@ -4,7 +4,14 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { test } from "node:test";
 
-import { CHROME_MIN, checkManifest, DESCRIPTION_MAX, NAME_MAX, pngSize, WHY } from "./check-manifest.mjs";
+import {
+  CHROME_MIN,
+  checkManifest,
+  DESCRIPTION_MAX,
+  NAME_MAX,
+  pngSize,
+  WHY,
+} from "./check-manifest.mjs";
 
 const POLICY =
   "default-src 'self'; script-src 'self'; object-src 'none'; img-src 'self' https: data:; connect-src https://api.example.com";
@@ -18,17 +25,30 @@ function manifest() {
     minimum_chrome_version: "140",
     homepage_url: "https://example.org/",
     icons: { 16: "icons/icon-16.png", 48: "icons/icon-48.png" },
-    content_scripts: [{ matches: ["https://play.autodarts.com/*"], js: ["content.js"] }],
-    web_accessible_resources: [{ resources: ["switcher.html"], matches: ["https://play.autodarts.com/*"] }],
+    content_scripts: [
+      { matches: ["https://play.autodarts.com/*"], js: ["content.js"] },
+    ],
+    web_accessible_resources: [
+      {
+        resources: ["switcher.html"],
+        matches: ["https://play.autodarts.com/*"],
+      },
+    ],
     permissions: ["storage", "alarms"],
-    host_permissions: ["https://play.autodarts.com/*", "https://api.example.com/*"],
+    host_permissions: [
+      "https://play.autodarts.com/*",
+      "https://api.example.com/*",
+    ],
     content_security_policy: { extension_pages: POLICY },
   };
 }
 
 const ALLOWED = {
   permissions: { storage: "the accounts", alarms: "the renewal" },
-  host_permissions: { "https://play.autodarts.com/*": "the page", "https://api.example.com/*": "the sign-in" },
+  host_permissions: {
+    "https://play.autodarts.com/*": "the page",
+    "https://api.example.com/*": "the sign-in",
+  },
   web_accessible_resources: { "switcher.html": "the switcher" },
 };
 
@@ -54,10 +74,18 @@ function check(changes = {}) {
     manifest: changes.manifest ?? manifest(),
     allowed: changes.allowed ?? ALLOWED,
     locales: changes.locales ?? {
-      en: { extName: { message: "Player Switch" }, extDescription: { message: "Switch players." } },
+      en: {
+        extName: { message: "Player Switch" },
+        extDescription: { message: "Switch players." },
+      },
     },
     listings: changes.listings ?? { "store/listing.en.md": LISTING },
-    imageSize: changes.imageSize ?? ((path) => ({ width: Number(/(\d+)/.exec(path)[1]), height: Number(/(\d+)/.exec(path)[1]) })),
+    imageSize:
+      changes.imageSize ??
+      ((path) => ({
+        width: Number(/(\d+)/.exec(path)[1]),
+        height: Number(/(\d+)/.exec(path)[1]),
+      })),
   });
 }
 
@@ -95,8 +123,14 @@ test("a new permission fails until the allowlist and the listings have it", () =
   added.permissions.push("tabs");
   const problems = check({ manifest: added });
   assert.equal(problems.length, 2, problems.join("\n"));
-  assert.match(problems[0], /asks for the permission tabs, which store\/permissions\.json doesn't allow/);
-  assert.match(problems[1], /store\/listing\.en\.md doesn't justify the permission tabs/);
+  assert.match(
+    problems[0],
+    /asks for the permission tabs, which store\/permissions\.json doesn't allow/,
+  );
+  assert.match(
+    problems[1],
+    /store\/listing\.en\.md doesn't justify the permission tabs/,
+  );
   // The explanation that the script prints with every failure says what an update with it does.
   assert.match(WHY, /disables an installed extension/);
 });
@@ -106,29 +140,59 @@ test("a permission that the manifest dropped is dropped from the allowlist and t
   dropped.permissions = ["storage"];
   const problems = check({ manifest: dropped });
   assert.equal(problems.length, 2, problems.join("\n"));
-  assert.match(problems[0], /allows the permission alarms, which extension\/manifest\.json doesn't ask for/);
-  assert.match(problems[1], /justifies the permission alarms, which extension\/manifest\.json doesn't ask for/);
+  assert.match(
+    problems[0],
+    /allows the permission alarms, which extension\/manifest\.json doesn't ask for/,
+  );
+  assert.match(
+    problems[1],
+    /justifies the permission alarms, which extension\/manifest\.json doesn't ask for/,
+  );
 });
 
 test("a new host fails, and a listing that names a host the manifest lacks fails", () => {
   const added = manifest();
   added.host_permissions.push("https://*/*");
   const problems = check({ manifest: added });
-  assert.ok(problems.some((problem) => /asks for the host https:\/\/\*\/\*/.test(problem)), problems.join("\n"));
+  assert.ok(
+    problems.some((problem) =>
+      /asks for the host https:\/\/\*\/\*/.test(problem),
+    ),
+    problems.join("\n"),
+  );
 
   for (const everywhere of ["<all_urls>", "*://*/*"]) {
     const wide = manifest();
     wide.host_permissions.push(everywhere);
     const found = check({ manifest: wide });
     const all = found.join("\n");
-    assert.ok(found.some((problem) => problem.includes(`asks for the host ${everywhere}`)), all);
-    assert.ok(found.some((problem) => problem.includes(`doesn't justify the access to ${everywhere}`)), all);
+    assert.ok(
+      found.some((problem) =>
+        problem.includes(`asks for the host ${everywhere}`),
+      ),
+      all,
+    );
+    assert.ok(
+      found.some((problem) =>
+        problem.includes(`doesn't justify the access to ${everywhere}`),
+      ),
+      all,
+    );
   }
 
-  const stale = LISTING.replace("• alarms", "• Host access to play.autodarts.io.\n• alarms");
-  findsOne(check({ listings: { "store/listing.en.md": stale } }), /justifies the access to play\.autodarts\.io/);
+  const stale = LISTING.replace(
+    "• alarms",
+    "• Host access to play.autodarts.io.\n• alarms",
+  );
+  findsOne(
+    check({ listings: { "store/listing.en.md": stale } }),
+    /justifies the access to play\.autodarts\.io/,
+  );
   const missing = LISTING.replace(" and api.example.com", "");
-  findsOne(check({ listings: { "store/listing.en.md": missing } }), /doesn't justify the access to api\.example\.com/);
+  findsOne(
+    check({ listings: { "store/listing.en.md": missing } }),
+    /doesn't justify the access to api\.example\.com/,
+  );
 });
 
 test("a new web-accessible page, or one open to another site or extension, fails", () => {
@@ -151,7 +215,10 @@ test("a new web-accessible page, or one open to another site or extension, fails
 test("a content script on another site or in the world of the page fails", () => {
   const elsewhere = manifest();
   elsewhere.content_scripts[0].matches.push("https://example.org/*");
-  findsOne(check({ manifest: elsewhere }), /runs content\.js on https:\/\/example\.org\/\*/);
+  findsOne(
+    check({ manifest: elsewhere }),
+    /runs content\.js on https:\/\/example\.org\/\*/,
+  );
 
   const main = manifest();
   main.content_scripts[0].world = "MAIN";
@@ -159,7 +226,13 @@ test("a content script on another site or in the world of the page fails", () =>
 });
 
 test("a key that opens the extension wider fails", () => {
-  for (const key of ["externally_connectable", "optional_permissions", "optional_host_permissions", "sandbox", "update_url"]) {
+  for (const key of [
+    "externally_connectable",
+    "optional_permissions",
+    "optional_host_permissions",
+    "sandbox",
+    "update_url",
+  ]) {
     const opened = { ...manifest(), [key]: {} };
     findsOne(check({ manifest: opened }), new RegExp(`declares ${key}, which`));
   }
@@ -168,19 +241,45 @@ test("a key that opens the extension wider fails", () => {
 test("the content security policy must be there, run only the own scripts and connect only to the hosts", () => {
   const none = manifest();
   delete none.content_security_policy;
-  findsOne(check({ manifest: none }), /has no content_security_policy\.extension_pages/);
+  findsOne(
+    check({ manifest: none }),
+    /has no content_security_policy\.extension_pages/,
+  );
 
   const policy = (text) => {
     const changed = manifest();
     changed.content_security_policy.extension_pages = text;
     return check({ manifest: changed });
   };
-  findsOne(policy(POLICY.replace("script-src 'self'", "script-src 'self' https://cdn.example.com")), /script-src 'self'/);
-  findsOne(policy(POLICY.replace("script-src 'self'; ", "")), /must say "script-src 'self'", not "script-src "/);
-  findsOne(policy(POLICY.replace("default-src 'self'", "default-src *")), /must say "default-src 'self'" or "default-src 'none'", not "default-src \*"/);
-  findsOne(policy(POLICY.replace("object-src 'none'", "object-src 'self'")), /object-src 'none'/);
-  findsOne(policy(`${POLICY} https://example.org`), /connect to https:\/\/example\.org, which is no host/);
-  findsOne(policy(POLICY.replace("; connect-src https://api.example.com", "")), /has no connect-src/);
+  findsOne(
+    policy(
+      POLICY.replace(
+        "script-src 'self'",
+        "script-src 'self' https://cdn.example.com",
+      ),
+    ),
+    /script-src 'self'/,
+  );
+  findsOne(
+    policy(POLICY.replace("script-src 'self'; ", "")),
+    /must say "script-src 'self'", not "script-src "/,
+  );
+  findsOne(
+    policy(POLICY.replace("default-src 'self'", "default-src *")),
+    /must say "default-src 'self'" or "default-src 'none'", not "default-src \*"/,
+  );
+  findsOne(
+    policy(POLICY.replace("object-src 'none'", "object-src 'self'")),
+    /object-src 'none'/,
+  );
+  findsOne(
+    policy(`${POLICY} https://example.org`),
+    /connect to https:\/\/example\.org, which is no host/,
+  );
+  findsOne(
+    policy(POLICY.replace("; connect-src https://api.example.com", "")),
+    /has no connect-src/,
+  );
   // Empty parts between the semicolons change nothing.
   assert.deepEqual(policy(`${POLICY};;`), []);
 });
@@ -201,37 +300,75 @@ test("the minimum version of Chrome and the homepage must be there", () => {
 
 test("an icon must be a PNG of the size the manifest declares", () => {
   findsOne(
-    check({ imageSize: (path) => (path.includes("48") ? { width: 48, height: 47 } : { width: 16, height: 16 }) }),
+    check({
+      imageSize: (path) =>
+        path.includes("48")
+          ? { width: 48, height: 47 }
+          : { width: 16, height: 16 },
+    }),
     /declares icons\/icon-48\.png as 48×48 pixels, but it has 48×47/,
   );
   findsOne(
-    check({ imageSize: (path) => (path.includes("48") ? null : { width: 16, height: 16 }) }),
+    check({
+      imageSize: (path) =>
+        path.includes("48") ? null : { width: 16, height: 16 },
+    }),
     /names the icon icons\/icon-48\.png, which is no PNG/,
   );
 });
 
 test("the name and the description must have a text in every language that fits the store", () => {
   const locales = (name, description) => ({
-    en: { extName: { message: "Player Switch" }, extDescription: { message: "Switch players." } },
-    de: { extName: { message: name }, extDescription: { message: description } },
+    en: {
+      extName: { message: "Player Switch" },
+      extDescription: { message: "Switch players." },
+    },
+    de: {
+      extName: { message: name },
+      extDescription: { message: description },
+    },
   });
-  findsOne(check({ locales: locales("x".repeat(NAME_MAX + 1), "kurz") }), /name .* has 76 characters in de/);
-  findsOne(check({ locales: locales("Name", "y".repeat(DESCRIPTION_MAX + 1)) }), /description .* has 133 characters in de/);
-  findsOne(check({ locales: locales("Name", "") }), /description of extension\/manifest\.json has no text in de/);
+  findsOne(
+    check({ locales: locales("x".repeat(NAME_MAX + 1), "kurz") }),
+    /name .* has 76 characters in de/,
+  );
+  findsOne(
+    check({ locales: locales("Name", "y".repeat(DESCRIPTION_MAX + 1)) }),
+    /description .* has 133 characters in de/,
+  );
+  findsOne(
+    check({ locales: locales("Name", "") }),
+    /description of extension\/manifest\.json has no text in de/,
+  );
   // A name without a message is taken as it is.
   const plain = { ...manifest(), name: "Player Switch" };
   assert.deepEqual(check({ manifest: plain }), []);
   const missing = { ...manifest(), name: undefined };
-  findsOne(check({ manifest: missing }), /name of extension\/manifest\.json has no text in en/);
+  findsOne(
+    check({ manifest: missing }),
+    /name of extension\/manifest\.json has no text in en/,
+  );
 });
 
 test("a listing needs a short description that fits the store and a section that justifies the permissions", () => {
-  const long = LISTING.replace("Switch players with one tap.", "z".repeat(DESCRIPTION_MAX + 1));
-  findsOne(check({ listings: { "store/listing.en.md": long } }), /short description of store\/listing\.en\.md has 133/);
+  const long = LISTING.replace(
+    "Switch players with one tap.",
+    "z".repeat(DESCRIPTION_MAX + 1),
+  );
+  findsOne(
+    check({ listings: { "store/listing.en.md": long } }),
+    /short description of store\/listing\.en\.md has 133/,
+  );
   const empty = LISTING.replace("Switch players with one tap.", "");
-  findsOne(check({ listings: { "store/listing.en.md": empty } }), /has no short description/);
+  findsOne(
+    check({ listings: { "store/listing.en.md": empty } }),
+    /has no short description/,
+  );
   const none = "# Listing\n\n## Short description\n\nShort.\n";
-  findsOne(check({ listings: { "store/listing.en.md": none } }), /has no section that justifies the permissions/);
+  findsOne(
+    check({ listings: { "store/listing.en.md": none } }),
+    /has no section that justifies the permissions/,
+  );
   // The section of the justifications may be the last one of the listing.
   const last = LISTING.replace("\n## Category\n", "");
   assert.deepEqual(check({ listings: { "store/listing.en.md": last } }), []);

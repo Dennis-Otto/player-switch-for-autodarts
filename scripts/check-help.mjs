@@ -8,7 +8,8 @@
 // of the extension. Run by scripts/check-project.sh; no dependencies.
 import { readFileSync } from "node:fs";
 
-const read = (path) => readFileSync(new URL(`../${path}`, import.meta.url), "utf8");
+const read = (path) =>
+  readFileSync(new URL(`../${path}`, import.meta.url), "utf8");
 
 // The messages that report a problem, a state that needs a tap, or a question before
 // something ends: each has an entry in the help.
@@ -109,11 +110,15 @@ const problems = [];
 
 const enMessages = JSON.parse(read("extension/_locales/en/messages.json"));
 for (const key of explained.filter((key) => plain.includes(key))) {
-  problems.push(`scripts/check-help.mjs lists "${key}" as explained and as plain; keep it in one list`);
+  problems.push(
+    `scripts/check-help.mjs lists "${key}" as explained and as plain; keep it in one list`,
+  );
 }
 for (const key of [...explained, ...plain]) {
   if (!(key in enMessages)) {
-    problems.push(`scripts/check-help.mjs lists "${key}", which no message defines; take it out`);
+    problems.push(
+      `scripts/check-help.mjs lists "${key}", which no message defines; take it out`,
+    );
   }
 }
 for (const key of Object.keys(enMessages)) {
@@ -138,12 +143,16 @@ function readable(markdown) {
 
 /** A pattern of the message, in which each placeholder such as $NAME$ is any text. */
 function pattern(message) {
-  const parts = message.split(/\$[A-Z_]+\$/).map((part) => part.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"));
+  const parts = message
+    .split(/\$[A-Z_]+\$/)
+    .map((part) => part.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"));
   return new RegExp(parts.join(".+?").replace(/\s+/g, " "));
 }
 
 if (site === undefined) {
-  problems.push("mkdocs.yml names no site_url, from which the addresses of the help are taken");
+  problems.push(
+    "mkdocs.yml names no site_url, from which the addresses of the help are taken",
+  );
 }
 for (const { code, page, url } of languages) {
   const messages = JSON.parse(read(`extension/_locales/${code}/messages.json`));
@@ -151,7 +160,9 @@ for (const { code, page, url } of languages) {
   try {
     text = readable(read(page));
   } catch {
-    problems.push(`${page} is missing; it explains the messages of the extension in this language`);
+    problems.push(
+      `${page} is missing; it explains the messages of the extension in this language`,
+    );
     continue;
   }
   for (const key of explained) {
@@ -163,7 +174,9 @@ for (const { code, page, url } of languages) {
     }
   }
   if (site !== undefined && messages.helpUrl?.message !== url) {
-    problems.push(`the message "helpUrl" of the language ${code} is "${messages.helpUrl?.message}"; it leads to the help, ${url}`);
+    problems.push(
+      `the message "helpUrl" of the language ${code} is "${messages.helpUrl?.message}"; it leads to the help, ${url}`,
+    );
   }
 }
 

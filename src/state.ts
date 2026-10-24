@@ -83,7 +83,9 @@ export interface StoredState extends State {
  * which `outdated` says that they are in the format of an earlier version, which the
  * next save brings up to date, or a value it doesn't know, which it must not save over.
  */
-export type Stored = { kind: "accounts"; state: State; outdated: boolean } | { kind: "unknown" };
+export type Stored =
+  | { kind: "accounts"; state: State; outdated: boolean }
+  | { kind: "unknown" };
 
 /**
  * Reads the stored value of the accounts. Nothing stored yet is no account; a value of
@@ -93,14 +95,22 @@ export function readStored(stored: unknown): Stored {
   if (stored === undefined) {
     return { kind: "accounts", state: EMPTY, outdated: false };
   }
-  if (typeof stored !== "object" || stored === null || !Array.isArray((stored as Record<string, unknown>).profiles)) {
+  if (
+    typeof stored !== "object" ||
+    stored === null ||
+    !Array.isArray((stored as Record<string, unknown>).profiles)
+  ) {
     return { kind: "unknown" };
   }
   const { version } = stored as Record<string, unknown>;
   if (version !== undefined && version !== STATE_VERSION) {
     return { kind: "unknown" };
   }
-  return { kind: "accounts", state: parseState(stored), outdated: version === undefined };
+  return {
+    kind: "accounts",
+    state: parseState(stored),
+    outdated: version === undefined,
+  };
 }
 
 /** What the extension stores of the accounts: the state, with the version of its format. */
@@ -127,9 +137,12 @@ export function parseState(stored: unknown): State {
     seen.add(profile.id);
     return [profile];
   });
-  const active = typeof activeId === "string" && parsed.some((profile) => profile.id === activeId);
+  const active =
+    typeof activeId === "string" &&
+    parsed.some((profile) => profile.id === activeId);
   // Adding an account ends once one plays, so a stored window beside a player is stale.
-  const adding = !active && typeof addingUntil === "number" && Number.isFinite(addingUntil);
+  const adding =
+    !active && typeof addingUntil === "number" && Number.isFinite(addingUntil);
   return {
     profiles: parsed,
     activeId: active ? (activeId as string) : null,
@@ -143,7 +156,12 @@ function parseProfile(entry: unknown): Profile | null {
   }
   const value = entry as Record<string, unknown>;
   const { id, username, name } = value;
-  if (typeof id !== "string" || id === "" || typeof username !== "string" || typeof name !== "string") {
+  if (
+    typeof id !== "string" ||
+    id === "" ||
+    typeof username !== "string" ||
+    typeof name !== "string"
+  ) {
     return null;
   }
   return {
@@ -151,10 +169,15 @@ function parseProfile(entry: unknown): Profile | null {
     username,
     name,
     picture: typeof value.picture === "string" ? value.picture : null,
-    token: typeof value.token === "string" && value.token !== "" ? value.token : null,
+    token:
+      typeof value.token === "string" && value.token !== ""
+        ? value.token
+        : null,
     needsSignIn: value.needsSignIn === true,
-    refreshedAt: typeof value.refreshedAt === "number" ? value.refreshedAt : null,
-    renewalFailedAt: typeof value.renewalFailedAt === "number" ? value.renewalFailedAt : null,
+    refreshedAt:
+      typeof value.refreshedAt === "number" ? value.refreshedAt : null,
+    renewalFailedAt:
+      typeof value.renewalFailedAt === "number" ? value.renewalFailedAt : null,
     credentials: parseCredentials(value.credentials),
   };
 }
@@ -164,7 +187,12 @@ function parseCredentials(value: unknown): Credentials | null {
     return null;
   }
   const { username, password } = value as Record<string, unknown>;
-  if (typeof username !== "string" || username === "" || typeof password !== "string" || password === "") {
+  if (
+    typeof username !== "string" ||
+    username === "" ||
+    typeof password !== "string" ||
+    password === ""
+  ) {
     return null;
   }
   return { username, password };
@@ -175,7 +203,9 @@ export function find(state: State, id: string): Profile | undefined {
 }
 
 function write(state: State, profile: Profile): State["profiles"] {
-  const others = state.profiles.filter((existing) => existing.id !== profile.id);
+  const others = state.profiles.filter(
+    (existing) => existing.id !== profile.id,
+  );
   return [...others, profile].sort(
     (a, b) => a.username.localeCompare(b.username) || a.id.localeCompare(b.id),
   );
@@ -195,7 +225,12 @@ function merge(state: State, identity: Identity): Profile {
 }
 
 /** Parks a renewed session with its account, which joins the extension if it is new. */
-export function park(state: State, identity: Identity, token: string, now: number): State {
+export function park(
+  state: State,
+  identity: Identity,
+  token: string,
+  now: number,
+): State {
   const profile = fresh(merge(state, identity), token, now);
   return {
     ...state,
@@ -205,7 +240,12 @@ export function park(state: State, identity: Identity, token: string, now: numbe
 }
 
 /** Parks a raw token the extension already holds, under an account it already knows. */
-export function stash(state: State, id: string, token: string, now: number): State {
+export function stash(
+  state: State,
+  id: string,
+  token: string,
+  now: number,
+): State {
   const profile = find(state, id);
   if (profile === undefined) {
     return state;
@@ -218,7 +258,13 @@ export function stash(state: State, id: string, token: string, now: number): Sta
 
 /** The account with a session that was just made, so its renewal works again. */
 function fresh(profile: Profile, token: string, now: number): Profile {
-  return { ...profile, token, needsSignIn: false, refreshedAt: now, renewalFailedAt: null };
+  return {
+    ...profile,
+    token,
+    needsSignIn: false,
+    refreshedAt: now,
+    renewalFailedAt: null,
+  };
 }
 
 /**
@@ -230,13 +276,25 @@ export function failRenewal(state: State, id: string, now: number): State {
   if (profile === undefined || profile.renewalFailedAt !== null) {
     return state;
   }
-  return { ...state, profiles: write(state, { ...profile, renewalFailedAt: now }) };
+  return {
+    ...state,
+    profiles: write(state, { ...profile, renewalFailedAt: now }),
+  };
 }
 
 /** Records the account, with no session of its own, as the one signed in on the page. */
 export function setActive(state: State, identity: Identity): State {
-  const profile: Profile = { ...merge(state, identity), token: null, needsSignIn: false, renewalFailedAt: null };
-  return { profiles: write(state, profile), activeId: identity.id, addingUntil: null };
+  const profile: Profile = {
+    ...merge(state, identity),
+    token: null,
+    needsSignIn: false,
+    renewalFailedAt: null,
+  };
+  return {
+    profiles: write(state, profile),
+    activeId: identity.id,
+    addingUntil: null,
+  };
 }
 
 /**
@@ -248,7 +306,12 @@ export function activate(state: State, id: string): State {
   if (profile === undefined) {
     return state;
   }
-  const playing: Profile = { ...profile, token: null, needsSignIn: false, renewalFailedAt: null };
+  const playing: Profile = {
+    ...profile,
+    token: null,
+    needsSignIn: false,
+    renewalFailedAt: null,
+  };
   return { profiles: write(state, playing), activeId: id, addingUntil: null };
 }
 
@@ -260,7 +323,13 @@ export function endSession(state: State, id: string): State {
   }
   return {
     ...state,
-    profiles: write(state, { ...profile, token: null, needsSignIn: true, refreshedAt: null, renewalFailedAt: null }),
+    profiles: write(state, {
+      ...profile,
+      token: null,
+      needsSignIn: true,
+      refreshedAt: null,
+      renewalFailedAt: null,
+    }),
     activeId: state.activeId === id ? null : state.activeId,
   };
 }
@@ -297,7 +366,11 @@ export function forget(state: State, id: string): State {
 }
 
 /** Keeps a sign-in for the account, used when a token no longer works. */
-export function rememberCredentials(state: State, id: string, credentials: Credentials): State {
+export function rememberCredentials(
+  state: State,
+  id: string,
+  credentials: Credentials,
+): State {
   const profile = find(state, id);
   if (profile === undefined) {
     return state;
@@ -311,15 +384,24 @@ export function forgetCredentials(state: State, id: string): State {
   if (profile === undefined) {
     return state;
   }
-  return { ...state, profiles: write(state, { ...profile, credentials: null }) };
+  return {
+    ...state,
+    profiles: write(state, { ...profile, credentials: null }),
+  };
 }
 
 /** The accounts whose parked session the extension renews by itself. */
 export function parked(state: State): Profile[] {
-  return state.profiles.filter((profile) => profile.token !== null && profile.id !== state.activeId);
+  return state.profiles.filter(
+    (profile) => profile.token !== null && profile.id !== state.activeId,
+  );
 }
 
-export function toView(state: State, pageHasSession: boolean, now: number): View {
+export function toView(
+  state: State,
+  pageHasSession: boolean,
+  now: number,
+): View {
   const renewing = new Set(parked(state).map((profile) => profile.id));
   return {
     profiles: state.profiles.map((profile) => ({
@@ -332,7 +414,9 @@ export function toView(state: State, pageHasSession: boolean, now: number): View
       active: profile.id === state.activeId,
       // The page renews the session of the account that plays; only a parked one is ours.
       renewedAt: renewing.has(profile.id) ? profile.refreshedAt : null,
-      renewalFailingSince: renewing.has(profile.id) ? profile.renewalFailedAt : null,
+      renewalFailingSince: renewing.has(profile.id)
+        ? profile.renewalFailedAt
+        : null,
     })),
     unsaved: pageHasSession && state.activeId === null,
     adding: isAdding(state, now),

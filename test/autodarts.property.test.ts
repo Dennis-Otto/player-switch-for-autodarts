@@ -45,22 +45,30 @@ const answerBody = fc.oneof(
 );
 
 function respond(code: number, body: string): Fetch {
-  return () => Promise.resolve(new Response(WITHOUT_BODY.has(code) ? null : body, { status: code }));
+  return () =>
+    Promise.resolve(
+      new Response(WITHOUT_BODY.has(code) ? null : body, { status: code }),
+    );
 }
 
 /** The text of the claims of an access token, as Autodarts writes it: base64url, unpadded or padded. */
 function encode(bytes: Uint8Array, padded: boolean): string {
   const payload = Buffer.from(bytes).toString("base64url");
-  return padded ? payload.padEnd(Math.ceil(payload.length / 4) * 4, "=") : payload;
+  return padded
+    ? payload.padEnd(Math.ceil(payload.length / 4) * 4, "=")
+    : payload;
 }
 
 function accessToken(claims: unknown, padded = false): string {
-  const part = (value: unknown) => encode(Buffer.from(JSON.stringify(value), "utf8"), padded);
+  const part = (value: unknown) =>
+    encode(Buffer.from(JSON.stringify(value), "utf8"), padded);
   return `${part({ alg: "none" })}.${part(claims)}.signature`;
 }
 
 /** What a session request ended in: the session, or the kind of its AuthError. */
-async function outcome(request: Promise<Session>): Promise<Session | AuthError["kind"]> {
+async function outcome(
+  request: Promise<Session>,
+): Promise<Session | AuthError["kind"]> {
   try {
     return await request;
   } catch (error) {
@@ -75,13 +83,17 @@ function assertReadable(identity: Identity): void {
     assert.notEqual(value, "");
     assert.equal(value, value.trim());
   }
-  assert.ok(identity.picture === null || identity.picture.startsWith("https://"));
+  assert.ok(
+    identity.picture === null || identity.picture.startsWith("https://"),
+  );
 }
 
 test("every answer is a session or an AuthError, and a refusal only for 400 and 401", async () => {
   await fc.assert(
     fc.asyncProperty(status, answerBody, async (code, body) => {
-      const result = await outcome(refreshSession(respond(code, body), "token"));
+      const result = await outcome(
+        refreshSession(respond(code, body), "token"),
+      );
       if (typeof result === "string") {
         assert.equal(result === "rejected", code === 400 || code === 401);
         return;
@@ -89,7 +101,10 @@ test("every answer is a session or an AuthError, and a refusal only for 400 and 
       // A session comes only from a successful answer that names both tokens.
       assert.ok(code >= 200 && code < 300);
       const data = JSON.parse(body) as Record<string, unknown>;
-      assert.deepEqual(result, { accessToken: data.access_token, refreshToken: data.refresh_token });
+      assert.deepEqual(result, {
+        accessToken: data.access_token,
+        refreshToken: data.refresh_token,
+      });
       assert.notEqual(result.accessToken, "");
       assert.notEqual(result.refreshToken, "");
     }),
@@ -99,14 +114,23 @@ test("every answer is a session or an AuthError, and a refusal only for 400 and 
 test("every successful answer with two tokens is a session, whatever else it carries", async () => {
   await fc.assert(
     fc.asyncProperty(
-      fc.integer({ min: 200, max: 299 }).filter((code) => !WITHOUT_BODY.has(code)),
+      fc
+        .integer({ min: 200, max: 299 })
+        .filter((code) => !WITHOUT_BODY.has(code)),
       filled,
       filled,
       fc.dictionary(text, fc.jsonValue()),
       async (code, access, refresh, extra) => {
-        const body = JSON.stringify({ ...extra, access_token: access, refresh_token: refresh });
+        const body = JSON.stringify({
+          ...extra,
+          access_token: access,
+          refresh_token: refresh,
+        });
         const session = await signIn(respond(code, body), "user", "password");
-        assert.deepEqual(session, { accessToken: access, refreshToken: refresh });
+        assert.deepEqual(session, {
+          accessToken: access,
+          refreshToken: refresh,
+        });
       },
     ),
   );
@@ -116,8 +140,14 @@ test("a service that can't be reached is never taken for a refusal", async () =>
   await fc.assert(
     fc.asyncProperty(fc.anything(), async (reason) => {
       const fetcher: Fetch = () => Promise.reject(reason);
-      assert.equal(await outcome(refreshSession(fetcher, "token")), "unreachable");
-      assert.equal(await outcome(signIn(fetcher, "user", "password")), "unreachable");
+      assert.equal(
+        await outcome(refreshSession(fetcher, "token")),
+        "unreachable",
+      );
+      assert.equal(
+        await outcome(signIn(fetcher, "user", "password")),
+        "unreachable",
+      );
       await revokeSession(fetcher, "token");
     }),
   );
@@ -126,9 +156,14 @@ test("a service that can't be reached is never taken for a refusal", async () =>
 test("every request carries exactly the token, username and password it is given", async () => {
   await fc.assert(
     fc.asyncProperty(text, text, text, async (token, username, password) => {
-      const sent: { url: string; method: string | undefined; body: unknown }[] = [];
+      const sent: { url: string; method: string | undefined; body: unknown }[] =
+        [];
       const fetcher: Fetch = (url, init) => {
-        sent.push({ url, method: init.method, body: JSON.parse(String(init.body)) });
+        sent.push({
+          url,
+          method: init.method,
+          body: JSON.parse(String(init.body)),
+        });
         return Promise.resolve(new Response(null, { status: 204 }));
       };
       await outcome(refreshSession(fetcher, token));
@@ -156,14 +191,21 @@ test("every request carries exactly the token, username and password it is given
 });
 
 test("readIdentity reads any token as an account or refuses it with an AuthError", () => {
-  const claimName = fc.constantFrom("sub", "preferred_username", "name", "picture");
+  const claimName = fc.constantFrom(
+    "sub",
+    "preferred_username",
+    "name",
+    "picture",
+  );
   const token = fc.oneof(
     text,
     fc.tuple(text, text, text).map((parts) => parts.join(".")),
     fc
       .tuple(fc.uint8Array(), fc.boolean())
       .map(([bytes, padded]) => `x.${encode(bytes, padded)}.y`),
-    fc.tuple(fc.jsonValue(), fc.boolean()).map(([claims, padded]) => accessToken(claims, padded)),
+    fc
+      .tuple(fc.jsonValue(), fc.boolean())
+      .map(([claims, padded]) => accessToken(claims, padded)),
     fc
       .tuple(fc.dictionary(claimName, fc.jsonValue()), fc.boolean())
       .map(([claims, padded]) => accessToken(claims, padded)),
@@ -174,7 +216,10 @@ test("readIdentity reads any token as an account or refuses it with an AuthError
       try {
         identity = readIdentity(value);
       } catch (error) {
-        assert.ok(error instanceof AuthError, `not an AuthError: ${String(error)}`);
+        assert.ok(
+          error instanceof AuthError,
+          `not an AuthError: ${String(error)}`,
+        );
         assert.equal(error.kind, "unreachable");
         return;
       }
@@ -185,7 +230,10 @@ test("readIdentity reads any token as an account or refuses it with an AuthError
 
 test("readIdentity names the account of the token, in any language", () => {
   const nonBlank = text.filter((value) => value.trim() !== "");
-  const picture = fc.oneof(text, fc.webUrl({ validSchemes: ["https", "http"] }));
+  const picture = fc.oneof(
+    text,
+    fc.webUrl({ validSchemes: ["https", "http"] }),
+  );
   const claims = fc.record(
     {
       sub: nonBlank,
@@ -199,13 +247,19 @@ test("readIdentity names the account of the token, in any language", () => {
     fc.property(claims, fc.boolean(), (value, padded) => {
       const identity = readIdentity(accessToken(value, padded));
       assertReadable(identity);
-      const trimmed = (claim: unknown): string => (typeof claim === "string" ? claim.trim() : "");
-      const username = trimmed(value.preferred_username) || trimmed(value.name) || value.sub.trim();
+      const trimmed = (claim: unknown): string =>
+        typeof claim === "string" ? claim.trim() : "";
+      const username =
+        trimmed(value.preferred_username) ||
+        trimmed(value.name) ||
+        value.sub.trim();
       assert.deepEqual(identity, {
         id: value.sub.trim(),
         username,
         name: trimmed(value.name) || username,
-        picture: trimmed(value.picture).startsWith("https://") ? trimmed(value.picture) : null,
+        picture: trimmed(value.picture).startsWith("https://")
+          ? trimmed(value.picture)
+          : null,
       });
     }),
   );

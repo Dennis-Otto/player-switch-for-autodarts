@@ -14,10 +14,10 @@ mkdir -p "$out"
 rm -f "$zip_path"
 
 if command -v zip >/dev/null 2>&1; then
-  (cd extension && zip -r -q "../$zip_path" . -x '*.map')
+  (cd extension && zip -r -q "../$zip_path" . -x '*.map' 'biome.jsonc')
 elif command -v powershell >/dev/null 2>&1; then
   powershell -NoProfile -Command \
-    "Compress-Archive -Path 'extension/*' -DestinationPath '$zip_path' -Force"
+    "Get-ChildItem -Path 'extension' -Exclude 'biome.jsonc' | Compress-Archive -DestinationPath '$zip_path' -Force"
   echo "Warning: built with PowerShell, which uses backslashes in the archive." >&2
   echo "The Chrome Web Store prefers forward slashes; install 'zip' (or use WSL or" >&2
   echo "the CI) for the upload archive if the store rejects this one." >&2

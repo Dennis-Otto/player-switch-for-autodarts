@@ -40,7 +40,12 @@ const ada: Identity = { id: "a", username: "ada", name: "Ada", picture: null };
 const bob: Identity = { id: "b", username: "bob", name: "Bob", picture: null };
 const cy: Identity = { id: "c", username: "cy", name: "Cy", picture: null };
 
-function deps(store: FakeStore, page: FakePage, fetcher: Deps["fetcher"], now = () => 1000): Deps {
+function deps(
+  store: FakeStore,
+  page: FakePage,
+  fetcher: Deps["fetcher"],
+  now = () => 1000,
+): Deps {
   return { store, page, fetcher, now, queue: createQueue() };
 }
 
@@ -50,7 +55,14 @@ const offline = () => Promise.resolve(jsonResponse({}, 503));
 test("switchTo brings a parked account onto the page", async () => {
   const store = new FakeStore(park(EMPTY, ada, "ta", 0));
   const page = new FakePage(null);
-  const result = await switchTo(deps(store, page, router({ refresh: () => Promise.resolve(sessionResponse("a", "fa")) })), "a");
+  const result = await switchTo(
+    deps(
+      store,
+      page,
+      router({ refresh: () => Promise.resolve(sessionResponse("a", "fa")) }),
+    ),
+    "a",
+  );
   assert.ok(result.ok);
   assert.equal(page.token, "fa");
   assert.equal(result.state.activeId, "a");
@@ -62,7 +74,14 @@ test("switchTo parks the account that was playing", async () => {
   state = setActive(state, bob);
   const store = new FakeStore(state);
   const page = new FakePage("pb");
-  const result = await switchTo(deps(store, page, router({ refresh: () => Promise.resolve(sessionResponse("a", "fa")) })), "a");
+  const result = await switchTo(
+    deps(
+      store,
+      page,
+      router({ refresh: () => Promise.resolve(sessionResponse("a", "fa")) }),
+    ),
+    "a",
+  );
   assert.equal(result.state.activeId, "a");
   assert.equal(find(result.state, "b")?.token, "pb");
   assert.equal(page.token, "fa");
@@ -77,15 +96,26 @@ test("switchTo to the account already playing does nothing", async () => {
 
 test("switchTo to an unknown account does nothing", async () => {
   const store = new FakeStore(EMPTY);
-  const result = await switchTo(deps(store, new FakePage(null), router()), "ghost");
+  const result = await switchTo(
+    deps(store, new FakePage(null), router()),
+    "ghost",
+  );
   assert.ok(result.ok);
   assert.equal(store.saves, 0);
 });
 
 test("switchTo falls back to the stored password when the token is dead", async () => {
-  const store = new FakeStore(rememberCredentials(park(EMPTY, ada, "bad", 0), "a", { username: "ada", password: "pw" }));
+  const store = new FakeStore(
+    rememberCredentials(park(EMPTY, ada, "bad", 0), "a", {
+      username: "ada",
+      password: "pw",
+    }),
+  );
   const page = new FakePage(null);
-  const fetcher = router({ refresh: rejected, login: () => Promise.resolve(sessionResponse("a", "fresh")) });
+  const fetcher = router({
+    refresh: rejected,
+    login: () => Promise.resolve(sessionResponse("a", "fresh")),
+  });
   const result = await switchTo(deps(store, page, fetcher), "a");
   assert.ok(result.ok);
   assert.equal(page.token, "fresh");
@@ -97,7 +127,9 @@ test("switchTo signs in with the stored password when there is no token", async 
   state = rememberCredentials(state, "a", { username: "ada", password: "pw" });
   const store = new FakeStore(state);
   const page = new FakePage("pb");
-  const fetcher = router({ login: () => Promise.resolve(sessionResponse("a", "fresh")) });
+  const fetcher = router({
+    login: () => Promise.resolve(sessionResponse("a", "fresh")),
+  });
   const result = await switchTo(deps(store, page, fetcher), "a");
   assert.ok(result.ok);
   assert.equal(page.token, "fresh");
@@ -107,22 +139,40 @@ test("switchTo signs in with the stored password when there is no token", async 
 test("switchTo reports a temporary problem and changes nothing", async () => {
   const store = new FakeStore(park(EMPTY, ada, "ta", 0));
   const page = new FakePage(null);
-  const result = await switchTo(deps(store, page, router({ refresh: offline })), "a");
+  const result = await switchTo(
+    deps(store, page, router({ refresh: offline })),
+    "a",
+  );
   assert.equal(result.ok, false);
   assert.equal(store.saves, 0);
   assert.equal(page.token, null);
 });
 
 test("switchTo reports when the password is also unreachable", async () => {
-  const store = new FakeStore(rememberCredentials(park(EMPTY, ada, "bad", 0), "a", { username: "ada", password: "pw" }));
-  const result = await switchTo(deps(store, new FakePage(null), router({ refresh: rejected, login: offline })), "a");
+  const store = new FakeStore(
+    rememberCredentials(park(EMPTY, ada, "bad", 0), "a", {
+      username: "ada",
+      password: "pw",
+    }),
+  );
+  const result = await switchTo(
+    deps(
+      store,
+      new FakePage(null),
+      router({ refresh: rejected, login: offline }),
+    ),
+    "a",
+  );
   assert.equal(result.ok, false);
   assert.equal(store.saves, 0);
 });
 
 test("switchTo marks the account when it has no way to sign in", async () => {
   const store = new FakeStore(park(EMPTY, ada, "ta", 0));
-  const result = await switchTo(deps(store, new FakePage(null), router({ refresh: rejected })), "a");
+  const result = await switchTo(
+    deps(store, new FakePage(null), router({ refresh: rejected })),
+    "a",
+  );
   assert.equal(result.ok, false);
   assert.equal(find(result.state, "a")?.needsSignIn, true);
 });
@@ -138,16 +188,26 @@ test("switchTo marks the account when it has no token and no password", async ()
 test("switchTo can't sign in when the stored password is refused", async () => {
   let state = setActive(park(EMPTY, bob, "tb", 0), bob);
   state = endSession(park(state, ada, "ta", 0), "a");
-  state = rememberCredentials(state, "a", { username: "ada", password: "wrong" });
+  state = rememberCredentials(state, "a", {
+    username: "ada",
+    password: "wrong",
+  });
   const store = new FakeStore(state);
-  const result = await switchTo(deps(store, new FakePage(null), router({ login: rejected })), "a");
+  const result = await switchTo(
+    deps(store, new FakePage(null), router({ login: rejected })),
+    "a",
+  );
   assert.equal(result.ok, false);
 });
 
 test("switchTo spends no token when the page is not there", async () => {
   const store = new FakeStore(park(EMPTY, ada, "ta", 0));
-  const fetcher = counting(router({ refresh: () => Promise.resolve(sessionResponse("a", "fa")) }));
-  await assert.rejects(switchTo(deps(store, new FakePage(null, ["read"]), fetcher), "a"));
+  const fetcher = counting(
+    router({ refresh: () => Promise.resolve(sessionResponse("a", "fa")) }),
+  );
+  await assert.rejects(
+    switchTo(deps(store, new FakePage(null, ["read"]), fetcher), "a"),
+  );
   assert.equal(fetcher.calls, 0);
   assert.equal(find(store.state, "a")?.token, "ta");
 });
@@ -155,7 +215,9 @@ test("switchTo spends no token when the page is not there", async () => {
 test("switchTo keeps the renewed token when the page can't take it", async () => {
   const store = new FakeStore(setActive(park(EMPTY, ada, "ta", 0), bob));
   const page = new FakePage("pb", ["write"]);
-  const fetcher = router({ refresh: () => Promise.resolve(sessionResponse("a", "fa")) });
+  const fetcher = router({
+    refresh: () => Promise.resolve(sessionResponse("a", "fa")),
+  });
   await assert.rejects(switchTo(deps(store, page, fetcher), "a"));
   assert.equal(find(store.state, "a")?.token, "fa");
   assert.equal(store.state.activeId, "b");
@@ -165,14 +227,18 @@ test("switchTo keeps the renewed token when the page can't take it", async () =>
 test("adoptCurrentSession keeps the renewed token when the page can't take it", async () => {
   const store = new FakeStore(EMPTY);
   const page = new FakePage("in-page", ["write"]);
-  const fetcher = router({ refresh: () => Promise.resolve(sessionResponse("a", "fresh")) });
+  const fetcher = router({
+    refresh: () => Promise.resolve(sessionResponse("a", "fresh")),
+  });
   await assert.rejects(adoptCurrentSession(deps(store, page, fetcher)));
   assert.equal(find(store.state, "a")?.token, "fresh");
 });
 
 test("signOutForNewAccount keeps the session when the page can't let go", async () => {
   const store = new FakeStore(setActive(EMPTY, ada));
-  await assert.rejects(signOutForNewAccount(deps(store, new FakePage("pa", ["clear"]), router())));
+  await assert.rejects(
+    signOutForNewAccount(deps(store, new FakePage("pa", ["clear"]), router())),
+  );
   assert.equal(find(store.state, "a")?.token, "pa");
   // The page still holds a session, so no new account is waited for.
   assert.equal(store.state.addingUntil, null);
@@ -181,7 +247,13 @@ test("signOutForNewAccount keeps the session when the page can't let go", async 
 test("adoptCurrentSession claims the session in the page and keeps it signed in", async () => {
   const store = new FakeStore(EMPTY);
   const page = new FakePage("in-page");
-  const state = await adoptCurrentSession(deps(store, page, router({ refresh: () => Promise.resolve(sessionResponse("a", "fresh")) })));
+  const state = await adoptCurrentSession(
+    deps(
+      store,
+      page,
+      router({ refresh: () => Promise.resolve(sessionResponse("a", "fresh")) }),
+    ),
+  );
   assert.equal(state.activeId, "a");
   assert.equal(page.token, "fresh");
   assert.equal(find(state, "a")?.token, null);
@@ -189,20 +261,32 @@ test("adoptCurrentSession claims the session in the page and keeps it signed in"
 
 test("adoptCurrentSession does nothing without a session in the page", async () => {
   const store = new FakeStore(setActive(EMPTY, ada));
-  const state = await adoptCurrentSession(deps(store, new FakePage(null), router()));
+  const state = await adoptCurrentSession(
+    deps(store, new FakePage(null), router()),
+  );
   assert.equal(state.activeId, null);
   assert.equal(store.saves, 1);
 });
 
 test("adoptCurrentSession drops a dead session", async () => {
   const page = new FakePage("dead");
-  const state = await adoptCurrentSession(deps(new FakeStore(EMPTY), page, router({ refresh: rejected })));
+  const state = await adoptCurrentSession(
+    deps(new FakeStore(EMPTY), page, router({ refresh: rejected })),
+  );
   assert.equal(state.activeId, null);
   assert.equal(page.clears, 1);
 });
 
 test("adoptCurrentSession passes a temporary problem on", async () => {
-  await assert.rejects(adoptCurrentSession(deps(new FakeStore(EMPTY), new FakePage("x"), router({ refresh: offline }))));
+  await assert.rejects(
+    adoptCurrentSession(
+      deps(
+        new FakeStore(EMPTY),
+        new FakePage("x"),
+        router({ refresh: offline }),
+      ),
+    ),
+  );
 });
 
 test("syncFromPage leaves everything alone while a session is in the page", async () => {
@@ -235,13 +319,17 @@ test("signOutForNewAccount parks the account that was playing", async () => {
 
 test("signOutForNewAccount clears an empty page without parking", async () => {
   const page = new FakePage(null);
-  const state = await signOutForNewAccount(deps(new FakeStore(EMPTY), page, router()));
+  const state = await signOutForNewAccount(
+    deps(new FakeStore(EMPTY), page, router()),
+  );
   assert.equal(state.activeId, null);
   assert.equal(page.clears, 1);
 });
 
 test("signOutForNewAccount waits ten minutes for the new account", async () => {
-  const state = await signOutForNewAccount(deps(new FakeStore(setActive(EMPTY, ada)), new FakePage("pa"), router()));
+  const state = await signOutForNewAccount(
+    deps(new FakeStore(setActive(EMPTY, ada)), new FakePage("pa"), router()),
+  );
   assert.equal(state.addingUntil, 1000 + ADD_WINDOW_MS);
   assert.equal(ADD_WINDOW_MS, 600_000);
 });
@@ -249,7 +337,9 @@ test("signOutForNewAccount waits ten minutes for the new account", async () => {
 test("adoptNewSignIn saves the session that the new account signs in with", async () => {
   const store = new FakeStore(park(EMPTY, bob, "tb", 0));
   const page = new FakePage("pb");
-  const fetcher = router({ refresh: () => Promise.resolve(sessionResponse("a", "fresh")) });
+  const fetcher = router({
+    refresh: () => Promise.resolve(sessionResponse("a", "fresh")),
+  });
   await signOutForNewAccount(deps(store, page, fetcher));
   // Ada signs in on the page that the extension signed out.
   page.token = "in-page";
@@ -266,8 +356,13 @@ test("adoptNewSignIn saves the session that the new account signs in with", asyn
 test("adoptNewSignIn saves only the first new sign-in", async () => {
   const store = new FakeStore(startAdding(EMPTY, 2000));
   const page = new FakePage("in-page");
-  const fetcher = counting(router({ refresh: () => Promise.resolve(sessionResponse("a", "fresh")) }));
-  assert.equal((await adoptNewSignIn(deps(store, page, fetcher))).kind, "saved");
+  const fetcher = counting(
+    router({ refresh: () => Promise.resolve(sessionResponse("a", "fresh")) }),
+  );
+  assert.equal(
+    (await adoptNewSignIn(deps(store, page, fetcher))).kind,
+    "saved",
+  );
   // Someone else signs in later on, while Ada is saved: that session stays unsaved.
   page.token = "someone-else";
   const later = await adoptNewSignIn(deps(store, page, fetcher));
@@ -288,7 +383,9 @@ test("adoptNewSignIn waits while the page has no session yet", async () => {
 
 test("adoptNewSignIn waits while the page can't be read", async () => {
   const store = new FakeStore(startAdding(EMPTY, 2000));
-  const result = await adoptNewSignIn(deps(store, new FakePage("in-page", ["read"]), router()));
+  const result = await adoptNewSignIn(
+    deps(store, new FakePage("in-page", ["read"]), router()),
+  );
   assert.equal(result.kind, "waiting");
   assert.equal(store.saves, 0);
 });
@@ -303,14 +400,19 @@ test("adoptNewSignIn never saves a sign-in after the window", async () => {
   assert.equal(page.token, "in-page");
   // The window is closed for good, so a clock set back can't open it again.
   assert.equal(store.state.addingUntil, null);
-  assert.equal((await adoptNewSignIn(deps(store, page, fetcher, () => 0))).kind, "idle");
+  assert.equal(
+    (await adoptNewSignIn(deps(store, page, fetcher, () => 0))).kind,
+    "idle",
+  );
   assert.equal(store.saves, 1);
 });
 
 test("adoptNewSignIn does nothing while no account is being added", async () => {
   const store = new FakeStore(EMPTY);
   const fetcher = counting(router());
-  const result = await adoptNewSignIn(deps(store, new FakePage("in-page"), fetcher));
+  const result = await adoptNewSignIn(
+    deps(store, new FakePage("in-page"), fetcher),
+  );
   assert.equal(result.kind, "idle");
   assert.equal(fetcher.calls, 0);
   assert.equal(store.saves, 0);
@@ -342,7 +444,9 @@ test("adoptNewSignIn waits while the page isn't ready, as during a match", async
   const store = new FakeStore(startAdding(EMPTY, 2000));
   const page = new FakePage("in-page");
   const fetcher = counting(router());
-  const result = await adoptNewSignIn(deps(store, page, fetcher), () => Promise.resolve(false));
+  const result = await adoptNewSignIn(deps(store, page, fetcher), () =>
+    Promise.resolve(false),
+  );
   assert.equal(result.kind, "waiting");
   assert.equal(fetcher.calls, 0);
   assert.equal(page.token, "in-page");
@@ -369,7 +473,9 @@ test("adoptNewSignIn keeps a session that the page renewed while it was read", a
 test("adoptNewSignIn keeps waiting while Autodarts can't be reached", async () => {
   const store = new FakeStore(startAdding(EMPTY, 2000));
   const page = new FakePage("in-page");
-  const result = await adoptNewSignIn(deps(store, page, router({ refresh: offline })));
+  const result = await adoptNewSignIn(
+    deps(store, page, router({ refresh: offline })),
+  );
   assert.equal(result.kind, "waiting");
   assert.equal(store.state.addingUntil, 2000);
   assert.equal(page.token, "in-page");
@@ -378,7 +484,9 @@ test("adoptNewSignIn keeps waiting while Autodarts can't be reached", async () =
 test("adoptNewSignIn drops a dead session and keeps waiting for the next sign-in", async () => {
   const store = new FakeStore(startAdding(EMPTY, 2000));
   const page = new FakePage("dead");
-  const result = await adoptNewSignIn(deps(store, page, router({ refresh: rejected })));
+  const result = await adoptNewSignIn(
+    deps(store, page, router({ refresh: rejected })),
+  );
   assert.equal(result.kind, "waiting");
   assert.equal(page.clears, 1);
   assert.equal(store.state.addingUntil, 2000);
@@ -387,7 +495,9 @@ test("adoptNewSignIn drops a dead session and keeps waiting for the next sign-in
 test("adoptNewSignIn keeps the renewed token when the page can't take it", async () => {
   const store = new FakeStore(startAdding(EMPTY, 2000));
   const page = new FakePage("in-page", ["write"]);
-  const fetcher = router({ refresh: () => Promise.resolve(sessionResponse("a", "fresh")) });
+  const fetcher = router({
+    refresh: () => Promise.resolve(sessionResponse("a", "fresh")),
+  });
   await assert.rejects(adoptNewSignIn(deps(store, page, fetcher)));
   assert.equal(find(store.state, "a")?.token, "fresh");
 });
@@ -403,14 +513,23 @@ test("startAddingAccount waits for a new account without signing anyone out", as
 
 test("stopAddingAccount no longer waits for a new account", async () => {
   const store = new FakeStore(startAdding(EMPTY, 2000));
-  const state = await stopAddingAccount(deps(store, new FakePage(null), router()));
+  const state = await stopAddingAccount(
+    deps(store, new FakePage(null), router()),
+  );
   assert.equal(state.addingUntil, null);
 });
 
 test("a switch to a saved account ends the adding", async () => {
   const store = new FakeStore(startAdding(park(EMPTY, ada, "ta", 0), 2000));
   const page = new FakePage(null);
-  const result = await switchTo(deps(store, page, router({ refresh: () => Promise.resolve(sessionResponse("a", "fa")) })), "a");
+  const result = await switchTo(
+    deps(
+      store,
+      page,
+      router({ refresh: () => Promise.resolve(sessionResponse("a", "fa")) }),
+    ),
+    "a",
+  );
   assert.ok(result.ok);
   assert.equal(result.state.addingUntil, null);
 });
@@ -425,7 +544,15 @@ test("signOutForNewAccount does not park a session it can't place", async () => 
 
 test("refreshParked renews a parked session", async () => {
   const store = new FakeStore(park(EMPTY, ada, "ta", 0));
-  const run = await refreshParked(deps(store, new FakePage(null), router({ refresh: () => Promise.resolve(sessionResponse("a", "rolled")) })));
+  const run = await refreshParked(
+    deps(
+      store,
+      new FakePage(null),
+      router({
+        refresh: () => Promise.resolve(sessionResponse("a", "rolled")),
+      }),
+    ),
+  );
   assert.equal(find(run.state, "a")?.token, "rolled");
   assert.equal(find(run.state, "a")?.refreshedAt, 1000);
   assert.deepEqual([run.renewed, run.rejected, run.unreachable], [1, 0, 0]);
@@ -433,7 +560,9 @@ test("refreshParked renews a parked session", async () => {
 
 test("refreshParked marks a parked account whose session died", async () => {
   const store = new FakeStore(park(EMPTY, ada, "ta", 0));
-  const run = await refreshParked(deps(store, new FakePage(null), router({ refresh: rejected })));
+  const run = await refreshParked(
+    deps(store, new FakePage(null), router({ refresh: rejected })),
+  );
   assert.equal(find(run.state, "a")?.needsSignIn, true);
   assert.equal(find(run.state, "a")?.token, null);
   assert.deepEqual([run.renewed, run.rejected, run.unreachable], [0, 1, 0]);
@@ -441,37 +570,69 @@ test("refreshParked marks a parked account whose session died", async () => {
 
 test("refreshParked counts every parked account that Autodarts turns away", async () => {
   const store = new FakeStore(park(park(EMPTY, ada, "ta", 0), bob, "tb", 0));
-  const run = await refreshParked(deps(store, new FakePage(null), router({ refresh: rejected })));
+  const run = await refreshParked(
+    deps(store, new FakePage(null), router({ refresh: rejected })),
+  );
   assert.deepEqual([run.renewed, run.rejected, run.unreachable], [0, 2, 0]);
-  assert.equal(run.state.profiles.every((profile) => profile.needsSignIn), true);
+  assert.equal(
+    run.state.profiles.every((profile) => profile.needsSignIn),
+    true,
+  );
 });
 
 test("refreshParked keeps a parked session on a temporary problem and marks since when renewing fails", async () => {
   const store = new FakeStore(park(EMPTY, ada, "ta", 0));
-  const run = await refreshParked(deps(store, new FakePage(null), router({ refresh: offline })));
+  const run = await refreshParked(
+    deps(store, new FakePage(null), router({ refresh: offline })),
+  );
   assert.equal(find(run.state, "a")?.token, "ta");
   assert.equal(find(run.state, "a")?.renewalFailedAt, 1000);
-  assert.equal(find(store.state, "a")?.renewalFailedAt, 1000, "the mark is saved");
+  assert.equal(
+    find(store.state, "a")?.renewalFailedAt,
+    1000,
+    "the mark is saved",
+  );
   assert.deepEqual([run.renewed, run.rejected, run.unreachable], [0, 0, 1]);
 });
 
 test("refreshParked keeps the time of the first failure of a row and clears it once renewing works", async () => {
   const store = new FakeStore(park(EMPTY, ada, "ta", 0));
-  await refreshParked(deps(store, new FakePage(null), router({ refresh: offline }), () => 1000));
+  await refreshParked(
+    deps(store, new FakePage(null), router({ refresh: offline }), () => 1000),
+  );
   const saves = store.saves;
-  const again = await refreshParked(deps(store, new FakePage(null), router({ refresh: offline }), () => 2000));
+  const again = await refreshParked(
+    deps(store, new FakePage(null), router({ refresh: offline }), () => 2000),
+  );
   assert.equal(find(again.state, "a")?.renewalFailedAt, 1000);
-  assert.equal(store.saves, saves, "a failure that is marked already saves nothing");
+  assert.equal(
+    store.saves,
+    saves,
+    "a failure that is marked already saves nothing",
+  );
   const back = await refreshParked(
-    deps(store, new FakePage(null), router({ refresh: () => Promise.resolve(sessionResponse("a", "rolled")) }), () => 3000),
+    deps(
+      store,
+      new FakePage(null),
+      router({
+        refresh: () => Promise.resolve(sessionResponse("a", "rolled")),
+      }),
+      () => 3000,
+    ),
   );
   assert.equal(find(back.state, "a")?.renewalFailedAt, null);
-  assert.deepEqual((await readView(deps(store, new FakePage(null), router()))).profiles[0]?.renewalFailingSince, null);
+  assert.deepEqual(
+    (await readView(deps(store, new FakePage(null), router()))).profiles[0]
+      ?.renewalFailingSince,
+    null,
+  );
 });
 
 test("the popup shows since when the renewal of a parked account fails", async () => {
   const store = new FakeStore(park(EMPTY, ada, "ta", 0));
-  await refreshParked(deps(store, new FakePage(null), router({ refresh: offline }), () => 1000));
+  await refreshParked(
+    deps(store, new FakePage(null), router({ refresh: offline }), () => 1000),
+  );
   const view = await readView(deps(store, new FakePage(null), router()));
   assert.equal(view.profiles[0]?.renewalFailingSince, 1000);
 });
@@ -523,20 +684,31 @@ test("readView shows the accounts and whether the page holds a session", async (
 
 test("readView says while an account is being added", async () => {
   const store = new FakeStore(startAdding(EMPTY, 2000));
-  assert.equal((await readView(deps(store, new FakePage(null), router()))).adding, true);
-  assert.equal((await readView(deps(store, new FakePage(null), router(), () => 2000))).adding, false);
+  assert.equal(
+    (await readView(deps(store, new FakePage(null), router()))).adding,
+    true,
+  );
+  assert.equal(
+    (await readView(deps(store, new FakePage(null), router(), () => 2000)))
+      .adding,
+    false,
+  );
 });
 
 test("readView counts a missing page as no session", async () => {
   const store = new FakeStore(EMPTY);
-  const view = await readView(deps(store, new FakePage(null, ["read"]), router()));
+  const view = await readView(
+    deps(store, new FakePage(null, ["read"]), router()),
+  );
   assert.equal(view.unsaved, false);
 });
 
 test("edit changes the saved accounts", async () => {
   const store = new FakeStore(park(EMPTY, ada, "ta", 0));
-  const state = await edit(deps(store, new FakePage(null), router()), (current) =>
-    rememberCredentials(current, "a", { username: "ada", password: "pw" }),
+  const state = await edit(
+    deps(store, new FakePage(null), router()),
+    (current) =>
+      rememberCredentials(current, "a", { username: "ada", password: "pw" }),
   );
   assert.equal(find(store.state, "a")?.credentials?.password, "pw");
   assert.equal(state, store.state);
@@ -546,9 +718,22 @@ test("edit changes the saved accounts", async () => {
  * A race on a shared display: Ada plays, Bob and Cy are parked, and each of them has
  * a working session at a fake Autodarts that rotates every token it renews.
  */
-function race(): { autodarts: FakeAutodarts; store: FakeStore; page: FakePage; deps: Deps } {
+function race(): {
+  autodarts: FakeAutodarts;
+  store: FakeStore;
+  page: FakePage;
+  deps: Deps;
+} {
   const autodarts = new FakeAutodarts();
-  const state = setActive(park(park(EMPTY, bob, autodarts.issue("b"), 0), cy, autodarts.issue("c"), 0), ada);
+  const state = setActive(
+    park(
+      park(EMPTY, bob, autodarts.issue("b"), 0),
+      cy,
+      autodarts.issue("c"),
+      0,
+    ),
+    ada,
+  );
   const store = new FakeStore(state);
   const page = new FakePage(autodarts.issue("a"));
   return { autodarts, store, page, deps: deps(store, page, autodarts.fetch) };
@@ -559,18 +744,34 @@ function race(): { autodarts: FakeAutodarts; store: FakeStore; page: FakePage; d
  * in the page for the account that plays and parked for every other one, and no token
  * was ever spent twice.
  */
-function assertEverySessionKept({ autodarts, store, page }: ReturnType<typeof race>): void {
+function assertEverySessionKept({
+  autodarts,
+  store,
+  page,
+}: ReturnType<typeof race>): void {
   assert.equal(autodarts.reuses, 0, "no token was spent twice");
   for (const profile of store.state.profiles) {
-    const kept = profile.id === store.state.activeId ? page.token : profile.token;
-    assert.equal(kept, autodarts.live.get(profile.id), `the session of ${profile.name} is kept`);
-    assert.equal(profile.needsSignIn, false, `${profile.name} needs no new sign-in`);
+    const kept =
+      profile.id === store.state.activeId ? page.token : profile.token;
+    assert.equal(
+      kept,
+      autodarts.live.get(profile.id),
+      `the session of ${profile.name} is kept`,
+    );
+    assert.equal(
+      profile.needsSignIn,
+      false,
+      `${profile.name} needs no new sign-in`,
+    );
   }
 }
 
 test("a double tap on a player renews its token once and keeps every session", async () => {
   const board = race();
-  const [first, second] = await Promise.all([switchTo(board.deps, "b"), switchTo(board.deps, "b")]);
+  const [first, second] = await Promise.all([
+    switchTo(board.deps, "b"),
+    switchTo(board.deps, "b"),
+  ]);
   assert.ok(first.ok);
   assert.ok(second.ok);
   assert.equal(board.autodarts.refreshes.length, 1);
@@ -597,12 +798,18 @@ test("a switch during the background renewal keeps every rotated token", async (
 
 test("a sign-out right after a switch parks the player who just came on", async () => {
   const board = race();
-  const [switched] = await Promise.all([switchTo(board.deps, "b"), signOutForNewAccount(board.deps)]);
+  const [switched] = await Promise.all([
+    switchTo(board.deps, "b"),
+    signOutForNewAccount(board.deps),
+  ]);
   assert.ok(switched.ok);
   // The taps run in their order: Bob comes on, and the sign-out then parks him.
   assert.equal(board.store.state.activeId, null);
   assert.equal(board.page.token, null);
-  assert.equal(find(board.store.state, "b")?.token, board.autodarts.live.get("b"));
+  assert.equal(
+    find(board.store.state, "b")?.token,
+    board.autodarts.live.get("b"),
+  );
   assertEverySessionKept(board);
 });
 
@@ -611,7 +818,10 @@ test("two loads of the page save the new account once and spend its token once",
   const store = new FakeStore(startAdding(EMPTY, 2000));
   const page = new FakePage(autodarts.issue("a"));
   const board = deps(store, page, autodarts.fetch);
-  const [first, second] = await Promise.all([adoptNewSignIn(board), adoptNewSignIn(board)]);
+  const [first, second] = await Promise.all([
+    adoptNewSignIn(board),
+    adoptNewSignIn(board),
+  ]);
   assert.deepEqual([first.kind, second.kind], ["saved", "idle"]);
   assert.equal(autodarts.refreshes.length, 1);
   assert.equal(autodarts.reuses, 0);
@@ -623,7 +833,9 @@ test("a password remembered during a switch is kept", async () => {
   const board = race();
   await Promise.all([
     switchTo(board.deps, "b"),
-    edit(board.deps, (state) => rememberCredentials(state, "c", { username: "cy", password: "pw" })),
+    edit(board.deps, (state) =>
+      rememberCredentials(state, "c", { username: "cy", password: "pw" }),
+    ),
   ]);
   assert.equal(board.store.state.activeId, "b");
   assert.equal(find(board.store.state, "c")?.credentials?.username, "cy");

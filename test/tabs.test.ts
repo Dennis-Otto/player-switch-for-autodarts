@@ -641,7 +641,10 @@ test("settleTab waits until a tab that just loaded has renewed its session", asy
 });
 
 test("settleTab gives up on a tab that never answers", async () => {
-  const browser = new FakeBrowser("t").add(1, { active: true, silentFor: ANSWER_ATTEMPTS + 1 });
+  const browser = new FakeBrowser("t").add(1, {
+    active: true,
+    silentFor: ANSWER_ATTEMPTS + 1,
+  });
   await settleTab(browser, 1);
   assert.equal(browser.waits, ANSWER_ATTEMPTS - 1);
 });

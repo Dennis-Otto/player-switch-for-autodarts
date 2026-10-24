@@ -10,7 +10,10 @@ import { resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 
 const folder = process.argv[2];
-const root = folder === undefined ? new URL("../extension/", import.meta.url) : pathToFileURL(`${resolve(folder)}/`);
+const root =
+  folder === undefined
+    ? new URL("../extension/", import.meta.url)
+    : pathToFileURL(`${resolve(folder)}/`);
 const text = (path) => readFileSync(new URL(path, root), "utf8");
 const en = JSON.parse(text("_locales/en/messages.json"));
 const de = JSON.parse(text("_locales/de/messages.json"));
@@ -30,10 +33,17 @@ for (const key of deKeys) {
   }
 }
 
-// Where a key is asked for: t("key") in a script, data-i18n="key" for a text and
+// Where a key is asked for: t("key") in a script, also with the key on a line of its
+// own as Biome breaks a long call, data-i18n="key" for a text and
 // data-i18n-label="key" for a name in a page, __MSG_key__ in the manifest.
-const patterns = [/\bt\("([A-Za-z]+)"/g, /\bdata-i18n(?:-label)?="([A-Za-z]+)"/g, /__MSG_([A-Za-z]+)__/g];
-const files = readdirSync(root).filter((name) => /\.(?:html|js)$/.test(name) || name === "manifest.json");
+const patterns = [
+  /\bt\(\s*"([A-Za-z]+)"/g,
+  /\bdata-i18n(?:-label)?="([A-Za-z]+)"/g,
+  /__MSG_([A-Za-z]+)__/g,
+];
+const files = readdirSync(root).filter(
+  (name) => /\.(?:html|js)$/.test(name) || name === "manifest.json",
+);
 const used = new Map();
 for (const file of files) {
   const source = text(file);
@@ -50,23 +60,35 @@ for (const [key, file] of used) {
 }
 for (const key of enKeys) {
   if (!used.has(key)) {
-    problems.push(`the message "${key}" is used nowhere; remove it from both languages`);
+    problems.push(
+      `the message "${key}" is used nowhere; remove it from both languages`,
+    );
   }
 }
 
 // The text of a page as a person reads it: its entities decoded, its white space as one.
-const ENTITIES = { amp: "&", lt: "<", gt: ">", quot: '"', apos: "'", nbsp: " " };
+const ENTITIES = {
+  amp: "&",
+  lt: "<",
+  gt: ">",
+  quot: '"',
+  apos: "'",
+  nbsp: " ",
+};
 const plain = (html) =>
   html
-    .replace(/&(?:#(\d+)|#x([\da-f]+)|([a-z]+));/gi, (whole, decimal, hex, name) => {
-      if (decimal !== undefined) {
-        return String.fromCodePoint(Number(decimal));
-      }
-      if (hex !== undefined) {
-        return String.fromCodePoint(Number.parseInt(hex, 16));
-      }
-      return ENTITIES[name.toLowerCase()] ?? whole;
-    })
+    .replace(
+      /&(?:#(\d+)|#x([\da-f]+)|([a-z]+));/gi,
+      (whole, decimal, hex, name) => {
+        if (decimal !== undefined) {
+          return String.fromCodePoint(Number(decimal));
+        }
+        if (hex !== undefined) {
+          return String.fromCodePoint(Number.parseInt(hex, 16));
+        }
+        return ENTITIES[name.toLowerCase()] ?? whole;
+      },
+    )
     .replace(/\s+/g, " ")
     .trim();
 const english = (key) => plain(en[key].message);
@@ -81,7 +103,11 @@ for (const file of files.filter((name) => name.endsWith(".html"))) {
     const [tagText, tag, attributes] = match;
     const name = attributes.match(/\bdata-i18n-label="([A-Za-z]+)"/)?.[1];
     const label = attributes.match(/\baria-label="([^"]*)"/)?.[1];
-    if (enKeys.has(name) && label !== undefined && plain(label) !== english(name)) {
+    if (
+      enKeys.has(name) &&
+      label !== undefined &&
+      plain(label) !== english(name)
+    ) {
       problems.push(
         `extension/${file}: the aria-label "${plain(label)}" of data-i18n-label="${name}" differs from its message "${english(name)}"`,
       );
@@ -92,12 +118,19 @@ for (const file of files.filter((name) => name.endsWith(".html"))) {
     }
     const rest = source.slice(match.index + tagText.length);
     const content = rest.match(/^[^<]*/)[0];
-    if (!rest.slice(content.length).toLowerCase().startsWith(`</${tag.toLowerCase()}>`)) {
+    if (
+      !rest
+        .slice(content.length)
+        .toLowerCase()
+        .startsWith(`</${tag.toLowerCase()}>`)
+    ) {
       problems.push(
         `extension/${file}: the <${tag}> of data-i18n="${key}" holds markup, which its message replaces; give the text an element of its own`,
       );
     } else if (plain(content) !== "" && plain(content) !== english(key)) {
-      problems.push(`extension/${file}: the text "${plain(content)}" of data-i18n="${key}" differs from its message "${english(key)}"`);
+      problems.push(
+        `extension/${file}: the text "${plain(content)}" of data-i18n="${key}" differs from its message "${english(key)}"`,
+      );
     }
   }
 }

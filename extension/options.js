@@ -18,7 +18,9 @@ const CORNER_LABELS = {
 
 /** One radio button for each corner that the settings know. */
 function drawCorners(chosen) {
-  for (const corner of Object.keys(CORNER_LABELS).filter((name) => CORNERS.includes(name))) {
+  for (const corner of Object.keys(CORNER_LABELS).filter((name) =>
+    CORNERS.includes(name),
+  )) {
     const label = document.createElement("label");
     label.className = "check";
     const input = document.createElement("input");
@@ -53,7 +55,10 @@ async function drawShortcuts() {
   const list = document.querySelector("#commands");
   for (const command of await chrome.commands.getAll()) {
     const name = document.createElement("dt");
-    name.textContent = command.name === "_execute_action" ? t("commandPopup") : t("commandToggle");
+    name.textContent =
+      command.name === "_execute_action"
+        ? t("commandPopup")
+        : t("commandToggle");
     const keys = document.createElement("dd");
     if (command.shortcut) {
       const kbd = document.createElement("kbd");
@@ -74,7 +79,9 @@ document.documentElement.lang = chrome.i18n.getMessage("locale");
 document.title = `${t("settings")} · ${t("extName")}`;
 translate(document);
 
-const settings = parseSettings((await chrome.storage.local.get(SETTINGS_KEY))[SETTINGS_KEY]);
+const settings = parseSettings(
+  (await chrome.storage.local.get(SETTINGS_KEY))[SETTINGS_KEY],
+);
 showButton.checked = settings.showButton;
 corners.disabled = !settings.showButton;
 drawCorners(settings.corner);

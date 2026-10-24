@@ -21,10 +21,27 @@ import {
   suggestsUpdate,
 } from "./lib/health.js";
 import { welcomes } from "./lib/onboarding.js";
-import { isPlayPage, mustConfirm, PLAY_ORIGINS, SETTINGS_KEY, toButtonView } from "./lib/page.js";
+import {
+  isPlayPage,
+  mustConfirm,
+  PLAY_ORIGINS,
+  SETTINGS_KEY,
+  toButtonView,
+} from "./lib/page.js";
 import { createQueue } from "./lib/queue.js";
-import { EMPTY, forget, forgetCredentials, rememberCredentials, toView } from "./lib/state.js";
-import { ACCOUNTS_KEY, accountsIn, createStore, UnknownStateError } from "./lib/storage.js";
+import {
+  EMPTY,
+  forget,
+  forgetCredentials,
+  rememberCredentials,
+  toView,
+} from "./lib/state.js";
+import {
+  ACCOUNTS_KEY,
+  accountsIn,
+  createStore,
+  UnknownStateError,
+} from "./lib/storage.js";
 import {
   adoptCurrentSession,
   adoptNewSignIn,
@@ -37,8 +54,19 @@ import {
   switchTo,
   syncFromPage,
 } from "./lib/switch.js";
-import { createPage, NoPageError, rankTabs, settleTab, showPage, withPage } from "./lib/tabs.js";
-import { fromExtension, fromExtensionPage, keepFromContentScripts } from "./lib/trust.js";
+import {
+  createPage,
+  NoPageError,
+  rankTabs,
+  settleTab,
+  showPage,
+  withPage,
+} from "./lib/tabs.js";
+import {
+  fromExtension,
+  fromExtensionPage,
+  keepFromContentScripts,
+} from "./lib/trust.js";
 
 const TAB_MATCHES = PLAY_ORIGINS.map((origin) => `${origin}/*`);
 const STORAGE_KEY = ACCOUNTS_KEY;
@@ -69,11 +97,14 @@ const store = createStore(chrome.storage.local);
  * Writes a failure of the service worker to its console, which `chrome://extensions`
  * shows, instead of dropping it, so that a renewal that keeps failing leaves a trace.
  */
-const logFailure = (what) => (error) => console.error(`Player Switch: ${what} failed.`, error);
+const logFailure = (what) => (error) =>
+  console.error(`Player Switch: ${what} failed.`, error);
 
 // The saved accounts hold tokens and remembered passwords: only the service worker and
 // the pages of the extension may read them, not content.js in the Autodarts page.
-keepFromContentScripts(chrome.storage.local).catch(logFailure("keeping the saved accounts from the Autodarts page"));
+keepFromContentScripts(chrome.storage.local).catch(
+  logFailure("keeping the saved accounts from the Autodarts page"),
+);
 
 const withId = (tabs) => tabs.filter((tab) => typeof tab.id === "number");
 
@@ -87,7 +118,8 @@ const tabs = {
       (window) => window.id,
       () => undefined,
     ),
-  send: (tabId, request) => chrome.tabs.sendMessage(tabId, request, { frameId: 0 }),
+  send: (tabId, request) =>
+    chrome.tabs.sendMessage(tabId, request, { frameId: 0 }),
   reload: (tabId) => chrome.tabs.reload(tabId),
   open: (url, active) => chrome.tabs.create({ url, active }),
   async focus(tab) {
@@ -102,7 +134,10 @@ const tabs = {
  * lib/tabs.js sends a switch to first, the tab in front in the window used last.
  */
 async function findTab() {
-  const [all, focused] = await Promise.all([tabs.query(), tabs.focusedWindow()]);
+  const [all, focused] = await Promise.all([
+    tabs.query(),
+    tabs.focusedWindow(),
+  ]);
   return rankTabs(all, focused)[0];
 }
 
@@ -113,7 +148,9 @@ async function findTab() {
  */
 function tabOf(sender) {
   const tab = sender.tab;
-  return typeof tab?.id === "number" && isPlayPage(tab.url) ? Promise.resolve(tab) : findTab();
+  return typeof tab?.id === "number" && isPlayPage(tab.url)
+    ? Promise.resolve(tab)
+    : findTab();
 }
 
 async function loadHealth() {
@@ -129,7 +166,8 @@ async function pageFor(tab) {
 // What every change of the accounts shares; each one adds the page of its tab.
 const shared = {
   store,
-  fetcher: (url, init) => fetch(url, { ...init, signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS) }),
+  fetcher: (url, init) =>
+    fetch(url, { ...init, signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS) }),
   now: () => Date.now(),
   queue: createQueue(),
 };
@@ -142,7 +180,9 @@ const shared = {
  */
 async function mustAskFirst(tab, message) {
   const all = await tabs.query().catch(() => []);
-  return [await tab, ...all].some((candidate) => mustConfirm(candidate?.url, message.confirmed));
+  return [await tab, ...all].some((candidate) =>
+    mustConfirm(candidate?.url, message.confirmed),
+  );
 }
 
 // Each answer says in `page` whether an Autodarts tab answered, when the action asked
@@ -162,7 +202,9 @@ async function runAction(message, tab) {
         }
         return { ok: true, page: false };
       }
-      return picked?.kind === "saved" ? { ok: true, page: true, saved: picked.identity.name } : { ok: true, page: true };
+      return picked?.kind === "saved"
+        ? { ok: true, page: true, saved: picked.identity.name }
+        : { ok: true, page: true };
     }
     case "switch": {
       if (await mustAskFirst(tab, message)) {
@@ -194,7 +236,10 @@ async function runAction(message, tab) {
       return { ok: true };
     case "remember":
       await edit(deps, (state) =>
-        rememberCredentials(state, message.id, { username: message.username, password: message.password }),
+        rememberCredentials(state, message.id, {
+          username: message.username,
+          password: message.password,
+        }),
       );
       return { ok: true };
     case "forgetPassword":
@@ -210,13 +255,19 @@ async function runAction(message, tab) {
 
 /** The view of the popup, and whether it should suggest an update of the extension. */
 async function popupView(tab) {
-  const [view, health] = await Promise.all([readView({ ...shared, page: await pageFor(tab) }), loadHealth()]);
+  const [view, health] = await Promise.all([
+    readView({ ...shared, page: await pageFor(tab) }),
+    loadHealth(),
+  ]);
   return { ...view, updateHint: suggestsUpdate(health, view.profiles) };
 }
 
 /** The view of the popup after a failure: with no account when the accounts can't be read. */
 function viewAfter(tab) {
-  return popupView(tab).catch(() => ({ ...toView(EMPTY, false, 0), updateHint: false }));
+  return popupView(tab).catch(() => ({
+    ...toView(EMPTY, false, 0),
+    updateHint: false,
+  }));
 }
 
 async function handlePopup(message, tab) {
@@ -244,14 +295,20 @@ async function buttonView() {
 
 /** Tells the content script of an Autodarts tab something; a tab without one has no say. */
 function tellPage(tabId, message) {
-  chrome.tabs.sendMessage(tabId, { type: "page", ...message }, { frameId: 0 }).catch(() => {});
+  chrome.tabs
+    .sendMessage(tabId, { type: "page", ...message }, { frameId: 0 })
+    .catch(() => {});
 }
 
 // Only a page of the extension, such as the popup or the switcher, may see the accounts
 // and change them; the content script in the Autodarts page may only ask what its
 // button shows.
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-  if (message === null || typeof message !== "object" || !fromExtension(sender, chrome.runtime.id)) {
+  if (
+    message === null ||
+    typeof message !== "object" ||
+    !fromExtension(sender, chrome.runtime.id)
+  ) {
     return false;
   }
   const fromPage = fromExtensionPage(sender, chrome.runtime.id);
@@ -267,7 +324,11 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       return true;
     case "switcher":
       // The switcher asks to close; only its own tab hears it.
-      if (fromPage && message.action === "close" && typeof sender.tab?.id === "number") {
+      if (
+        fromPage &&
+        message.action === "close" &&
+        typeof sender.tab?.id === "number"
+      ) {
         tellPage(sender.tab.id, { action: "closeSwitcher" });
       }
       return false;
@@ -295,7 +356,11 @@ chrome.storage.onChanged.addListener((changes, area) => {
 
 // The keyboard shortcut of the switcher opens or closes it in the Autodarts tab in front.
 chrome.commands.onCommand.addListener((command, tab) => {
-  if (command === "toggle-switcher" && typeof tab?.id === "number" && isPlayPage(tab.url)) {
+  if (
+    command === "toggle-switcher" &&
+    typeof tab?.id === "number" &&
+    isPlayPage(tab.url)
+  ) {
     tellPage(tab.id, { action: "toggleSwitcher" });
   }
 });
@@ -336,7 +401,11 @@ async function showBadge() {
   if (names !== "") {
     lines.push(t("badgeTitle", names));
   }
-  await setBadge(text, BADGE_COLORS[kind], lines.length === 0 ? t("extName") : lines.join("\n"));
+  await setBadge(
+    text,
+    BADGE_COLORS[kind],
+    lines.length === 0 ? t("extName") : lines.join("\n"),
+  );
 }
 
 /** Confirms on the toolbar icon, for a moment, that a new account was saved by itself. */
@@ -357,7 +426,9 @@ const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
  * Autodarts tab, which would end a match without asking, as a switch asks first.
  */
 async function noMatchRuns() {
-  return !(await chrome.tabs.query({ url: TAB_MATCHES })).some((tab) => mustConfirm(tab.url, false));
+  return !(await chrome.tabs.query({ url: TAB_MATCHES })).some((tab) =>
+    mustConfirm(tab.url, false),
+  );
 }
 
 /**
@@ -394,7 +465,10 @@ async function welcome() {
 }
 
 function scheduleRefresh(when) {
-  return chrome.alarms.create(REFRESH_ALARM, { when, periodInMinutes: REFRESH_PERIOD_MINUTES });
+  return chrome.alarms.create(REFRESH_ALARM, {
+    when,
+    periodInMinutes: REFRESH_PERIOD_MINUTES,
+  });
 }
 
 // The run that is on its way, so that the alarm and a start that catches up share one.
@@ -410,7 +484,9 @@ function refresh() {
     try {
       const run = await refreshParked({ ...shared, page: createPage(tabs) });
       const now = shared.now();
-      await chrome.storage.local.set({ [HEALTH_KEY]: recordRun(await loadHealth(), run, now) });
+      await chrome.storage.local.set({
+        [HEALTH_KEY]: recordRun(await loadHealth(), run, now),
+      });
       await scheduleRefresh(nextRunAt(run, now));
     } finally {
       refreshing = null;
@@ -431,7 +507,10 @@ let started = null;
  */
 function ensureRenewal() {
   started ??= (async () => {
-    const [alarm, health] = await Promise.all([chrome.alarms.get(REFRESH_ALARM), loadHealth()]);
+    const [alarm, health] = await Promise.all([
+      chrome.alarms.get(REFRESH_ALARM),
+      loadHealth(),
+    ]);
     // The badge must not hold up the renewal, nor a failure of it stop the renewal.
     showBadge().catch(logFailure("the badge"));
     const plan = planStart(alarm !== undefined, health, shared.now());
@@ -478,11 +557,15 @@ chrome.alarms.onAlarm.addListener((alarm) => {
 chrome.runtime.onStartup.addListener(ensureRenewal);
 chrome.runtime.onInstalled.addListener((details) => {
   if (details.reason === "update") {
-    shared.queue(() => store.migrate()).catch(logFailure("bringing the saved accounts up to date"));
+    shared
+      .queue(() => store.migrate())
+      .catch(logFailure("bringing the saved accounts up to date"));
   }
   void ensureRenewal();
   if (details.reason === "install" || details.reason === "update") {
-    injectIntoOpenTabs().catch(logFailure("adding the button to the open Autodarts tabs"));
+    injectIntoOpenTabs().catch(
+      logFailure("adding the button to the open Autodarts tabs"),
+    );
   }
   if (welcomes(details.reason)) {
     welcome().catch(logFailure("the welcome"));
@@ -499,7 +582,9 @@ chrome.runtime.onInstalled.addListener((details) => {
 async function injectIntoOpenTabs() {
   for (const tab of withId(await chrome.tabs.query({ url: TAB_MATCHES }))) {
     // A tab that Chrome discarded, or that is still loading, gets the script when it loads.
-    chrome.scripting.executeScript({ target: { tabId: tab.id }, files: ["content.js"] }).catch(() => {});
+    chrome.scripting
+      .executeScript({ target: { tabId: tab.id }, files: ["content.js"] })
+      .catch(() => {});
   }
 }
 

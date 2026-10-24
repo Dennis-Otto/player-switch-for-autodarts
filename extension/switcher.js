@@ -6,9 +6,11 @@ import { mountPlayers } from "./players.js";
 
 /** Asks the content script of this tab, through the service worker, to close the frame. */
 function close() {
-  chrome.runtime.sendMessage({ type: "switcher", action: "close" }).catch(() => {
-    // The worker did not answer; the page's own reload or the next tap closes it.
-  });
+  chrome.runtime
+    .sendMessage({ type: "switcher", action: "close" })
+    .catch(() => {
+      // The worker did not answer; the page's own reload or the next tap closes it.
+    });
 }
 
 // Once the players are there, the first of them takes the focus: content.js gives the
@@ -40,7 +42,10 @@ document.body.addEventListener("click", (event) => {
 
 document.addEventListener("keydown", (event) => {
   // Esc closes an open dialog first, the way the dialog does it, and the switcher next.
-  if (event.key === "Escape" && document.querySelector("dialog[open]") === null) {
+  if (
+    event.key === "Escape" &&
+    document.querySelector("dialog[open]") === null
+  ) {
     event.preventDefault();
     close();
   }

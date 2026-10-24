@@ -38,9 +38,9 @@ import {
   type PagePort,
   type PickUp,
   refreshParked,
-  signOutForNewAccount,
   type Store,
   type SwitchResult,
+  signOutForNewAccount,
   switchTo,
   syncFromPage,
 } from "../src/switch.ts";
@@ -53,7 +53,9 @@ const ACCOUNTS = ["a", "b", "c"] as const;
 /** Autodarts, with token rotation: a token is valid until it is renewed or its session ends. */
 class FakeAutodarts {
   readonly tokens = new Map<string, { account: string; valid: boolean }>();
-  readonly passwords = new Map<string, string>(ACCOUNTS.map((id) => [id, `${id}-1`]));
+  readonly passwords = new Map<string, string>(
+    ACCOUNTS.map((id) => [id, `${id}-1`]),
+  );
   /** Unreachable, by a failed request or by an error status, or reachable. */
   outage: "none" | "throws" | "503" = "none";
   /** The tokens sent to be renewed, in order. */
@@ -127,7 +129,9 @@ class Page implements PagePort {
   failing = new Set<PageFailure>();
 
   readToken(): Promise<string | null> {
-    return this.failing.has("read") ? Promise.reject(new NoPage()) : Promise.resolve(this.token);
+    return this.failing.has("read")
+      ? Promise.reject(new NoPage())
+      : Promise.resolve(this.token);
   }
 
   writeToken(token: string): Promise<void> {
@@ -169,41 +173,113 @@ const account = fc.constantFrom(...ACCOUNTS);
 /** Mostly a page that answers, sometimes one that fails at a request, as when its tab closes. */
 const failing = fc.oneof(
   { weight: 3, arbitrary: fc.constant<PageFailure[]>([]) },
-  { weight: 1, arbitrary: fc.subarray<PageFailure>(["read", "write", "clear"], { minLength: 1 }) },
+  {
+    weight: 1,
+    arbitrary: fc.subarray<PageFailure>(["read", "write", "clear"], {
+      minLength: 1,
+    }),
+  },
 );
 
 /** What the extension does, on a tap in the popup or on its timer; taps on accounts most often. */
 const action = fc.oneof(
-  { weight: 6, arbitrary: fc.record({ kind: fc.constant("switch" as const), id: account, failing }) },
-  { weight: 3, arbitrary: fc.record({ kind: fc.constant("adopt" as const), failing }) },
-  { weight: 2, arbitrary: fc.record({ kind: fc.constant("signOut" as const), failing }) },
-  { weight: 2, arbitrary: fc.record({ kind: fc.constant("sync" as const), failing }) },
+  {
+    weight: 6,
+    arbitrary: fc.record({
+      kind: fc.constant("switch" as const),
+      id: account,
+      failing,
+    }),
+  },
+  {
+    weight: 3,
+    arbitrary: fc.record({ kind: fc.constant("adopt" as const), failing }),
+  },
+  {
+    weight: 2,
+    arbitrary: fc.record({ kind: fc.constant("signOut" as const), failing }),
+  },
+  {
+    weight: 2,
+    arbitrary: fc.record({ kind: fc.constant("sync" as const), failing }),
+  },
   // An Autodarts page finished loading: the service worker saves a new sign-in.
-  { weight: 3, arbitrary: fc.record({ kind: fc.constant("pageLoads" as const), failing }) },
-  { weight: 2, arbitrary: fc.record({ kind: fc.constant("refresh" as const) }) },
+  {
+    weight: 3,
+    arbitrary: fc.record({ kind: fc.constant("pageLoads" as const), failing }),
+  },
+  {
+    weight: 2,
+    arbitrary: fc.record({ kind: fc.constant("refresh" as const) }),
+  },
   {
     weight: 1,
-    arbitrary: fc.record({ kind: fc.constant("remember" as const), id: account, right: fc.boolean() }),
+    arbitrary: fc.record({
+      kind: fc.constant("remember" as const),
+      id: account,
+      right: fc.boolean(),
+    }),
   },
-  { weight: 1, arbitrary: fc.record({ kind: fc.constant("forgetPassword" as const), id: account }) },
-  { weight: 1, arbitrary: fc.record({ kind: fc.constant("remove" as const), id: account }) },
+  {
+    weight: 1,
+    arbitrary: fc.record({
+      kind: fc.constant("forgetPassword" as const),
+      id: account,
+    }),
+  },
+  {
+    weight: 1,
+    arbitrary: fc.record({ kind: fc.constant("remove" as const), id: account }),
+  },
 );
 
 /** What happens around the extension: in the page, at Autodarts and on the network. */
 const event = fc.oneof(
-  { weight: 4, arbitrary: fc.record({ kind: fc.constant("pageSignsIn" as const), id: account }) },
-  { weight: 2, arbitrary: fc.record({ kind: fc.constant("pageRenews" as const) }) },
-  { weight: 1, arbitrary: fc.record({ kind: fc.constant("pageSignsOut" as const) }) },
-  { weight: 1, arbitrary: fc.record({ kind: fc.constant("sessionsEnd" as const), id: account }) },
-  { weight: 1, arbitrary: fc.record({ kind: fc.constant("passwordChanges" as const), id: account }) },
+  {
+    weight: 4,
+    arbitrary: fc.record({
+      kind: fc.constant("pageSignsIn" as const),
+      id: account,
+    }),
+  },
+  {
+    weight: 2,
+    arbitrary: fc.record({ kind: fc.constant("pageRenews" as const) }),
+  },
+  {
+    weight: 1,
+    arbitrary: fc.record({ kind: fc.constant("pageSignsOut" as const) }),
+  },
+  {
+    weight: 1,
+    arbitrary: fc.record({
+      kind: fc.constant("sessionsEnd" as const),
+      id: account,
+    }),
+  },
+  {
+    weight: 1,
+    arbitrary: fc.record({
+      kind: fc.constant("passwordChanges" as const),
+      id: account,
+    }),
+  },
   // Long enough for an account that is being added to be waited for no longer.
-  { weight: 1, arbitrary: fc.record({ kind: fc.constant("timePasses" as const) }) },
+  {
+    weight: 1,
+    arbitrary: fc.record({ kind: fc.constant("timePasses" as const) }),
+  },
   {
     weight: 2,
     arbitrary: fc.record({
       kind: fc.constant("outage" as const),
       // Autodarts is back more often than it is gone.
-      outage: fc.constantFrom("none" as const, "none" as const, "throws" as const, "503" as const),
+      outage: fc.constantFrom(
+        "none" as const,
+        "none" as const,
+        "throws" as const,
+        "503" as const,
+      ),
     }),
   },
 );
@@ -214,8 +290,16 @@ type Step = { by: "extension"; action: Action } | { by: "world"; event: Event };
 
 const evening = fc.array(
   fc.oneof(
-    { weight: 2, arbitrary: action.map((value): Step => ({ by: "extension", action: value })) },
-    { weight: 1, arbitrary: event.map((value): Step => ({ by: "world", event: value })) },
+    {
+      weight: 2,
+      arbitrary: action.map(
+        (value): Step => ({ by: "extension", action: value }),
+      ),
+    },
+    {
+      weight: 1,
+      arbitrary: event.map((value): Step => ({ by: "world", event: value })),
+    },
   ),
   { maxLength: 60, size: "max" },
 );
@@ -234,7 +318,13 @@ function world(): World {
   const page = new Page();
   const store = new JsonStore();
   const clock = { now: 0 };
-  const deps: Deps = { fetcher: autodarts.fetch, page, store, now: () => ++clock.now, queue: createQueue() };
+  const deps: Deps = {
+    fetcher: autodarts.fetch,
+    page,
+    store,
+    now: () => ++clock.now,
+    queue: createQueue(),
+  };
   return { autodarts, page, store, deps, clock };
 }
 
@@ -315,9 +405,13 @@ async function run(w: World, step: Action): Promise<Result> {
         await refreshParked(deps);
         return undefined;
       case "remember": {
-        const password = step.right ? autodarts.passwords.get(step.id) : "wrong";
+        const password = step.right
+          ? autodarts.passwords.get(step.id)
+          : "wrong";
         const credentials = { username: step.id, password: password ?? "" };
-        await store.save(rememberCredentials(store.state, step.id, credentials));
+        await store.save(
+          rememberCredentials(store.state, step.id, credentials),
+        );
         return undefined;
       }
       case "forgetPassword":
@@ -343,8 +437,10 @@ function usable(w: World): Set<string> {
     const credentials = profile.credentials;
     if (
       autodarts.holder(profile.token) === profile.id ||
-      (profile.id === state.activeId && autodarts.holder(page.token) === profile.id) ||
-      (credentials !== null && autodarts.passwords.get(credentials.username) === credentials.password)
+      (profile.id === state.activeId &&
+        autodarts.holder(page.token) === profile.id) ||
+      (credentials !== null &&
+        autodarts.passwords.get(credentials.username) === credentials.password)
     ) {
       result.add(profile.id);
     }
@@ -358,21 +454,35 @@ function assertSound(w: World): void {
   const state = w.store.state;
   const ids = state.profiles.map((profile) => profile.id);
   assert.equal(new Set(ids).size, ids.length, "each account is stored once");
-  assert.ok(state.activeId === null || ids.includes(state.activeId), "the active account is stored");
-  assert.ok(state.addingUntil === null || state.activeId === null, "a new account is waited for while nobody plays");
+  assert.ok(
+    state.activeId === null || ids.includes(state.activeId),
+    "the active account is stored",
+  );
+  assert.ok(
+    state.addingUntil === null || state.activeId === null,
+    "a new account is waited for while nobody plays",
+  );
   assert.equal(
     state.activeId === null ? false : find(state, state.activeId)?.needsSignIn,
     false,
     "the active account needs no sign-in",
   );
   // Each session that still works has one keeper: two keepers would spend it for each other.
-  const keepers = [page.token, ...parked(state).map((profile) => profile.token)].filter(
-    (token) => autodarts.holder(token) !== null,
+  const keepers = [
+    page.token,
+    ...parked(state).map((profile) => profile.token),
+  ].filter((token) => autodarts.holder(token) !== null);
+  assert.equal(
+    new Set(keepers).size,
+    keepers.length,
+    "no session is kept twice",
   );
-  assert.equal(new Set(keepers).size, keepers.length, "no session is kept twice");
   for (const profile of state.profiles) {
     const holder = autodarts.holder(profile.token);
-    assert.ok(holder === null || holder === profile.id, `${profile.id} keeps a session of ${holder}`);
+    assert.ok(
+      holder === null || holder === profile.id,
+      `${profile.id} keeps a session of ${holder}`,
+    );
   }
 }
 
@@ -414,13 +524,17 @@ function assertKept(
   if (result instanceof Error) {
     assert.ok(
       result instanceof NoPage ||
-        (extension.kind === "adopt" && result instanceof AuthError && result.kind === "unreachable"),
+        (extension.kind === "adopt" &&
+          result instanceof AuthError &&
+          result.kind === "unreachable"),
       `unexpected ${result.name}: ${result.message}`,
     );
   }
   // Only adopting renews the token that is live in the page, and saving a new sign-in
   // while an account is being added; both write the fresh one straight back.
-  const adopts = extension.kind === "adopt" || (extension.kind === "pageLoads" && before.adding);
+  const adopts =
+    extension.kind === "adopt" ||
+    (extension.kind === "pageLoads" && before.adding);
   if (!adopts && before.page !== null) {
     const renewed = autodarts.renewed.slice(before.renewed);
     assert.ok(!renewed.includes(before.page), "renewed the page's session");
@@ -428,7 +542,9 @@ function assertKept(
   // An account that could play before still can, unless a person removed it
   // or changed its stored password.
   const touched =
-    extension.kind === "remember" || extension.kind === "forgetPassword" ? extension.id : null;
+    extension.kind === "remember" || extension.kind === "forgetPassword"
+      ? extension.id
+      : null;
   for (const id of before.usable) {
     if (find(after, id) !== undefined && id !== touched) {
       assert.ok(usable(w).has(id), `${id} lost its session`);
@@ -437,7 +553,11 @@ function assertKept(
   if (result === undefined && extension.kind === "adopt") {
     // The account of the page is saved and plays on, and a dead session leaves the page.
     assert.equal(after.activeId, before.playing);
-    assert.equal(autodarts.holder(page.token), before.playing, "the page stays signed in");
+    assert.equal(
+      autodarts.holder(page.token),
+      before.playing,
+      "the page stays signed in",
+    );
     assert.ok(before.playing !== null || page.token === null);
   }
   if (result === undefined && extension.kind === "signOut") {
@@ -448,36 +568,59 @@ function assertKept(
   if (extension.kind === "pageLoads") {
     assertPickedUp(w, before, result as PickUp | Error);
   }
-  if (result === undefined && extension.kind === "sync" && page.token === null) {
+  if (
+    result === undefined &&
+    extension.kind === "sync" &&
+    page.token === null
+  ) {
     assert.equal(after.activeId, null);
   }
-  if (extension.kind === "switch" && result !== undefined && !(result instanceof Error)) {
+  if (
+    extension.kind === "switch" &&
+    result !== undefined &&
+    !(result instanceof Error)
+  ) {
     const switched = result as SwitchResult;
     const target = find(before.state, extension.id);
     if (switched.ok) {
       assert.ok(target === undefined || after.activeId === extension.id);
       if (target !== undefined && before.state.activeId !== extension.id) {
-        assert.equal(autodarts.holder(page.token), extension.id, "the page plays the account");
+        assert.equal(
+          autodarts.holder(page.token),
+          extension.id,
+          "the page plays the account",
+        );
       }
     } else if (switched.reason === "unreachable") {
       assert.deepEqual(after, before.state);
       assert.equal(page.token, before.page);
     } else {
       assert.equal(find(after, extension.id)?.needsSignIn, true);
-      assert.ok(!before.usable.has(extension.id), `${extension.id} could still play`);
+      assert.ok(
+        !before.usable.has(extension.id),
+        `${extension.id} could still play`,
+      );
     }
   }
 }
 
 /** What a page that finished loading promises: a sign-in is saved only while an account is being added. */
-function assertPickedUp(w: World, before: Before, result: PickUp | Error): void {
+function assertPickedUp(
+  w: World,
+  before: Before,
+  result: PickUp | Error,
+): void {
   const { autodarts, page } = w;
   const after = w.store.state;
   if (!before.adding) {
     // Outside the window, nothing is saved and no token is spent; the window closes for good.
     assert.ok(!(result instanceof Error) && result.kind === "idle");
     assert.deepEqual(after, { ...before.state, addingUntil: null });
-    assert.equal(autodarts.renewed.length, before.renewed, "spent a token outside the window");
+    assert.equal(
+      autodarts.renewed.length,
+      before.renewed,
+      "spent a token outside the window",
+    );
     return;
   }
   if (!(result instanceof Error) && result.kind === "saved") {
@@ -485,11 +628,19 @@ function assertPickedUp(w: World, before: Before, result: PickUp | Error): void 
     assert.equal(result.identity.id, before.playing);
     assert.equal(after.activeId, before.playing);
     assert.equal(after.addingUntil, null);
-    assert.equal(autodarts.holder(page.token), before.playing, "the page stays signed in");
+    assert.equal(
+      autodarts.holder(page.token),
+      before.playing,
+      "the page stays signed in",
+    );
     return;
   }
   // Without a sign-in to save yet, the window stays open for the next load.
-  assert.notEqual(after.addingUntil, null, "the new account is still waited for");
+  assert.notEqual(
+    after.addingUntil,
+    null,
+    "the new account is still waited for",
+  );
 }
 
 test("over any evening, the extension loses no usable session and never renews the page's own", async () => {
@@ -517,20 +668,23 @@ test("over any evening, the extension loses no usable session and never renews t
 
 test("a switch between saved accounts plays the account and parks the one before", async () => {
   await fc.assert(
-    fc.asyncProperty(fc.array(account, { minLength: 1, maxLength: 20 }), async (taps) => {
-      const w = world();
-      await saveEveryAccount(w);
-      assert.deepEqual(usable(w), new Set(ACCOUNTS));
-      for (const id of taps) {
-        const result = await switchTo(w.deps, id);
-        assert.ok(result.ok);
-        assert.equal(w.store.state.activeId, id);
-        assert.equal(w.autodarts.holder(w.page.token), id);
+    fc.asyncProperty(
+      fc.array(account, { minLength: 1, maxLength: 20 }),
+      async (taps) => {
+        const w = world();
+        await saveEveryAccount(w);
         assert.deepEqual(usable(w), new Set(ACCOUNTS));
-        await refreshParked(w.deps);
-        assert.deepEqual(usable(w), new Set(ACCOUNTS));
-      }
-    }),
+        for (const id of taps) {
+          const result = await switchTo(w.deps, id);
+          assert.ok(result.ok);
+          assert.equal(w.store.state.activeId, id);
+          assert.equal(w.autodarts.holder(w.page.token), id);
+          assert.deepEqual(usable(w), new Set(ACCOUNTS));
+          await refreshParked(w.deps);
+          assert.deepEqual(usable(w), new Set(ACCOUNTS));
+        }
+      },
+    ),
   );
 });
 
@@ -539,10 +693,32 @@ const answering = fc.constant<PageFailure[]>([]);
 
 /** What the extension may do at the same time: taps in the popup or the switcher, and the renewal. */
 const overlapping = fc.oneof(
-  { weight: 4, arbitrary: fc.record({ kind: fc.constant("switch" as const), id: account, failing: answering }) },
-  { weight: 1, arbitrary: fc.record({ kind: fc.constant("adopt" as const), failing: answering }) },
-  { weight: 1, arbitrary: fc.record({ kind: fc.constant("signOut" as const), failing: answering }) },
-  { weight: 2, arbitrary: fc.record({ kind: fc.constant("refresh" as const) }) },
+  {
+    weight: 4,
+    arbitrary: fc.record({
+      kind: fc.constant("switch" as const),
+      id: account,
+      failing: answering,
+    }),
+  },
+  {
+    weight: 1,
+    arbitrary: fc.record({
+      kind: fc.constant("adopt" as const),
+      failing: answering,
+    }),
+  },
+  {
+    weight: 1,
+    arbitrary: fc.record({
+      kind: fc.constant("signOut" as const),
+      failing: answering,
+    }),
+  },
+  {
+    weight: 2,
+    arbitrary: fc.record({ kind: fc.constant("refresh" as const) }),
+  },
 );
 
 /**
@@ -552,25 +728,39 @@ const overlapping = fc.oneof(
  * the extension.
  */
 function overlapsAreSafe(queue: () => Queue) {
-  return fc.asyncProperty(fc.scheduler(), fc.array(overlapping, { minLength: 2, maxLength: 6 }), async (s, steps) => {
-    const w = world();
-    w.deps.queue = queue();
-    await saveEveryAccount(w);
-    await switchTo(w.deps, "a");
-    assert.deepEqual(usable(w), new Set(ACCOUNTS));
-    const sentBefore = w.autodarts.renewed.length;
-    w.deps.fetcher = s.scheduleFunction(w.autodarts.fetch);
-    w.deps.page = {
-      readToken: s.scheduleFunction(() => w.page.readToken()),
-      writeToken: s.scheduleFunction((token: string) => w.page.writeToken(token)),
-      clearToken: s.scheduleFunction(() => w.page.clearToken()),
-    };
-    await s.waitFor(Promise.all(steps.map((step) => run(w, step))));
-    const sent = w.autodarts.renewed.slice(sentBefore);
-    assert.equal(new Set(sent).size, sent.length, `a refresh token was sent twice: ${sent.join(", ")}`);
-    assert.deepEqual(usable(w), new Set(ACCOUNTS), "an account lost its session");
-    assertSound(w);
-  });
+  return fc.asyncProperty(
+    fc.scheduler(),
+    fc.array(overlapping, { minLength: 2, maxLength: 6 }),
+    async (s, steps) => {
+      const w = world();
+      w.deps.queue = queue();
+      await saveEveryAccount(w);
+      await switchTo(w.deps, "a");
+      assert.deepEqual(usable(w), new Set(ACCOUNTS));
+      const sentBefore = w.autodarts.renewed.length;
+      w.deps.fetcher = s.scheduleFunction(w.autodarts.fetch);
+      w.deps.page = {
+        readToken: s.scheduleFunction(() => w.page.readToken()),
+        writeToken: s.scheduleFunction((token: string) =>
+          w.page.writeToken(token),
+        ),
+        clearToken: s.scheduleFunction(() => w.page.clearToken()),
+      };
+      await s.waitFor(Promise.all(steps.map((step) => run(w, step))));
+      const sent = w.autodarts.renewed.slice(sentBefore);
+      assert.equal(
+        new Set(sent).size,
+        sent.length,
+        `a refresh token was sent twice: ${sent.join(", ")}`,
+      );
+      assert.deepEqual(
+        usable(w),
+        new Set(ACCOUNTS),
+        "an account lost its session",
+      );
+      assertSound(w);
+    },
+  );
 }
 
 test("taps and the renewal that overlap, in any order, spend no token twice and lose no session", async () => {
@@ -580,6 +770,9 @@ test("taps and the renewal that overlap, in any order, spend no token twice and 
 test("without the queue, the overlap test finds a token spent twice, as on the code before the queue", async () => {
   // Every operation runs at once, as before the queue came.
   const unqueued: Queue = (task) => task();
-  const details = await fc.check(overlapsAreSafe(() => unqueued), { seed: 28, numRuns: 100 });
+  const details = await fc.check(
+    overlapsAreSafe(() => unqueued),
+    { seed: 28, numRuns: 100 },
+  );
   assert.ok(details.failed, "no order of the overlapping taps broke a promise");
 });

@@ -2,8 +2,8 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 
 import {
-  failingSince,
   badge,
+  failingSince,
   type Health,
   isOverdue,
   looksLikeSignInChanged,
@@ -37,7 +37,10 @@ test("the period of the alarm and the one of the clock agree", () => {
 });
 
 test("parseHealth reads a stored record", () => {
-  assert.deepEqual(parseHealth({ lastRefreshAt: 5, lastAttemptAt: 7, suspectedChange: true }), ranAt(5, true, 7));
+  assert.deepEqual(
+    parseHealth({ lastRefreshAt: 5, lastAttemptAt: 7, suspectedChange: true }),
+    ranAt(5, true, 7),
+  );
   assert.deepEqual(parseHealth({ lastRefreshAt: 5 }), ranAt(5, false, null));
 });
 
@@ -45,9 +48,19 @@ test("parseHealth starts afresh from anything it doesn't recognise", () => {
   assert.deepEqual(parseHealth(undefined), NO_HEALTH);
   assert.deepEqual(parseHealth(null), NO_HEALTH);
   assert.deepEqual(parseHealth("health"), NO_HEALTH);
-  assert.deepEqual(parseHealth({ lastRefreshAt: "yesterday", lastAttemptAt: "today", suspectedChange: "yes" }), NO_HEALTH);
+  assert.deepEqual(
+    parseHealth({
+      lastRefreshAt: "yesterday",
+      lastAttemptAt: "today",
+      suspectedChange: "yes",
+    }),
+    NO_HEALTH,
+  );
   assert.deepEqual(parseHealth({ lastRefreshAt: Number.NaN }), NO_HEALTH);
-  assert.deepEqual(parseHealth({ lastRefreshAt: Number.POSITIVE_INFINITY }), NO_HEALTH);
+  assert.deepEqual(
+    parseHealth({ lastRefreshAt: Number.POSITIVE_INFINITY }),
+    NO_HEALTH,
+  );
 });
 
 test("a renewal that never ran is overdue", () => {
@@ -72,77 +85,152 @@ test("after a browser restart without the alarm, it is made anew for when the ne
 });
 
 test("a computer that was off when the renewal was due catches up at once", () => {
-  assert.deepEqual(planStart(true, ranAt(NOW - 2 * DAY), NOW), { alarmAt: null, refreshNow: true });
+  assert.deepEqual(planStart(true, ranAt(NOW - 2 * DAY), NOW), {
+    alarmAt: null,
+    refreshNow: true,
+  });
 });
 
 test("without the alarm and overdue, the renewal runs now and the alarm a period later", () => {
-  assert.deepEqual(planStart(false, ranAt(NOW - 2 * DAY), NOW), { alarmAt: NOW + REFRESH_PERIOD_MS, refreshNow: true });
-  assert.deepEqual(planStart(false, NO_HEALTH, NOW), { alarmAt: NOW + REFRESH_PERIOD_MS, refreshNow: true });
+  assert.deepEqual(planStart(false, ranAt(NOW - 2 * DAY), NOW), {
+    alarmAt: NOW + REFRESH_PERIOD_MS,
+    refreshNow: true,
+  });
+  assert.deepEqual(planStart(false, NO_HEALTH, NOW), {
+    alarmAt: NOW + REFRESH_PERIOD_MS,
+    refreshNow: true,
+  });
 });
 
 test("a start with the alarm in place and a recent run changes nothing", () => {
-  assert.deepEqual(planStart(true, ranAt(NOW - HOUR), NOW), { alarmAt: null, refreshNow: false });
+  assert.deepEqual(planStart(true, ranAt(NOW - HOUR), NOW), {
+    alarmAt: null,
+    refreshNow: false,
+  });
 });
 
 test("an overdue renewal that was tried 5 minutes ago is not tried again at a start", () => {
   const health = ranAt(NOW - 2 * DAY, false, NOW - 5 * MINUTE);
-  assert.deepEqual(planStart(true, health, NOW), { alarmAt: null, refreshNow: false });
-  assert.deepEqual(planStart(false, health, NOW), { alarmAt: NOW - 5 * MINUTE + RETRY_MS, refreshNow: false });
+  assert.deepEqual(planStart(true, health, NOW), {
+    alarmAt: null,
+    refreshNow: false,
+  });
+  assert.deepEqual(planStart(false, health, NOW), {
+    alarmAt: NOW - 5 * MINUTE + RETRY_MS,
+    refreshNow: false,
+  });
 });
 
 test("an overdue renewal that was tried 20 minutes ago is tried again at a start", () => {
-  assert.deepEqual(planStart(true, ranAt(NOW - 2 * DAY, false, NOW - 20 * MINUTE), NOW), {
+  assert.deepEqual(
+    planStart(true, ranAt(NOW - 2 * DAY, false, NOW - 20 * MINUTE), NOW),
+    {
+      alarmAt: null,
+      refreshNow: true,
+    },
+  );
+  assert.deepEqual(planStart(true, ranAt(null, false, NOW - RETRY_MS), NOW), {
     alarmAt: null,
     refreshNow: true,
   });
-  assert.deepEqual(planStart(true, ranAt(null, false, NOW - RETRY_MS), NOW), { alarmAt: null, refreshNow: true });
 });
 
 test("an attempt ahead of the clock does not hold up a catch-up", () => {
-  assert.deepEqual(planStart(true, ranAt(NOW - 2 * DAY, false, NOW + MINUTE), NOW), {
-    alarmAt: null,
-    refreshNow: true,
-  });
+  assert.deepEqual(
+    planStart(true, ranAt(NOW - 2 * DAY, false, NOW + MINUTE), NOW),
+    {
+      alarmAt: null,
+      refreshNow: true,
+    },
+  );
 });
 
 test("every parked account turned away in one run hints at a change at Autodarts", () => {
-  assert.equal(looksLikeSignInChanged({ renewed: 0, rejected: 2, unreachable: 0 }), true);
-  assert.equal(looksLikeSignInChanged({ renewed: 0, rejected: 5, unreachable: 0 }), true);
+  assert.equal(
+    looksLikeSignInChanged({ renewed: 0, rejected: 2, unreachable: 0 }),
+    true,
+  );
+  assert.equal(
+    looksLikeSignInChanged({ renewed: 0, rejected: 5, unreachable: 0 }),
+    true,
+  );
 });
 
 test("one account turned away, or some still renewed or unasked, is no such hint", () => {
-  assert.equal(looksLikeSignInChanged({ renewed: 0, rejected: 1, unreachable: 0 }), false);
-  assert.equal(looksLikeSignInChanged({ renewed: 1, rejected: 3, unreachable: 0 }), false);
-  assert.equal(looksLikeSignInChanged({ renewed: 0, rejected: 3, unreachable: 1 }), false);
-  assert.equal(looksLikeSignInChanged({ renewed: 0, rejected: 0, unreachable: 0 }), false);
+  assert.equal(
+    looksLikeSignInChanged({ renewed: 0, rejected: 1, unreachable: 0 }),
+    false,
+  );
+  assert.equal(
+    looksLikeSignInChanged({ renewed: 1, rejected: 3, unreachable: 0 }),
+    false,
+  );
+  assert.equal(
+    looksLikeSignInChanged({ renewed: 0, rejected: 3, unreachable: 1 }),
+    false,
+  );
+  assert.equal(
+    looksLikeSignInChanged({ renewed: 0, rejected: 0, unreachable: 0 }),
+    false,
+  );
 });
 
 test("a run that reached Autodarts for everyone moves the time on", () => {
-  assert.deepEqual(recordRun(ranAt(1), { renewed: 2, rejected: 0, unreachable: 0 }, NOW), ranAt(NOW));
-  assert.deepEqual(recordRun(ranAt(1), { renewed: 0, rejected: 0, unreachable: 0 }, NOW), ranAt(NOW));
+  assert.deepEqual(
+    recordRun(ranAt(1), { renewed: 2, rejected: 0, unreachable: 0 }, NOW),
+    ranAt(NOW),
+  );
+  assert.deepEqual(
+    recordRun(ranAt(1), { renewed: 0, rejected: 0, unreachable: 0 }, NOW),
+    ranAt(NOW),
+  );
 });
 
 test("a run without a network for an account keeps the old time, so the next start catches up", () => {
-  assert.deepEqual(recordRun(ranAt(1), { renewed: 1, rejected: 0, unreachable: 1 }, NOW), ranAt(1, false, NOW));
-  assert.deepEqual(recordRun(NO_HEALTH, { renewed: 0, rejected: 0, unreachable: 2 }, NOW), ranAt(null, false, NOW));
+  assert.deepEqual(
+    recordRun(ranAt(1), { renewed: 1, rejected: 0, unreachable: 1 }, NOW),
+    ranAt(1, false, NOW),
+  );
+  assert.deepEqual(
+    recordRun(NO_HEALTH, { renewed: 0, rejected: 0, unreachable: 2 }, NOW),
+    ranAt(null, false, NOW),
+  );
 });
 
 test("a run that turns everyone away records the suspicion of a change", () => {
-  assert.deepEqual(recordRun(ranAt(1), { renewed: 0, rejected: 2, unreachable: 0 }, NOW), ranAt(NOW, true));
+  assert.deepEqual(
+    recordRun(ranAt(1), { renewed: 0, rejected: 2, unreachable: 0 }, NOW),
+    ranAt(NOW, true),
+  );
 });
 
 test("a run that renews an account clears the suspicion", () => {
-  assert.deepEqual(recordRun(ranAt(1, true), { renewed: 1, rejected: 1, unreachable: 0 }, NOW), ranAt(NOW));
+  assert.deepEqual(
+    recordRun(ranAt(1, true), { renewed: 1, rejected: 1, unreachable: 0 }, NOW),
+    ranAt(NOW),
+  );
 });
 
 test("a run with nobody to renew leaves the suspicion as it was", () => {
-  assert.deepEqual(recordRun(ranAt(1, true), { renewed: 0, rejected: 0, unreachable: 0 }, NOW), ranAt(NOW, true));
-  assert.deepEqual(recordRun(ranAt(1, true), { renewed: 0, rejected: 1, unreachable: 0 }, NOW), ranAt(NOW, true));
+  assert.deepEqual(
+    recordRun(ranAt(1, true), { renewed: 0, rejected: 0, unreachable: 0 }, NOW),
+    ranAt(NOW, true),
+  );
+  assert.deepEqual(
+    recordRun(ranAt(1, true), { renewed: 0, rejected: 1, unreachable: 0 }, NOW),
+    ranAt(NOW, true),
+  );
 });
 
 test("the next run comes a period later, or soon when an account could not be asked", () => {
-  assert.equal(nextRunAt({ renewed: 2, rejected: 1, unreachable: 0 }, NOW), NOW + REFRESH_PERIOD_MS);
-  assert.equal(nextRunAt({ renewed: 2, rejected: 0, unreachable: 1 }, NOW), NOW + RETRY_MS);
+  assert.equal(
+    nextRunAt({ renewed: 2, rejected: 1, unreachable: 0 }, NOW),
+    NOW + REFRESH_PERIOD_MS,
+  );
+  assert.equal(
+    nextRunAt({ renewed: 2, rejected: 0, unreachable: 1 }, NOW),
+    NOW + RETRY_MS,
+  );
   assert.ok(RETRY_MS < REFRESH_PERIOD_MS);
 });
 
@@ -152,23 +240,50 @@ const cy = { name: "Cy", needsSignIn: true };
 
 test("the badge is empty while nobody has to sign in again", () => {
   assert.deepEqual(badge([], "en"), { text: "", names: "", kind: "none" });
-  assert.deepEqual(badge([ada], "en", false), { text: "", names: "", kind: "none" });
+  assert.deepEqual(badge([ada], "en", false), {
+    text: "",
+    names: "",
+    kind: "none",
+  });
 });
 
 test("the badge counts the accounts that have to sign in again and names them", () => {
-  assert.deepEqual(badge([ada, bob], "en"), { text: "1", names: "Bob", kind: "signIn" });
-  assert.deepEqual(badge([ada, bob, cy], "en"), { text: "2", names: "Bob and Cy", kind: "signIn" });
-  assert.deepEqual(badge([bob, cy], "de"), { text: "2", names: "Bob und Cy", kind: "signIn" });
+  assert.deepEqual(badge([ada, bob], "en"), {
+    text: "1",
+    names: "Bob",
+    kind: "signIn",
+  });
+  assert.deepEqual(badge([ada, bob, cy], "en"), {
+    text: "2",
+    names: "Bob and Cy",
+    kind: "signIn",
+  });
+  assert.deepEqual(badge([bob, cy], "de"), {
+    text: "2",
+    names: "Bob und Cy",
+    kind: "signIn",
+  });
 });
 
 test("the badge shows a plus while the page holds a session that no account keeps yet", () => {
-  assert.deepEqual(badge([ada], "en", true), { text: "+", names: "", kind: "unsaved" });
+  assert.deepEqual(badge([ada], "en", true), {
+    text: "+",
+    names: "",
+    kind: "unsaved",
+  });
   // The tooltip still names who has to sign in again.
-  assert.deepEqual(badge([ada, bob, cy], "en", true), { text: "+", names: "Bob and Cy", kind: "unsaved" });
+  assert.deepEqual(badge([ada, bob, cy], "en", true), {
+    text: "+",
+    names: "Bob and Cy",
+    kind: "unsaved",
+  });
 });
 
 test("the badge stays short with many accounts", () => {
-  const many = Array.from({ length: 10 }, (_, index) => ({ name: `P${index}`, needsSignIn: true }));
+  const many = Array.from({ length: 10 }, (_, index) => ({
+    name: `P${index}`,
+    needsSignIn: true,
+  }));
   assert.equal(badge(many.slice(0, 9), "en").text, "9");
   assert.equal(badge(many, "en").text, "9+");
 });
@@ -188,7 +303,10 @@ test("renewedAgo says in minutes how long ago a session was renewed within the h
 
 test("renewedAgo says it in hours for up to two days", () => {
   assert.equal(renewedAgo(NOW - HOUR, NOW, "en"), "1 hour ago");
-  assert.equal(renewedAgo(NOW - 3 * HOUR - 20 * MINUTE, NOW, "en"), "3 hours ago");
+  assert.equal(
+    renewedAgo(NOW - 3 * HOUR - 20 * MINUTE, NOW, "en"),
+    "3 hours ago",
+  );
   assert.equal(renewedAgo(NOW - 3 * HOUR, NOW, "de"), "vor 3 Stunden");
   assert.equal(renewedAgo(NOW - 47 * HOUR, NOW, "en"), "47 hours ago");
 });
@@ -204,11 +322,17 @@ test("renewedAgo counts a time ahead of the clock as now", () => {
 
 test("failingSince names the day and the time when the renewal began to fail, in the language of the popup", () => {
   // Versions of ICU differ in the space before "PM", a narrow one or a plain one.
-  assert.equal(failingSince(NOW, "en", "UTC").replace(/\s/gu, " "), "Oct 24, 2026, 8:00 PM");
+  assert.equal(
+    failingSince(NOW, "en", "UTC").replace(/\s/gu, " "),
+    "Oct 24, 2026, 8:00 PM",
+  );
   assert.equal(failingSince(NOW, "de", "Europe/Berlin"), "24.10.2026, 22:00");
 });
 
 test("failingSince takes the time zone of the computer when none is named", () => {
-  const local = new Intl.DateTimeFormat("de", { dateStyle: "medium", timeStyle: "short" }).format(NOW);
+  const local = new Intl.DateTimeFormat("de", {
+    dateStyle: "medium",
+    timeStyle: "short",
+  }).format(NOW);
   assert.equal(failingSince(NOW, "de"), local);
 });
