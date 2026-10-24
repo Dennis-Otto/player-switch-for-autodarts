@@ -3,9 +3,11 @@
 # lists gain their new items, and values replace those of repository.toml.
 # https://github.com/Dennis-Otto/repo-blueprint#settings-as-code
 
-# Checks that only this project runs, such as its end-to-end tests:
-# [branch]
-# required_checks = ["e2e"]
+# Checks that only this project runs: its end-to-end tests, whose job "e2e" of
+# .github/workflows/e2e.yml passes in seconds for a pull request that changes nothing
+# that they run.
+[branch]
+required_checks = ["e2e"]
 
 # An environment of this project and the secrets it needs:
 # [environments.deploy]

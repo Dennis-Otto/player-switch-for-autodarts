@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Fake Autodarts Play</title>
+    <style>
+      body {
+        margin: 0;
+        padding: 24px;
+        font: 16px/1.4 system-ui, sans-serif;
+      }
+    </style>
+  </head>
+  <body data-state="starting">
+    <!-- The stand-in for Autodarts Play in the end-to-end tests (play.js). -->
+    <h1>Fake Autodarts Play</h1>
+    <p>Signed in as <strong id="who"></strong></p>
+    <form id="sign-in" hidden>
+      <label>Username <input name="username" autocomplete="off" /></label>
+      <label>Password <input name="password" type="password" autocomplete="off" /></label>
+      <button type="submit">Sign in</button>
+      <p id="sign-in-error" hidden>Wrong username or password</p>
+    </form>
+    <script src="/__e2e__/play.js"></script>
+  </body>
+</html>

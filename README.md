@@ -139,7 +139,7 @@ Under **Manage accounts**, choose **Remember password** for an account, and the 
 
 ## Development
 
-Contributions are welcome. [CONTRIBUTING.md](CONTRIBUTING.md) has the rules and the checks, [docs/development.md](docs/development.md) explains how the code is laid out, how to run the extension from the source and what the tests check, among them property-based tests that run the account logic on generated inputs, and [docs/releases.md](docs/releases.md) how a release reaches the Chrome Web Store.
+Contributions are welcome. [CONTRIBUTING.md](CONTRIBUTING.md) has the rules and the checks, [docs/development.md](docs/development.md) explains how the code is laid out, how to run the extension from the source and what the tests check, among them property-based tests that run the account logic on generated inputs and end-to-end tests that run the built extension in a real Chromium against a fake Autodarts, and [docs/releases.md](docs/releases.md) how a release reaches the Chrome Web Store.
 
 ## Support and security
 
