@@ -267,6 +267,12 @@ test("refreshParked with nothing parked changes nothing", async () => {
   assert.equal(store.saves, 0);
 });
 
+test("refreshParked leaves the account that is playing to the page", async () => {
+  const store = new FakeStore(setActive(park(EMPTY, ada, "ta", 0), ada));
+  const state = await refreshParked(deps(store, new FakePage("live"), router()));
+  assert.equal(state.activeId, "a");
+});
+
 test("refreshParked keeps each fresh token as soon as it arrives", async () => {
   const store = new FakeStore(park(park(EMPTY, ada, "ta", 0), bob, "tb", 0));
   let askedForBob = (): void => {};
