@@ -1,11 +1,13 @@
-// Checks that the two language files carry the same keys and that every message the
-// popup and the service worker ask for exists. Run by scripts/check-project.sh; no
-// dependencies.
-import { readFileSync } from "node:fs";
+// Checks that the two language files carry the same keys, that every message the
+// extension asks for exists, and that every message is asked for somewhere. It reads
+// every page and script of extension/ (not the built lib/) and the manifest. Run by
+// scripts/check-project.sh; no dependencies.
+import { readdirSync, readFileSync } from "node:fs";
 
-const read = (path) => JSON.parse(readFileSync(new URL(`../${path}`, import.meta.url), "utf8"));
-const en = read("extension/_locales/en/messages.json");
-const de = read("extension/_locales/de/messages.json");
+const root = new URL("../extension/", import.meta.url);
+const text = (path) => readFileSync(new URL(path, root), "utf8");
+const en = JSON.parse(text("_locales/en/messages.json"));
+const de = JSON.parse(text("_locales/de/messages.json"));
 
 const problems = [];
 
@@ -22,21 +24,27 @@ for (const key of deKeys) {
   }
 }
 
-const sources = ["extension/popup.js", "extension/popup.html", "extension/background.js"].map((path) =>
-  readFileSync(new URL(`../${path}`, import.meta.url), "utf8"),
-);
-const used = new Set();
-for (const source of sources) {
-  for (const match of source.matchAll(/\bt\("([A-Za-z]+)"/g)) {
-    used.add(match[1]);
-  }
-  for (const match of source.matchAll(/data-i18n="([A-Za-z]+)"/g)) {
-    used.add(match[1]);
+// Where a key is asked for: t("key") in a script, data-i18n="key" for a text and
+// data-i18n-label="key" for a name in a page, __MSG_key__ in the manifest.
+const patterns = [/\bt\("([A-Za-z]+)"/g, /\bdata-i18n(?:-label)?="([A-Za-z]+)"/g, /__MSG_([A-Za-z]+)__/g];
+const files = readdirSync(root).filter((name) => /\.(?:html|js)$/.test(name) || name === "manifest.json");
+const used = new Map();
+for (const file of files) {
+  const source = text(file);
+  for (const pattern of patterns) {
+    for (const match of source.matchAll(pattern)) {
+      used.set(match[1], used.get(match[1]) ?? file);
+    }
   }
 }
-for (const key of used) {
+for (const [key, file] of used) {
   if (!enKeys.has(key)) {
-    problems.push(`the extension uses "${key}", which no message defines`);
+    problems.push(`extension/${file} uses "${key}", which no message defines`);
+  }
+}
+for (const key of enKeys) {
+  if (!used.has(key)) {
+    problems.push(`the message "${key}" is used nowhere; remove it from both languages`);
   }
 }
 
@@ -46,4 +54,4 @@ if (problems.length > 0) {
   }
   process.exit(1);
 }
-console.log(`Both languages define the same ${enKeys.size} messages.`);
+console.log(`Both languages define the same ${enKeys.size} messages, and the ${files.length} files of the extension use every one.`);

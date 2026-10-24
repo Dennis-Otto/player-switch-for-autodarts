@@ -23,6 +23,7 @@ and never leaves it except to Autodarts itself:
   token stops working. It is stored as plain text in `chrome.storage.local`, like
   the token, and is sent only to `api.autodarts.com/auth/v1/login`. Leave it off,
   and no password is ever stored.
+- **The settings of the button in the page:** whether it shows, and in which corner.
 - **When the renewal last ran,** and whether Autodarts turned every parked account
   away in it, so that the extension catches up on a renewal it missed while the
   computer was off and can suggest an update of itself. This holds no token and no
@@ -39,6 +40,14 @@ stored session is `extension/content.js`.
    the browser profile it sits in.
 2. **Extension → Autodarts.** Tokens and passwords go only to `autodarts.com`,
    over HTTPS. Nothing is sent anywhere else, and nothing is logged.
+3. **The Autodarts page ↔ the switcher in it.** The switcher that the page shows is
+   `switcher.html`, a page of the extension in a frame: another origin than the
+   page, so the scripts of the page can't read the accounts out of it, and it sits in
+   a closed shadow root. Only that page is web-accessible, and only for
+   `play.autodarts.com` and `play.autodarts.io`. The content script in the page learns
+   only the name and picture of the player on the button, never a token or a password,
+   and the service worker takes a request to see or change the accounts only from a
+   page of the extension, not from the content script.
 
 ## Threats and countermeasures
 
@@ -51,12 +60,18 @@ stored session is `extension/content.js`.
 | A switch lands in a hidden tab, or another Autodarts tab plays on as the account before and spends its token | A switch goes to the Autodarts tab shown in the window used last, and every other Autodarts tab reloads once the session in the page has changed, so no tab keeps the account before in memory |
 | A page that starts renews its session while the extension parks it | With no tab that answers, the extension opens or reloads one and waits until the page has renewed the session it started with, so it parks the fresh token of the player before and not a spent one |
 | The extension sees more of the browser than it needs | It asks for no `tabs` permission: it finds the Autodarts tabs through its host access and asks only for them, and the browser gives it the address and title of no other tab |
+| The scripts of the Autodarts page read the saved accounts out of the switcher | The switcher is a page of the extension in a frame of another origin, inside a closed shadow root; the content script gets only the player on the button from the service worker |
+| A switch during a match ends it by surprise | On a match page, the service worker refuses a switch or a sign-out until the person confirms, before it spends a token |
 
 ## Residual risks
 
 - A stored token or password is only as protected as the computer and browser
   profile it lives in; this extension is for a trusted, shared machine, not a
   public one.
+- The Autodarts page can tell that the extension is installed, from the button and
+  from `switcher.html`, which it may load. A page that wanted to could also lay the
+  switcher under a decoy and trick a tap on it; that would take a script of Autodarts
+  itself, which already holds the session of the player in the page.
 - Autodarts' sign-in is not a published interface. A change on their side can stop
   the extension working until it is adjusted, and could change how long a parked
   token stays valid.

@@ -253,6 +253,20 @@ test("the page reads the session from the tab in front, not the first one listed
   assert.deepEqual(browser.log, ["read 2"]);
 });
 
+test("a preferred tab takes the request first, and the others reload after a write", async () => {
+  const browser = new FakeBrowser("t").add(1, { active: true }).add(2);
+  assert.equal(await createPage(browser, 2).readToken(), "t");
+  await createPage(browser, 2).writeToken("new");
+  assert.deepEqual(browser.log.slice(0, 2), ["read 2", "write 2"]);
+  assert.ok(browser.log.includes("reload 1"));
+});
+
+test("a preferred tab that closed leaves the request to the tab in front", async () => {
+  const browser = new FakeBrowser("t").add(1, { active: true });
+  assert.equal(await createPage(browser, 9).readToken(), "t");
+  assert.deepEqual(browser.log, ["read 1"]);
+});
+
 test("when the tab in front has no content script that answers, the next one takes the request", async () => {
   const browser = new FakeBrowser("t")
     .add(1)

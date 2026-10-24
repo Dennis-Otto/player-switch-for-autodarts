@@ -46,6 +46,22 @@ The display in the hallway, the club or the pub is shared, but everyone plays un
 
 </div>
 
+## On the board display
+
+A board display often runs in fullscreen or as a kiosk, where the toolbar and its popup are out of reach. So the Autodarts page itself carries a round button in a corner, with the picture of the player. A tap on it shows the players over the page in large tiles for a touch screen, with everything the popup has.
+
+- **Keyboard:** <kbd>Alt</kbd>+<kbd>Shift</kbd>+<kbd>O</kbd> opens and closes the players on the page, <kbd>Alt</kbd>+<kbd>Shift</kbd>+<kbd>P</kbd> the popup; the keys <kbd>1</kbd> to <kbd>9</kbd> pick a player and <kbd>Esc</kbd> closes. Change the shortcuts under `chrome://extensions/shortcuts`.
+- **A match ends only on purpose:** on the page of a running match, a switch asks first, before it spends a token.
+- **Your corner:** **Settings** in the popup turns the button off or moves it to another corner.
+- **Private:** the players open in a page of the extension, in a frame of its own, so the scripts of the Autodarts page can't read the saved accounts.
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="images/diagrams/switch-from-the-page.dark.svg">
+  <img src="images/diagrams/switch-from-the-page.svg" alt="Switch players from the Autodarts page: In fullscreen or kiosk mode, a tap on the round button in a corner of the Autodarts page, or the keyboard shortcut, opens the switcher over the page. It is a page of the extension in a frame, so the page can't read the accounts. A tap on a player, or the keys 1 to 9, switches; on a match page the switcher asks first, before any token is spent, and the page reloads as the chosen player.">
+</picture>
+
+Tip: Chrome puts a new extension in the puzzle-piece menu of the toolbar; pin it there, and its button stays in sight.
+
 ## How it works
 
 Autodarts Play keeps the signed-in session as a single value in the browser, a rotating refresh token. The extension keeps that value per account and swaps it when you switch:
@@ -64,6 +80,6 @@ Autodarts Play keeps the signed-in session as a single value in the browser, a r
 
 - The way the extension keeps a session is not an official Autodarts interface. A change on Autodarts' side can stop it until the extension is adjusted. When Autodarts turns every saved account away at once, the popup says so and links to the known problems and updates, so you look for an update of the extension rather than sign everyone in again.
 - It is built for a display that the people of a household, club or venue share and trust: anyone at that display can switch to any saved account.
-- It asks only for access to the Autodarts sites, its own storage and a timer for the renewal. It can't read the address or title of your other tabs, or your browsing history.
+- It asks only for access to the Autodarts sites, its own storage, a timer for the renewal and the right to run its own script in the Autodarts tabs after an update. It can't read the address or title of your other tabs, or your browsing history.
 
 Not affiliated with Autodarts.

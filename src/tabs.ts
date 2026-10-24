@@ -112,15 +112,21 @@ interface Delivery {
 }
 
 /**
- * Sends a request to the tab in front. When its content script doesn't answer, as in
+ * Sends a request to the tab in front, or to the `preferred` one while it is open.
+ * When its content script doesn't answer, as in
  * a tab that still loads or that was open before the extension was installed or
  * updated, the next tab gets it.
  */
 async function deliver(
   tabs: TabsPort,
   request: PageRequest,
+  preferred: number | undefined,
 ): Promise<Delivery> {
-  const candidates = await ranked(tabs);
+  const all = await ranked(tabs);
+  const candidates = [
+    ...all.filter((tab) => tab.id === preferred),
+    ...all.filter((tab) => tab.id !== preferred),
+  ];
   for (const tab of candidates) {
     try {
       const reply = await tabs.send(tab.id, request);
@@ -154,8 +160,12 @@ function tokenOf(reply: unknown): string | null {
  * same moment would both send that token, and Autodarts takes a token that comes a
  * second time for a stolen one and ends the session of its account.
  */
-async function change(tabs: TabsPort, request: PageRequest): Promise<void> {
-  const { tab, others } = await deliver(tabs, request);
+async function change(
+  tabs: TabsPort,
+  request: PageRequest,
+  preferred: number | undefined,
+): Promise<void> {
+  const { tab, others } = await deliver(tabs, request, preferred);
   // The session is in the page already; a tab that doesn't come back fails no switch.
   await settle(tabs, tab.id).catch(() => undefined);
   for (const other of others) {
@@ -169,18 +179,25 @@ async function change(tabs: TabsPort, request: PageRequest): Promise<void> {
   }
 }
 
-/** The page of `switch.ts`, in the Autodarts tab in front. */
-export function createPage(tabs: TabsPort): PagePort {
+/**
+ * The page of `switch.ts`, in the Autodarts tab in front, or in the `preferred` tab
+ * while it is open, such as the one whose switcher the person tapped.
+ */
+export function createPage(tabs: TabsPort, preferred?: number): PagePort {
   return {
     async readToken() {
-      const { reply } = await deliver(tabs, { type: "page", action: "read" });
+      const { reply } = await deliver(
+        tabs,
+        { type: "page", action: "read" },
+        preferred,
+      );
       return tokenOf(reply);
     },
     writeToken(token) {
-      return change(tabs, { type: "page", action: "write", token });
+      return change(tabs, { type: "page", action: "write", token }, preferred);
     },
     clearToken() {
-      return change(tabs, { type: "page", action: "clear" });
+      return change(tabs, { type: "page", action: "clear" }, preferred);
     },
   };
 }
