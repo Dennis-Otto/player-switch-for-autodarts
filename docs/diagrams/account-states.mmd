@@ -19,6 +19,7 @@ flowchart TB
     parked -- "a tap" --> playing
     parked -- "every<br>12 hours" --> renewal
     renewal -- "a fresh<br>token" --> parked
+    playing --> signin
     renewal -- "turned away,<br>also at a tap" --> signin
     signin -- "remember the password<br>and tap, or sign in<br>with Add account" --> playing
     signin ~~~ removed

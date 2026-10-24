@@ -5,20 +5,20 @@ config:
 ---
 flowchart TB
     accTitle: Where the data goes
-    accDescr: Everything stays in the browser on this computer. The popup and the switcher ask the service worker, which keeps a token per account, a password only when one is remembered, the settings of the button, the time of the last renewal and until when a new account is being added in chrome.storage.local. It moves a session in and out of the Autodarts page only through content.js, the one script that reads or writes the session in the page's localStorage. To renew a token, sign in with a password or end a session, it talks to api.autodarts.com over HTTPS, the same service the Autodarts page itself uses. Nothing goes anywhere else: no server of the developer, no analytics, no other site; Help and Report a problem only open a page in a new tab.
+    accDescr: Everything stays in the browser on this computer. The popup and the switcher ask the service worker, which keeps a token per account, a password only when one is remembered, the settings of the button, the time of the last renewal, whether Autodarts turned every account away in it, and until when a new account is being added in chrome.storage.local. It moves a session into the Autodarts page and reads the outgoing one out of it only through content.js, the one script that reads or writes the session in the page's localStorage. To renew a token, sign in with a password or end a session, it talks to api.autodarts.com over HTTPS, the same service the Autodarts page itself uses. The popup and the switcher show each player's picture from the address Autodarts gives for it. Nothing else goes anywhere: no server of the developer, no analytics; Help and Report a problem only open a page in a new tab.
 
     subgraph computer ["The browser on this computer"]
         direction TB
         ui["The popup<br>and the switcher<br>pages of the extension"]
         worker["The service worker<br>switches, renews, signs in"]
-        storage[("chrome.storage.local<br>a token per account,<br>a password if remembered,<br>the button's settings,<br>the last renewal")]
+        storage[("chrome.storage.local<br>a token per account,<br>a password if remembered,<br>the button's settings,<br>the last renewal,<br>the window for<br>a new account")]
         page["The Autodarts page<br>its session in<br>localStorage, touched<br>only by content.js"]
         storage <--> worker
         ui -- "a tap" --> worker
-        worker -- "a session" --> page
+        worker <-- "a session,<br>in and out" --> page
     end
     api["api.autodarts.com<br>renews a token, signs in,<br>ends a session"]
-    nobody["Nobody else<br>no server of the developer,<br>no analytics, no other site"]
+    nobody["Nobody else<br>no server of the developer,<br>no analytics; only the<br>players' pictures load from<br>where Autodarts keeps them"]
 
     worker -- "HTTPS" --> api
     page --> api

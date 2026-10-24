@@ -19,6 +19,7 @@ flowchart TB
     parked -- "ein Tipp" --> playing
     parked -- "alle<br>12 Stunden" --> renewal
     renewal -- "ein frischer<br>Token" --> parked
+    playing --> signin
     renewal -- "abgewiesen,<br>auch bei einem Tipp" --> signin
     signin -- "Passwort merken und<br>tippen, oder mit Konto<br>hinzufügen anmelden" --> playing
     signin ~~~ removed
