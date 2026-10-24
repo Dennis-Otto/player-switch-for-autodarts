@@ -22,6 +22,7 @@ import {
 
 const ada: Identity = { id: "a", username: "ada", name: "Ada", picture: "https://p/a.png" };
 const bob: Identity = { id: "b", username: "bob", name: "Bob", picture: null };
+const cy: Identity = { id: "c", username: "cy", name: "Cy", picture: null };
 
 test("parseState starts empty from anything unexpected", () => {
   assert.deepEqual(parseState(null), EMPTY);
@@ -178,9 +179,22 @@ test("toView hides the session and shows what the popup needs", () => {
   state = activate(state, "a");
   const view = toView(state, true);
   assert.deepEqual(view.profiles, [
-    { id: "a", username: "ada", name: "Ada", picture: "https://p/a.png", needsSignIn: false, remembersPassword: true, active: true },
+    { id: "a", username: "ada", name: "Ada", picture: "https://p/a.png", needsSignIn: false, remembersPassword: true, active: true, renewedAt: null },
   ]);
   assert.equal(view.unsaved, false);
+});
+
+test("toView shows when the extension last renewed a parked session, and only then", () => {
+  let state = park(park(park(EMPTY, ada, "ta", 10), bob, "tb", 20), cy, "tc", 30);
+  state = activate(state, "a");
+  state = endSession(state, "c");
+  const renewed = toView(state, true).profiles.map((profile) => [profile.id, profile.renewedAt]);
+  // Ada plays, so the page renews her session; Cy has none.
+  assert.deepEqual(renewed, [
+    ["a", null],
+    ["b", 20],
+    ["c", null],
+  ]);
 });
 
 test("toView reports a session that belongs to no account yet", () => {

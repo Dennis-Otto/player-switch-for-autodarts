@@ -1,4 +1,8 @@
 {
+  "locale": {
+    "message": "en",
+    "description": "The language code of this translation, used to format names and times. Do not translate; use the code of the language of this file."
+  },
   "extName": {
     "message": "Player Switch for Autodarts",
     "description": "The name of the extension."
@@ -21,6 +25,22 @@
   },
   "needsSignIn": {
     "message": "Sign in again"
+  },
+  "badgeTitle": {
+    "message": "Player Switch for Autodarts – sign in again: $NAMES$",
+    "description": "The tooltip of the toolbar icon while accounts have to sign in again. $NAMES$ is a list of their names, such as 'Ada and Bob'.",
+    "placeholders": { "names": { "content": "$1" } }
+  },
+  "renewed": {
+    "message": "Renewed $WHEN$",
+    "description": "When the extension last renewed the parked session of an account. $WHEN$ is a relative time, such as '3 hours ago'.",
+    "placeholders": { "when": { "content": "$1" } }
+  },
+  "updateHintText": {
+    "message": "Autodarts may have changed how it signs in. Check for an update of Player Switch."
+  },
+  "updateHintLink": {
+    "message": "Known problems and updates"
   },
   "addAccount": {
     "message": "Add account"
