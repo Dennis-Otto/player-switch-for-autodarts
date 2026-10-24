@@ -2,9 +2,13 @@
 // both show them: one module, so the two can't drift apart. It holds no account logic:
 // it asks the service worker for a view and sends it the person's taps. All the
 // thinking happens in the worker and in lib/.
+import { renewedAgo } from "./lib/health.js";
 import { initialOf, tileForKey } from "./lib/page.js";
 
 export const t = (key, substitution) => chrome.i18n.getMessage(key, substitution);
+// The language of the texts that show, so that names and times read the same: the
+// browser may run in a language the extension has no texts for.
+const language = t("locale");
 
 /**
  * Fills every element that carries a data-i18n key with its translated text, and
@@ -112,6 +116,7 @@ export function mountPlayers({ numbered = false, onRender = () => {} } = {}) {
   const statusBar = document.querySelector("#status");
   const unsaved = document.querySelector("#unsaved");
   const manageButton = document.querySelector("#manage");
+  const updateHint = document.querySelector("#update-hint");
 
   let managing = false;
   // True while a request is with the service worker: the page then takes no other tap.
@@ -196,6 +201,7 @@ export function mountPlayers({ numbered = false, onRender = () => {} } = {}) {
       profiles.append(tile(profile, index));
     });
     unsaved.hidden = !view.unsaved;
+    updateHint.hidden = view.updateHint !== true;
     if (view.profiles.length === 0 && !view.unsaved && !statusBar.classList.contains("is-error")) {
       showStatus(t("empty"));
     }
@@ -233,6 +239,13 @@ export function mountPlayers({ numbered = false, onRender = () => {} } = {}) {
 
     const menu = node.querySelector(".menu");
     menu.hidden = !managing;
+
+    // Shows in the manage view that the renewal of a parked session works.
+    if (profile.renewedAt !== null) {
+      const renewed = node.querySelector(".renewed");
+      renewed.textContent = t("renewed", renewedAgo(profile.renewedAt, Date.now(), language));
+      renewed.hidden = false;
+    }
 
     button.addEventListener("click", () => {
       if (busy || managing || profile.active) {
@@ -333,7 +346,7 @@ export function mountPlayers({ numbered = false, onRender = () => {} } = {}) {
     });
   }
 
-  document.documentElement.lang = chrome.i18n.getUILanguage();
+  document.documentElement.lang = language;
   translate(document);
   void send("view");
 }

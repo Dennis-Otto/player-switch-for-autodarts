@@ -17,6 +17,9 @@ developer or to any third party.
   token stops working. It is off by default, and you can remove it at any time.
 - **The settings of the button on the Autodarts page:** whether it shows, and in
   which corner.
+- **The time of the last renewal**, and whether Autodarts turned every account
+  away in it, so the extension can catch up after the computer was off and tell you
+  when it may need an update.
 
 ## Where data is sent
 

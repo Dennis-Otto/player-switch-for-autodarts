@@ -70,7 +70,7 @@ document.querySelector("#shortcuts").addEventListener("click", () => {
   void chrome.tabs.create({ url: "chrome://extensions/shortcuts" });
 });
 
-document.documentElement.lang = chrome.i18n.getUILanguage();
+document.documentElement.lang = chrome.i18n.getMessage("locale");
 document.title = `${t("settings")} · ${t("extName")}`;
 translate(document);
 

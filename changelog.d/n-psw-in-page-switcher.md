@@ -10,3 +10,6 @@
 - A new options page, behind "Settings" in the popup, turns the button off or moves
   it to another corner. Removing an account now asks in a dialog that works on a
   touch screen.
+- After an update of the extension, the button keeps working in Autodarts tabs that
+  were already open, without a reload. A switch from the button on the page always
+  happens in that tab, also with Autodarts open in two windows.

@@ -1,4 +1,8 @@
 {
+  "locale": {
+    "message": "de",
+    "description": "The language code of this translation, used to format names and times. Do not translate; use the code of the language of this file."
+  },
   "extName": {
     "message": "Player Switch for Autodarts",
     "description": "Der Name der Erweiterung."
@@ -21,6 +25,20 @@
   },
   "needsSignIn": {
     "message": "Neu anmelden"
+  },
+  "badgeTitle": {
+    "message": "Player Switch for Autodarts – neu anmelden: $NAMES$",
+    "placeholders": { "names": { "content": "$1" } }
+  },
+  "renewed": {
+    "message": "Erneuert $WHEN$",
+    "placeholders": { "when": { "content": "$1" } }
+  },
+  "updateHintText": {
+    "message": "Autodarts hat vielleicht geändert, wie die Anmeldung funktioniert. Schau, ob es ein Update von Player Switch gibt."
+  },
+  "updateHintLink": {
+    "message": "Bekannte Probleme und Updates"
   },
   "addAccount": {
     "message": "Konto hinzufügen"
@@ -96,6 +114,9 @@
   },
   "switchButton": {
     "message": "Spieler wechseln"
+  },
+  "reloadAfterUpdate": {
+    "message": "Player Switch wurde aktualisiert. Die Seite neu laden, um es zu nutzen? Ein laufendes Match endet auf diesem Bildschirm."
   },
   "switchButtonPlaying": {
     "message": "$NAME$ spielt. Spieler wechseln",

@@ -68,7 +68,8 @@ Autodarts Play keeps the signed-in session as a single value in the browser, a r
 
 - **Switching** parks the session of the account that was playing, writes the chosen account's session into the page and reloads.
 - **The account that steps aside is not signed out at Autodarts.** Its session stays valid; switching away only takes it off the page.
-- **Parked sessions are kept fresh**, because the token rotates.
+- **Parked sessions are kept fresh**, because the token rotates: every 12 hours, and straight away after a start of the browser when the computer was off while a renewal was due. "Manage accounts" shows for each parked account when it was last renewed, such as "Renewed 3 hours ago".
+- **You see who needs attention.** When an account has to sign in again, the toolbar icon shows how many, and its tooltip names them.
 - **One change at a time.** A token works only once, so a second tap while a switch is on its way is ignored, and the renewal in the background waits for the switch. A double tap can't sign the previous player out.
 - **Password fallback, optional.** If you let the extension remember an account's password, it signs that account back in by itself should its token ever stop working. Accounts that sign in with Google or Apple can't use this.
 
@@ -76,7 +77,7 @@ Autodarts Play keeps the signed-in session as a single value in the browser, a r
 
 ## Good to know
 
-- The way the extension keeps a session is not an official Autodarts interface. A change on Autodarts' side can stop it until the extension is adjusted.
+- The way the extension keeps a session is not an official Autodarts interface. A change on Autodarts' side can stop it until the extension is adjusted. When Autodarts turns every saved account away at once, the popup says so and links to the known problems and updates, so you look for an update of the extension rather than sign everyone in again.
 - It is built for a display that the people of a household, club or venue share and trust: anyone at that display can switch to any saved account.
 
 Not affiliated with Autodarts.

@@ -268,11 +268,15 @@ test("the popup sees no session and no password of any account", () => {
           "needsSignIn",
           "picture",
           "remembersPassword",
+          "renewedAt",
           "username",
         ]);
         assert.equal(shown.id, profile?.id);
         assert.equal(shown.active, shown.id === state.activeId);
         assert.equal(shown.remembersPassword, profile?.credentials !== null);
+        // A time shows only for a parked session, which the extension renews itself.
+        const ownsSession = profile?.token !== null && !shown.active;
+        assert.equal(shown.renewedAt, ownsSession ? profile?.refreshedAt : null);
       }
     }),
   );
