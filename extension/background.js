@@ -1,9 +1,14 @@
 // The service worker: it wires the real browser (storage, the Autodarts tab, the
 // clock and fetch) to the logic in lib/, which is built from src/ and fully tested.
-// It holds no account logic of its own — only the wiring.
-import { forget, forgetCredentials, parseState, rememberCredentials, toView } from "./lib/state.js";
+// It holds no account logic of its own — only the wiring. Every read and change of
+// the accounts goes through lib/switch.js, which runs them one at a time in the queue
+// below, so a double tap or the background renewal can't spend a token twice.
+import { createQueue } from "./lib/queue.js";
+import { forget, forgetCredentials, parseState, rememberCredentials } from "./lib/state.js";
 import {
   adoptCurrentSession,
+  edit,
+  readView,
   refreshParked,
   signOutForNewAccount,
   switchTo,
@@ -13,6 +18,9 @@ import {
 const TAB_MATCHES = ["https://play.autodarts.com/*", "https://play.autodarts.io/*"];
 const STORAGE_KEY = "accounts";
 const REFRESH_ALARM = "refresh-parked";
+// How long a request to Autodarts may take. The account changes wait for each other,
+// so one request that never ends would hold up every tap after it.
+const REQUEST_TIMEOUT_MS = 20_000;
 
 /** Thrown when there is no Autodarts tab with the content script to talk to. */
 class NoPageError extends Error {
@@ -59,19 +67,13 @@ const page = {
   },
 };
 
-const deps = { store, page, fetcher: (url, init) => fetch(url, init), now: () => Date.now() };
-
-/** The current view, treating a missing page as simply no session on the page. */
-async function viewNow() {
-  const state = await store.load();
-  let hasSession = false;
-  try {
-    hasSession = (await page.readToken()) !== null;
-  } catch {
-    hasSession = false;
-  }
-  return toView(state, hasSession);
-}
+const deps = {
+  store,
+  page,
+  fetcher: (url, init) => fetch(url, { ...init, signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS) }),
+  now: () => Date.now(),
+  queue: createQueue(),
+};
 
 async function runAction(message) {
   switch (message.action) {
@@ -95,23 +97,17 @@ async function runAction(message) {
     case "signout":
       await signOutForNewAccount(deps);
       return { ok: true };
-    case "remember": {
-      const state = await store.load();
-      await store.save(
+    case "remember":
+      await edit(deps, (state) =>
         rememberCredentials(state, message.id, { username: message.username, password: message.password }),
       );
       return { ok: true };
-    }
-    case "forgetPassword": {
-      const state = await store.load();
-      await store.save(forgetCredentials(state, message.id));
+    case "forgetPassword":
+      await edit(deps, (state) => forgetCredentials(state, message.id));
       return { ok: true };
-    }
-    case "removeAccount": {
-      const state = await store.load();
-      await store.save(forget(state, message.id));
+    case "removeAccount":
+      await edit(deps, (state) => forget(state, message.id));
       return { ok: true };
-    }
     default:
       return { ok: true };
   }
@@ -120,12 +116,12 @@ async function runAction(message) {
 async function handlePopup(message) {
   try {
     const result = await runAction(message);
-    return { ...result, view: await viewNow() };
+    return { ...result, view: await readView(deps) };
   } catch (error) {
     if (error instanceof NoPageError) {
-      return { error: "noPage", view: await viewNow() };
+      return { error: "noPage", view: await readView(deps) };
     }
-    return { error: "error", view: await viewNow() };
+    return { error: "error", view: await readView(deps) };
   }
 }
 
