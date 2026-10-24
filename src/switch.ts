@@ -187,6 +187,11 @@ async function claim(deps: Deps, loaded: State, token: string): Promise<{ state:
     session = await refreshSession(deps.fetcher, token);
   } catch (error) {
     if ((error as AuthError).kind === "rejected") {
+      if ((await deps.page.readToken()) !== token) {
+        // The page renewed the token while it was read, so Autodarts turned the old one
+        // away: the page holds a fresh session, which must stay.
+        return { state: loaded, identity: null };
+      }
       await deps.page.clearToken();
       return { state: await commit(deps, deactivate(loaded)), identity: null };
     }
@@ -214,12 +219,20 @@ export type PickUp =
  * being added: the service worker asks each time an Autodarts page has finished
  * loading. Outside the window it changes nothing and spends no token, so a sign-in
  * later on is never saved by itself; a window that has run out is closed for good.
+ *
+ * Inside the window, `ready` runs first and says whether the page may be read now: the
+ * service worker waits there until a page that just loaded has renewed the session it
+ * started with, since a token sent a second time ends the session, and answers false
+ * while a match runs, which saving the session would end with a reload.
  */
-export function adoptNewSignIn(deps: Deps): Promise<PickUp> {
+export function adoptNewSignIn(deps: Deps, ready: () => Promise<boolean> = () => Promise.resolve(true)): Promise<PickUp> {
   return deps.queue(async (): Promise<PickUp> => {
     const state = await deps.store.load();
     if (!isAdding(state, deps.now())) {
       return { kind: "idle", state: state.addingUntil === null ? state : await commit(deps, stopAdding(state)) };
+    }
+    if (!(await ready())) {
+      return { kind: "waiting", state };
     }
     // A page that is still loading, or on the sign-in form, has no session yet.
     const token = await deps.page.readToken().catch(() => null);

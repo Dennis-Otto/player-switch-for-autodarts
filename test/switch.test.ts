@@ -316,6 +316,56 @@ test("adoptNewSignIn does nothing while no account is being added", async () => 
   assert.equal(store.saves, 0);
 });
 
+test("adoptNewSignIn reads the page only once it is ready", async () => {
+  const store = new FakeStore(startAdding(EMPTY, 2000));
+  // The page renews the token it started with while the extension waits for it.
+  const page = new FakePage("started-with");
+  const sent: string[] = [];
+  const fetcher = router({
+    refresh: (_url, init) => {
+      sent.push(String(init.body));
+      return Promise.resolve(sessionResponse("a", "fresh"));
+    },
+  });
+  const ready = () => {
+    page.token = "renewed";
+    return Promise.resolve(true);
+  };
+  const result = await adoptNewSignIn(deps(store, page, fetcher), ready);
+  assert.equal(result.kind, "saved");
+  assert.ok(sent.every((body) => !body.includes("started-with")));
+  assert.equal(page.clears, 0);
+  assert.equal(page.token, "fresh");
+});
+
+test("adoptNewSignIn waits while the page isn't ready, as during a match", async () => {
+  const store = new FakeStore(startAdding(EMPTY, 2000));
+  const page = new FakePage("in-page");
+  const fetcher = counting(router());
+  const result = await adoptNewSignIn(deps(store, page, fetcher), () => Promise.resolve(false));
+  assert.equal(result.kind, "waiting");
+  assert.equal(fetcher.calls, 0);
+  assert.equal(page.token, "in-page");
+  assert.equal(store.saves, 0);
+});
+
+test("adoptNewSignIn keeps a session that the page renewed while it was read", async () => {
+  const store = new FakeStore(startAdding(EMPTY, 2000));
+  const page = new FakePage("t1");
+  // The page sends T1 at the same moment, gets T2, and Autodarts turns the second T1 away.
+  const fetcher = router({
+    refresh: () => {
+      page.token = "t2";
+      return rejected();
+    },
+  });
+  const result = await adoptNewSignIn(deps(store, page, fetcher));
+  assert.equal(result.kind, "waiting");
+  assert.equal(page.clears, 0);
+  assert.equal(page.token, "t2");
+  assert.equal(store.state.addingUntil, 2000);
+});
+
 test("adoptNewSignIn keeps waiting while Autodarts can't be reached", async () => {
   const store = new FakeStore(startAdding(EMPTY, 2000));
   const page = new FakePage("in-page");

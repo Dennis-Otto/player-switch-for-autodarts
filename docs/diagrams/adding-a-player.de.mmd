@@ -5,9 +5,9 @@ config:
 ---
 flowchart TB
     accTitle: So wird ein neuer Spieler von selbst gespeichert
-    accDescr: Nach der Installation oder einem Tipp auf Konto hinzufügen meldet sich die Seite ab, und die Erweiterung wartet zehn Minuten auf ein neues Konto. Der neue Spieler meldet sich auf Autodarts an. Jedes Mal, wenn eine Seite von Autodarts fertig geladen ist, sucht die Erweiterung nach der Sitzung. Innerhalb der zehn Minuten speichert sie das Konto einmal, das Symbol zeigt einen Haken, und der Spieler spielt weiter. Nach den zehn Minuten, oder sobald ein Spieler gespeichert ist, wird keine Anmeldung von selbst gespeichert; das Symbol zeigt ein Plus, und Konto speichern im Popup speichert sie.
+    accDescr: Nach der Installation, die niemanden abmeldet, oder einem Tipp auf Konto hinzufügen, der die Seite abmeldet, wartet die Erweiterung zehn Minuten auf ein neues Konto. Der neue Spieler meldet sich auf Autodarts an. Jedes Mal, wenn eine Seite von Autodarts fertig geladen ist, sucht die Erweiterung nach der Sitzung. Innerhalb der zehn Minuten speichert sie das Konto einmal, das Symbol zeigt einen Haken, und der Spieler spielt weiter. Nach den zehn Minuten, oder sobald ein Spieler gespeichert ist, wird keine Anmeldung von selbst gespeichert; das Symbol zeigt ein Plus, und Konto speichern im Popup speichert sie.
 
-    add["Installation, oder ein Tipp auf Konto hinzufügen<br>die Seite meldet sich ab"]
+    add["Installation: niemand wird abgemeldet<br>Konto hinzufügen: die Seite meldet sich ab"]
     wait["Die Erweiterung wartet<br>zehn Minuten auf ein neues Konto"]
     signin["Der neue Spieler meldet sich<br>auf Autodarts an"]
     load["Eine Seite von Autodarts ist fertig geladen"]

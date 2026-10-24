@@ -264,6 +264,15 @@ async function settle(tabs: TabsPort, tabId: number): Promise<void> {
 }
 
 /**
+ * Waits until an Autodarts tab that just loaded has renewed the session it started
+ * with, or until it has had time to: then its token can be read without racing the
+ * page. A tab that doesn't answer ends the wait as well.
+ */
+export function settleTab(tabs: TabsPort, tabId: number): Promise<void> {
+  return settle(tabs, tabId).catch(() => undefined);
+}
+
+/**
  * Makes an Autodarts tab answer when none does: reloads the tab in front, or, with
  * no Autodarts tab at all, opens one in the background, so that the popup stays open
  * and can show how the switch ended. Answers with the tab that it opened, if any.

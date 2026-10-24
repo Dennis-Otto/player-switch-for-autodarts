@@ -16,6 +16,7 @@ import {
   preparePage,
   rankTabs,
   SETTLE_ATTEMPTS,
+  settleTab,
   showPage,
   type Tab,
   type TabsPort,
@@ -629,4 +630,18 @@ test("Add account with no tab open opens Autodarts and shows it signed out", asy
   assert.equal(browser.token, null);
   assert.equal(browser.log.at(-1), "focus 100");
   assert.equal(find(store.state, "a")?.token, autodarts.live.get("a"));
+});
+
+test("settleTab waits until a tab that just loaded has renewed its session", async () => {
+  const browser = new FakeBrowser("old").add(1, { active: true });
+  await browser.reload(1);
+  await settleTab(browser, 1);
+  assert.equal(browser.token, "old+");
+  assert.ok(browser.waits < SETTLE_ATTEMPTS);
+});
+
+test("settleTab gives up on a tab that never answers", async () => {
+  const browser = new FakeBrowser("t").add(1, { active: true, silentFor: ANSWER_ATTEMPTS + 1 });
+  await settleTab(browser, 1);
+  assert.equal(browser.waits, ANSWER_ATTEMPTS - 1);
 });

@@ -34,7 +34,7 @@ import {
   switchTo,
   syncFromPage,
 } from "./lib/switch.js";
-import { createPage, NoPageError, rankTabs, showPage, withPage } from "./lib/tabs.js";
+import { createPage, NoPageError, rankTabs, settleTab, showPage, withPage } from "./lib/tabs.js";
 
 const TAB_MATCHES = ["https://play.autodarts.com/*", "https://play.autodarts.io/*"];
 const STORAGE_KEY = "accounts";
@@ -146,7 +146,7 @@ async function runAction(message, tab) {
   switch (message.action) {
     case "view": {
       // A new account that signed in before the page told the worker is saved now.
-      const picked = await adoptNewSignIn(deps).catch(() => null);
+      const picked = await adoptNewSignIn(deps, noMatchRuns).catch(() => null);
       // A missing page here is normal (the popup may be open with no Autodarts tab).
       try {
         await syncFromPage(deps);
@@ -313,6 +313,10 @@ async function showBadge() {
     return;
   }
   const view = await readView({ ...shared, page: createPage(tabs) });
+  // A new account was saved while the view was read: its check mark stays.
+  if (Date.now() < confirmingUntil) {
+    return;
+  }
   const { text, names, kind } = badge(view.profiles, t("locale"), view.unsaved);
   const lines = [];
   if (kind === "unsaved") {
@@ -338,15 +342,29 @@ async function confirmSaved(name) {
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
 /**
+ * Whether no match runs in any Autodarts tab: saving a session by itself reloads every
+ * Autodarts tab, which would end a match without asking, as a switch asks first.
+ */
+async function noMatchRuns() {
+  return !(await chrome.tabs.query({ url: TAB_MATCHES })).some((tab) => mustConfirm(tab.url, false));
+}
+
+/**
  * After an Autodarts tab has finished loading: saves the session of a new account that
  * signed in there while an account is being added, and keeps the badge current, also for
  * a session that Autodarts stores a moment after the load.
  */
 async function pickUp(tab) {
   const deps = { ...shared, page: createPage(tabs, tab.id) };
+  // Autodarts renews the session it started with as the page loads: reading the token
+  // before that would send it a second time, which ends the session.
+  const ready = async () => {
+    await settleTab(tabs, tab.id);
+    return noMatchRuns();
+  };
   for (const delay of PICK_UP_DELAYS_MS) {
     await sleep(delay);
-    const result = await adoptNewSignIn(deps).catch(() => null);
+    const result = await adoptNewSignIn(deps, ready).catch(() => null);
     if (result?.kind === "saved") {
       await confirmSaved(result.identity.name);
       return;

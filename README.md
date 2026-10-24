@@ -75,11 +75,11 @@ After the install, a welcome page opens with these steps:
 2. **Sign in the first player** on [play.autodarts.com](https://play.autodarts.com). The account is saved by itself, and the icon shows ✓ for a moment.
 3. **Add the next players:** in the popup, or in the players on the Autodarts page, choose **Add account** and sign in as the next person. That account is saved by itself too, without opening the popup again.
 
-From then on, a tap on a tile switches accounts, and **Manage accounts** shows the options of each account. The extension saves a new sign-in by itself only in the ten minutes after **Add account** or the install, and only once; **Cancel** in the popup stops it earlier. A `+` on the icon says that someone is signed in who isn't saved, and **Save account** in the popup saves them.
+From then on, a tap on a tile switches accounts, and **Manage accounts** shows the options of each account. The extension saves a new sign-in by itself only in the ten minutes after **Add account** or the install, and only once; **Cancel** in the popup or the switcher stops it earlier. A `+` on the icon says that someone is signed in who isn't saved, and **Save account** in the popup saves them.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/images/diagrams/adding-a-player.dark.svg">
-  <img src="docs/images/diagrams/adding-a-player.svg" alt="How a new player is saved by itself: After the install or a tap on Add account, the page is signed out and the extension waits ten minutes for a new account. The new player signs in on Autodarts. Each time an Autodarts page has finished loading, the extension looks for the session. Within the ten minutes, it saves the account once, the icon shows a check mark, and the player plays on. After the ten minutes, or once a player was saved, a sign-in is never saved by itself; the icon shows a plus, and Save account in the popup saves it.">
+  <img src="docs/images/diagrams/adding-a-player.svg" alt="How a new player is saved by itself: After the install, which signs nobody out, or a tap on Add account, which signs the page out, the extension waits ten minutes for a new account. The new player signs in on Autodarts. Each time an Autodarts page has finished loading, the extension looks for the session. Within the ten minutes, it saves the account once, the icon shows a check mark, and the player plays on. After the ten minutes, or once a player was saved, a sign-in is never saved by itself; the icon shows a plus, and Save account in the popup saves it.">
 </picture>
 
 The popup links to **Help**, the documentation website, and to **Report a problem**, the bug form, filled in with the versions of the extension and the browser alone.

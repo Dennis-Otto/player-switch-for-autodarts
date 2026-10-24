@@ -30,7 +30,7 @@ not every sign-in on it is one that should become a tile.
 Option 3. The person has already said that a new account comes; saving the sign-in
 that follows is what they would do anyway. The window is short, is used once, closes
 when a saved account comes on, closes for good when it runs out, and **Cancel** in
-the popup closes it earlier, so a sign-in later on is never saved without a tap. A
+the popup or the switcher closes it earlier, so a sign-in later on is never saved without a tap. A
 `+` on the icon points at a session that no account keeps outside the window, and
 **Save account** stays for it. The window is part of the saved accounts
 (`addingUntil`), because the service worker stops while a person signs in.
@@ -45,3 +45,9 @@ the popup closes it earlier, so a sign-in later on is never saved without a tap.
 - Autodarts stores the session a moment after the page has loaded, so the service
   worker looks a few times over 15 seconds; the popup and the switcher on the page
   look as well when they open.
+- Autodarts renews the session it started with as a page loads, and a token sent a
+  second time ends the session: after a load, the service worker first waits until
+  the page has renewed it, as a switch does, and keeps a session that the page
+  renewed while Autodarts turned the old token away.
+- Saving a session reloads every Autodarts tab, so nothing is saved by itself while a
+  match runs in one of them; **Save account** and the `+` still cover that session.
