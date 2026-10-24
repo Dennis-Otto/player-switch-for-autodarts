@@ -117,3 +117,60 @@ export function router(
     return handler(url, init);
   };
 }
+
+/**
+ * Autodarts' sign-in service as far as a race needs it: it rotates the refresh token
+ * as the real one does, so each token works once. A token sent again is refused, and,
+ * as a service that detects the reuse of a token may do, it ends that account's
+ * session too. It answers only after other work has had a turn, as a network does.
+ */
+export class FakeAutodarts {
+  /** The refresh token that works now, by account. */
+  readonly live = new Map<string, string>();
+  /** The refresh tokens it was sent, in order. */
+  readonly refreshes: string[] = [];
+  /** How often a token that was used already came back. */
+  reuses = 0;
+  private readonly spent = new Map<string, string>();
+  private issued = 0;
+  private waiting: (() => void)[] = [];
+
+  /** Starts a session for an account and answers with its refresh token. */
+  issue(id: string): string {
+    this.issued += 1;
+    const token = `${id}-${this.issued}`;
+    this.live.set(id, token);
+    return token;
+  }
+
+  /** Settles once the next request has arrived, while its answer is still on the way. */
+  requested(): Promise<void> {
+    return new Promise((resolve) => {
+      this.waiting.push(resolve);
+    });
+  }
+
+  readonly fetch: Fetch = async (url, init) => {
+    const { refresh_token: token } = JSON.parse(String(init.body)) as { refresh_token: string };
+    if (!url.endsWith("/refresh")) {
+      throw new Error(`unexpected request to ${url}`);
+    }
+    this.refreshes.push(token);
+    for (const resolve of this.waiting.splice(0)) {
+      resolve();
+    }
+    await new Promise((resolve) => setTimeout(resolve, 5));
+    const owner = [...this.live].find(([, live]) => live === token)?.[0];
+    if (owner !== undefined) {
+      this.live.delete(owner);
+      this.spent.set(token, owner);
+      return sessionResponse(owner, this.issue(owner));
+    }
+    const victim = this.spent.get(token);
+    if (victim !== undefined) {
+      this.reuses += 1;
+      this.live.delete(victim);
+    }
+    return jsonResponse({ error: "invalid_grant" }, 400);
+  };
+}

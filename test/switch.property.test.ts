@@ -14,6 +14,7 @@ import { test } from "node:test";
 import fc from "fast-check";
 
 import { AuthError, type Fetch } from "../src/autodarts.ts";
+import { createQueue } from "../src/queue.ts";
 import {
   find,
   forget,
@@ -218,7 +219,7 @@ function world(): World {
   const page = new Page();
   const store = new JsonStore();
   let clock = 0;
-  const deps: Deps = { fetcher: autodarts.fetch, page, store, now: () => ++clock };
+  const deps: Deps = { fetcher: autodarts.fetch, page, store, now: () => ++clock, queue: createQueue() };
   return { autodarts, page, store, deps };
 }
 

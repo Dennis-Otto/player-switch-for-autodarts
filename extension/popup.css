@@ -313,3 +313,34 @@ input:focus-visible {
 #unsaved .primary {
   width: 100%;
 }
+
+/* While a request runs, the controls that send one take no tap. They fade only when
+   it takes a moment, so a quick answer doesn't make them flicker. */
+[aria-disabled="true"] {
+  cursor: progress;
+  opacity: 0.55;
+  transition: opacity 0.15s ease 0.2s;
+}
+
+.tile[aria-disabled="true"]:hover {
+  background: transparent;
+}
+
+.link[aria-disabled="true"]:hover {
+  text-decoration: none;
+}
+
+.primary[aria-disabled="true"]:hover {
+  filter: none;
+}
+
+.ghost[aria-disabled="true"]:hover {
+  border-color: var(--line);
+  color: var(--muted);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [aria-disabled="true"] {
+    transition: none;
+  }
+}

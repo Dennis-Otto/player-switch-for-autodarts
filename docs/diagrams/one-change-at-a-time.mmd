@@ -1,0 +1,32 @@
+---
+config:
+  flowchart:
+    wrappingWidth: 400
+---
+flowchart TB
+    accTitle: One change of the accounts at a time
+    accDescr: A tap on a player, a second tap on the same player and the renewal in the background wait in one queue of the service worker. Each turn loads the saved accounts, talks to Autodarts and the page, and saves before the next turn starts, so the second tap finds the player playing and spends no token.
+
+    tap["A tap on Bob"]
+    again["A second tap on Bob"]
+    renewal["The renewal in the background<br>one turn per parked account"]
+    queue["The queue of the service worker<br>one change at a time"]
+    tap --> queue
+    again --> queue
+    renewal --> queue
+
+    subgraph turn ["Each turn"]
+        direction TB
+        load["Load the saved accounts"]
+        work["Renew the token at Autodarts<br>and write it into the page"]
+        save["Save the accounts"]
+        load --> work --> save
+    end
+
+    queue --> load
+    save --> next["The next turn starts<br>the second tap finds Bob playing<br>and spends no token"]
+
+    classDef bot fill:#526cfe2e,stroke:#526cfe,stroke-width:2px
+    classDef done fill:#16a34a2e,stroke:#16a34a,stroke-width:2px
+    class queue bot
+    class next done

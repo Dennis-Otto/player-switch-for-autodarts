@@ -41,7 +41,7 @@ stored session is `extension/content.js`.
 | Threat | Countermeasure |
 | --- | --- |
 | A token is sent to the wrong place | Requests go only to `api.autodarts.com`; the host list in the manifest is limited to Autodarts |
-| A stale token is reused and locks an account out | The extension always keeps the token the server last returned (rotation) and renews parked tokens in the background |
+| A stale token is reused and locks an account out | The extension always keeps the token the server last returned (rotation) and renews parked tokens in the background; every change of the accounts runs one at a time in one queue of the service worker, so a double tap or the renewal never sends the same token twice |
 | A password is stored when it wasn't wanted | A password is kept only after an explicit "Remember password"; it is off by default and can be forgotten again |
 | The page's session is touched by surprise | Only `content.js` reads or writes it, only under the key `autodarts_refresh_token`, only on `play.autodarts.com` |
 

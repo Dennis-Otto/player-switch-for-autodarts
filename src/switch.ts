@@ -7,6 +7,11 @@
  * token in the page belongs to the page. The extension reads it only to park it
  * when switching away, and writes a token only when a different account takes over.
  * It never renews the token that is live in the page behind the page's back.
+ *
+ * And because a token works only once, every operation here runs in the queue of
+ * `deps.queue`, one at a time, and loads the accounts only when its turn has come:
+ * a double tap or the background renewal can't spend a token twice or save over the
+ * work of another.
  */
 import {
   type AuthError,
@@ -16,6 +21,7 @@ import {
   refreshSession,
   signIn,
 } from "./autodarts.ts";
+import type { Queue } from "./queue.ts";
 import {
   activate,
   deactivate,
@@ -26,6 +32,8 @@ import {
   type Profile,
   type State,
   stash,
+  toView,
+  type View,
 } from "./state.ts";
 
 /** The session in the page, where the Autodarts app reads and writes it. */
@@ -46,6 +54,8 @@ export interface Deps {
   page: PagePort;
   store: Store;
   now: () => number;
+  /** Runs the operations that read or change the accounts one at a time. */
+  queue: Queue;
 }
 
 /**
@@ -100,16 +110,41 @@ async function renew(deps: Deps, profile: Profile): Promise<Renewal> {
  * account's session has vanished (a sign-out in the page), it is marked as needing
  * a new one.
  */
-export async function syncFromPage(deps: Deps): Promise<State> {
-  const state = await deps.store.load();
-  const token = await deps.page.readToken();
-  if (token !== null) {
-    return state;
-  }
-  if (state.activeId === null) {
-    return state;
-  }
-  return commit(deps, endSession(state, state.activeId));
+export function syncFromPage(deps: Deps): Promise<State> {
+  return deps.queue(async () => {
+    const state = await deps.store.load();
+    const token = await deps.page.readToken();
+    if (token !== null) {
+      return state;
+    }
+    if (state.activeId === null) {
+      return state;
+    }
+    return commit(deps, endSession(state, state.activeId));
+  });
+}
+
+/**
+ * What the popup shows: the saved accounts, and whether a session is in the page. A
+ * missing page simply counts as no session there.
+ */
+export function readView(deps: Deps): Promise<View> {
+  return deps.queue(async () => {
+    const state = await deps.store.load();
+    const hasSession = await deps.page.readToken().then(
+      (token) => token !== null,
+      () => false,
+    );
+    return toView(state, hasSession);
+  });
+}
+
+/**
+ * Changes the saved accounts without the page or the network, such as remembering a
+ * password or removing an account.
+ */
+export function edit(deps: Deps, change: (state: State) => State): Promise<State> {
+  return deps.queue(async () => commit(deps, change(await deps.store.load())));
 }
 
 /**
@@ -117,7 +152,11 @@ export async function syncFromPage(deps: Deps): Promise<State> {
  * extension. Because reading who it is rotates the token, the fresh token is
  * written straight back, so the page stays signed in.
  */
-export async function adoptCurrentSession(deps: Deps): Promise<State> {
+export function adoptCurrentSession(deps: Deps): Promise<State> {
+  return deps.queue(() => adopt(deps));
+}
+
+async function adopt(deps: Deps): Promise<State> {
   let state = await deps.store.load();
   const token = await deps.page.readToken();
   if (token === null) {
@@ -151,9 +190,15 @@ export interface SwitchResult {
 
 /**
  * Brings an account onto the page. The account playing now, if any, keeps its
- * session parked, so a tap can bring it back without a new sign-in.
+ * session parked, so a tap can bring it back without a new sign-in. A second tap on
+ * the same account waits for the first and then finds it playing, so it spends no
+ * token.
  */
-export async function switchTo(deps: Deps, id: string): Promise<SwitchResult> {
+export function switchTo(deps: Deps, id: string): Promise<SwitchResult> {
+  return deps.queue(() => bringOn(deps, id));
+}
+
+async function bringOn(deps: Deps, id: string): Promise<SwitchResult> {
   let state = await deps.store.load();
   const target = find(state, id);
   if (target === undefined || state.activeId === id) {
@@ -182,7 +227,11 @@ export async function switchTo(deps: Deps, id: string): Promise<SwitchResult> {
  * Signs the page out so that a new account can sign in. The account playing now
  * keeps its session parked first, so it is not lost.
  */
-export async function signOutForNewAccount(deps: Deps): Promise<State> {
+export function signOutForNewAccount(deps: Deps): Promise<State> {
+  return deps.queue(() => signOut(deps));
+}
+
+async function signOut(deps: Deps): Promise<State> {
   let state = await deps.store.load();
   const outgoing = await deps.page.readToken();
   if (outgoing !== null && state.activeId !== null) {
@@ -197,16 +246,31 @@ export async function signOutForNewAccount(deps: Deps): Promise<State> {
  * Keeps every parked session fresh, so a stored account can play at any time. An
  * account whose token has died and that has no stored sign-in is marked as needing
  * one; a temporary problem leaves the account untouched for the next run.
+ *
+ * Each account takes a turn of its own in the queue, so a tap waits for one renewal at
+ * most, and each fresh token is saved as soon as it arrives.
  */
 export async function refreshParked(deps: Deps): Promise<State> {
-  let state = await deps.store.load();
-  for (const profile of parked(state)) {
-    const renewal = await renew(deps, profile);
-    if (renewal.kind === "ok") {
-      state = stash(state, profile.id, renewal.session.refreshToken, deps.now());
-    } else if (renewal.kind === "rejected") {
-      state = endSession(state, profile.id);
-    }
+  let state = await deps.queue(() => deps.store.load());
+  for (const { id } of parked(state)) {
+    state = await deps.queue(() => refreshOne(deps, id));
   }
-  return commit(deps, state);
+  return state;
+}
+
+async function refreshOne(deps: Deps, id: string): Promise<State> {
+  const state = await deps.store.load();
+  // A switch may have run since the list was made: renew only what is still parked.
+  const profile = parked(state).find((candidate) => candidate.id === id);
+  if (profile === undefined) {
+    return state;
+  }
+  const renewal = await renew(deps, profile);
+  if (renewal.kind === "ok") {
+    return commit(deps, stash(state, id, renewal.session.refreshToken, deps.now()));
+  }
+  if (renewal.kind === "rejected") {
+    return commit(deps, endSession(state, id));
+  }
+  return state;
 }
