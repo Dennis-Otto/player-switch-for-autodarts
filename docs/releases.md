@@ -44,7 +44,29 @@ The pictures show no logo and no design of Autodarts, and each screenshot says t
 
 ## Later versions
 
-Every release after the first reaches the store on its own: the workflow [`publish-store.yml`](https://github.com/Dennis-Otto/player-switch-for-autodarts/blob/main/.github/workflows/publish-store.yml) starts after every run of the Release workflow, and by hand under *Actions → Chrome Web Store* with a tag. It takes the latest published release and asks the store which version it has; a version that the store has already, under review or published, ends the run with a note. Otherwise it builds the package from the tag of the release, checks that the manifest carries the version of the release, keeps the package as an artifact of the run for 30 days, so that what went to the store can be looked at later, uploads it with the Chrome Web Store API and submits it for review. Google reviews each version again and publishes it after the review; a prerelease stays off the store. The workflow needs this one-time set-up:
+Every release after the first reaches the store on its own: the workflow [`publish-store.yml`](https://github.com/Dennis-Otto/player-switch-for-autodarts/blob/main/.github/workflows/publish-store.yml) starts after every run of the Release workflow, every day at 00:17 UTC, and by hand under *Actions → Chrome Web Store* with a tag. It signs in, asks the store for the state of the item and decides. A release that the store lacks goes to the store once no review is pending: a job without any secret builds the package from the tag of the release, checks that the manifest carries the version of the release and keeps the package as an artifact of the run for 30 days, so that what went to the store can be looked at later; then a job that reaches only Google uploads it with the Chrome Web Store API and submits it for review. Google reviews each version again and publishes it after the review; a prerelease stays off the store.
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="images/diagrams/store-delivery.dark.svg">
+  <img src="images/diagrams/store-delivery.svg" alt="How a release reaches the Chrome Web Store: After every release, every day at 00:17 UTC and when started by hand with a tag, the workflow signs in to the Chrome Web Store and asks for the state of the item. A refresh token that Google turns away, a rejected release, a warning, a takedown or a review of more than 7 days fail the run, with the reason and the fix in its summary, and the bot-health sweep of the night keeps an issue open. While a review is pending, the run ends with a note, and a later day delivers the release. When the store has the release already, nothing happens. Otherwise a job without any secret builds the zip from the tag and keeps it as an artifact, and a job that reaches only Google uploads it and submits it for review.">
+</picture>
+
+Every run writes a table into its summary: the release, the version that the store publishes and the one submitted since, each with its state, the days that a pending review has taken, and whether Google warned the item or took it down. `scripts/store-status.ts` decides, and its tests cover every row of this table:
+
+| What the store says | What the run does |
+| --- | --- |
+| It publishes the release, or has it approved | A note: nothing to deliver. |
+| It lacks the release, and no review is pending | Delivers the release. |
+| It reviews the release, or an earlier version | A note. The store takes no new version during a review, so a later day delivers the release. |
+| The review has taken more than 7 days | Fails. |
+| Google rejected the release | Fails. A start by hand with the tag submits it again. |
+| The submission of the release was cancelled in the dashboard | A note. A start by hand with the tag submits it again. |
+| Google rejected an earlier version | A warning, and delivers the release. |
+| Google warned the item | Fails, and still delivers a release that the store lacks, as it may be the fix. |
+| Google took the item down | Fails, and delivers nothing. |
+| It has a higher version than the release | Fails: the store takes only a version above its own. |
+
+The days of a review count from the artifact of the delivery, or from the release of the version when it went to the store another way. The workflow needs this one-time set-up:
 
 1. In the [Google Cloud Console](https://console.cloud.google.com/), create a project and enable the **Chrome Web Store API** for it.
 2. Under **APIs & Services → OAuth consent screen**, create the consent screen as an external app with your own address as a test user, then set its publishing status to **In production**: while it stays in testing, Google expires every refresh token after seven days.
@@ -73,4 +95,38 @@ Every release after the first reaches the store on its own: the workflow [`publi
     gh variable set CWS_PUBLISHER_ID --body PUBLISHER_ID
     ```
 
-While a version is still under review, the store takes no new one. Wait for the review, or cancel the submission in the dashboard, and then start the workflow by hand with the tag of the release. The package is not attached to the GitHub release: a release is immutable once published, and only the isolated build of the release workflow could add a file with its signed provenance; the artifact of the run holds it instead. [Decision 0003](decisions/0003-deliver-each-release-to-the-chrome-web-store.md) records the reasons.
+### When a run fails
+
+A failed run names the reason and the fix in its summary and in an annotation, and the bot-health sweep of the night opens an issue with the label `bot-failure`, which the next run that passes closes:
+
+- **Google turned the refresh token away** (`invalid_grant`): [renew it](#renew-the-refresh-token).
+- **Google doesn't know the OAuth client**: set `CWS_CLIENT_ID` and `CWS_CLIENT_SECRET` again from **Credentials** of the Google Cloud project (steps 3 and 6).
+- **Rejected**: the mail of Google and the [Developer Dashboard](https://chrome.google.com/webstore/devconsole) say why. Fix the cause and release a new version; when only the listing or the privacy practices had to change, change them in the dashboard and start the workflow by hand with the tag, which submits the same version again.
+- **Warned or taken down**: the dashboard says which policy and until when. Fix it there or with a new release, and ask for a review.
+- **In review for more than 7 days**: look in the dashboard whether Google asks for anything, or contact the support of the Chrome Web Store. A new permission makes a review take longer.
+- **A higher version in the store**: a version went to the store by hand without its release; release a version above it.
+
+A run that failed for a reason of GitHub or of the network needs nothing: the next daily run delivers the release.
+
+### Renew the refresh token
+
+The daily sign-in keeps the refresh token in use, so Google doesn't expire it after six months without use. It still ends when the password of the Google account changes, when someone removes the access of the app under **Security → Third-party connections** of the account, or when the consent screen goes back to testing (step 2). Then get a new one as in step 4, set it, and start the workflow by hand to check it:
+
+```sh
+gh secret set CWS_REFRESH_TOKEN --env chrome-web-store
+gh workflow run publish-store.yml
+```
+
+### The network of the jobs
+
+The jobs that hold the secrets of the store could publish a version to every user, so each job of the workflow reaches only the hosts that it needs: [Harden-Runner](https://github.com/step-security/harden-runner) blocks every other one with `egress-policy: block`, and the jobs run without sudo and containers, on `ubuntu-24.04`, an image that doesn't move to a new release of Ubuntu by itself.
+
+| Job | Secrets | Hosts |
+| --- | --- | --- |
+| *the state of the store* | the OAuth client and the refresh token | GitHub, `oauth2.googleapis.com`, `chromewebstore.googleapis.com` |
+| *the package of the release* | none | GitHub, `registry.npmjs.org` |
+| *deliver to the Chrome Web Store* | the OAuth client and the refresh token | `oauth2.googleapis.com`, `chromewebstore.googleapis.com` |
+
+GitHub means `api.github.com`, `github.com` and the two hosts of its downloads, for Node.js should the runner image lack its version; the hosts of the Actions service itself, such as those of the artifacts, are open to every job. The job that uploads runs no code of the repository and no npm package: it takes the zip of the job before it as an artifact. When a new version of an action needs another host, its run fails at the blocked request, and the insights of Harden-Runner, linked in the log of its first step, name the host to add to `allowed-endpoints`. `scripts/check-project.sh` fails when a job of the workflow goes back to recording its traffic only, gives up `disable-sudo-and-containers` or runs on `ubuntu-latest`.
+
+The package is not attached to the GitHub release: a release is immutable once published, and only the isolated build of the release workflow could add a file with its signed provenance; the artifact of the run holds it instead. [Decision 0003](decisions/0003-deliver-each-release-to-the-chrome-web-store.md) and [decision 0005](decisions/0005-look-after-the-store-every-day-from-a-closed-network.md) record the reasons.

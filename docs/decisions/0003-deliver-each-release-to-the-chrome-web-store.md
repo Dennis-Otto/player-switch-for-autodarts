@@ -1,6 +1,6 @@
 # Deliver each release to the Chrome Web Store from the release workflow
 
-- Status: accepted
+- Status: accepted, extended by [0005](0005-look-after-the-store-every-day-from-a-closed-network.md)
 - Date: 2026-10-15
 
 ## Context
@@ -55,7 +55,9 @@ provenance.
   refresh token lasts as long as the consent screen of the Google Cloud project is
   in production; in testing, it expires after seven days.
 - While a version is under review, the store takes no new one; after the review or
-  a cancellation, the workflow is started by hand with the tag.
+  a cancellation, the workflow is started by hand with the tag. Since
+  [decision 0005](0005-look-after-the-store-every-day-from-a-closed-network.md), a
+  daily run delivers it instead.
 - The upload zip is in the store and, for 30 days, in the artifact of the run, not on
   the GitHub release; attaching it there with its provenance needs a step in the
   isolated build, which belongs to the blueprint.
