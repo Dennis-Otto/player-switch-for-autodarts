@@ -1,4 +1,8 @@
 {
+  "locale": {
+    "message": "de",
+    "description": "The language code of this translation, used to format names and times. Do not translate; use the code of the language of this file."
+  },
   "extName": {
     "message": "Player Switch for Autodarts",
     "description": "Der Name der Erweiterung."

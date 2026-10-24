@@ -25,20 +25,26 @@ const BADGE_LIMIT = 9;
 export interface Health {
   /** When the last renewal ended in which Autodarts answered for every account, or null. */
   lastRefreshAt: number | null;
+  /** When the last renewal ran at all, answered or not, or null. */
+  lastAttemptAt: number | null;
   /** The last renewal that got answers turned every parked account away. */
   suspectedChange: boolean;
 }
 
-export const NO_HEALTH: Health = { lastRefreshAt: null, suspectedChange: false };
+export const NO_HEALTH: Health = { lastRefreshAt: null, lastAttemptAt: null, suspectedChange: false };
+
+const time = (value: unknown): number | null =>
+  typeof value === "number" && Number.isFinite(value) ? value : null;
 
 /** Reads a stored record, and starts afresh from anything it doesn't recognise. */
 export function parseHealth(stored: unknown): Health {
   if (typeof stored !== "object" || stored === null) {
     return NO_HEALTH;
   }
-  const { lastRefreshAt, suspectedChange } = stored as Record<string, unknown>;
+  const { lastRefreshAt, lastAttemptAt, suspectedChange } = stored as Record<string, unknown>;
   return {
-    lastRefreshAt: typeof lastRefreshAt === "number" && Number.isFinite(lastRefreshAt) ? lastRefreshAt : null,
+    lastRefreshAt: time(lastRefreshAt),
+    lastAttemptAt: time(lastAttemptAt),
     suspectedChange: suspectedChange === true,
   };
 }
@@ -60,13 +66,32 @@ export interface StartPlan {
   refreshNow: boolean;
 }
 
+/**
+ * A run was tried less than the retry time ago. Then a start does not try again, since
+ * an account that Autodarts keeps failing for would otherwise renew everyone at every
+ * wake-up of the service worker; the retry alarm comes soon enough.
+ */
+function triedRecently(health: Health, now: number): boolean {
+  const last = health.lastAttemptAt;
+  return last !== null && last <= now && now - last < RETRY_MS;
+}
+
 export function planStart(alarmExists: boolean, health: Health, now: number): StartPlan {
-  const refreshNow = isOverdue(health, now);
+  const overdue = isOverdue(health, now);
+  const refreshNow = overdue && !triedRecently(health, now);
   if (alarmExists) {
     return { alarmAt: null, refreshNow };
   }
-  // Not overdue means that the last run is recent and in the past.
-  const alarmAt = refreshNow ? now + REFRESH_PERIOD_MS : (health.lastRefreshAt as number) + REFRESH_PERIOD_MS;
+  let alarmAt: number;
+  if (refreshNow) {
+    alarmAt = now + REFRESH_PERIOD_MS;
+  } else if (overdue) {
+    // Tried recently, so the last attempt is in the past: retry when its time is up.
+    alarmAt = (health.lastAttemptAt as number) + RETRY_MS;
+  } else {
+    // Not overdue means that the last run is recent and in the past.
+    alarmAt = (health.lastRefreshAt as number) + REFRESH_PERIOD_MS;
+  }
   return { alarmAt, refreshNow };
 }
 
@@ -91,7 +116,8 @@ export function looksLikeSignInChanged(run: RunCounts): boolean {
 
 /**
  * The record after a run. Its time moves on only when Autodarts answered for every
- * account, so a start without a network catches up at the next start. A run that
+ * account, so a start without a network catches up at the next start; the time of the
+ * attempt moves on always, so that such a catch-up is tried at most once per retry time. A run that
  * renews an account clears the suspicion of a change, and one without any answer
  * leaves it as it was.
  */
@@ -102,7 +128,7 @@ export function recordRun(health: Health, run: RunCounts, now: number): Health {
   } else if (run.renewed > 0) {
     suspectedChange = false;
   }
-  return { lastRefreshAt: run.unreachable === 0 ? now : health.lastRefreshAt, suspectedChange };
+  return { lastRefreshAt: run.unreachable === 0 ? now : health.lastRefreshAt, lastAttemptAt: now, suspectedChange };
 }
 
 /** When the next run should start: soon when an account could not be renewed for now. */

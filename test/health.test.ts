@@ -24,7 +24,11 @@ const DAY = 24 * HOUR;
 // A clock that stands still, on a day in October.
 const NOW = Date.UTC(2026, 9, 24, 20, 0);
 
-const ranAt = (lastRefreshAt: number | null, suspectedChange = false): Health => ({ lastRefreshAt, suspectedChange });
+const ranAt = (
+  lastRefreshAt: number | null,
+  suspectedChange = false,
+  lastAttemptAt: number | null = lastRefreshAt,
+): Health => ({ lastRefreshAt, lastAttemptAt, suspectedChange });
 
 test("the period of the alarm and the one of the clock agree", () => {
   assert.equal(REFRESH_PERIOD_MS, REFRESH_PERIOD_MINUTES * MINUTE);
@@ -32,14 +36,15 @@ test("the period of the alarm and the one of the clock agree", () => {
 });
 
 test("parseHealth reads a stored record", () => {
-  assert.deepEqual(parseHealth({ lastRefreshAt: 5, suspectedChange: true }), ranAt(5, true));
+  assert.deepEqual(parseHealth({ lastRefreshAt: 5, lastAttemptAt: 7, suspectedChange: true }), ranAt(5, true, 7));
+  assert.deepEqual(parseHealth({ lastRefreshAt: 5 }), ranAt(5, false, null));
 });
 
 test("parseHealth starts afresh from anything it doesn't recognise", () => {
   assert.deepEqual(parseHealth(undefined), NO_HEALTH);
   assert.deepEqual(parseHealth(null), NO_HEALTH);
   assert.deepEqual(parseHealth("health"), NO_HEALTH);
-  assert.deepEqual(parseHealth({ lastRefreshAt: "yesterday", suspectedChange: "yes" }), NO_HEALTH);
+  assert.deepEqual(parseHealth({ lastRefreshAt: "yesterday", lastAttemptAt: "today", suspectedChange: "yes" }), NO_HEALTH);
   assert.deepEqual(parseHealth({ lastRefreshAt: Number.NaN }), NO_HEALTH);
   assert.deepEqual(parseHealth({ lastRefreshAt: Number.POSITIVE_INFINITY }), NO_HEALTH);
 });
@@ -78,6 +83,27 @@ test("a start with the alarm in place and a recent run changes nothing", () => {
   assert.deepEqual(planStart(true, ranAt(NOW - HOUR), NOW), { alarmAt: null, refreshNow: false });
 });
 
+test("an overdue renewal that was tried 5 minutes ago is not tried again at a start", () => {
+  const health = ranAt(NOW - 2 * DAY, false, NOW - 5 * MINUTE);
+  assert.deepEqual(planStart(true, health, NOW), { alarmAt: null, refreshNow: false });
+  assert.deepEqual(planStart(false, health, NOW), { alarmAt: NOW - 5 * MINUTE + RETRY_MS, refreshNow: false });
+});
+
+test("an overdue renewal that was tried 20 minutes ago is tried again at a start", () => {
+  assert.deepEqual(planStart(true, ranAt(NOW - 2 * DAY, false, NOW - 20 * MINUTE), NOW), {
+    alarmAt: null,
+    refreshNow: true,
+  });
+  assert.deepEqual(planStart(true, ranAt(null, false, NOW - RETRY_MS), NOW), { alarmAt: null, refreshNow: true });
+});
+
+test("an attempt ahead of the clock does not hold up a catch-up", () => {
+  assert.deepEqual(planStart(true, ranAt(NOW - 2 * DAY, false, NOW + MINUTE), NOW), {
+    alarmAt: null,
+    refreshNow: true,
+  });
+});
+
 test("every parked account turned away in one run hints at a change at Autodarts", () => {
   assert.equal(looksLikeSignInChanged({ renewed: 0, rejected: 2, unreachable: 0 }), true);
   assert.equal(looksLikeSignInChanged({ renewed: 0, rejected: 5, unreachable: 0 }), true);
@@ -96,8 +122,8 @@ test("a run that reached Autodarts for everyone moves the time on", () => {
 });
 
 test("a run without a network for an account keeps the old time, so the next start catches up", () => {
-  assert.deepEqual(recordRun(ranAt(1), { renewed: 1, rejected: 0, unreachable: 1 }, NOW), ranAt(1));
-  assert.deepEqual(recordRun(NO_HEALTH, { renewed: 0, rejected: 0, unreachable: 2 }, NOW), NO_HEALTH);
+  assert.deepEqual(recordRun(ranAt(1), { renewed: 1, rejected: 0, unreachable: 1 }, NOW), ranAt(1, false, NOW));
+  assert.deepEqual(recordRun(NO_HEALTH, { renewed: 0, rejected: 0, unreachable: 2 }, NOW), ranAt(null, false, NOW));
 });
 
 test("a run that turns everyone away records the suspicion of a change", () => {

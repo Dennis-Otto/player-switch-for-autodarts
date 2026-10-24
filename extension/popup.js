@@ -10,7 +10,9 @@ const manageButton = document.querySelector("#manage");
 const updateHint = document.querySelector("#update-hint");
 
 const t = (key, substitution) => chrome.i18n.getMessage(key, substitution);
-const language = chrome.i18n.getUILanguage();
+// The language of the texts that show, so that names and times read the same: the
+// browser may run in a language the extension has no texts for.
+const language = t("locale");
 
 let managing = false;
 // True while a request is with the service worker: the popup then takes no other tap.

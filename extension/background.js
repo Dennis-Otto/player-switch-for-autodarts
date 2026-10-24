@@ -163,7 +163,7 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
 
 /** Shows on the toolbar icon how many accounts have to sign in again, and who. */
 async function showBadge(state) {
-  const { text, names } = badge(state.profiles, chrome.i18n.getUILanguage());
+  const { text, names } = badge(state.profiles, t("locale"));
   await chrome.action.setBadgeText({ text });
   await chrome.action.setTitle({ title: names === "" ? t("extName") : t("badgeTitle", names) });
 }
