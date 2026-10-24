@@ -3,11 +3,12 @@ name: Issue assistant
 # A first analysis of new issues, the labels of the issue forms and the answers that
 # the assistant or the maintainer waits for: https://github.com/Dennis-Otto/issue-assistant
 #
-# event    no AI: labels and the next task
-# analyze  the AI engine of .github/issue-assistant/config.toml reads the checkout and
-#          a context folder and answers with JSON; read-only token, read-only tools,
-#          egress-firewall runner (.github/egress-firewall.yaml)
-# apply    no AI: checks the engine's answer and is the only job that writes
+# The jobs are the issue assistant's reusable workflow at the commit of a release, so
+# an update is a move of the pin below. event and apply run no AI; analyze runs the
+# engine of .github/issue-assistant/config.toml with a read-only token and read-only
+# tools on the egress-firewall runner (.github/egress-firewall.yaml), and apply
+# checks its answer before anything is written. The permissions below are the most
+# that any of its jobs gets.
 #
 # Without the engine's secret in the environment issue-assistant, or with the
 # repository variable ISSUE_ASSISTANT_AI set to "off", only labels and the lifecycle
@@ -27,7 +28,7 @@ on:
       mode:
         description: Task of the assistant
         type: choice
-        options: [triage, follow-up, maintainer-reply, release-reply]
+        options: [triage, follow-up, maintainer-reply, release-reply, maintainer-question]
         default: triage
       dry_run:
         description: Only show what the assistant would do
@@ -36,11 +37,15 @@ on:
 
 permissions: {}
 
+# The runs of one issue run one after the other. Up to 100 wait their turn, first
+# in, first out, so an answer written while an analysis runs is never dropped.
 concurrency:
   group: issue-assistant-${{ github.event.issue.number || inputs.issue }}
   cancel-in-progress: false
+  queue: max
 
 jobs:
+<<<<<<< before updating
   event:
     name: Handle the event
     if: >-
@@ -148,20 +153,22 @@ jobs:
     if: needs.analyze.outputs.answer != ''
     runs-on: ubuntu-latest
     timeout-minutes: 5
+=======
+  assistant:
+    name: Issue assistant
+>>>>>>> after updating
     permissions:
       contents: read
       issues: write
       discussions: read
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
-      - name: Check the engine's answer and post it
-        uses: Dennis-Otto/issue-assistant@a12fb7227ff7d966809cad4e043e159977fccfcd # v1.2.2
-        with:
-          command: apply
-          issue: ${{ needs.event.outputs.issue }}
-          mode: ${{ needs.event.outputs.mode }}
-          engine: ${{ needs.analyze.outputs.engine }}
-          answer: ${{ needs.analyze.outputs.answer }}
-          dry-run: ${{ inputs.dry_run || false }}
+    uses: Dennis-Otto/issue-assistant/.github/workflows/reusable-issue-assistant.yml@1f78330598c545784358643ceda2b720014ebb42 # v1.6.1
+    with:
+      dry_run: ${{ inputs.dry_run || false }}
+    # Passed by name: only the job analyze sees their values, those of the
+    # environment issue-assistant, which only the default branch may use.
+    secrets:
+      CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+      GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+      COPILOT_GITHUB_TOKEN: ${{ secrets.COPILOT_GITHUB_TOKEN }}

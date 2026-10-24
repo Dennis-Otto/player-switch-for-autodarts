@@ -1,25 +1,87 @@
 name: After the checks
 
-# The two bots that act on a finished run of the checks. One workflow for both, so
-# that every run of the checks starts one run after it, not two that mostly have
-# nothing to do. Neither checks out or runs the code of a pull request.
+# The bots that act on a finished run of the checks and of the release. One workflow
+# for all, so that every run starts one run after it, not one for each bot that
+# mostly has nothing to do. None checks out or runs the code of a pull request.
 #
-# The flaky-test bot: when a run of the tests fails for the first time, it runs the
-# failed jobs once more. A job that passes then failed without a change of the code:
-# its test is flaky, and the bot reports it in one issue, so that it gets fixed
+# The flaky-test bot: when a run of the tests fails for the first time, or a job of it
+# runs out of time, it runs the failed jobs once more. A job that passes then failed
+# without a change of the code: its test is flaky, and the bot reports it in one
+# issue, with the step, the test and the error that failed, so that it gets fixed
 # instead of failing pull requests at random. A job that fails again is a real
-# failure and stays red.
+# failure and stays red, and so does one that failed the same way for the commit
+# before: running it again would only keep a runner busy. A pull request names its
+# jobs and steps and writes its logs, so the issue shows them only as code, and the
+# branch of a fork not at all.
 #
-# The coverage bot: after the checks of a pull request, it compares the coverage of
-# its tests with that of main, file by file, and keeps one comment on the pull
-# request up to date. It reads the coverage reports that the checks keep as the
-# artifact "coverage".
+# The bot for cancelled checks: a newer run of a workflow cancels the one still running
+# for the same pull request. GitHub doesn't always create the runs in the order of the
+# commits, so a late run for an older commit can cancel the run for the head of the
+# pull request; its required checks then stay cancelled and block the merge. When a
+# run for the head of an open pull request was cancelled that way and no newer run of
+# its workflow for the same commit exists, the bot starts it again. A run that a
+# person cancelled, or one whose commit a newer push replaced, stays cancelled. The
+# quick checks avoid the race: their runs for different commits never cancel each
+# other.
+#
+# The bot for failed releases: when the release that a merge started fails, such as
+# at a push of its tag that GitHub refused for a moment, it runs the failed jobs once
+# more, where they stopped, instead of leaving the release and its rollout to a
+# person. The release workflow takes up a tag that it pushed already. A release that
+# a person or another bot already runs again, or ran again, is theirs: the bot leaves
+# it alone.
+#
+# The PR coach: after every run of the checks of a pull request, one comment on it
+# explains each check that failed: what it found, why that matters and how to fix
+# it, with the commands to run, from the explanations of .github/checks.toml and
+# .github/checks.project.toml. It works for a pull request from a fork as well, whose
+# own runs can't write to it. The comment follows every push and turns into a short
+# all-clear once every check passes. A check that was cancelled, as a job that ran out
+# of time is, hasn't passed either. It reads the check runs and their annotations from
+# the API and shows their text only as code, and waits up to three minutes for the
+# checks of other apps, such as the alerts of code scanning, which end after the last
+# workflow. The scanners, which run in the pull requests that change what they read,
+# start it as well. On a pull request of a person, the comment also says what the
+# pull request makes: the next version, from its title and the release-please files
+# of main, and the entry that it adds to the changelog; the coverage of its tests
+# against that of main, file by file, from the coverage reports that the checks keep
+# as the artifact "coverage", which a pull request from a fork writes as it likes;
+# and the website that the check docs built, with the pages that it changes. A pull
+# request whose checks never failed gets the comment only when it has something of
+# this to say, and one of a bot never.
+#
+# The fix bot: a check whose findings a command fixes, such as the format of the code,
+# the whitespace of a text file or the rules of markdownlint, runs the commands of
+# autofix in .github/checks.toml when it fails, on the head of the pull request or on
+# main, and keeps the files that they changed as an artifact fixes-*. Once the checks
+# of the commit that fix have ended, the bot takes these files as data: on a pull
+# request from a branch of this repository, also one of Renovate or another bot, it
+# commits them as one commit onto the branch, as the release app, so that the checks
+# run again; on one from a fork, which no bot may push to, it suggests them at their
+# lines, at most ten in one review, never one twice; on main, it keeps one pull
+# request from bot/self-heal with them, which merges itself, and closes it once main
+# needs no fix. blueprint.py of main lets through only text files that the commit has
+# already, outside .git and the workflows. It commits at most twice in a row onto its own commits,
+# and leaves a pull request with the label no-bot-fixes alone. When the bot fails, it
+# says so on the pull request; on main, it keeps one issue open until it passes again.
+#
+# The diagram bot: when the check diagrams of Lint finds a ```mermaid block, which
+# the GitHub app shows as code, or pictures of diagrams that differ from their sources
+# in docs/diagrams/, in a pull request from a branch of this repository, it commits
+# what scripts/diagrams.sh --extract changed in the check onto that branch, as the
+# release app, so that the checks run again, and says in a comment which blocks became
+# pictures. blueprint.py of main takes only sources, SVG pictures and pages of
+# Markdown from the artifact "diagrams". When the bot can't commit, it says so on the
+# pull request, with the command. A pull request from a fork keeps the failing check,
+# with the command that fixes it.
 # https://github.com/Dennis-Otto/repo-blueprint
 
 on:
   workflow_run:
-    # The checks of this repository, and its end-to-end tests if a workflow of its own named Docker E2E runs them.
-    workflows: [CI (node), Docker E2E]
+    # The checks of this repository, its end-to-end tests if a workflow of its own named Docker E2E runs them,
+    # and the workflows of its other tests that the answer test_workflows of the blueprint names.
+    # Then those of the other required checks and of the scanners, the same in every repository, and the release.
+    workflows: [CI (node), Docker E2E, CodeQL, Dependency review, Docs, Lint, Pull request title, Secret scan, Fuzzing, Links, OSV-Scanner, Workflow security, Release]
     types: [completed]
 
 permissions: {}
@@ -27,17 +89,21 @@ permissions: {}
 jobs:
   rerun:
     name: run the failed jobs again
+    # The tests only; the other required checks fail the same way again, and the
+    # release has a bot of its own.
     if: >-
       !github.event.repository.fork &&
-      github.event.workflow_run.conclusion == 'failure' &&
+      !contains(fromJSON('["CodeQL", "Dependency review", "Docs", "Lint", "Pull request title", "Secret scan", "Fuzzing", "Links", "OSV-Scanner", "Workflow security", "Release"]'), github.event.workflow_run.name) &&
+      contains(fromJSON('["failure", "cancelled"]'), github.event.workflow_run.conclusion) &&
       github.event.workflow_run.run_attempt == 1
     concurrency:
       group: ${{ github.workflow }}-flaky-${{ github.event.workflow_run.id }}
       cancel-in-progress: false
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 5
     permissions:
       actions: write
+      checks: read
     steps:
       - name: Record the network traffic of the job
         uses: step-security/harden-runner@ccd8616d44fd3846e67624a50d5aad6d37bf2d25 # v2.22.1
@@ -48,8 +114,68 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GH_REPO: ${{ github.repository }}
           RUN: ${{ github.event.workflow_run.id }}
+          CONCLUSION: ${{ github.event.workflow_run.conclusion }}
           NAME: ${{ github.event.workflow_run.name }}
+          WORKFLOW: ${{ github.event.workflow_run.workflow_id }}
+          EVENT: ${{ github.event.workflow_run.event }}
+          BRANCH: ${{ github.event.workflow_run.head_branch }}
+          HEAD_REPO: ${{ github.event.workflow_run.head_repository.full_name }}
+          SHA: ${{ github.event.workflow_run.head_sha }}
         run: |
+          # The jobs of an attempt that failed or ran out of time, by name, given the
+          # conclusion of the attempt: GitHub cancels a job at its time limit and says
+          # so in an annotation. An attempt that a newer run cancelled broke nothing; it
+          # is the business of the bot for cancelled checks. In one that a person or a
+          # time limit cancelled, only the jobs that ran out of time broke: a job that
+          # waits for the others fails when they are cancelled. With a third argument,
+          # only the jobs it names.
+          broken() {
+            local jobs id conclusion name messages found=""
+            jobs="$(gh api "repos/$GH_REPO/actions/runs/$1/jobs" --paginate \
+              --jq '.jobs[] | select(.conclusion == "failure" or .conclusion == "cancelled") | [.id, .conclusion, .name] | @tsv')" ||
+              return 1
+            while IFS=$'\t' read -r -u 4 id conclusion name; do
+              if [[ -z "$id" ]] || [[ "$conclusion" == failure && "$2" == cancelled ]]; then
+                continue
+              fi
+              if [[ "$conclusion" == cancelled ]]; then
+                messages="$(gh api "repos/$GH_REPO/check-runs/$id/annotations" --paginate --jq '.[].message')" ||
+                  return 1
+                if grep -q "higher priority waiting request" <<<"$messages"; then
+                  return 0
+                fi
+                if ! grep -q "has exceeded the maximum execution time" <<<"$messages"; then
+                  continue
+                fi
+              fi
+              if [[ -z "${3:-}" ]] || grep -Fxq -- "$name" <<<"$3"; then
+                found+="$name"$'\n'
+              fi
+            done 4<<<"$jobs"
+            printf '%s' "$found"
+          }
+          now="$(broken "$RUN/attempts/1" "$CONCLUSION")"
+          if [[ -z "$now" ]]; then
+            echo "No job of $NAME failed or ran out of time; a newer run or a person cancelled it." >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+          # A failure that the commit before ended with as well is a real one: the same
+          # jobs broke in the last attempt of the run for the previous commit of the
+          # branch, after the bot had run them once more. When that can't be read, the
+          # jobs run once more.
+          previous="$(gh api --method GET "repos/$GH_REPO/actions/workflows/$WORKFLOW/runs" \
+            -f branch="$BRANCH" -f event="$EVENT" -f status=completed -f per_page=30 \
+            --jq ".workflow_runs | map(select(.id < $RUN and .head_sha != \"$SHA\" and .head_repository.full_name == \"$HEAD_REPO\")) | .[0] // empty | [.id, .conclusion] | @tsv" ||
+            true)"
+          if [[ -n "$previous" ]] &&
+            [[ "$(broken "${previous%%$'\t'*}" "${previous#*$'\t'}" "$now" | sort)" == "$(sort <<<"$now")" ]]; then
+            mapfile -t jobs <<<"$now"
+            {
+              echo "The same jobs of $NAME broke for the commit before, so they don't run again:"
+              printf -- '- %s\n' "${jobs[@]}"
+            } >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
           gh run rerun "$RUN" --failed
           echo "The failed jobs of $NAME run once more: a flaky test passes now." >> "$GITHUB_STEP_SUMMARY"
 
@@ -57,15 +183,17 @@ jobs:
     name: report the flaky tests
     if: >-
       !github.event.repository.fork &&
+      !contains(fromJSON('["CodeQL", "Dependency review", "Docs", "Lint", "Pull request title", "Secret scan", "Fuzzing", "Links", "OSV-Scanner", "Workflow security", "Release"]'), github.event.workflow_run.name) &&
       github.event.workflow_run.conclusion == 'success' &&
       github.event.workflow_run.run_attempt > 1
     concurrency:
       group: ${{ github.workflow }}-flaky-${{ github.event.workflow_run.id }}
       cancel-in-progress: false
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 5
     permissions:
       actions: read
+      checks: read
       issues: write
     steps:
       - name: Record the network traffic of the job
@@ -80,49 +208,230 @@ jobs:
           NAME: ${{ github.event.workflow_run.name }}
           URL: ${{ github.event.workflow_run.html_url }}
           BRANCH: ${{ github.event.workflow_run.head_branch }}
+          HEAD_REPO: ${{ github.event.workflow_run.head_repository.full_name }}
           SHA: ${{ github.event.workflow_run.head_sha }}
         run: |
-          # The backticks are Markdown of jq's output, not the shell's.
-          # shellcheck disable=SC2016
+          # Lengths in characters, not bytes, so that a cut keeps every character whole.
+          export LC_ALL=C.UTF-8
+          # A cell of the table, as code: the names and the logs of a pull request reach
+          # it, so it keeps no backtick, line break or pipe of their own, and no more
+          # than a line.
+          cell() {
+            local text
+            text="$(printf '%s' "$1" | tr -d '`' | tr '\000-\037\177' ' ' | sed 's/|/\\|/g')"
+            if ((${#text} > 150)); then
+              text="${text:0:149}…"
+            fi
+            if [[ -n "${text// /}" ]]; then
+              # The backticks are Markdown, not the shell's.
+              # shellcheck disable=SC2016
+              printf '`%s`' "$text"
+            else
+              printf '–'
+            fi
+          }
+          # Each job that failed in the first attempt, or ran out of time there, with
+          # the step that broke, the tests that pytest names in its log, and the first
+          # error that it reported. An attempt that a newer run cancelled, as one that
+          # the bot for cancelled checks started again, failed in no test. In one that
+          # a person or a time limit cancelled, only the jobs that ran out of time
+          # broke: a job that waits for the others fails when they are cancelled.
+          first="$(gh api "repos/$GH_REPO/actions/runs/$RUN/attempts/1" --jq .conclusion)"
           jobs="$(gh api "repos/$GH_REPO/actions/runs/$RUN/attempts/1/jobs" --paginate \
-            --jq '.jobs[] | select(.conclusion == "failure") | "- `\(.name)`"')"
-          if [[ -z "$jobs" ]]; then
-            echo "No job failed at first; nothing to report." >> "$GITHUB_STEP_SUMMARY"
+            --jq '.jobs[] | select(.conclusion == "failure" or .conclusion == "cancelled") | [.id, .conclusion, .html_url, .name, ([.steps[]? | select(.conclusion == "failure" or .conclusion == "cancelled") | .name] | join(", "))] | @tsv')"
+          rows=""
+          while IFS=$'\t' read -r -u 3 id conclusion url name steps; do
+            if [[ -z "$id" ]] || [[ "$conclusion" == failure && "$first" == cancelled ]]; then
+              continue
+            fi
+            errors="$(gh api "repos/$GH_REPO/check-runs/$id/annotations" --paginate \
+              --jq '.[] | select(.annotation_level == "failure") | .message | gsub("\\s+"; " ")' || true)"
+            if grep -q "higher priority waiting request" <<<"$errors"; then
+              rows=""
+              break
+            fi
+            if [[ "$conclusion" == cancelled ]] && ! grep -q "has exceeded the maximum execution time" <<<"$errors"; then
+              continue
+            fi
+            failed="$(gh api "repos/$GH_REPO/actions/jobs/$id/logs" 2>/dev/null |
+              sed -E 's/\x1b\[[0-9;]*m//g; s/^[0-9-]+T[0-9:.]+Z //' |
+              grep -E '^(FAILED|ERROR) [^ ]+\.py(::| |$)' | head -n 3)"
+            tests="$(sed -nE 's/^[A-Z]+ ([^ ]+).*/\1/p' <<<"$failed" | awk 'NR > 1 { printf ", " } { printf "%s", $0 }')"
+            error="$(grep -v -e '^Process completed with exit code' -e '^The operation was canceled' <<<"$errors" | head -n 1)"
+            if [[ -z "$error" ]]; then
+              error="$(sed -nE '1s/^[A-Z]+ [^ ]+ - //p' <<<"$failed")"
+            fi
+            if [[ -z "$error" ]]; then
+              error="$(head -n 1 <<<"$errors")"
+            fi
+            rows+="| [$(cell "$name")]($url) | $(cell "$steps") | $(cell "$tests") | $(cell "$error") |"$'\n'
+          done 3<<<"$jobs"
+          if [[ -z "$rows" ]]; then
+            echo "No job failed or ran out of time at first; nothing to report." >> "$GITHUB_STEP_SUMMARY"
             exit 0
           fi
+          # A fork names its branches as it likes; the issue names only those of the
+          # repository.
+          where="a branch of a fork"
+          if [[ "$HEAD_REPO" == "$GH_REPO" ]]; then
+            where="$(cell "$BRANCH")"
+          fi
           title="Flaky tests"
-          body="$(printf '%s failed at first and passed when it ran again, on %s at %s ([the run](%s)):\n\n%s\n' \
-            "$NAME" "$BRANCH" "${SHA:0:7}" "$URL" "$jobs")"
+          body="$(printf '**%s** failed at first and passed when it ran again, on %s at %s ([the run](%s)):\n\n%s\n%s\n%s' \
+            "$NAME" "$where" "${SHA:0:7}" "$URL" \
+            "| Job | Step | Test | Error |" "| --- | --- | --- | --- |" "$rows")"
           number="$(gh issue list --state open --search "in:title \"$title\"" --json number,title \
             --jq "map(select(.title == \"$title\")) | .[0].number // empty")"
           if [[ -n "$number" ]]; then
             gh issue comment "$number" --body "$body"
           else
             printf '%s\n\n%s\n' \
-              "The flaky-test bot lists here every job that failed and then passed without a change of the code. Fix its test, then close this issue." \
+              "The flaky-test bot lists here every job that failed and then passed without a change of the code, with the step, the test and the error that failed. Fix its test, then close this issue." \
               "$body" > "$RUNNER_TEMP/issue.md"
-            gh issue create --title "$title" --body-file "$RUNNER_TEMP/issue.md"
+            gh issue create --title "$title" --label maintenance --body-file "$RUNNER_TEMP/issue.md"
           fi
           {
             echo "### Flaky"
-            echo "$jobs"
+            echo
+            echo "| Job | Step | Test | Error |"
+            echo "| --- | --- | --- | --- |"
+            printf '%s' "$rows"
           } >> "$GITHUB_STEP_SUMMARY"
 
-  coverage:
-    name: coverage comment
-    # The checks that keep a coverage report, when they ran.
+  release:
+    name: run the failed release again
+    # The release of a merge, once: a run that a person started is theirs, and the
+    # scheduled run looks again anyway.
     if: >-
       !github.event.repository.fork &&
-      github.event.workflow_run.event == 'pull_request' &&
-      contains(fromJSON('["success", "failure"]'), github.event.workflow_run.conclusion) &&
-      contains(fromJSON('["CI (python)", "CI (github-action)", "CI (home-assistant)", "CI (php)", "CI (node)"]'), github.event.workflow_run.name)
+      github.event.workflow_run.name == 'Release' &&
+      github.event.workflow_run.event == 'push' &&
+      github.event.workflow_run.conclusion == 'failure' &&
+      github.event.workflow_run.run_attempt == 1
     concurrency:
-      group: ${{ github.workflow }}-coverage-${{ github.event.workflow_run.head_sha }}
-      cancel-in-progress: true
-    runs-on: ubuntu-latest
+      group: ${{ github.workflow }}-release-${{ github.event.workflow_run.id }}
+      cancel-in-progress: false
+    runs-on: ubuntu-24.04
     timeout-minutes: 5
     permissions:
-      actions: read
+      actions: write
+    steps:
+      - name: Record the network traffic of the job
+        uses: step-security/harden-runner@ccd8616d44fd3846e67624a50d5aad6d37bf2d25 # v2.22.1
+        with:
+          egress-policy: audit
+      - name: Run the failed jobs of the release once more
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+          RUN: ${{ github.event.workflow_run.id }}
+          SHA: ${{ github.event.workflow_run.head_sha }}
+        run: |
+          # A person or another bot may have run the release again before this job
+          # started: then the run is theirs, and GitHub refuses a rerun while it runs.
+          state="$(gh api "repos/$GH_REPO/actions/runs/$RUN" --jq '"\(.status) \(.run_attempt)"')"
+          if [[ "$state" != "completed 1" ]]; then
+            case "${state%% *}" in
+              completed) now="done" ;;
+              queued | waiting | pending | requested) now="waiting" ;;
+              *) now="running" ;;
+            esac
+            echo "The release of ${SHA:0:7} ran again already: its attempt ${state#* } is $now. The bot leaves it alone." >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+          # It may also start again between the look and the rerun.
+          if ! output="$(gh run rerun "$RUN" --failed 2>&1)"; then
+            if grep -q "already running" <<<"$output"; then
+              echo "The release of ${SHA:0:7} runs again already; the bot leaves it alone." >> "$GITHUB_STEP_SUMMARY"
+              exit 0
+            fi
+            printf '%s\n' "$output" >&2
+            exit 1
+          fi
+          printf '%s\n' "$output"
+          echo "The failed jobs of the release of ${SHA:0:7} run once more, where they stopped." >> "$GITHUB_STEP_SUMMARY"
+
+  cancelled:
+    name: run the cancelled checks again
+    if: >-
+      !github.event.repository.fork &&
+      github.event.workflow_run.conclusion == 'cancelled' &&
+      contains(fromJSON('["pull_request", "pull_request_target"]'), github.event.workflow_run.event) &&
+      github.event.workflow_run.run_attempt < 3
+    concurrency:
+      group: ${{ github.workflow }}-cancelled-${{ github.event.workflow_run.id }}
+      cancel-in-progress: false
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      actions: write
+      checks: read
+      pull-requests: read
+    steps:
+      - name: Record the network traffic of the job
+        uses: step-security/harden-runner@ccd8616d44fd3846e67624a50d5aad6d37bf2d25 # v2.22.1
+        with:
+          egress-policy: audit
+      - name: Run the checks of the head of the pull request again
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+          RUN: ${{ github.event.workflow_run.id }}
+          ATTEMPT: ${{ github.event.workflow_run.run_attempt }}
+          WORKFLOW: ${{ github.event.workflow_run.workflow_id }}
+          NAME: ${{ github.event.workflow_run.name }}
+          SHA: ${{ github.event.workflow_run.head_sha }}
+        run: |
+          # Only the runs for the head of a pull request report its checks.
+          number="$(gh api "repos/$GH_REPO/commits/$SHA/pulls" \
+            --jq "map(select(.state == \"open\" and .head.sha == \"$SHA\")) | .[0].number // empty")"
+          if [[ -z "$number" ]]; then
+            echo "${SHA:0:7} is not the head of an open pull request; its run of $NAME stays cancelled." >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+          # A newer run of the same commit reports the checks itself.
+          newer="$(gh api "repos/$GH_REPO/actions/workflows/$WORKFLOW/runs?head_sha=$SHA" --paginate \
+            --jq ".workflow_runs[] | select(.id > $RUN) | .id")"
+          if [[ -n "$newer" ]]; then
+            echo "A newer run of $NAME for ${SHA:0:7} reports the checks of #$number." >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+          # Cancelled by the concurrency of the workflow, which says so on the job.
+          jobs="$(gh api "repos/$GH_REPO/actions/runs/$RUN/attempts/$ATTEMPT/jobs" --paginate \
+            --jq '.jobs[] | select(.conclusion == "cancelled") | .id')"
+          raced=false
+          for job in $jobs; do
+            if gh api "repos/$GH_REPO/check-runs/$job/annotations" --paginate --jq '.[].message' |
+              grep -q "higher priority waiting request"; then
+              raced=true
+              break
+            fi
+          done
+          if [[ "$raced" != true ]]; then
+            echo "No newer run of $NAME cancelled it, but a person or a time limit; it stays cancelled." >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+          gh run rerun "$RUN"
+          echo "A run for an older commit cancelled $NAME for the head of #$number; it runs again." >> "$GITHUB_STEP_SUMMARY"
+
+  coach:
+    name: PR coach
+    # After every run of the checks of a pull request, also one from a fork, and one
+    # that was cancelled: a job that ran out of time ends so, and its check hasn't
+    # passed. For a run that a push cancelled, the coach finds that its commit is no
+    # longer the head and stops.
+    if: >-
+      !github.event.repository.fork &&
+      contains(fromJSON('["pull_request", "pull_request_target"]'), github.event.workflow_run.event)
+    # One report at a time for each commit, so that the last one sees every check.
+    concurrency:
+      group: ${{ github.workflow }}-coach-${{ github.event.workflow_run.head_sha }}
+      cancel-in-progress: false
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      actions: read # the coverage reports and the website that the checks kept
+      checks: read
       contents: read
       pull-requests: write
     steps:
@@ -130,54 +439,346 @@ jobs:
         uses: step-security/harden-runner@ccd8616d44fd3846e67624a50d5aad6d37bf2d25 # v2.22.1
         with:
           egress-policy: audit
-      # The default branch, for blueprint.py; the pull request only gives its report.
+      # The default branch, for blueprint.py, the explanations and the versions of
+      # release-please; nothing of the pull request is checked out or run, its checks
+      # only come from the API.
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-      - name: Fetch the reports of the pull request and of main
-        id: reports
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          GH_REPO: ${{ github.repository }}
-          RUN: ${{ github.event.workflow_run.id }}
-          WORKFLOW: ${{ github.event.workflow_run.workflow_id }}
-        run: |
-          mkdir -p "$RUNNER_TEMP/head" "$RUNNER_TEMP/base"
-          if ! gh run download "$RUN" --name coverage --dir "$RUNNER_TEMP/head"; then
-            echo "The checks kept no coverage report; nothing to compare." >> "$GITHUB_STEP_SUMMARY"
-            exit 0
-          fi
-          base="$(gh run list --workflow "$WORKFLOW" --branch main --event push --status success \
-            --limit 1 --json databaseId --jq '.[0].databaseId // empty')"
-          if [[ -n "$base" ]]; then
-            gh run download "$base" --name coverage --dir "$RUNNER_TEMP/base" || true
-          fi
-          echo "found=true" >> "$GITHUB_OUTPUT"
-      - name: Keep one comment on the pull request up to date
-        if: steps.reports.outputs.found == 'true'
+          sparse-checkout: |
+            .github
+            blueprint
+      # Every run of the coach reads them anew, as a newer run takes the place of one
+      # that waits: the run after the tests may never come. It runs for every run,
+      # also one a bot started: the bots push to pull requests of people too. The
+      # coach gives a pull request that a bot opened no coverage in its report.
+      - name: Fetch the coverage reports of the head and of main
+        id: coverage
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GH_REPO: ${{ github.repository }}
           SHA: ${{ github.event.workflow_run.head_sha }}
+        run: |
+          # The newest run of the tests of the head that ended, and its workflow.
+          run="$(gh run list --commit "$SHA" --status completed --limit 100 \
+            --json databaseId,workflowDatabaseId,workflowName,conclusion \
+            --jq 'first(.[] | select((.workflowName | startswith("CI (")) and (.conclusion == "success" or .conclusion == "failure"))) | "\(.databaseId) \(.workflowDatabaseId)"')"
+          if [[ -z "$run" ]] || ! gh run download "${run% *}" --name coverage --dir "$RUNNER_TEMP/head"; then
+            echo "No run of the tests of ${SHA:0:7} kept a coverage report so far." >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+          base="$(gh run list --workflow "${run#* }" --branch main --event push --status success \
+            --limit 1 --json databaseId --jq '.[0].databaseId // empty')"
+          if [[ -n "$base" ]]; then
+            gh run download "$base" --name coverage --dir "$RUNNER_TEMP/base" || true
+          fi
+          # The report of Cobertura, coverage.xml, or that of the test runner of
+          # Node, lcov.info, which the coach reads as LCOV by its name.
+          report=coverage.xml
+          if [[ -f "$RUNNER_TEMP/head/lcov.info" ]]; then
+            report=lcov.info
+          fi
+          {
+            echo "head=$RUNNER_TEMP/head/$report"
+            echo "base=$RUNNER_TEMP/base/$report"
+          } >> "$GITHUB_OUTPUT"
+      - name: Keep the one report of the PR coach up to date
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+          SHA: ${{ github.event.workflow_run.head_sha }}
+          # A pull request from a fork isn't named in the run; its commit finds it.
           NUMBER: ${{ github.event.workflow_run.pull_requests[0].number }}
+          COVERAGE: ${{ steps.coverage.outputs.head }}
+          COVERAGE_BASE: ${{ steps.coverage.outputs.base }}
         run: |
           script=.github/blueprint.py
           [[ -f "$script" ]] || script=blueprint.py
-          python3 "$script" coverage "$RUNNER_TEMP/head/coverage.xml" "$RUNNER_TEMP/base/coverage.xml" \
-            > "$RUNNER_TEMP/comment.md"
-          cat "$RUNNER_TEMP/comment.md" >> "$GITHUB_STEP_SUMMARY"
+          python3 "$script" --repo "$GH_REPO" coach report "$SHA" --pull "$NUMBER" \
+            --coverage "$COVERAGE" --coverage-base "$COVERAGE_BASE" >> "$GITHUB_STEP_SUMMARY"
+
+  fixes:
+    name: the fix bot
+    # After a run of Lint or of the CI that failed for a pull request, also one from a
+    # fork, and after every run of the CI on main, which also closes the pull request
+    # of the fixes of main once main needs none.
+    if: >-
+      !github.event.repository.fork &&
+      (github.event.workflow_run.name == 'Lint' || startsWith(github.event.workflow_run.name, 'CI (')) &&
+      ((github.event.workflow_run.event == 'pull_request' && github.event.workflow_run.conclusion == 'failure') ||
+      (github.event.workflow_run.event == 'push' &&
+      github.event.workflow_run.head_branch == github.event.repository.default_branch &&
+      github.event.workflow_run.head_repository.full_name == github.repository &&
+      contains(fromJSON('["success", "failure"]'), github.event.workflow_run.conclusion)))
+    # One run at a time for each branch, so that two runs never commit onto it at once.
+    concurrency:
+      group: ${{ github.workflow }}-fixes-${{ github.event.workflow_run.head_repository.full_name }}-${{ github.event.workflow_run.head_branch }}
+      cancel-in-progress: false
+    runs-on: ubuntu-24.04
+    # It waits up to a quarter of an hour for the other checks of the commit that fix.
+    timeout-minutes: 20
+    # The environment holds the private key of the release app; only main may use it.
+    environment:
+      name: release
+      deployment: false
+    permissions:
+      actions: read # the runs of the commit and the fixes that their checks kept
+      contents: read # blueprint.py of main, and the files of the commit
+      issues: write # the issue of the fix bot of main, when it fails
+      pull-requests: write # the suggestions on a pull request from a fork, and the comment when the bot fails
+    steps:
+      - name: Record the network traffic of the job
+        uses: step-security/harden-runner@ccd8616d44fd3846e67624a50d5aad6d37bf2d25 # v2.22.1
+        with:
+          egress-policy: audit
+      # The tool of main, never the code of the pull request; the fixes are data.
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          sparse-checkout: |
+            .github
+            blueprint
+      - name: Collect the fixes of the checks of the commit
+        id: collect
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+          RUN: ${{ github.event.workflow_run.id }}
+          SHA: ${{ github.event.workflow_run.head_sha }}
+          EVENT: ${{ github.event.workflow_run.event }}
+          BRANCH: ${{ github.event.workflow_run.head_branch }}
           # A pull request from a fork isn't named in the run; its commit finds it.
-          number="${NUMBER:-$(gh pr list --state open --search "$SHA" --json number --jq '.[0].number // empty')}"
-          if [[ -z "$number" ]]; then
-            echo "No open pull request has the commit $SHA." >> "$GITHUB_STEP_SUMMARY"
+          NUMBER: ${{ github.event.workflow_run.pull_requests[0].number }}
+        run: |
+          tool=.github/blueprint.py
+          [[ -f "$tool" ]] || tool=blueprint.py
+          python3 "$tool" --repo "$GH_REPO" fix collect "$RUN" --sha "$SHA" --event "$EVENT" \
+            --branch "$BRANCH" --pull "$NUMBER" --folder "$RUNNER_TEMP/fixes" \
+            --output "$GITHUB_OUTPUT" >> "$GITHUB_STEP_SUMMARY"
+      - name: Suggest the fixes on the pull request from a fork
+        if: steps.collect.outputs.action == 'suggest'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+          SHA: ${{ github.event.workflow_run.head_sha }}
+          PULL: ${{ steps.collect.outputs.pull }}
+        run: |
+          tool=.github/blueprint.py
+          [[ -f "$tool" ]] || tool=blueprint.py
+          python3 "$tool" --repo "$GH_REPO" fix suggest --sha "$SHA" --pull "$PULL" \
+            --folder "$RUNNER_TEMP/fixes" >> "$GITHUB_STEP_SUMMARY"
+      - name: Say that no bot commits the fixes without the release app
+        if: >-
+          contains(fromJSON('["commit", "pull-request", "close"]'), steps.collect.outputs.action) &&
+          vars.RELEASE_AUTOMATION_CLIENT_ID == ''
+        run: |
+          echo "::warning::The checks found what a command fixes, but without the release app no bot commits the fixes. The PR coach names the command of each check that failed, and the artifacts fixes-* of the checks hold the files."
+      - name: Create a token of the release app for the branch
+        id: branch-app
+        if: steps.collect.outputs.action == 'commit' && vars.RELEASE_AUTOMATION_CLIENT_ID != ''
+        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
+        with:
+          client-id: ${{ vars.RELEASE_AUTOMATION_CLIENT_ID }}
+          private-key: ${{ secrets.RELEASE_AUTOMATION_PRIVATE_KEY }}
+          # Only what one commit on the branch needs.
+          permission-contents: write
+      - name: Commit the fixes onto the branch of the pull request
+        if: steps.branch-app.outputs.token != ''
+        env:
+          GH_TOKEN: ${{ steps.branch-app.outputs.token }}
+          GH_REPO: ${{ github.repository }}
+          APP_SLUG: ${{ steps.branch-app.outputs.app-slug }}
+          BRANCH: ${{ github.event.workflow_run.head_branch }}
+          SHA: ${{ github.event.workflow_run.head_sha }}
+          URL: ${{ github.event.workflow_run.html_url }}
+        run: |
+          tool=.github/blueprint.py
+          [[ -f "$tool" ]] || tool=blueprint.py
+          # The commit goes through GitHub's API as the release app: GitHub signs it,
+          # and the push starts the checks again.
+          python3 "$tool" --repo "$GH_REPO" fix commit --sha "$SHA" --branch "$BRANCH" \
+            --app "$APP_SLUG" --url "$URL" --folder "$RUNNER_TEMP/fixes" >> "$GITHUB_STEP_SUMMARY"
+      - name: Create a token of the release app for main
+        id: main-app
+        if: >-
+          contains(fromJSON('["pull-request", "close"]'), steps.collect.outputs.action) &&
+          vars.RELEASE_AUTOMATION_CLIENT_ID != ''
+        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
+        with:
+          client-id: ${{ vars.RELEASE_AUTOMATION_CLIENT_ID }}
+          private-key: ${{ secrets.RELEASE_AUTOMATION_PRIVATE_KEY }}
+          # Only what the branch and the pull request need, workflows included: the
+          # branch of an open pull request moves from a commit on an older main to one
+          # on the newest, and GitHub refuses that move without workflows when main
+          # changed a workflow in between. The commit itself holds no workflow.
+          permission-contents: write
+          permission-pull-requests: write
+          permission-workflows: write
+      - name: Keep the pull request with the fixes of main
+        if: steps.main-app.outputs.token != ''
+        env:
+          GH_TOKEN: ${{ steps.main-app.outputs.token }}
+          GH_REPO: ${{ github.repository }}
+          APP_SLUG: ${{ steps.main-app.outputs.app-slug }}
+          BASE: ${{ github.event.repository.default_branch }}
+          SHA: ${{ github.event.workflow_run.head_sha }}
+          URL: ${{ github.event.workflow_run.html_url }}
+        run: |
+          tool=.github/blueprint.py
+          [[ -f "$tool" ]] || tool=blueprint.py
+          python3 "$tool" --repo "$GH_REPO" fix main --sha "$SHA" --base "$BASE" \
+            --app "$APP_SLUG" --url "$URL" --folder "$RUNNER_TEMP/fixes" >> "$GITHUB_STEP_SUMMARY"
+      # The failed check of the pull request may wait for the bot's commit; when the
+      # bot fails, the pull request learns so.
+      - name: Say on the pull request that the fix bot failed
+        if: failure() && github.event.workflow_run.event == 'pull_request'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+          PULL: ${{ steps.collect.outputs.pull || github.event.workflow_run.pull_requests[0].number }}
+          URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          if [[ -n "$PULL" ]]; then
+            gh pr comment "$PULL" --body "The fix bot couldn't fix the findings of this pull request that a command fixes ($URL); its summary says why. The PR coach names the command of each check that failed, which makes the fixes on your machine."
+          fi
+      # The issue of a failing bot of main: a failure opens it or brings it up to
+      # date, and the next run that passes closes it.
+      - name: Keep the issue of the fix bot of main current
+        if: always() && github.event.workflow_run.event == 'push'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+          FAILED: ${{ job.status == 'failure' }}
+          URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          title="The fix bot fails on main"
+          number="$(gh issue list --state open --search "\"$title\" in:title" --json number,title \
+            --jq "map(select(.title == \"$title\"))[0].number // empty")"
+          if [[ "$FAILED" != true ]]; then
+            if [[ -n "$number" ]]; then
+              gh issue close "$number" --comment "The fix bot passes again: $URL"
+            fi
             exit 0
           fi
-          marker="$(head -n 1 "$RUNNER_TEMP/comment.md")"
-          comment="$(gh api "repos/$GH_REPO/issues/$number/comments" --paginate \
-            --jq ".[] | select(.body | startswith(\"$marker\")) | .id" | head -n 1)"
-          if [[ -n "$comment" ]]; then
-            gh api --method PATCH "repos/$GH_REPO/issues/comments/$comment" \
-              -F "body=@$RUNNER_TEMP/comment.md" --silent
+          body="$(printf '%s\n\n%s\n' \
+            "The fix bot failed after the checks of main, so findings that a command fixes may stay there. Its log says why; the next run that passes closes this issue." \
+            "The latest failure: $URL")"
+          if [[ -n "$number" ]]; then
+            gh issue edit "$number" --body "$body"
           else
-            gh pr comment "$number" --body-file "$RUNNER_TEMP/comment.md"
+            gh issue create --title "$title" --label maintenance --body "$body"
           fi
+
+  diagrams:
+    name: commit the diagrams
+    if: >-
+      !github.event.repository.fork &&
+      github.event.workflow_run.name == 'Lint' &&
+      github.event.workflow_run.event == 'pull_request' &&
+      github.event.workflow_run.conclusion == 'failure' &&
+      github.event.workflow_run.head_repository.full_name == github.repository
+    concurrency:
+      group: ${{ github.workflow }}-diagrams-${{ github.event.workflow_run.head_branch }}
+      cancel-in-progress: true
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    # The environment holds the private key of the release app; only main may use it.
+    environment:
+      name: release
+      deployment: false
+    permissions:
+      actions: read # the diagrams that the check kept
+      contents: read # blueprint.py of main, which checks them
+      pull-requests: write # the comment when the bot fails
+    env:
+      # The first line of the bot's commits.
+      HEADLINE: "docs: draw the diagrams anew"
+    steps:
+      - name: Record the network traffic of the job
+        uses: step-security/harden-runner@ccd8616d44fd3846e67624a50d5aad6d37bf2d25 # v2.22.1
+        with:
+          egress-policy: audit
+      - name: Fetch the diagrams that the check drew
+        id: drawn
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+          RUN: ${{ github.event.workflow_run.id }}
+          SHA: ${{ github.event.workflow_run.head_sha }}
+        run: |
+          if ! gh run download "$RUN" --name diagrams --dir "$RUNNER_TEMP/diagrams"; then
+            echo "The check diagrams kept nothing; another check failed." >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+          # The bot's own commit drew pictures that differ again: drawing them once more
+          # would only repeat that.
+          if [[ "$(gh api "repos/$GH_REPO/commits/$SHA" --jq '.commit.message | split("\n")[0]')" == "$HEADLINE" ]]; then
+            echo "::error::The diagrams that the diagram bot committed in ${SHA:0:7} differ again from what their sources draw; scripts/diagrams.sh doesn't draw them the same way twice."
+            exit 1
+          fi
+          echo "found=true" >> "$GITHUB_OUTPUT"
+      # The tool of main, never the code of the pull request.
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        if: steps.drawn.outputs.found == 'true'
+        with:
+          persist-credentials: false
+          sparse-checkout: |
+            .github/blueprint
+            blueprint
+      - name: Create a token of the release app
+        id: app
+        if: steps.drawn.outputs.found == 'true' && vars.RELEASE_AUTOMATION_CLIENT_ID != ''
+        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
+        with:
+          client-id: ${{ vars.RELEASE_AUTOMATION_CLIENT_ID }}
+          private-key: ${{ secrets.RELEASE_AUTOMATION_PRIVATE_KEY }}
+          # Only what a commit on the branch and one comment need.
+          permission-contents: write
+          permission-pull-requests: write
+      - name: Commit the diagrams onto the branch of the pull request
+        if: steps.app.outputs.token != ''
+        env:
+          GH_TOKEN: ${{ steps.app.outputs.token }}
+          GH_REPO: ${{ github.repository }}
+          APP_SLUG: ${{ steps.app.outputs.app-slug }}
+          BRANCH: ${{ github.event.workflow_run.head_branch }}
+          NUMBER: ${{ github.event.workflow_run.pull_requests[0].number }}
+          SHA: ${{ github.event.workflow_run.head_sha }}
+          URL: ${{ github.event.workflow_run.html_url }}
+        run: |
+          head="$(gh api "repos/$GH_REPO/git/ref/heads/$BRANCH" --jq .object.sha)"
+          if [[ "$head" != "$SHA" ]]; then
+            echo "$BRANCH moved on from ${SHA:0:7}; the checks of its new head draw the diagrams again." >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+          tool=.github/blueprint.py
+          [[ -f "$tool" ]] || tool=blueprint.py
+          kept="$RUNNER_TEMP/diagrams"
+          # The commit goes through GitHub's API as the release app: GitHub signs it, and
+          # the push starts the checks again. The sign-off names the app's account, which
+          # is the author of the commit. blueprint.py takes only sources, pictures and
+          # pages of Markdown from what the check kept.
+          user_id="$(gh api "users/${APP_SLUG}[bot]" --jq .id)"
+          body="Drawn by scripts/diagrams.sh --extract from the sources in docs/diagrams/, in the check diagrams: $URL
+
+          Signed-off-by: ${APP_SLUG}[bot] <${user_id}+${APP_SLUG}[bot]@users.noreply.github.com>"
+          python3 "$tool" --repo "$GH_REPO" diagrams commit "$kept" --branch "$BRANCH" \
+            --head "$SHA" --headline "$HEADLINE" --body "$body" > "$RUNNER_TEMP/commit.json"
+          commit="$(gh api graphql --input "$RUNNER_TEMP/commit.json" --jq .data.createCommitOnBranch.commit.oid)"
+          echo "Committed the diagrams onto $BRANCH: $commit" >> "$GITHUB_STEP_SUMMARY"
+          python3 "$tool" diagrams report "$kept" --for comment > "$RUNNER_TEMP/comment.md"
+          if [[ -s "$RUNNER_TEMP/comment.md" ]]; then
+            gh pr comment "${NUMBER:-$BRANCH}" --body-file "$RUNNER_TEMP/comment.md"
+          fi
+      # The failed check of the pull request promises the bot's commit; when the bot
+      # can't make it, the pull request learns so, with the command that fixes it.
+      - name: Say on the pull request that the bot failed
+        if: failure()
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+          BRANCH: ${{ github.event.workflow_run.head_branch }}
+          NUMBER: ${{ github.event.workflow_run.pull_requests[0].number }}
+          URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          gh pr comment "${NUMBER:-$BRANCH}" --body "The diagram bot couldn't commit the diagrams of this pull request ($URL). Run \`bash scripts/diagrams.sh --extract\` with Docker and commit what it changes, or take the files from the artifact \`diagrams\` of the check *diagrams*."

@@ -2,6 +2,8 @@ name: Labels
 
 # Creates and updates the repository's labels from .github/labels.toml. It never
 # deletes a label; one that is missing from the file is reported in the summary.
+# The job is the issue assistant's reusable workflow at the commit of a release, so
+# an update is a move of the pin below; it blocks every host but GitHub's.
 # https://github.com/Dennis-Otto/issue-assistant
 
 on:
@@ -23,20 +25,11 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  sync:
-    name: Synchronize labels
-    if: ${{ !github.event.repository.fork }}
-    runs-on: ubuntu-latest
-    timeout-minutes: 5
+  labels:
+    name: Labels
     permissions:
       contents: read
       issues: write
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
-      - name: Create and update the labels
-        uses: Dennis-Otto/issue-assistant@a12fb7227ff7d966809cad4e043e159977fccfcd # v1.2.2
-        with:
-          command: sync-labels
-          dry-run: ${{ inputs.dry_run || false }}
+    uses: Dennis-Otto/issue-assistant/.github/workflows/reusable-labels.yml@1f78330598c545784358643ceda2b720014ebb42 # v1.6.1
+    with:
+      dry_run: ${{ inputs.dry_run || false }}
