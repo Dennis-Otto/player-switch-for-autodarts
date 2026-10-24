@@ -94,6 +94,8 @@
           account.id === activeId || renewedAgo === null
             ? null
             : now - renewedAgo,
+        // Every made-up account renews fine.
+        renewalFailingSince: null,
       })),
       unsaved: false,
       updateHint: false,
