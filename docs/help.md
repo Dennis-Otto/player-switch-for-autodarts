@@ -82,7 +82,7 @@ and the popup and the players on the Autodarts page say:
 
 > Player Switch was updated. Reload the page to use it? A running match ends on this display.
 
-**What it means:** the extension was updated while this Autodarts page showed a match, and the button on the page belongs to the version before. As a rule, the new version takes over the open Autodarts tabs by itself; the page asks only where that didn't work. On a page without a match, a tap on the button reloads it straight away.
+**What it means:** the extension was updated, and this tab still has the button of the version before, because the new version couldn't take it over. As a rule, the new version takes over the open Autodarts tabs by itself; this question comes only where that didn't work. Only a reload brings the new version, and on a match page that ends the match, so the page asks first; on a page without a match, a tap on the button reloads it straight away.
 
 **What to do:** **OK** reloads the page with the new version. **Cancel** keeps the page as it is, to finish the match first; tap the button again afterwards.
 
@@ -92,7 +92,7 @@ and the popup and the players on the Autodarts page say:
 
 **What it means:** in one renewal, Autodarts turned away every parked account at once, at least two of them. One account can lose its session on its own; all of them at the same time more likely means that Autodarts changed how it signs in, and the extension needs an update for that.
 
-**What to do:** don't sign everybody in again yet. **Known problems and updates** opens the list of known problems. Chrome brings a new version of an extension by itself within a few hours; to fetch it now, turn on **Developer mode** under `chrome://extensions` and choose **Update**. Once the new version is there, sign in again only the accounts that still say so.
+**What to do:** don't sign everybody in again yet. **Known problems and updates** opens the list of known problems. Chrome brings a new version of an extension by itself within a few hours; to fetch it now, turn on **Developer mode** under `chrome://extensions` and choose **Update**. Installed unpacked, from the source? Then Chrome fetches nothing by itself: get the latest source (`git pull`), run `npm run build`, and choose the reload arrow of Player Switch under `chrome://extensions`, as in the [quick start](https://github.com/Dennis-Otto/player-switch-for-autodarts#quick-start). Once the new version is there, sign in again only the accounts that still say so.
 
 ### Renewed 3 hours ago {#renewed}
 

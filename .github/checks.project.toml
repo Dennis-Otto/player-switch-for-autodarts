@@ -48,6 +48,6 @@ fix = """Do what the line says. A new message goes into the list `explained` of
 entry in both help pages that quotes it word for word, and into the list `plain`
 otherwise. Then run the checks again:"""
 commands = ["bash scripts/check-project.sh"]
-docs = "docs/help.md"
+docs = "docs/development.md"
 autofix = """What a message means and what a player does about it needs a person who
 knows the extension, and so does a missing text or file."""

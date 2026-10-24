@@ -82,7 +82,7 @@ und das Popup und die Spieler auf der Autodarts-Seite sagen:
 
 > Player Switch wurde aktualisiert. Die Seite neu laden, um es zu nutzen? Ein laufendes Match endet auf diesem Bildschirm.
 
-**Was es bedeutet:** Die Erweiterung wurde aktualisiert, während diese Autodarts-Seite ein Match zeigte, und der Knopf auf der Seite gehört noch zur Version davor. In der Regel übernimmt die neue Version die offenen Autodarts-Tabs von selbst; die Seite fragt nur dort, wo das nicht geklappt hat. Auf einer Seite ohne Match lädt ein Tipp auf den Knopf sie sofort neu.
+**Was es bedeutet:** Die Erweiterung wurde aktualisiert, und dieser Tab hat noch den Knopf der Version davor, weil die neue Version ihn nicht übernehmen konnte. In der Regel übernimmt die neue Version die offenen Autodarts-Tabs von selbst; diese Frage kommt nur dort, wo das nicht geklappt hat. Erst ein Neuladen bringt die neue Version, und auf einer Match-Seite beendet das das Match, deshalb fragt die Seite vorher; auf einer Seite ohne Match lädt ein Tipp auf den Knopf sie sofort neu.
 
 **Was du tust:** **OK** lädt die Seite mit der neuen Version neu. **Abbrechen** lässt die Seite, wie sie ist, um das Match erst zu Ende zu spielen; tippe danach noch einmal auf den Knopf.
 
@@ -92,7 +92,7 @@ und das Popup und die Spieler auf der Autodarts-Seite sagen:
 
 **Was es bedeutet:** Bei einer Erneuerung hat Autodarts alle geparkten Konten auf einmal abgewiesen, mindestens zwei. Ein einzelnes Konto kann seine Sitzung auch allein verlieren; alle zur selben Zeit heißt eher, dass Autodarts die Anmeldung geändert hat und die Erweiterung dafür ein Update braucht.
 
-**Was du tust:** Melde noch nicht alle neu an. **Bekannte Probleme und Updates** öffnet die Liste der bekannten Probleme. Chrome holt eine neue Version einer Erweiterung innerhalb weniger Stunden von selbst; um sie gleich zu holen, schalte unter `chrome://extensions` den **Entwicklermodus** ein und wähle **Aktualisieren**. Ist die neue Version da, melde nur die Konten neu an, die es dann noch zeigen.
+**Was du tust:** Melde noch nicht alle neu an. **Bekannte Probleme und Updates** öffnet die Liste der bekannten Probleme. Chrome holt eine neue Version einer Erweiterung innerhalb weniger Stunden von selbst; um sie gleich zu holen, schalte unter `chrome://extensions` den **Entwicklermodus** ein und wähle **Aktualisieren**. Entpackt aus dem Quellcode installiert? Dann holt Chrome nichts von selbst: Hol den neuesten Quellcode (`git pull`), führe `npm run build` aus und wähle unter `chrome://extensions` den Pfeil zum Neuladen von Player Switch, wie im [Schnellstart der README](https://github.com/Dennis-Otto/player-switch-for-autodarts#quick-start). Ist die neue Version da, melde nur die Konten neu an, die es dann noch zeigen.
 
 ### Erneuert vor 3 Stunden {#renewed}
 

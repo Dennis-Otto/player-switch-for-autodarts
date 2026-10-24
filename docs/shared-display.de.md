@@ -68,7 +68,7 @@ Unter Raspberry Pi OS Bookworm und älter schreibst du `chromium-browser` statt 
 
 Nur die Anmeldungen brauchen eine Tastatur: einmal pro Spieler, und wieder nur, wenn eine Kachel **Neu anmelden** zeigt.
 
-- **Windows 11:** Unter **Einstellungen → Zeit und Sprache → Eingabe** lässt du Windows die Bildschirmtastatur zeigen, wenn keine Tastatur angeschlossen ist; sie öffnet sich dann, sobald du in ein Feld tippst.
+- **Windows 11:** Unter **Einstellungen → Zeit und Sprache → Eingabe → Bildschirmtastatur** lässt du Windows die Bildschirmtastatur zeigen, wenn keine Tastatur angeschlossen ist; sie öffnet sich dann, sobald du in ein Feld tippst.
 - **Raspberry Pi OS** bringt eine Bildschirmtastatur für einen Touchscreen mit, die **Raspberry Pi Configuration** ein- und ausschaltet.
 - **Oder eine kleine Funktastatur**, die nach den Anmeldungen wieder weggelegt wird.
 

@@ -36,6 +36,11 @@ Die Erweiterung meldet nur über den eigenen Anmeldedienst von Autodarts an. Sie
 nie einen Token oder ein Passwort von einer anderen Website, und der einzige Code, der
 die gespeicherte Sitzung der Seite berührt, ist `extension/content.js`.
 
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="images/diagrams/data-flow.de.dark.svg">
+  <img src="images/diagrams/data-flow.de.svg" alt="Wohin die Daten gehen: Alles bleibt im Browser auf diesem Computer. Das Popup und der Umschalter fragen den Service Worker, der in chrome.storage.local einen Token pro Konto behält, ein Passwort nur, wenn eines gemerkt ist, die Einstellungen des Knopfs, die Zeit der letzten Erneuerung, ob Autodarts dabei jedes Konto abgewiesen hat, und bis wann ein neues Konto hinzugefügt wird. Er bringt eine Sitzung in die Autodarts-Seite und liest die ausgehende nur über content.js aus ihr, das einzige Skript, das die Sitzung im localStorage der Seite liest oder schreibt. Um einen Token zu erneuern, mit einem Passwort anzumelden oder eine Sitzung zu beenden, spricht er über HTTPS mit api.autodarts.com, demselben Dienst, den die Autodarts-Seite selbst nutzt. Das Popup und der Umschalter zeigen das Bild jedes Spielers von der Adresse, die Autodarts dafür angibt. Sonst geht nichts irgendwohin: kein Server des Entwicklers, keine Statistiken; Hilfe und Problem melden öffnen nur eine Seite in einem neuen Tab.">
+</picture>
+
 ## Vertrauensgrenzen
 
 1. **Der gemeinsame Computer.** Jede Person am Display kann zu jedem gespeicherten
