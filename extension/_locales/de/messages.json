@@ -22,6 +22,20 @@
   "needsSignIn": {
     "message": "Neu anmelden"
   },
+  "badgeTitle": {
+    "message": "Player Switch for Autodarts – neu anmelden: $NAMES$",
+    "placeholders": { "names": { "content": "$1" } }
+  },
+  "renewed": {
+    "message": "Erneuert $WHEN$",
+    "placeholders": { "when": { "content": "$1" } }
+  },
+  "updateHintText": {
+    "message": "Autodarts hat vielleicht geändert, wie die Anmeldung funktioniert. Schau, ob es ein Update von Player Switch gibt."
+  },
+  "updateHintLink": {
+    "message": "Bekannte Probleme und Updates"
+  },
   "addAccount": {
     "message": "Konto hinzufügen"
   },

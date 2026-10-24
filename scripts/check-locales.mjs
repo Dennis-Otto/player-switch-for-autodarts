@@ -1,5 +1,6 @@
 // Checks that the two language files carry the same keys and that every message the
-// popup asks for exists. Run by scripts/check-project.sh; no dependencies.
+// popup and the service worker ask for exists. Run by scripts/check-project.sh; no
+// dependencies.
 import { readFileSync } from "node:fs";
 
 const read = (path) => JSON.parse(readFileSync(new URL(`../${path}`, import.meta.url), "utf8"));
@@ -21,7 +22,7 @@ for (const key of deKeys) {
   }
 }
 
-const sources = ["extension/popup.js", "extension/popup.html"].map((path) =>
+const sources = ["extension/popup.js", "extension/popup.html", "extension/background.js"].map((path) =>
   readFileSync(new URL(`../${path}`, import.meta.url), "utf8"),
 );
 const used = new Set();
@@ -35,7 +36,7 @@ for (const source of sources) {
 }
 for (const key of used) {
   if (!enKeys.has(key)) {
-    problems.push(`the popup uses "${key}", which no message defines`);
+    problems.push(`the extension uses "${key}", which no message defines`);
   }
 }
 

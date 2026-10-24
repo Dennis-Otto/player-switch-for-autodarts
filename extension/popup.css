@@ -93,6 +93,30 @@ h1 {
   color: var(--warn);
 }
 
+/* Every account was turned away at once: the extension may need an update. */
+.notice {
+  margin: 0 0 12px;
+  padding: 10px 12px;
+  border: 1px solid var(--warn);
+  border-radius: 10px;
+  background: var(--warn-soft);
+  color: var(--fg);
+  font-size: 13px;
+  display: grid;
+  gap: 6px;
+}
+
+.notice p {
+  margin: 0;
+}
+
+/* The text color, not the amber of the border, keeps the link at a contrast of 4.5:1. */
+.notice a {
+  color: inherit;
+  font-weight: 600;
+  text-decoration: underline;
+}
+
 ul {
   list-style: none;
   margin: 0;
@@ -204,6 +228,12 @@ body.managing .tile:hover {
   padding: 10px 14px;
   display: grid;
   gap: 10px;
+}
+
+.renewed {
+  margin: 0;
+  color: var(--muted);
+  font-size: 12px;
 }
 
 .actions {

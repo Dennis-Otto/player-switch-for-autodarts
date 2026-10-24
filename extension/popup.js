@@ -1,13 +1,16 @@
 // The popup. It holds no account logic: it asks the service worker for a view and
 // sends it the person's taps. All the thinking happens in the worker and in lib/.
+import { renewedAgo } from "./lib/health.js";
 
 const profiles = document.querySelector("#profiles");
 const template = document.querySelector("#profile-template");
 const statusBar = document.querySelector("#status");
 const unsaved = document.querySelector("#unsaved");
 const manageButton = document.querySelector("#manage");
+const updateHint = document.querySelector("#update-hint");
 
 const t = (key, substitution) => chrome.i18n.getMessage(key, substitution);
+const language = chrome.i18n.getUILanguage();
 
 let managing = false;
 // True while a request is with the service worker: the popup then takes no other tap.
@@ -99,6 +102,7 @@ function render(view) {
     profiles.append(tile(profile));
   }
   unsaved.hidden = !view.unsaved;
+  updateHint.hidden = view.updateHint !== true;
   if (view.profiles.length === 0 && !view.unsaved && !statusBar.classList.contains("is-error")) {
     showStatus(t("empty"));
   }
@@ -135,6 +139,13 @@ function tile(profile) {
 
   const menu = node.querySelector(".menu");
   menu.hidden = !managing;
+
+  // Shows in the manage view that the renewal of a parked session works.
+  if (profile.renewedAt !== null) {
+    const renewed = node.querySelector(".renewed");
+    renewed.textContent = t("renewed", renewedAgo(profile.renewedAt, Date.now(), language));
+    renewed.hidden = false;
+  }
 
   node.querySelector(".tile").addEventListener("click", () => {
     if (busy || managing || profile.active) {
@@ -206,6 +217,6 @@ document.querySelector("#add").addEventListener("click", () => {
   void send("signout");
 });
 
-document.documentElement.lang = chrome.i18n.getUILanguage();
+document.documentElement.lang = language;
 translate(document);
 void send("view");

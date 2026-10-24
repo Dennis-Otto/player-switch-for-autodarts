@@ -243,34 +243,45 @@ test("signOutForNewAccount does not park a session it can't place", async () => 
 
 test("refreshParked renews a parked session", async () => {
   const store = new FakeStore(park(EMPTY, ada, "ta", 0));
-  const state = await refreshParked(deps(store, new FakePage(null), router({ refresh: () => Promise.resolve(sessionResponse("a", "rolled")) })));
-  assert.equal(find(state, "a")?.token, "rolled");
-  assert.equal(find(state, "a")?.refreshedAt, 1000);
+  const run = await refreshParked(deps(store, new FakePage(null), router({ refresh: () => Promise.resolve(sessionResponse("a", "rolled")) })));
+  assert.equal(find(run.state, "a")?.token, "rolled");
+  assert.equal(find(run.state, "a")?.refreshedAt, 1000);
+  assert.deepEqual([run.renewed, run.rejected, run.unreachable], [1, 0, 0]);
 });
 
 test("refreshParked marks a parked account whose session died", async () => {
   const store = new FakeStore(park(EMPTY, ada, "ta", 0));
-  const state = await refreshParked(deps(store, new FakePage(null), router({ refresh: rejected })));
-  assert.equal(find(state, "a")?.needsSignIn, true);
-  assert.equal(find(state, "a")?.token, null);
+  const run = await refreshParked(deps(store, new FakePage(null), router({ refresh: rejected })));
+  assert.equal(find(run.state, "a")?.needsSignIn, true);
+  assert.equal(find(run.state, "a")?.token, null);
+  assert.deepEqual([run.renewed, run.rejected, run.unreachable], [0, 1, 0]);
+});
+
+test("refreshParked counts every parked account that Autodarts turns away", async () => {
+  const store = new FakeStore(park(park(EMPTY, ada, "ta", 0), bob, "tb", 0));
+  const run = await refreshParked(deps(store, new FakePage(null), router({ refresh: rejected })));
+  assert.deepEqual([run.renewed, run.rejected, run.unreachable], [0, 2, 0]);
+  assert.equal(run.state.profiles.every((profile) => profile.needsSignIn), true);
 });
 
 test("refreshParked leaves a parked account alone on a temporary problem", async () => {
   const store = new FakeStore(park(EMPTY, ada, "ta", 0));
-  const state = await refreshParked(deps(store, new FakePage(null), router({ refresh: offline })));
-  assert.equal(find(state, "a")?.token, "ta");
+  const run = await refreshParked(deps(store, new FakePage(null), router({ refresh: offline })));
+  assert.equal(find(run.state, "a")?.token, "ta");
+  assert.deepEqual([run.renewed, run.rejected, run.unreachable], [0, 0, 1]);
 });
 
 test("refreshParked with nothing parked changes nothing", async () => {
   const store = new FakeStore(EMPTY);
-  await refreshParked(deps(store, new FakePage(null), router()));
+  const run = await refreshParked(deps(store, new FakePage(null), router()));
   assert.equal(store.saves, 0);
+  assert.deepEqual([run.renewed, run.rejected, run.unreachable], [0, 0, 0]);
 });
 
 test("refreshParked leaves the account that is playing to the page", async () => {
   const store = new FakeStore(setActive(park(EMPTY, ada, "ta", 0), ada));
-  const state = await refreshParked(deps(store, new FakePage("live"), router()));
-  assert.equal(state.activeId, "a");
+  const run = await refreshParked(deps(store, new FakePage("live"), router()));
+  assert.equal(run.state.activeId, "a");
 });
 
 test("refreshParked keeps each fresh token as soon as it arrives", async () => {
@@ -363,8 +374,10 @@ test("a switch during the background renewal keeps every rotated token", async (
   // Bob's renewal is on its way when someone taps Cy.
   await board.autodarts.requested();
   const switched = await switchTo(board.deps, "c");
-  await renewal;
+  const run = await renewal;
   assert.ok(switched.ok);
+  // Cy left the parked accounts on the way, so the run counts Bob alone.
+  assert.deepEqual([run.renewed, run.rejected, run.unreachable], [1, 0, 0]);
   assert.equal(board.store.state.activeId, "c");
   // Bob was renewed, Cy came onto the page, and the renewal left Cy to the page.
   assert.equal(board.autodarts.refreshes.length, 2);
