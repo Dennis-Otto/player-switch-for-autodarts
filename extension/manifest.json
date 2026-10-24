@@ -4,6 +4,8 @@
   "version": "0.2.0",
   "description": "__MSG_extDescription__",
   "default_locale": "en",
+  "minimum_chrome_version": "140",
+  "homepage_url": "https://dennis-otto.github.io/player-switch-for-autodarts/",
   "icons": {
     "16": "icons/icon-16.png",
     "48": "icons/icon-48.png",
@@ -37,8 +39,7 @@
   "content_scripts": [
     {
       "matches": [
-        "https://play.autodarts.com/*",
-        "https://play.autodarts.io/*"
+        "https://play.autodarts.com/*"
       ],
       "js": [
         "content.js"
@@ -52,8 +53,7 @@
         "switcher.html"
       ],
       "matches": [
-        "https://play.autodarts.com/*",
-        "https://play.autodarts.io/*"
+        "https://play.autodarts.com/*"
       ]
     }
   ],
@@ -64,7 +64,9 @@
   ],
   "host_permissions": [
     "https://play.autodarts.com/*",
-    "https://play.autodarts.io/*",
     "https://api.autodarts.com/*"
-  ]
+  ],
+  "content_security_policy": {
+    "extension_pages": "default-src 'self'; script-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'; img-src 'self' https: data:; connect-src https://api.autodarts.com"
+  }
 }

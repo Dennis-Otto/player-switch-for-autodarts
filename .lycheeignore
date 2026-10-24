@@ -5,6 +5,6 @@
 # and the Docs workflow has published it; a pull request can't reach it yet.
 ^https://dennis-otto\.github\.io/player-switch-for-autodarts/de/
 
-# The workflow that delivers a release to the Chrome Web Store, linked from
-# docs/releases.md; it exists on main once the pull request that adds it is merged.
-^https://(github\.com|raw\.githubusercontent\.com)/Dennis-Otto/player-switch-for-autodarts/(blob/)?main/\.github/workflows/publish-store\.yml$
+# The allowlist of the manifest, linked from docs/security.md and docs/security.de.md;
+# it exists on main once the pull request that adds it is merged. Remove this entry then.
+^https://(github\.com|raw\.githubusercontent\.com)/Dennis-Otto/player-switch-for-autodarts/(blob/)?main/store/permissions\.json$

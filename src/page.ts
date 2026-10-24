@@ -8,8 +8,12 @@
  */
 import type { State } from "./state.ts";
 
-/** The origins of Autodarts Play, where the extension runs; the manifest lists the same. */
-export const PLAY_ORIGINS: readonly string[] = ["https://play.autodarts.com", "https://play.autodarts.io"];
+/**
+ * The origins of Autodarts Play, where the extension runs; the manifest lists the same.
+ * play.autodarts.io forwards every address to play.autodarts.com, so no page of it ever
+ * shows, and the extension asks for no access to it.
+ */
+export const PLAY_ORIGINS: readonly string[] = ["https://play.autodarts.com"];
 
 /** The key under which the extension keeps the settings of the page in its storage. */
 export const SETTINGS_KEY = "pageSettings";

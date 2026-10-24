@@ -9,7 +9,8 @@ erhebt.
 
 Alles, was die Erweiterung behält, bleibt im Browser auf deinem eigenen Computer, im
 lokalen Speicher der Erweiterung (`chrome.storage.local`). Es geht nie an den
-Entwickler oder an Dritte.
+Entwickler oder an Dritte. Nur die Erweiterung selbst kann es lesen, nicht die
+Autodarts-Seite und nicht das Skript, das die Erweiterung in dieser Seite ausführt.
 
 - **Ein Sitzungs-Token von Autodarts für jedes gespeicherte Konto**, damit ein Konto
   ohne neue Anmeldung wieder spielen kann. Die Erweiterung erneuert diese Token bei
@@ -37,8 +38,10 @@ Die Erweiterung spricht nur mit Autodarts (`api.autodarts.com` und
 `play.autodarts.com`), über HTTPS, um anzumelden, eine Sitzung zu erneuern und die
 Sitzung zwischen Konten zu verschieben — dieselben Anfragen, die die Autodarts-Website
 selbst stellt. Das Popup und der Umschalter zeigen auch das Bild jedes Spielers von der
-Adresse, die Autodarts dafür angibt, wie die Autodarts-Website. Sie öffnet keine andere Verbindung, spricht mit keinem Dienst für
-Statistiken oder Tracking, und der Entwickler bekommt keine Daten von ihr.
+Adresse, die Autodarts dafür angibt, wie die Autodarts-Website. Sie öffnet keine
+andere Verbindung, spricht mit keinem Dienst für Statistiken oder Tracking, und der
+Entwickler bekommt keine Daten von ihr. Ihre Content Security Policy lässt sie nur mit
+`api.autodarts.com` verbinden, darum sperrt der Browser selbst jede andere Verbindung.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="images/diagrams/data-flow.de.dark.svg">

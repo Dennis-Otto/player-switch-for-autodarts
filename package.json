@@ -24,7 +24,7 @@
     "build": "tsc --project tsconfig.build.json",
     "typecheck": "tsc --project tsconfig.json",
     "test:a11y": "npm run --silent build && node --test test/harness/a11y.mjs",
-    "test": "node --test --experimental-test-coverage --test-coverage-include=\"src/**\" --test-coverage-lines=100 --test-coverage-branches=100 --test-coverage-functions=100 \"test/**/*.test.ts\""
+    "test": "node --test --experimental-test-coverage --test-coverage-include=\"src/**\" --test-coverage-include=\"scripts/store-status.ts\" --test-coverage-lines=100 --test-coverage-branches=100 --test-coverage-functions=100 \"test/**/*.test.ts\""
   },
   "devDependencies": {
     "@types/chrome": "^0.3.5",
