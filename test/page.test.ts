@@ -26,10 +26,21 @@ const ada: Profile = {
   renewalFailedAt: null,
   credentials: { username: "ada", password: "secret" },
 };
-const bob: Profile = { ...ada, id: "b", username: "bob", name: "Bob", picture: null, token: "t-bob", credentials: null };
+const bob: Profile = {
+  ...ada,
+  id: "b",
+  username: "bob",
+  name: "Bob",
+  picture: null,
+  token: "t-bob",
+  credentials: null,
+};
 
 test("the button shows by default, at the bottom right", () => {
-  assert.deepEqual(DEFAULT_SETTINGS, { showButton: true, corner: "bottom-right" });
+  assert.deepEqual(DEFAULT_SETTINGS, {
+    showButton: true,
+    corner: "bottom-right",
+  });
   assert.equal(CORNERS[0], DEFAULT_SETTINGS.corner);
 });
 
@@ -40,16 +51,28 @@ test("parseSettings takes the default from anything that isn't settings", () => 
 });
 
 test("parseSettings keeps each setting it knows", () => {
-  assert.deepEqual(parseSettings({ showButton: false, corner: "top-left" }), { showButton: false, corner: "top-left" });
+  assert.deepEqual(parseSettings({ showButton: false, corner: "top-left" }), {
+    showButton: false,
+    corner: "top-left",
+  });
   for (const corner of CORNERS) {
     assert.equal(parseSettings({ corner }).corner, corner);
   }
 });
 
 test("parseSettings replaces each setting it doesn't know with its default", () => {
-  assert.deepEqual(parseSettings({ showButton: "no", corner: "middle" }), DEFAULT_SETTINGS);
-  assert.deepEqual(parseSettings({ showButton: false }), { showButton: false, corner: "bottom-right" });
-  assert.deepEqual(parseSettings({ corner: "top-right", extra: 1 }), { showButton: true, corner: "top-right" });
+  assert.deepEqual(
+    parseSettings({ showButton: "no", corner: "middle" }),
+    DEFAULT_SETTINGS,
+  );
+  assert.deepEqual(parseSettings({ showButton: false }), {
+    showButton: false,
+    corner: "bottom-right",
+  });
+  assert.deepEqual(parseSettings({ corner: "top-right", extra: 1 }), {
+    showButton: true,
+    corner: "top-right",
+  });
 });
 
 test("parseSettings answers a copy, so a change of it leaves the default alone", () => {
@@ -73,18 +96,33 @@ test("initialOf keeps a character outside the basic plane whole", () => {
 });
 
 test("toButtonView shows the account that plays, without its session or password", () => {
-  const state: State = { profiles: [ada, bob], activeId: "a", addingUntil: null };
+  const state: State = {
+    profiles: [ada, bob],
+    activeId: "a",
+    addingUntil: null,
+  };
   assert.deepEqual(toButtonView(state, { corner: "top-left" }), {
     settings: { showButton: true, corner: "top-left" },
     player: { name: "Ada", picture: "https://p/a.png", initial: "A" },
   });
-  const view = JSON.stringify(toButtonView({ profiles: [ada, bob], activeId: "b", addingUntil: null }, undefined));
+  const view = JSON.stringify(
+    toButtonView(
+      { profiles: [ada, bob], activeId: "b", addingUntil: null },
+      undefined,
+    ),
+  );
   assert.ok(!view.includes("t-bob") && !view.includes("secret"));
 });
 
 test("toButtonView shows no player when none of the saved accounts plays", () => {
   assert.equal(toButtonView(EMPTY, undefined).player, null);
-  assert.equal(toButtonView({ profiles: [ada], activeId: "gone", addingUntil: null }, undefined).player, null);
+  assert.equal(
+    toButtonView(
+      { profiles: [ada], activeId: "gone", addingUntil: null },
+      undefined,
+    ).player,
+    null,
+  );
 });
 
 test("isPlayPage knows the address of Autodarts Play and nothing else", () => {
@@ -103,7 +141,11 @@ test("isPlayPage knows the address of Autodarts Play and nothing else", () => {
 });
 
 test("isMatchPage knows a match that runs", () => {
-  assert.ok(isMatchPage("https://play.autodarts.com/matches/0b5a1c2d-0000-4000-8000-000000000001"));
+  assert.ok(
+    isMatchPage(
+      "https://play.autodarts.com/matches/0b5a1c2d-0000-4000-8000-000000000001",
+    ),
+  );
   assert.ok(isMatchPage("https://play.autodarts.com/matches/abc/"));
   assert.ok(isMatchPage("https://play.autodarts.com/matches/abc?board=1#x"));
 });

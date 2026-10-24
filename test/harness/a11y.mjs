@@ -35,11 +35,20 @@ const TYPES = {
   ".svg": "image/svg+xml",
 };
 // The rules of WCAG 2.2 up to AA, and the best practices of axe-core.
-const RULES = ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa", "best-practice"];
+const RULES = [
+  "wcag2a",
+  "wcag2aa",
+  "wcag21a",
+  "wcag21aa",
+  "wcag22aa",
+  "best-practice",
+];
 
 /** Chrome from CHROME_PATH, the one installed, or Edge, which every Windows has. */
 async function launch() {
-  const choices = process.env.CHROME_PATH ? [{ executablePath: process.env.CHROME_PATH }] : [{ channel: "chrome" }, { channel: "msedge" }];
+  const choices = process.env.CHROME_PATH
+    ? [{ executablePath: process.env.CHROME_PATH }]
+    : [{ channel: "chrome" }, { channel: "msedge" }];
   for (const choice of choices) {
     try {
       return await chromium.launch(choice);
@@ -55,12 +64,16 @@ async function launch() {
 
 // The pages load the code of src/ from extension/lib/, which `npm run build` writes.
 if (!existsSync(new URL("../../extension/lib/page.js", import.meta.url))) {
-  throw new Error("extension/lib/ is missing: build it first with npm run build.");
+  throw new Error(
+    "extension/lib/ is missing: build it first with npm run build.",
+  );
 }
 
 const browser = await launch();
 if (browser === null) {
-  console.log("No Chrome or Edge here: the accessibility tests of the popup skip; the CI runs them. CHROME_PATH points them at a Chrome.");
+  console.log(
+    "No Chrome or Edge here: the accessibility tests of the popup skip; the CI runs them. CHROME_PATH points them at a Chrome.",
+  );
 }
 
 /** Answers a request of the browser with a file of the repository, and nothing else. */
@@ -74,14 +87,26 @@ async function serve(route) {
   }
   try {
     const body = await readFile(target);
-    await route.fulfill({ status: 200, body, headers: { "Content-Type": TYPES[extname(target)] ?? "application/octet-stream" } });
+    await route.fulfill({
+      status: 200,
+      body,
+      headers: {
+        "Content-Type": TYPES[extname(target)] ?? "application/octet-stream",
+      },
+    });
   } catch {
     await route.abort();
   }
 }
 
 /** A fresh page of the extension, once it shows its players. */
-async function open({ page = "popup", lang = "en", scheme = "light", forcedColors = "none", accounts = 3 } = {}) {
+async function open({
+  page = "popup",
+  lang = "en",
+  scheme = "light",
+  forcedColors = "none",
+  accounts = 3,
+} = {}) {
   const context = await browser.newContext({
     viewport: { width: page === "popup" ? 340 : 1024, height: 720 },
     colorScheme: scheme,
@@ -95,7 +120,9 @@ async function open({ page = "popup", lang = "en", scheme = "light", forcedColor
   const tab = await context.newPage();
   const errors = [];
   tab.on("pageerror", (error) => errors.push(error));
-  await tab.goto(`${ORIGIN}/extension/${page}.html?lang=${lang}&accounts=${accounts}`);
+  await tab.goto(
+    `${ORIGIN}/extension/${page}.html?lang=${lang}&accounts=${accounts}`,
+  );
   await tab.waitForSelector("#profiles .tile");
   await settle(tab);
   tab.errors = errors;
@@ -112,8 +139,15 @@ async function violations(page) {
   if (!(await page.evaluate(() => "axe" in window))) {
     await page.addScriptTag({ path: AXE });
   }
-  const found = await page.evaluate((tags) => window.axe.run(document, { runOnly: { type: "tag", values: tags } }), RULES);
-  return found.violations.map((rule) => `${rule.id}: ${rule.help} (${rule.nodes.map((node) => node.target.join(" ")).join(", ")})`);
+  const found = await page.evaluate(
+    (tags) =>
+      window.axe.run(document, { runOnly: { type: "tag", values: tags } }),
+    RULES,
+  );
+  return found.violations.map(
+    (rule) =>
+      `${rule.id}: ${rule.help} (${rule.nodes.map((node) => node.target.join(" ")).join(", ")})`,
+  );
 }
 
 /**
@@ -124,15 +158,21 @@ function measure(page) {
   return page.evaluate(() => {
     const name = (element) =>
       `${element.tagName.toLowerCase()}${element.id ? `#${element.id}` : ""}.${[...element.classList].join(".")} "${element.textContent.trim().slice(0, 30)}"`;
-    const shown = (element) => element.checkVisibility() && element.closest("[inert]") === null;
+    const shown = (element) =>
+      element.checkVisibility() && element.closest("[inert]") === null;
     const found = [];
     for (const control of document.querySelectorAll("button, a[href], input")) {
       const box = control.getBoundingClientRect();
       if (shown(control) && (box.width < 44 || box.height < 44)) {
-        found.push(`${name(control)} is ${Math.round(box.width)}x${Math.round(box.height)} px, less than 44x44`);
+        found.push(
+          `${name(control)} is ${Math.round(box.width)}x${Math.round(box.height)} px, less than 44x44`,
+        );
       }
     }
-    const texts = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
+    const texts = document.createTreeWalker(
+      document.body,
+      NodeFilter.SHOW_TEXT,
+    );
     for (let node = texts.nextNode(); node !== null; node = texts.nextNode()) {
       const element = node.parentElement;
       if (node.textContent.trim() === "" || !shown(element)) {
@@ -144,7 +184,9 @@ function measure(page) {
       }
       const range = document.createRange();
       range.selectNodeContents(node);
-      const lines = new Set([...range.getClientRects()].map((rect) => Math.round(rect.top)));
+      const lines = new Set(
+        [...range.getClientRects()].map((rect) => Math.round(rect.top)),
+      );
       if (element.closest("button") !== null && lines.size > 1) {
         found.push(`${name(element)} breaks onto ${lines.size} lines`);
       }
@@ -155,8 +197,16 @@ function measure(page) {
 
 /** Checks a view with axe-core and with the measures of the page. */
 async function check(page, view) {
-  assert.deepEqual(await violations(page), [], `axe-core finds problems in ${view}`);
-  assert.deepEqual(await measure(page), [], `the targets or the texts of ${view} are too small`);
+  assert.deepEqual(
+    await violations(page),
+    [],
+    `axe-core finds problems in ${view}`,
+  );
+  assert.deepEqual(
+    await measure(page),
+    [],
+    `the targets or the texts of ${view} are too small`,
+  );
 }
 
 /** Presses a key and waits for the answer of any request that it sends. */
@@ -168,7 +218,12 @@ async function press(page, key) {
 /** Presses Tab, or Shift+Tab backwards, until the focus is on `selector`. */
 async function tabTo(page, selector, backwards = false) {
   for (let step = 0; step < 40; step += 1) {
-    if (await page.evaluate((wanted) => document.activeElement?.matches(wanted) === true, selector)) {
+    if (
+      await page.evaluate(
+        (wanted) => document.activeElement?.matches(wanted) === true,
+        selector,
+      )
+    ) {
       return;
     }
     await page.keyboard.press(backwards ? "Shift+Tab" : "Tab");
@@ -181,7 +236,9 @@ function focused(page) {
   return page.evaluate(() => {
     const element = document.activeElement;
     const account = element.closest(".profile")?.dataset.id;
-    const kind = element.id ? `#${element.id}` : `.${element.classList[element.classList.length - 1]}`;
+    const kind = element.id
+      ? `#${element.id}`
+      : `.${element.classList[element.classList.length - 1]}`;
     return account === undefined ? kind : `${account} ${kind}`;
   });
 }
@@ -192,7 +249,6 @@ const tile = (id) => `[data-id="demo-${id}"] .tile`;
 const control = (id, kind) => `[data-id="demo-${id}"] ${kind}`;
 
 describe("the popup in axe-core", { skip: browser === null }, () => {
-
   for (const lang of ["en", "de"]) {
     for (const scheme of ["light", "dark"]) {
       test(`every view, in ${lang} and ${scheme}`, async () => {
@@ -200,7 +256,9 @@ describe("the popup in axe-core", { skip: browser === null }, () => {
         await check(page, "the list");
 
         // An error, read out at once: a switch that Autodarts can't take.
-        await page.evaluate(() => window.harness.refuse({ ok: false, reason: "unreachable" }));
+        await page.evaluate(() =>
+          window.harness.refuse({ ok: false, reason: "unreachable" }),
+        );
         await page.click(tile("jonasberg"));
         await settle(page);
         assert.notEqual(await page.textContent("#problem"), "");
@@ -227,7 +285,11 @@ describe("the popup in axe-core", { skip: browser === null }, () => {
   test("the switcher in the Autodarts page", async () => {
     for (const scheme of ["light", "dark"]) {
       const page = await open({ page: "switcher", scheme });
-      assert.deepEqual(await violations(page), [], `axe-core finds problems in the switcher, ${scheme}`);
+      assert.deepEqual(
+        await violations(page),
+        [],
+        `axe-core finds problems in the switcher, ${scheme}`,
+      );
       await page.context().close();
     }
   });
@@ -241,7 +303,9 @@ describe("the popup in axe-core", { skip: browser === null }, () => {
   });
 });
 
-describe("the popup with the keyboard alone", { skip: browser === null }, () => {
+describe("the popup with the keyboard alone", {
+  skip: browser === null,
+}, () => {
   let page;
   before(async () => {
     page = await open();
@@ -252,15 +316,27 @@ describe("the popup with the keyboard alone", { skip: browser === null }, () => 
     await press(page, "Tab");
     assert.equal(await focused(page), "#manage");
     assert.equal(await page.locator(".key").first().isVisible(), true);
-    assert.equal(await page.getAttribute(tile("miakeller"), "aria-current"), "true");
-    assert.equal(await page.getAttribute(tile("jonasberg"), "aria-keyshortcuts"), "2");
+    assert.equal(
+      await page.getAttribute(tile("miakeller"), "aria-current"),
+      "true",
+    );
+    assert.equal(
+      await page.getAttribute(tile("jonasberg"), "aria-keyshortcuts"),
+      "2",
+    );
   });
 
   test("a key from 1 to 9 switches, and the focus stays on the new player", async () => {
     await press(page, "2");
     assert.equal(await focused(page), "demo-jonasberg .tile");
-    assert.equal(await page.getAttribute(tile("jonasberg"), "aria-current"), "true");
-    assert.equal(await page.getAttribute(tile("miakeller"), "aria-current"), null);
+    assert.equal(
+      await page.getAttribute(tile("jonasberg"), "aria-current"),
+      "true",
+    );
+    assert.equal(
+      await page.getAttribute(tile("miakeller"), "aria-current"),
+      null,
+    );
     // The switch is over, so the popup no longer says it is under way.
     assert.equal(await page.textContent("#status"), "");
   });
@@ -269,15 +345,23 @@ describe("the popup with the keyboard alone", { skip: browser === null }, () => 
     await tabTo(page, tile("lenavogt"));
     await press(page, "Enter");
     assert.equal(await focused(page), "demo-lenavogt .tile");
-    assert.equal(await page.getAttribute(tile("lenavogt"), "aria-current"), "true");
+    assert.equal(
+      await page.getAttribute(tile("lenavogt"), "aria-current"),
+      "true",
+    );
   });
 
   test("an error is read out at once, and the focus stays where it was", async () => {
     await tabTo(page, tile("miakeller"), true);
-    await page.evaluate(() => window.harness.refuse({ ok: false, reason: "unreachable" }));
+    await page.evaluate(() =>
+      window.harness.refuse({ ok: false, reason: "unreachable" }),
+    );
     await press(page, "Enter");
     assert.equal(await focused(page), "demo-miakeller .tile");
-    assert.equal(await page.textContent("#problem"), "Autodarts can't be reached right now. Try again in a moment.");
+    assert.equal(
+      await page.textContent("#problem"),
+      "Autodarts can't be reached right now. Try again in a moment.",
+    );
     assert.equal(await page.getAttribute("#problem", "role"), "alert");
     assert.equal(await page.textContent("#status"), "");
   });
@@ -291,10 +375,16 @@ describe("the popup with the keyboard alone", { skip: browser === null }, () => 
     await press(page, "Tab");
     // The next stop is the first action of the first account, not its tile.
     assert.equal(await focused(page), "demo-miakeller .toggle-remember");
-    assert.equal(await page.getAttribute('[data-id="demo-miakeller"] .menu', "aria-label"), "Mia Keller");
+    assert.equal(
+      await page.getAttribute('[data-id="demo-miakeller"] .menu', "aria-label"),
+      "Mia Keller",
+    );
     // The keys pick no player while the accounts are managed.
     await press(page, "2");
-    assert.equal(await page.getAttribute(tile("lenavogt"), "aria-current"), "true");
+    assert.equal(
+      await page.getAttribute(tile("lenavogt"), "aria-current"),
+      "true",
+    );
     assert.equal(await focused(page), "demo-miakeller .toggle-remember");
   });
 
@@ -304,7 +394,10 @@ describe("the popup with the keyboard alone", { skip: browser === null }, () => 
     await tabTo(page, control("miakeller", ".cancel-remember"));
     await press(page, "Enter");
     assert.equal(await focused(page), "demo-miakeller .toggle-remember");
-    assert.equal(await page.locator(control("miakeller", ".remember")).isVisible(), false);
+    assert.equal(
+      await page.locator(control("miakeller", ".remember")).isVisible(),
+      false,
+    );
   });
 
   test("a saved password leads back to its toggle, which now forgets it", async () => {
@@ -315,13 +408,19 @@ describe("the popup with the keyboard alone", { skip: browser === null }, () => 
     await tabTo(page, control("miakeller", ".save-remember"));
     await press(page, "Enter");
     assert.equal(await focused(page), "demo-miakeller .toggle-remember");
-    assert.equal(await page.textContent(control("miakeller", ".toggle-remember")), "Forget password");
+    assert.equal(
+      await page.textContent(control("miakeller", ".toggle-remember")),
+      "Forget password",
+    );
   });
 
   test("Forget password keeps the focus on its toggle", async () => {
     await press(page, "Enter");
     assert.equal(await focused(page), "demo-miakeller .toggle-remember");
-    assert.equal(await page.textContent(control("miakeller", ".toggle-remember")), "Remember password");
+    assert.equal(
+      await page.textContent(control("miakeller", ".toggle-remember")),
+      "Remember password",
+    );
   });
 
   test("Esc in the question before a removal keeps the account and the focus", async () => {
@@ -368,29 +467,46 @@ describe("the popup with the keyboard alone", { skip: browser === null }, () => 
   });
 });
 
-describe("the popup in the settings of the system", { skip: browser === null }, () => {
-
+describe("the popup in the settings of the system", {
+  skip: browser === null,
+}, () => {
   test("a contrast theme keeps the player who plays and the chips apart", async () => {
     const page = await open({ forcedColors: "active" });
     const looks = await page.evaluate(() =>
-      [".profile.active", ".profile:not(.active)", ".chip.playing"].map((selector) => {
-        const style = getComputedStyle(document.querySelector(selector));
-        return { color: style.borderTopColor, width: style.borderTopWidth, background: style.backgroundColor };
-      }),
+      [".profile.active", ".profile:not(.active)", ".chip.playing"].map(
+        (selector) => {
+          const style = getComputedStyle(document.querySelector(selector));
+          return {
+            color: style.borderTopColor,
+            width: style.borderTopWidth,
+            background: style.backgroundColor,
+          };
+        },
+      ),
     );
     const [active, other, chip] = looks;
     assert.notEqual(active.color, other.color);
     assert.equal(active.width, "3px");
     assert.notEqual(chip.background, "rgba(0, 0, 0, 0)");
-    const inside = await page.evaluate(() => getComputedStyle(document.querySelector(".profile.active .name")).forcedColorAdjust);
-    assert.equal(inside, "auto", "the text of the active tile keeps the colors of the contrast theme");
+    const inside = await page.evaluate(
+      () =>
+        getComputedStyle(document.querySelector(".profile.active .name"))
+          .forcedColorAdjust,
+    );
+    assert.equal(
+      inside,
+      "auto",
+      "the text of the active tile keeps the colors of the contrast theme",
+    );
     await page.context().close();
   });
 
   test("reduced motion leaves no transition", async () => {
     const page = await open();
     const durations = await page.evaluate(() =>
-      [...document.querySelectorAll("*")].map((element) => getComputedStyle(element).transitionDuration).filter((value) => value !== "0s"),
+      [...document.querySelectorAll("*")]
+        .map((element) => getComputedStyle(element).transitionDuration)
+        .filter((value) => value !== "0s"),
     );
     assert.deepEqual(durations, []);
     await page.context().close();

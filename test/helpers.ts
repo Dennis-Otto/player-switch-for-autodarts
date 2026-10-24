@@ -1,7 +1,7 @@
 /** Shared fakes for the tests: no browser, no network, a clock that stands still. */
 import type { Fetch } from "../src/autodarts.ts";
-import type { PagePort, Store } from "../src/switch.ts";
 import { EMPTY, type State } from "../src/state.ts";
+import type { PagePort, Store } from "../src/switch.ts";
 
 function base64url(text: string): string {
   return Buffer.from(text, "utf8").toString("base64url");
@@ -109,7 +109,11 @@ export function router(
   handlers: { refresh?: Fetch; login?: Fetch; logout?: Fetch } = {},
 ): Fetch {
   return (url, init) => {
-    const path = url.endsWith("/refresh") ? "refresh" : url.endsWith("/login") ? "login" : "logout";
+    const path = url.endsWith("/refresh")
+      ? "refresh"
+      : url.endsWith("/login")
+        ? "login"
+        : "logout";
     const handler = handlers[path];
     if (handler === undefined) {
       throw new Error(`unexpected request to ${url}`);
@@ -151,7 +155,9 @@ export class FakeAutodarts {
   }
 
   readonly fetch: Fetch = async (url, init) => {
-    const { refresh_token: token } = JSON.parse(String(init.body)) as { refresh_token: string };
+    const { refresh_token: token } = JSON.parse(String(init.body)) as {
+      refresh_token: string;
+    };
     if (!url.endsWith("/refresh")) {
       throw new Error(`unexpected request to ${url}`);
     }

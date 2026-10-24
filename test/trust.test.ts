@@ -1,38 +1,82 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 
-import { type AccessLevel, fromExtension, fromExtensionPage, keepFromContentScripts } from "../src/trust.ts";
+import {
+  type AccessLevel,
+  fromExtension,
+  fromExtensionPage,
+  keepFromContentScripts,
+} from "../src/trust.ts";
 
 const ID = "abcdefghijklmnopabcdefghijklmnop";
 const OTHER = "ponmlkjihgfedcbaponmlkjihgfedcba";
 
 test("fromExtension takes a message of this extension alone", () => {
   assert.ok(fromExtension({ id: ID, url: "https://play.autodarts.com/" }, ID));
-  assert.ok(!fromExtension({ id: OTHER, url: `chrome-extension://${OTHER}/popup.html` }, ID));
+  assert.ok(
+    !fromExtension(
+      { id: OTHER, url: `chrome-extension://${OTHER}/popup.html` },
+      ID,
+    ),
+  );
   assert.ok(!fromExtension({ url: `chrome-extension://${ID}/popup.html` }, ID));
   // A worker whose id is unknown takes nothing, not even a sender without an id.
   assert.ok(!fromExtension({}, ""));
 });
 
 test("fromExtensionPage takes the popup and the switcher in its frame", () => {
-  assert.ok(fromExtensionPage({ id: ID, url: `chrome-extension://${ID}/popup.html` }, ID));
-  assert.ok(fromExtensionPage({ id: ID, url: `chrome-extension://${ID}/switcher.html?x=1#y` }, ID));
+  assert.ok(
+    fromExtensionPage(
+      { id: ID, url: `chrome-extension://${ID}/popup.html` },
+      ID,
+    ),
+  );
+  assert.ok(
+    fromExtensionPage(
+      { id: ID, url: `chrome-extension://${ID}/switcher.html?x=1#y` },
+      ID,
+    ),
+  );
 });
 
 test("fromExtensionPage turns away the content script in the Autodarts page", () => {
   // The content script sends with the id of the extension, but from the address of the page.
-  assert.ok(!fromExtensionPage({ id: ID, url: "https://play.autodarts.com/" }, ID));
-  assert.ok(!fromExtensionPage({ id: ID, url: `https://play.autodarts.com/chrome-extension://${ID}/` }, ID));
+  assert.ok(
+    !fromExtensionPage({ id: ID, url: "https://play.autodarts.com/" }, ID),
+  );
+  assert.ok(
+    !fromExtensionPage(
+      { id: ID, url: `https://play.autodarts.com/chrome-extension://${ID}/` },
+      ID,
+    ),
+  );
 });
 
 test("fromExtensionPage turns away a page of another extension, or one that names no page", () => {
-  assert.ok(!fromExtensionPage({ id: OTHER, url: `chrome-extension://${OTHER}/popup.html` }, ID));
+  assert.ok(
+    !fromExtensionPage(
+      { id: OTHER, url: `chrome-extension://${OTHER}/popup.html` },
+      ID,
+    ),
+  );
   // A page of another extension can't take the id of this one in its address either.
-  assert.ok(!fromExtensionPage({ id: ID, url: `chrome-extension://${OTHER}/popup.html` }, ID));
-  assert.ok(!fromExtensionPage({ id: ID, url: `chrome-extension://${ID}.example.org/popup.html` }, ID));
+  assert.ok(
+    !fromExtensionPage(
+      { id: ID, url: `chrome-extension://${OTHER}/popup.html` },
+      ID,
+    ),
+  );
+  assert.ok(
+    !fromExtensionPage(
+      { id: ID, url: `chrome-extension://${ID}.example.org/popup.html` },
+      ID,
+    ),
+  );
   assert.ok(!fromExtensionPage({ id: ID }, ID));
   assert.ok(!fromExtensionPage({ id: ID, url: "not an address" }, ID));
-  assert.ok(!fromExtensionPage({ url: `chrome-extension://${ID}/popup.html` }, ID));
+  assert.ok(
+    !fromExtensionPage({ url: `chrome-extension://${ID}/popup.html` }, ID),
+  );
 });
 
 /**
@@ -41,7 +85,9 @@ test("fromExtensionPage turns away a page of another extension, or one that name
  */
 function fakeLocalArea() {
   let level: AccessLevel = "TRUSTED_AND_UNTRUSTED_CONTEXTS";
-  const data: Record<string, unknown> = { accounts: { version: 1, profiles: [{ refreshToken: "secret" }] } };
+  const data: Record<string, unknown> = {
+    accounts: { version: 1, profiles: [{ refreshToken: "secret" }] },
+  };
   return {
     area: {
       setAccessLevel: async (options: { accessLevel: AccessLevel }) => {
@@ -63,7 +109,9 @@ function fakeLocalArea() {
 test("keepFromContentScripts takes the saved accounts out of the reach of the content script", async () => {
   const local = fakeLocalArea();
   // Chrome's default, which the worker changes.
-  assert.deepEqual(Object.keys(await local.read("content script")), ["accounts"]);
+  assert.deepEqual(Object.keys(await local.read("content script")), [
+    "accounts",
+  ]);
 
   await keepFromContentScripts(local.area);
 
@@ -73,10 +121,14 @@ test("keepFromContentScripts takes the saved accounts out of the reach of the co
 });
 
 test("keepFromContentScripts fails where the browser can't limit the storage", async () => {
-  await assert.rejects(keepFromContentScripts({}), /can't keep the storage from the content scripts/);
+  await assert.rejects(
+    keepFromContentScripts({}),
+    /can't keep the storage from the content scripts/,
+  );
   await assert.rejects(
     keepFromContentScripts({
-      setAccessLevel: () => Promise.reject(new Error("This StorageArea doesn't support it.")),
+      setAccessLevel: () =>
+        Promise.reject(new Error("This StorageArea doesn't support it.")),
     }),
     /doesn't support it/,
   );

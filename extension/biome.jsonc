@@ -1,0 +1,18 @@
+// release-please writes the version into manifest.json on every release pull request
+// with JSON.stringify(…, null, 2), which puts every item of an array on a line of its
+// own. Biome would put short arrays on one line, so its check would fail on each
+// release pull request. This keeps the manifest in the format that release-please
+// writes. The file belongs to the project and stays out of the store zip
+// (scripts/package-extension.sh). It can go once the blueprint's biome.jsonc keeps
+// the format of the JSON files that release-please rewrites:
+// https://github.com/Dennis-Otto/repo-blueprint/issues/423
+{
+  "root": false,
+  "extends": "//",
+  "overrides": [
+    {
+      "includes": ["manifest.json"],
+      "json": { "formatter": { "expand": "always" } }
+    }
+  ]
+}

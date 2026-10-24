@@ -20,7 +20,11 @@
 // old one steps aside. Everything sits in a function, so a second run declares nothing
 // twice.
 (() => {
-
+  // The service worker can also run this script itself, in a tab that it picked by its
+  // address just before; a tab that went to another site in between gets nothing here.
+  if (location.origin !== "https://play.autodarts.com") {
+    return;
+  }
   const SESSION_KEY = "autodarts_refresh_token";
   // Marks the elements of the page that the open switcher made inert, so that the script
   // of a later version can make them usable again when it takes over.
@@ -32,7 +36,10 @@
 
   // A script of this extension that is still linked to it runs here already, as when a
   // tab that was still loading got the script twice: that one stays.
-  if (typeof globalThis.playerSwitchAlive === "function" && globalThis.playerSwitchAlive()) {
+  if (
+    typeof globalThis.playerSwitchAlive === "function" &&
+    globalThis.playerSwitchAlive()
+  ) {
     return;
   }
   globalThis.playerSwitchAlive = alive;
@@ -136,7 +143,10 @@
   // The button, the frame while it is open, and the shadow root that holds them.
   let ui = null;
   // What the button shows, as the service worker last said; hidden until it has.
-  let view = { settings: { showButton: false, corner: "bottom-right" }, player: null };
+  let view = {
+    settings: { showButton: false, corner: "bottom-right" },
+    player: null,
+  };
   // The elements of the page that the open switcher made inert, and where the focus was.
   let inerted = [];
   let opener = null;
@@ -171,7 +181,8 @@
       return;
     }
     const full = document.fullscreenElement;
-    const parent = full !== null && full !== document.documentElement ? full : document.body;
+    const parent =
+      full !== null && full !== document.documentElement ? full : document.body;
     if (parent !== null && ui.host.parentNode !== parent) {
       parent.append(ui.host);
     }
@@ -213,14 +224,21 @@
     const image = document.createElement("img");
     image.alt = "";
     image.src = player.picture;
-    image.addEventListener("error", () => image.replaceWith(letter(player.initial)), { once: true });
+    image.addEventListener(
+      "error",
+      () => image.replaceWith(letter(player.initial)),
+      { once: true },
+    );
     return image;
   }
 
   function drawButton() {
     const { button } = ensureUi();
     const { settings, player } = view;
-    const label = player === null ? t("switchButton") : t("switchButtonPlaying", player.name);
+    const label =
+      player === null
+        ? t("switchButton")
+        : t("switchButtonPlaying", player.name);
     button.className = `button ${settings.corner}`;
     button.hidden = !settings.showButton;
     button.title = label;
@@ -277,7 +295,12 @@
     // when the button opened the switcher (the page then sees the focus on the host).
     const back = opener;
     opener = null;
-    if (back !== null && back !== ui.host && back !== document.body && back.isConnected) {
+    if (
+      back !== null &&
+      back !== ui.host &&
+      back !== document.body &&
+      back.isConnected
+    ) {
       back.focus();
     } else if (!ui.button.hidden) {
       ui.button.focus();
@@ -298,7 +321,10 @@
       // The extension was updated and this tab didn't get the new script. Only a reload
       // brings it, and on a match page that ends the match, so it asks first there.
       retire();
-      if (!/^\/matches\/[^/]+/.test(window.location.pathname) || window.confirm(reloadQuestion)) {
+      if (
+        !/^\/matches\/[^/]+/.test(window.location.pathname) ||
+        window.confirm(reloadQuestion)
+      ) {
         window.location.reload();
       }
       return;
@@ -316,7 +342,11 @@
     chrome.runtime
       .sendMessage({ type: "button" })
       .then((reply) => {
-        if (reply !== undefined && reply !== null && typeof reply.settings === "object") {
+        if (
+          reply !== undefined &&
+          reply !== null &&
+          typeof reply.settings === "object"
+        ) {
           view = reply;
           drawButton();
         }
@@ -328,7 +358,12 @@
 
   // Only the service worker of this extension talks to the page.
   chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-    if (message === null || typeof message !== "object" || message.type !== "page" || sender.id !== chrome.runtime.id) {
+    if (
+      message === null ||
+      typeof message !== "object" ||
+      message.type !== "page" ||
+      sender.id !== chrome.runtime.id
+    ) {
       return false;
     }
 

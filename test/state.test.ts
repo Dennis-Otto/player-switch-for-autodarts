@@ -18,8 +18,8 @@ import {
   readStored,
   rememberCredentials,
   STATE_VERSION,
-  setActive,
   type State,
+  setActive,
   startAdding,
   stash,
   stopAdding,
@@ -27,15 +27,38 @@ import {
   toView,
 } from "../src/state.ts";
 
-const ada: Identity = { id: "a", username: "ada", name: "Ada", picture: "https://p/a.png" };
+const ada: Identity = {
+  id: "a",
+  username: "ada",
+  name: "Ada",
+  picture: "https://p/a.png",
+};
 const bob: Identity = { id: "b", username: "bob", name: "Bob", picture: null };
 const cy: Identity = { id: "c", username: "cy", name: "Cy", picture: null };
 
 /** The accounts as release 0.2.0 stored them, with no version: one plays, one is parked. */
 const RELEASE_0_2_0 = {
   profiles: [
-    { id: "a", username: "ada", name: "Ada", picture: "https://p/a.png", token: null, needsSignIn: false, refreshedAt: null, credentials: null },
-    { id: "b", username: "bob", name: "Bob", picture: null, token: "rt-b", needsSignIn: false, refreshedAt: 1_700_000_000_000, credentials: { username: "bob", password: "pw" } },
+    {
+      id: "a",
+      username: "ada",
+      name: "Ada",
+      picture: "https://p/a.png",
+      token: null,
+      needsSignIn: false,
+      refreshedAt: null,
+      credentials: null,
+    },
+    {
+      id: "b",
+      username: "bob",
+      name: "Bob",
+      picture: null,
+      token: "rt-b",
+      needsSignIn: false,
+      refreshedAt: 1_700_000_000_000,
+      credentials: { username: "bob", password: "pw" },
+    },
   ],
   activeId: "a",
 };
@@ -46,7 +69,10 @@ test("readStored takes the accounts of a release before the version without losi
     kind: "accounts",
     outdated: true,
     state: {
-      profiles: RELEASE_0_2_0.profiles.map((profile) => ({ ...profile, renewalFailedAt: null })),
+      profiles: RELEASE_0_2_0.profiles.map((profile) => ({
+        ...profile,
+        renewalFailedAt: null,
+      })),
       activeId: "a",
       addingUntil: null,
     },
@@ -58,11 +84,19 @@ test("toStored writes the version, which readStored then reads as up to date", (
   const stored = toStored(state);
   assert.equal(stored.version, STATE_VERSION);
   assert.equal(STATE_VERSION, 1);
-  assert.deepEqual(readStored(JSON.parse(JSON.stringify(stored))), { kind: "accounts", state, outdated: false });
+  assert.deepEqual(readStored(JSON.parse(JSON.stringify(stored))), {
+    kind: "accounts",
+    state,
+    outdated: false,
+  });
 });
 
 test("readStored starts with no account when nothing is stored yet", () => {
-  assert.deepEqual(readStored(undefined), { kind: "accounts", state: EMPTY, outdated: false });
+  assert.deepEqual(readStored(undefined), {
+    kind: "accounts",
+    state: EMPTY,
+    outdated: false,
+  });
 });
 
 test("readStored keeps a value of a newer or unknown version, or of no state at all, from being read", () => {
@@ -77,7 +111,11 @@ test("readStored keeps a value of a newer or unknown version, or of no state at 
     42,
     "accounts",
   ]) {
-    assert.deepEqual(readStored(stored), { kind: "unknown" }, JSON.stringify(stored));
+    assert.deepEqual(
+      readStored(stored),
+      { kind: "unknown" },
+      JSON.stringify(stored),
+    );
   }
 });
 
@@ -91,10 +129,28 @@ test("parseState keeps valid profiles and drops invalid ones", () => {
   const state = parseState({
     activeId: "a",
     profiles: [
-      { id: "a", username: "ada", name: "Ada", picture: "https://p/a.png", token: "t", needsSignIn: false, refreshedAt: 10, credentials: { username: "ada", password: "pw" } },
+      {
+        id: "a",
+        username: "ada",
+        name: "Ada",
+        picture: "https://p/a.png",
+        token: "t",
+        needsSignIn: false,
+        refreshedAt: 10,
+        credentials: { username: "ada", password: "pw" },
+      },
       "not a profile",
       { id: "", username: "x", name: "x" },
-      { id: "b", username: "bob", name: "Bob", picture: 5, token: "", needsSignIn: "yes", refreshedAt: "later", credentials: { username: "bob", password: "" } },
+      {
+        id: "b",
+        username: "bob",
+        name: "Bob",
+        picture: 5,
+        token: "",
+        needsSignIn: "yes",
+        refreshedAt: "later",
+        credentials: { username: "bob", password: "" },
+      },
     ],
   });
   assert.equal(state.profiles.length, 2);
@@ -118,7 +174,10 @@ test("parseState reads a profile with no token that needs a sign-in", () => {
 });
 
 test("parseState forgets an active id that names no profile", () => {
-  const state = parseState({ activeId: "ghost", profiles: [{ id: "a", username: "ada", name: "Ada" }] });
+  const state = parseState({
+    activeId: "ghost",
+    profiles: [{ id: "a", username: "ada", name: "Ada" }],
+  });
   assert.equal(state.activeId, null);
 });
 
@@ -126,10 +185,16 @@ test("parseState reads when the adding of an account ends, and only while nobody
   const profiles = [{ id: "a", username: "ada", name: "Ada" }];
   assert.equal(parseState({ profiles, addingUntil: 500 }).addingUntil, 500);
   assert.equal(parseState({ profiles, addingUntil: "soon" }).addingUntil, null);
-  assert.equal(parseState({ profiles, addingUntil: Number.NaN }).addingUntil, null);
+  assert.equal(
+    parseState({ profiles, addingUntil: Number.NaN }).addingUntil,
+    null,
+  );
   assert.equal(parseState({ profiles }).addingUntil, null);
   // A window stored beside a player is stale: a player that comes on ends it.
-  assert.equal(parseState({ profiles, activeId: "a", addingUntil: 500 }).addingUntil, null);
+  assert.equal(
+    parseState({ profiles, activeId: "a", addingUntil: 500 }).addingUntil,
+    null,
+  );
 });
 
 test("parseState keeps the first of two stored profiles with the same id", () => {
@@ -146,7 +211,9 @@ test("parseState keeps the first of two stored profiles with the same id", () =>
 });
 
 test("parseState rejects credentials that are not an object", () => {
-  const state = parseState({ profiles: [{ id: "a", username: "ada", name: "Ada", credentials: "no" }] });
+  const state = parseState({
+    profiles: [{ id: "a", username: "ada", name: "Ada", credentials: "no" }],
+  });
   assert.equal(state.profiles[0]?.credentials, null);
 });
 
@@ -174,13 +241,29 @@ test("park clears the active id when the active account is parked", () => {
 test("park sorts the profiles by username then id", () => {
   let state = park(EMPTY, bob, "tb", 1);
   state = park(state, ada, "ta", 1);
-  assert.deepEqual(state.profiles.map((profile) => profile.id), ["a", "b"]);
+  assert.deepEqual(
+    state.profiles.map((profile) => profile.id),
+    ["a", "b"],
+  );
 });
 
 test("park orders accounts that share a username by id", () => {
-  let state = park(EMPTY, { id: "z", username: "same", name: "Z", picture: null }, "t", 1);
-  state = park(state, { id: "a", username: "same", name: "A", picture: null }, "t", 1);
-  assert.deepEqual(state.profiles.map((profile) => profile.id), ["a", "z"]);
+  let state = park(
+    EMPTY,
+    { id: "z", username: "same", name: "Z", picture: null },
+    "t",
+    1,
+  );
+  state = park(
+    state,
+    { id: "a", username: "same", name: "A", picture: null },
+    "t",
+    1,
+  );
+  assert.deepEqual(
+    state.profiles.map((profile) => profile.id),
+    ["a", "z"],
+  );
 });
 
 test("stash keeps a token under a known account and ignores an unknown one", () => {
@@ -239,10 +322,16 @@ test("forget removes an account and clears it when active", () => {
 test("remembering and forgetting a password", () => {
   let state = park(EMPTY, ada, "t", 1);
   state = rememberCredentials(state, "a", { username: "ada", password: "pw" });
-  assert.deepEqual(find(state, "a")?.credentials, { username: "ada", password: "pw" });
+  assert.deepEqual(find(state, "a")?.credentials, {
+    username: "ada",
+    password: "pw",
+  });
   state = forgetCredentials(state, "a");
   assert.equal(find(state, "a")?.credentials, null);
-  assert.equal(rememberCredentials(state, "z", { username: "x", password: "y" }), state);
+  assert.equal(
+    rememberCredentials(state, "z", { username: "x", password: "y" }),
+    state,
+  );
   assert.equal(forgetCredentials(state, "z"), state);
 });
 
@@ -250,7 +339,10 @@ test("parked lists the accounts the extension renews itself", () => {
   let state: State = park(EMPTY, ada, "ta", 1);
   state = park(state, bob, "tb", 1);
   state = activate(state, "b");
-  assert.deepEqual(parked(state).map((profile) => profile.id), ["a"]);
+  assert.deepEqual(
+    parked(state).map((profile) => profile.id),
+    ["a"],
+  );
 });
 
 test("toView hides the session and shows what the popup needs", () => {
@@ -259,16 +351,34 @@ test("toView hides the session and shows what the popup needs", () => {
   state = activate(state, "a");
   const view = toView(state, true, 0);
   assert.deepEqual(view.profiles, [
-    { id: "a", username: "ada", name: "Ada", picture: "https://p/a.png", needsSignIn: false, remembersPassword: true, active: true, renewedAt: null, renewalFailingSince: null },
+    {
+      id: "a",
+      username: "ada",
+      name: "Ada",
+      picture: "https://p/a.png",
+      needsSignIn: false,
+      remembersPassword: true,
+      active: true,
+      renewedAt: null,
+      renewalFailingSince: null,
+    },
   ]);
   assert.equal(view.unsaved, false);
 });
 
 test("toView shows when the extension last renewed a parked session, and only then", () => {
-  let state = park(park(park(EMPTY, ada, "ta", 10), bob, "tb", 20), cy, "tc", 30);
+  let state = park(
+    park(park(EMPTY, ada, "ta", 10), bob, "tb", 20),
+    cy,
+    "tc",
+    30,
+  );
   state = activate(state, "a");
   state = endSession(state, "c");
-  const renewed = toView(state, true, 0).profiles.map((profile) => [profile.id, profile.renewedAt]);
+  const renewed = toView(state, true, 0).profiles.map((profile) => [
+    profile.id,
+    profile.renewedAt,
+  ]);
   // Ada plays, so the page renews her session; Cy has none.
   assert.deepEqual(renewed, [
     ["a", null],
@@ -281,7 +391,11 @@ test("failRenewal marks since when the renewal of an account fails, and a fresh 
   let state = park(park(EMPTY, ada, "ta", 10), bob, "tb", 20);
   state = failRenewal(state, "b", 30);
   assert.equal(find(state, "b")?.renewalFailedAt, 30);
-  assert.equal(find(state, "b")?.token, "tb", "the session stays for the next try");
+  assert.equal(
+    find(state, "b")?.token,
+    "tb",
+    "the session stays for the next try",
+  );
   // The failures go on: the mark keeps the time of the first one.
   assert.equal(failRenewal(state, "b", 40), state);
   assert.equal(failRenewal(state, "ghost", 40), state);
@@ -291,14 +405,23 @@ test("failRenewal marks since when the renewal of an account fails, and a fresh 
   assert.equal(find(activate(state, "b"), "b")?.renewalFailedAt, null);
   assert.equal(find(setActive(state, bob), "b")?.renewalFailedAt, null);
   // A new name or picture of the account keeps the mark.
-  assert.equal(find(rememberCredentials(state, "b", { username: "bob", password: "pw" }), "b")?.renewalFailedAt, 30);
+  assert.equal(
+    find(
+      rememberCredentials(state, "b", { username: "bob", password: "pw" }),
+      "b",
+    )?.renewalFailedAt,
+    30,
+  );
 });
 
 test("toView shows since when the renewal fails, only for a parked session", () => {
   let state = park(park(EMPTY, ada, "ta", 10), bob, "tb", 20);
   state = failRenewal(failRenewal(state, "a", 30), "b", 40);
   state = activate(state, "a");
-  const failing = toView(state, true, 0).profiles.map((profile) => [profile.id, profile.renewalFailingSince]);
+  const failing = toView(state, true, 0).profiles.map((profile) => [
+    profile.id,
+    profile.renewalFailingSince,
+  ]);
   assert.deepEqual(failing, [
     ["a", null],
     ["b", 40],

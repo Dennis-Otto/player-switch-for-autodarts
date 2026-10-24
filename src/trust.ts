@@ -30,8 +30,15 @@ export function fromExtension(sender: Sender, extensionId: string): boolean {
  * switcher in its frame, and not from the content script, whose address is the one of
  * the Autodarts page. Only those pages may see the accounts and change them.
  */
-export function fromExtensionPage(sender: Sender, extensionId: string): boolean {
-  if (!fromExtension(sender, extensionId) || typeof sender.url !== "string" || !URL.canParse(sender.url)) {
+export function fromExtensionPage(
+  sender: Sender,
+  extensionId: string,
+): boolean {
+  if (
+    !fromExtension(sender, extensionId) ||
+    typeof sender.url !== "string" ||
+    !URL.canParse(sender.url)
+  ) {
     return false;
   }
   const url = new URL(sender.url);
@@ -43,7 +50,9 @@ export type AccessLevel = "TRUSTED_CONTEXTS" | "TRUSTED_AND_UNTRUSTED_CONTEXTS";
 
 /** A storage area whose readers can be limited, as `chrome.storage.StorageArea` has it. */
 export interface RestrictableArea {
-  setAccessLevel?: ((options: { accessLevel: AccessLevel }) => Promise<void>) | undefined;
+  setAccessLevel?:
+    | ((options: { accessLevel: AccessLevel }) => Promise<void>)
+    | undefined;
 }
 
 /**
@@ -53,9 +62,13 @@ export interface RestrictableArea {
  * says it at each of its starts, and it holds after every restart of the browser.
  * Fails when the browser can't do it, so that the worker leaves a trace.
  */
-export async function keepFromContentScripts(area: RestrictableArea): Promise<void> {
+export async function keepFromContentScripts(
+  area: RestrictableArea,
+): Promise<void> {
   if (typeof area.setAccessLevel !== "function") {
-    throw new Error("This browser can't keep the storage from the content scripts.");
+    throw new Error(
+      "This browser can't keep the storage from the content scripts.",
+    );
   }
   await area.setAccessLevel({ accessLevel: "TRUSTED_CONTEXTS" });
 }

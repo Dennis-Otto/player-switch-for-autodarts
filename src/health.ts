@@ -31,7 +31,11 @@ export interface Health {
   suspectedChange: boolean;
 }
 
-export const NO_HEALTH: Health = { lastRefreshAt: null, lastAttemptAt: null, suspectedChange: false };
+export const NO_HEALTH: Health = {
+  lastRefreshAt: null,
+  lastAttemptAt: null,
+  suspectedChange: false,
+};
 
 const time = (value: unknown): number | null =>
   typeof value === "number" && Number.isFinite(value) ? value : null;
@@ -41,7 +45,10 @@ export function parseHealth(stored: unknown): Health {
   if (typeof stored !== "object" || stored === null) {
     return NO_HEALTH;
   }
-  const { lastRefreshAt, lastAttemptAt, suspectedChange } = stored as Record<string, unknown>;
+  const { lastRefreshAt, lastAttemptAt, suspectedChange } = stored as Record<
+    string,
+    unknown
+  >;
   return {
     lastRefreshAt: time(lastRefreshAt),
     lastAttemptAt: time(lastAttemptAt),
@@ -76,7 +83,11 @@ function triedRecently(health: Health, now: number): boolean {
   return last !== null && last <= now && now - last < RETRY_MS;
 }
 
-export function planStart(alarmExists: boolean, health: Health, now: number): StartPlan {
+export function planStart(
+  alarmExists: boolean,
+  health: Health,
+  now: number,
+): StartPlan {
   const overdue = isOverdue(health, now);
   const refreshNow = overdue && !triedRecently(health, now);
   if (alarmExists) {
@@ -128,7 +139,11 @@ export function recordRun(health: Health, run: RunCounts, now: number): Health {
   } else if (run.renewed > 0) {
     suspectedChange = false;
   }
-  return { lastRefreshAt: run.unreachable === 0 ? now : health.lastRefreshAt, lastAttemptAt: now, suspectedChange };
+  return {
+    lastRefreshAt: run.unreachable === 0 ? now : health.lastRefreshAt,
+    lastAttemptAt: now,
+    suspectedChange,
+  };
 }
 
 /** When the next run should start: soon when an account could not be renewed for now. */
@@ -155,16 +170,26 @@ export interface Badge {
   kind: "unsaved" | "signIn" | "none";
 }
 
-export function badge(profiles: readonly Attention[], locale: string, unsaved = false): Badge {
-  const waiting = profiles.filter((profile) => profile.needsSignIn).map((profile) => profile.name);
-  const names = waiting.length === 0 ? "" : new Intl.ListFormat(locale, { type: "conjunction" }).format(waiting);
+export function badge(
+  profiles: readonly Attention[],
+  locale: string,
+  unsaved = false,
+): Badge {
+  const waiting = profiles
+    .filter((profile) => profile.needsSignIn)
+    .map((profile) => profile.name);
+  const names =
+    waiting.length === 0
+      ? ""
+      : new Intl.ListFormat(locale, { type: "conjunction" }).format(waiting);
   if (unsaved) {
     return { text: "+", names, kind: "unsaved" };
   }
   if (waiting.length === 0) {
     return { text: "", names, kind: "none" };
   }
-  const text = waiting.length > BADGE_LIMIT ? `${BADGE_LIMIT}+` : String(waiting.length);
+  const text =
+    waiting.length > BADGE_LIMIT ? `${BADGE_LIMIT}+` : String(waiting.length);
   return { text, names, kind: "signIn" };
 }
 
@@ -172,15 +197,24 @@ export function badge(profiles: readonly Attention[], locale: string, unsaved = 
  * The popup suggests an update of the extension while the last run suspected a change
  * at Autodarts and an account still has to sign in again.
  */
-export function suggestsUpdate(health: Health, profiles: readonly Attention[]): boolean {
-  return health.suspectedChange && profiles.some((profile) => profile.needsSignIn);
+export function suggestsUpdate(
+  health: Health,
+  profiles: readonly Attention[],
+): boolean {
+  return (
+    health.suspectedChange && profiles.some((profile) => profile.needsSignIn)
+  );
 }
 
 /**
  * How long ago a session was renewed, in words of the given language, such as
  * "3 hours ago" or "vor 3 Stunden". A time ahead of the clock counts as now.
  */
-export function renewedAgo(renewedAt: number, now: number, locale: string): string {
+export function renewedAgo(
+  renewedAt: number,
+  now: number,
+  locale: string,
+): string {
   const format = new Intl.RelativeTimeFormat(locale, { numeric: "auto" });
   const elapsed = Math.max(0, now - renewedAt);
   if (elapsed < HOUR) {
@@ -197,7 +231,15 @@ export function renewedAgo(renewedAt: number, now: number, locale: string): stri
  * date and a time in the language of the popup, such as "Oct 22, 2026, 9:15 PM", in
  * the time zone of the computer, unless a test names one.
  */
-export function failingSince(since: number, locale: string, timeZone?: string): string {
+export function failingSince(
+  since: number,
+  locale: string,
+  timeZone?: string,
+): string {
   const zone = timeZone === undefined ? {} : { timeZone };
-  return new Intl.DateTimeFormat(locale, { dateStyle: "medium", timeStyle: "short", ...zone }).format(since);
+  return new Intl.DateTimeFormat(locale, {
+    dateStyle: "medium",
+    timeStyle: "short",
+    ...zone,
+  }).format(since);
 }

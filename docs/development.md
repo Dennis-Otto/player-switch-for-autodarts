@@ -136,6 +136,16 @@ npm run test:a11y
 
 runs it alone, after a build of `extension/lib/`. `CHROME_PATH` points it at another Chrome. On a computer with neither Chrome nor Edge it skips with a note; in the CI, whose runner has Chrome, it never skips.
 
+[Biome](https://biomejs.dev/) lints and formats every JavaScript, TypeScript, CSS, HTML and JSON file of the repository with the settings of `biome.jsonc`: `src/` and `test/`, and also the code that the types don't reach, such as `extension/*.js` and `scripts/*.mjs`. A warning fails the check as well. Before a commit,
+
+```sh
+npx --no -- biome check --write .
+```
+
+formats the code, sorts the imports and makes the fixes that Biome can make safely; `npx --no -- biome explain RULE` explains a rule whose finding is left. A rule that doesn't fit one place is turned off only there, with a `biome-ignore` comment that gives the reason. The pictures that `scripts/diagrams.sh` draws into `docs/images/diagrams/` are left out by `docs/images/diagrams/biome.jsonc`, since the next drawing would undo every change by hand. `extension/biome.jsonc` keeps every array of `extension/manifest.json` on lines of its own, the format in which release-please writes the version on every release pull request, so the check stays green there; it stays out of the store zip, and a test fails when the manifest leaves that format.
+
+`npm test` also writes the coverage to `lcov.info`, which git ignores. The CI keeps it as the artifact `coverage`, and the report of the PR coach compares the coverage of `src/` and `scripts/store-status.ts` with that of `main`, file by file.
+
 ## Property-based tests
 
 What reaches the extension from the network or from the storage can be anything, and a switch meets the page, Autodarts and the network in any order. So beside the tests of single cases, [fast-check](https://fast-check.dev/) checks properties of `src/` on generated inputs: 100 for each property in every test run, and when one fails, it shrinks the input to the smallest one that still fails and prints it with its seed. This is the fuzzing that [OpenSSF Scorecard](https://securityscorecards.dev/) looks for.

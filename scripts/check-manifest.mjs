@@ -35,11 +35,15 @@ export const WHY =
 
 /** Keys that open the extension wider than it needs, and why each is left out. */
 const FORBIDDEN = {
-  externally_connectable: "lets web pages and other extensions send requests to the service worker",
-  optional_permissions: "grants permissions at run time that store/permissions.json doesn't list",
-  optional_host_permissions: "grants hosts at run time that store/permissions.json doesn't list",
+  externally_connectable:
+    "lets web pages and other extensions send requests to the service worker",
+  optional_permissions:
+    "grants permissions at run time that store/permissions.json doesn't list",
+  optional_host_permissions:
+    "grants hosts at run time that store/permissions.json doesn't list",
   sandbox: "serves pages under a looser content security policy",
-  update_url: "takes the updates from somewhere other than the Chrome Web Store",
+  update_url:
+    "takes the updates from somewhere other than the Chrome Web Store",
 };
 
 /** The directives of a content security policy, each with its sources. */
@@ -97,7 +101,12 @@ function compare(problems, what, asked, allowed) {
 /** The permissions, hosts and pages; the names in the problems say which list each one is in. */
 function checkAccess(problems, manifest, allowed) {
   const hosts = manifest.host_permissions ?? [];
-  compare(problems, "permission", manifest.permissions ?? [], allowed.permissions);
+  compare(
+    problems,
+    "permission",
+    manifest.permissions ?? [],
+    allowed.permissions,
+  );
   compare(problems, "host", hosts, allowed.host_permissions);
   const pages = manifest.web_accessible_resources ?? [];
   compare(
@@ -115,7 +124,9 @@ function checkAccess(problems, manifest, allowed) {
       }
     }
     if (entry.extension_ids !== undefined) {
-      problems.push("extension/manifest.json opens a web-accessible page to other extensions; remove extension_ids.");
+      problems.push(
+        "extension/manifest.json opens a web-accessible page to other extensions; remove extension_ids.",
+      );
     }
   }
   for (const script of manifest.content_scripts ?? []) {
@@ -134,7 +145,9 @@ function checkAccess(problems, manifest, allowed) {
   }
   for (const [key, reason] of Object.entries(FORBIDDEN)) {
     if (key in manifest) {
-      problems.push(`extension/manifest.json declares ${key}, which ${reason}; remove it.`);
+      problems.push(
+        `extension/manifest.json declares ${key}, which ${reason}; remove it.`,
+      );
     }
   }
 }
@@ -152,7 +165,11 @@ function checkPolicy(problems, manifest) {
   const parsed = directives(policy);
   const only = (name, allowed) => {
     const sources = parsed.get(name);
-    if (sources === undefined || sources.length === 0 || sources.some((source) => !allowed.includes(source))) {
+    if (
+      sources === undefined ||
+      sources.length === 0 ||
+      sources.some((source) => !allowed.includes(source))
+    ) {
       problems.push(
         `The content security policy of extension/manifest.json must say ${allowed.map((source) => `"${name} ${source}"`).join(" or ")}, not "${name} ${sources?.join(" ") ?? ""}".`,
       );
@@ -199,13 +216,20 @@ function checkDetails(problems, manifest, locales, imageSize) {
     );
   }
   if (!/^https:\/\//.test(manifest.homepage_url ?? "")) {
-    problems.push("extension/manifest.json has no homepage_url that starts with https://; chrome://extensions links it.");
+    problems.push(
+      "extension/manifest.json has no homepage_url that starts with https://; chrome://extensions links it.",
+    );
   }
   for (const [size, path] of Object.entries(manifest.icons ?? {})) {
     const actual = imageSize(path);
     if (actual === null) {
-      problems.push(`extension/manifest.json names the icon ${path}, which is no PNG in extension/.`);
-    } else if (actual.width !== Number(size) || actual.height !== Number(size)) {
+      problems.push(
+        `extension/manifest.json names the icon ${path}, which is no PNG in extension/.`,
+      );
+    } else if (
+      actual.width !== Number(size) ||
+      actual.height !== Number(size)
+    ) {
       problems.push(
         `extension/manifest.json declares ${path} as ${size}×${size} pixels, but it has ${actual.width}×${actual.height}.`,
       );
@@ -218,7 +242,9 @@ function checkDetails(problems, manifest, locales, imageSize) {
     ]) {
       const text = resolve(manifest[field], messages);
       if (typeof text !== "string" || text === "") {
-        problems.push(`The ${field} of extension/manifest.json has no text in ${language}.`);
+        problems.push(
+          `The ${field} of extension/manifest.json has no text in ${language}.`,
+        );
       } else if (text.length > max) {
         problems.push(
           `The ${field} of extension/manifest.json has ${text.length} characters in ${language}; the store takes ${max} at most.`,
@@ -230,13 +256,16 @@ function checkDetails(problems, manifest, locales, imageSize) {
 
 /** The headings of the sections of a listing that the checks read, in English and German. */
 const SHORT_DESCRIPTION = /^## (?:Short description|Kurzbeschreibung)/m;
-const JUSTIFICATIONS = /^## (?:Permission justifications|Begründung der Berechtigungen)/m;
+const JUSTIFICATIONS =
+  /^## (?:Permission justifications|Begründung der Berechtigungen)/m;
 
 /** The store listings: their short descriptions, and that they justify exactly what the manifest asks for. */
 function checkListings(problems, manifest, listings) {
   const permissions = manifest.permissions ?? [];
   const hosts = (manifest.host_permissions ?? []).map(hostOf);
-  const pages = (manifest.web_accessible_resources ?? []).flatMap((entry) => entry.resources ?? []);
+  const pages = (manifest.web_accessible_resources ?? []).flatMap(
+    (entry) => entry.resources ?? [],
+  );
   for (const [file, text] of Object.entries(listings)) {
     const short = section(text, SHORT_DESCRIPTION)?.trim();
     if (short === undefined || short === "") {
@@ -251,25 +280,37 @@ function checkListings(problems, manifest, listings) {
       problems.push(`${file} has no section that justifies the permissions.`);
       continue;
     }
-    const named = [...justified.matchAll(/^• ([a-z][A-Za-z]*) —/gm)].map((match) => match[1]);
+    const named = [...justified.matchAll(/^• ([a-z][A-Za-z]*) —/gm)].map(
+      (match) => match[1],
+    );
     for (const permission of permissions) {
       if (!named.includes(permission)) {
-        problems.push(`${file} doesn't justify the permission ${permission}; add a line "• ${permission} — why".`);
+        problems.push(
+          `${file} doesn't justify the permission ${permission}; add a line "• ${permission} — why".`,
+        );
       }
     }
     for (const name of named) {
       if (!permissions.includes(name)) {
-        problems.push(`${file} justifies the permission ${name}, which extension/manifest.json doesn't ask for; remove it.`);
+        problems.push(
+          `${file} justifies the permission ${name}, which extension/manifest.json doesn't ask for; remove it.`,
+        );
       }
     }
     for (const needed of [...hosts, ...pages]) {
       if (!justified.includes(needed)) {
-        problems.push(`${file} doesn't justify the access to ${needed}; name it in the justification.`);
+        problems.push(
+          `${file} doesn't justify the access to ${needed}; name it in the justification.`,
+        );
       }
     }
-    for (const host of new Set(justified.match(/\b(?:[a-z0-9-]+\.)*autodarts\.[a-z]+\b/g))) {
+    for (const host of new Set(
+      justified.match(/\b(?:[a-z0-9-]+\.)*autodarts\.[a-z]+\b/g),
+    )) {
       if (!hosts.includes(host)) {
-        problems.push(`${file} justifies the access to ${host}, which extension/manifest.json doesn't ask for; remove it.`);
+        problems.push(
+          `${file} justifies the access to ${host}, which extension/manifest.json doesn't ask for; remove it.`,
+        );
       }
     }
   }
@@ -288,7 +329,13 @@ function checkListings(problems, manifest, listings) {
  * @param {(path: string) => {width: number, height: number} | null} input.imageSize the size of a PNG of extension/
  * @returns {string[]}
  */
-export function checkManifest({ manifest, allowed, locales, listings, imageSize }) {
+export function checkManifest({
+  manifest,
+  allowed,
+  locales,
+  listings,
+  imageSize,
+}) {
   const problems = [];
   checkAccess(problems, manifest, allowed);
   checkPolicy(problems, manifest);
@@ -300,7 +347,11 @@ export function checkManifest({ manifest, allowed, locales, listings, imageSize 
 /** The width and height of a PNG, from its header; null for a file that is missing or no PNG. */
 export function pngSize(bytes) {
   const signature = "89504e470d0a1a0a";
-  if (bytes === null || bytes.length < 24 || Buffer.from(bytes.subarray(0, 8)).toString("hex") !== signature) {
+  if (
+    bytes === null ||
+    bytes.length < 24 ||
+    Buffer.from(bytes.subarray(0, 8)).toString("hex") !== signature
+  ) {
     return null;
   }
   const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
@@ -327,7 +378,13 @@ function main() {
     const file = new URL(`extension/${path}`, root);
     return pngSize(existsSync(file) ? readFileSync(file) : null);
   };
-  const problems = checkManifest({ manifest, allowed: json("store/permissions.json"), locales, listings, imageSize });
+  const problems = checkManifest({
+    manifest,
+    allowed: json("store/permissions.json"),
+    locales,
+    listings,
+    imageSize,
+  });
   if (problems.length > 0) {
     for (const problem of problems) {
       console.error(problem);
