@@ -13,6 +13,10 @@ if [[ "$manifest" != "$release" ]]; then
 fi
 echo "The manifest version is $manifest."
 
-# Every message the UI asks for must exist in both languages, and the two language
-# files must carry the same keys.
+# Every message the UI asks for must exist in both languages, every message must be
+# asked for, and the two language files must carry the same keys.
 node scripts/check-locales.mjs
+
+# Every file the manifest names must exist, and the switcher in the page must show the
+# tiles of the popup.
+node scripts/check-pages.mjs
