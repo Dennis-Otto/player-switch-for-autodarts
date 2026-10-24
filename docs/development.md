@@ -48,9 +48,16 @@ What reaches the extension from the network or from the storage can be anything,
 
 The model test makes up evenings of up to 60 steps: taps on accounts, **Add account**, the background refresh and passwords kept, wrong or dropped, between a page that renews and loses its session, a tab that closes in the middle of a request, Autodarts ending sessions or going offline. A fake Autodarts rotates the refresh tokens as the real one does, so a token that the extension renews behind the page's back, or keeps for two accounts, makes a rule break.
 
-To look further than a test run does, or to repeat a failure:
+To look further than a test run does:
 
 ```sh
 FAST_CHECK_RUNS=10000 npm test
-FAST_CHECK_SEED=1473600459 npm test
 ```
+
+A failure prints its seed and path. Give both to replay exactly the failing input:
+
+```sh
+FAST_CHECK_SEED=1473600459 FAST_CHECK_PATH=42:3:1 npm test
+```
+
+The seed alone replays the same runs from the start and stops at the run count, so without the path give it the run count of the failing run too: `FAST_CHECK_RUNS=10000 FAST_CHECK_SEED=1473600459 npm test`.
