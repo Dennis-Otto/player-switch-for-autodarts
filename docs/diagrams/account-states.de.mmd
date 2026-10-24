@@ -1,0 +1,34 @@
+---
+config:
+  flowchart:
+    wrappingWidth: 400
+---
+flowchart TB
+    accTitle: Das Leben eines gespeicherten Kontos
+    accDescr: Ein Konto, das sich auf der Seite anmeldet, wird nach Konto hinzufügen oder der Installation von selbst gespeichert, oder mit Konto speichern, und es spielt. Kommt ein anderer Spieler dran, oder meldet Konto hinzufügen die Seite ab, wird seine Sitzung geparkt, bei Autodarts weiter gültig, und ein Tipp holt es zurück. Alle 12 Stunden erneuert die Erweiterung jede geparkte Sitzung, mit ihrem Token oder einem gemerkten Passwort. Weist Autodarts ein Konto ab, bei einer Erneuerung oder einem Tipp, oder meldet es sich auf der Seite ab, muss es sich neu anmelden, und das Symbol in der Symbolleiste zählt es: sein Passwort merken und darauf tippen, oder sich einmal mit Konto hinzufügen anmelden. Konto entfernen löscht ein Konto mit Token und Passwort, in jedem Zustand.
+
+    save["Gespeichert<br>von selbst nach Konto<br>hinzufügen oder der<br>Installation, oder mit<br>Konto speichern"]
+    playing["Spielt<br>seine Sitzung ist in der Seite"]
+    parked["Geparkt<br>seine Sitzung wartet in<br>der Erweiterung, bei<br>Autodarts weiter gültig"]
+    renewal["Erneuert<br>mit seinem Token, oder mit<br>einem gemerkten Passwort"]
+    signin["Muss sich neu anmelden<br>abgewiesen, oder auf der<br>Seite abgemeldet; das Symbol<br>der Symbolleiste zählt es"]
+    removed["Konto entfernen, jederzeit<br>löscht Token<br>und Passwort"]
+
+    save --> playing
+    playing -- "ein anderer Spieler<br>oder Konto hinzufügen" --> parked
+    parked -- "ein Tipp" --> playing
+    parked -- "alle<br>12 Stunden" --> renewal
+    renewal -- "ein frischer<br>Token" --> parked
+    playing --> signin
+    renewal -- "abgewiesen,<br>auch bei einem Tipp" --> signin
+    signin -- "Passwort merken und<br>tippen, oder mit Konto<br>hinzufügen anmelden" --> playing
+    signin ~~~ removed
+
+    classDef bot fill:#526cfe2e,stroke:#526cfe,stroke-width:2px
+    classDef done fill:#16a34a2e,stroke:#16a34a,stroke-width:2px
+    classDef person fill:#f59e0b2e,stroke:#f59e0b,stroke-width:2px
+    classDef failed fill:#dc26262e,stroke:#dc2626,stroke-width:2px
+    class save,removed person
+    class playing done
+    class parked,renewal bot
+    class signin failed

@@ -33,6 +33,11 @@ The extension signs in only through Autodarts' own auth service. It never reads 
 token or a password from any other site, and the only code that touches the page's
 stored session is `extension/content.js`.
 
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="images/diagrams/data-flow.dark.svg">
+  <img src="images/diagrams/data-flow.svg" alt="Where the data goes: Everything stays in the browser on this computer. The popup and the switcher ask the service worker, which keeps a token per account, a password only when one is remembered, the settings of the button, the time of the last renewal, whether Autodarts turned every account away in it, and until when a new account is being added in chrome.storage.local. It moves a session into the Autodarts page and reads the outgoing one out of it only through content.js, the one script that reads or writes the session in the page's localStorage. To renew a token, sign in with a password or end a session, it talks to api.autodarts.com over HTTPS, the same service the Autodarts page itself uses. The popup and the switcher show each player's picture from the address Autodarts gives for it. Nothing else goes anywhere: no server of the developer, no analytics; Help and Report a problem only open a page in a new tab.">
+</picture>
+
 ## Trust boundaries
 
 1. **The shared computer.** Anyone at the display can switch to any saved account;

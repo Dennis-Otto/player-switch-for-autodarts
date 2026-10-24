@@ -85,7 +85,12 @@ Die [Anleitung für ein gemeinsames Display](shared-display.md) richtet alles ei
 
 ## So funktioniert es
 
-Autodarts Play speichert die Anmeldung als einen einzigen Wert im Browser, einen rotierenden Refresh-Token. Die Erweiterung behält diesen Wert pro Konto und tauscht ihn beim Wechsel:
+Autodarts Play speichert die Anmeldung als einen einzigen Wert im Browser, einen rotierenden Refresh-Token. Die Erweiterung behält diesen Wert pro Konto und tauscht ihn beim Wechsel.
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="images/diagrams/switch-flow.de.dark.svg">
+  <img src="images/diagrams/switch-flow.de.svg" alt="Was ein Tipp auf einen Spieler tut: Ada spielt, und ein Tipp auf Bob wechselt. Die Erweiterung erneuert Bobs Sitzung bei Autodarts mit seinem geparkten Token oder, wenn Autodarts den Token ablehnt, mit seinem gemerkten Passwort. Klappt das nicht, bleibt die Seite, wie sie ist, und kein Token geht verloren: Hat Autodarts Bob abgelehnt, muss er sich neu anmelden, war Autodarts nicht erreichbar, versucht es ein späterer Tipp neu. Sonst speichert die Erweiterung Bobs frischen Token, parkt Adas Sitzung aus der Seite, bei Autodarts weiter gültig, schreibt Bobs Sitzung in die Seite und lädt sie neu, und jeder andere Autodarts-Tab lädt als Bob neu.">
+</picture>
 
 - **Beim Wechseln** parkt sie die Sitzung des Kontos, das gerade spielte, schreibt die Sitzung des gewählten Kontos in die Seite und lädt neu.
 - **Das Konto, das Platz macht, wird bei Autodarts nicht abgemeldet.** Seine Sitzung bleibt gültig; der Wechsel nimmt es nur von der Seite.
@@ -94,6 +99,13 @@ Autodarts Play speichert die Anmeldung als einen einzigen Wert im Browser, einen
 - **Eine Änderung nach der anderen.** Ein Token gilt nur einmal, deshalb zählt ein zweiter Tipp nicht, solange ein Wechsel läuft, und die Erneuerung im Hintergrund wartet, bis der Wechsel fertig ist. Ein Doppeltipp meldet den vorigen Spieler nicht ab.
 - **Der Tab vorne.** Der Wechsel passiert im Autodarts-Tab, den du gerade siehst, und jeder andere Autodarts-Tab lädt mit dem neuen Spieler neu, damit keiner als der vorige weiterspielt. Ist kein Autodarts-Tab offen, öffnet ein Tipp Autodarts und wechselt dort.
 - **Passwort-Rückfall, optional.** Wenn du die Erweiterung ein Passwort merken lässt, meldet sie das Konto von selbst neu an, falls sein Token einmal nicht mehr geht. Konten, die sich mit Google oder Apple anmelden, können das nicht nutzen.
+
+Über Tage und Wochen wechselt ein gespeichertes Konto zwischen diesen Zuständen:
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="images/diagrams/account-states.de.dark.svg">
+  <img src="images/diagrams/account-states.de.svg" alt="Das Leben eines gespeicherten Kontos: Ein Konto, das sich auf der Seite anmeldet, wird nach Konto hinzufügen oder der Installation von selbst gespeichert, oder mit Konto speichern, und es spielt. Kommt ein anderer Spieler dran, oder meldet Konto hinzufügen die Seite ab, wird seine Sitzung geparkt, bei Autodarts weiter gültig, und ein Tipp holt es zurück. Alle 12 Stunden erneuert die Erweiterung jede geparkte Sitzung, mit ihrem Token oder einem gemerkten Passwort. Weist Autodarts ein Konto ab, bei einer Erneuerung oder einem Tipp, oder meldet es sich auf der Seite ab, muss es sich neu anmelden, und das Symbol in der Symbolleiste zählt es: sein Passwort merken und darauf tippen, oder sich einmal mit Konto hinzufügen anmelden. Konto entfernen löscht ein Konto mit Token und Passwort, in jedem Zustand.">
+</picture>
 
 [Entscheidung 0002](decisions/0002-swap-the-session-not-the-login.md) hält fest, warum es so gebaut ist, und das [Sicherheitsdesign](security.md), was gespeichert wird und welche Risiken bleiben.
 

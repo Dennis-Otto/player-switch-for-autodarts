@@ -12,6 +12,11 @@ How the code is laid out, how to run the extension from the source, and what the
 | `store/` | The texts of the Chrome Web Store listing. |
 | `scripts/` | `check.sh` runs every check, `check-project.sh` the ones of this project (the manifest version against the release, the two languages against each other and against the texts that the pages use, the files the manifest names, and the template of a tile in the switcher against the popup's), `package-extension.sh` builds the store package. |
 
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="images/diagrams/architecture.dark.svg">
+  <img src="images/diagrams/architecture.svg" alt="How the code is laid out: The popup and the switcher are pages of the extension that players.js draws, the options page keeps the settings of the button, and the welcome page guides the first set-up. They send their requests to background.js, the service worker, which wires the browser to the logic in src/, built into extension/lib/. There switch.ts makes every change of the accounts, one at a time through queue.ts, with state.ts for the saved accounts and autodarts.ts for the sign-in service of Autodarts; tabs.ts picks the Autodarts tab, health.ts plans the renewal and the badge, page.ts decides for the switcher, and onboarding.ts for the first set-up and the bug report. The logic reaches chrome.storage.local, api.autodarts.com and content.js only through what background.js passes in. content.js runs in each Autodarts tab, shows the button and the frame of the switcher, and is the only code that reads or writes the session of the page.">
+</picture>
+
 The one rule that shapes `switch.ts`: Autodarts rotates the refresh token, so the token in the page belongs to the page. The extension reads it only to park it when switching away, writes a token only when a different account takes over, and never renews the token that is live in the page behind the page's back. [Decision 0002](decisions/0002-swap-the-session-not-the-login.md) records why, and the [security design](security.md) what is stored.
 
 ### One change of the accounts at a time
