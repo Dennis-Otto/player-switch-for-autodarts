@@ -1,0 +1,30 @@
+---
+config:
+  flowchart:
+    wrappingWidth: 400
+---
+flowchart TB
+    accTitle: How the model test of switching works
+    accDescr: fast-check makes up an evening of up to 60 steps: actions of the extension and events in the page, at Autodarts and on the network, in any order. They run against a fake page whose requests can fail, a storage that keeps JSON and a fake Autodarts that rotates every refresh token. After every step the test checks its rules; when one breaks, fast-check shrinks the evening to the shortest one that breaks it and prints it with its seed.
+
+    evening["fast-check makes up an evening<br>of up to 60 steps"]
+    subgraph steps ["Each step, in any order"]
+        direction TB
+        extension["The extension<br>a tap on an account, Add account,<br>adopt, sync, the background refresh,<br>a password kept, wrong or dropped"]
+        world["Around it<br>the page signs in, renews and signs out,<br>Autodarts ends sessions, changes a password<br>or can't be reached"]
+    end
+    fakes["The fakes<br>an Autodarts page whose requests can fail,<br>a storage that keeps JSON,<br>an Autodarts that rotates every refresh token"]
+    rules["The rules after every step<br>no account loses a session it could still use,<br>only adopting renews the page's token,<br>no session is kept twice or under another account"]
+    shrunk["fast-check shrinks the evening<br>to the shortest one that breaks the rule<br>and prints it with the seed to run it again"]
+
+    evening --> steps --> fakes --> rules
+    rules -- "a rule breaks" --> shrunk
+
+    classDef bot fill:#526cfe2e,stroke:#526cfe,stroke-width:2px
+    classDef done fill:#16a34a2e,stroke:#16a34a,stroke-width:2px
+    classDef person fill:#f59e0b2e,stroke:#f59e0b,stroke-width:2px
+    classDef failed fill:#dc26262e,stroke:#dc2626,stroke-width:2px
+    class evening,fakes bot
+    class extension,world person
+    class rules done
+    class shrunk failed
