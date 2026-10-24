@@ -13,6 +13,23 @@
     "default_title": "__MSG_extName__",
     "default_popup": "popup.html"
   },
+  "options_ui": {
+    "page": "options.html",
+    "open_in_tab": false
+  },
+  "commands": {
+    "_execute_action": {
+      "suggested_key": {
+        "default": "Alt+Shift+P"
+      }
+    },
+    "toggle-switcher": {
+      "suggested_key": {
+        "default": "Alt+Shift+O"
+      },
+      "description": "__MSG_commandToggle__"
+    }
+  },
   "background": {
     "service_worker": "background.js",
     "type": "module"
@@ -27,6 +44,17 @@
         "content.js"
       ],
       "run_at": "document_start"
+    }
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": [
+        "switcher.html"
+      ],
+      "matches": [
+        "https://play.autodarts.com/*",
+        "https://play.autodarts.io/*"
+      ]
     }
   ],
   "permissions": [

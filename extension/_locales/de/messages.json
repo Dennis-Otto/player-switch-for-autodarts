@@ -44,10 +44,6 @@
     "message": "$NAME$ von diesem Display entfernen? Zum Wiederherstellen einfach neu anmelden.",
     "placeholders": { "name": { "content": "$1" } }
   },
-  "passwordTitle": {
-    "message": "Passwort für $NAME$",
-    "placeholders": { "name": { "content": "$1" } }
-  },
   "passwordHint": {
     "message": "Wird nur genutzt, wenn die gespeicherte Anmeldung nicht mehr geht. Es bleibt auf diesem Computer und geht nur an Autodarts."
   },
@@ -85,5 +81,78 @@
   },
   "error": {
     "message": "Etwas ist schiefgelaufen. Bitte nochmal versuchen."
+  },
+  "accounts": {
+    "message": "Konten"
+  },
+  "settings": {
+    "message": "Einstellungen"
+  },
+  "close": {
+    "message": "Schließen"
+  },
+  "keysHint": {
+    "message": "Die Tasten 1 bis 9 wählen einen Spieler, Esc schließt."
+  },
+  "switchButton": {
+    "message": "Spieler wechseln"
+  },
+  "switchButtonPlaying": {
+    "message": "$NAME$ spielt. Spieler wechseln",
+    "placeholders": { "name": { "content": "$1" } }
+  },
+  "matchTitle": {
+    "message": "Ein Match läuft"
+  },
+  "matchText": {
+    "message": "Ein Wechsel beendet es auf diesem Display."
+  },
+  "matchConfirm": {
+    "message": "Trotzdem wechseln"
+  },
+  "matchCancel": {
+    "message": "Weiterspielen"
+  },
+  "commandPopup": {
+    "message": "Popup öffnen"
+  },
+  "commandToggle": {
+    "message": "Wechsler in der Autodarts-Seite öffnen oder schließen"
+  },
+  "optionsButton": {
+    "message": "Der Knopf in der Autodarts-Seite"
+  },
+  "optionShowButton": {
+    "message": "Den Knopf auf der Autodarts-Seite zeigen"
+  },
+  "optionShowButtonHint": {
+    "message": "Ein Tipp darauf zeigt die Spieler über der Seite, auch im Vollbild und im Kiosk-Modus, wo die Symbolleiste nicht erreichbar ist. Das Tastenkürzel öffnet sie ebenso."
+  },
+  "optionCorner": {
+    "message": "Ecke des Knopfs"
+  },
+  "cornerBottomRight": {
+    "message": "Unten rechts"
+  },
+  "cornerBottomLeft": {
+    "message": "Unten links"
+  },
+  "cornerTopRight": {
+    "message": "Oben rechts"
+  },
+  "cornerTopLeft": {
+    "message": "Oben links"
+  },
+  "optionShortcuts": {
+    "message": "Tastenkürzel"
+  },
+  "shortcutNotSet": {
+    "message": "Nicht festgelegt"
+  },
+  "changeShortcuts": {
+    "message": "Tastenkürzel ändern"
+  },
+  "saved": {
+    "message": "Gespeichert."
   }
 }

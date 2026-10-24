@@ -44,10 +44,6 @@
     "message": "Remove $NAME$ from this display? Sign in again to add the account back.",
     "placeholders": { "name": { "content": "$1" } }
   },
-  "passwordTitle": {
-    "message": "Password for $NAME$",
-    "placeholders": { "name": { "content": "$1" } }
-  },
   "passwordHint": {
     "message": "Only used when the saved sign-in stops working. It stays on this computer and goes only to Autodarts."
   },
@@ -85,5 +81,78 @@
   },
   "error": {
     "message": "Something went wrong. Please try again."
+  },
+  "accounts": {
+    "message": "Accounts"
+  },
+  "settings": {
+    "message": "Settings"
+  },
+  "close": {
+    "message": "Close"
+  },
+  "keysHint": {
+    "message": "Keys 1 to 9 pick a player, Esc closes."
+  },
+  "switchButton": {
+    "message": "Switch players"
+  },
+  "switchButtonPlaying": {
+    "message": "$NAME$ is playing. Switch players",
+    "placeholders": { "name": { "content": "$1" } }
+  },
+  "matchTitle": {
+    "message": "A match is running"
+  },
+  "matchText": {
+    "message": "Switching ends it on this display."
+  },
+  "matchConfirm": {
+    "message": "Switch anyway"
+  },
+  "matchCancel": {
+    "message": "Keep playing"
+  },
+  "commandPopup": {
+    "message": "Open the popup"
+  },
+  "commandToggle": {
+    "message": "Open or close the switcher in the Autodarts page"
+  },
+  "optionsButton": {
+    "message": "The button in the Autodarts page"
+  },
+  "optionShowButton": {
+    "message": "Show the button on the Autodarts page"
+  },
+  "optionShowButtonHint": {
+    "message": "A tap on it shows the players over the page, also in fullscreen and kiosk mode, where the toolbar is out of reach. The keyboard shortcut opens them as well."
+  },
+  "optionCorner": {
+    "message": "Corner of the button"
+  },
+  "cornerBottomRight": {
+    "message": "Bottom right"
+  },
+  "cornerBottomLeft": {
+    "message": "Bottom left"
+  },
+  "cornerTopRight": {
+    "message": "Top right"
+  },
+  "cornerTopLeft": {
+    "message": "Top left"
+  },
+  "optionShortcuts": {
+    "message": "Keyboard shortcuts"
+  },
+  "shortcutNotSet": {
+    "message": "Not set"
+  },
+  "changeShortcuts": {
+    "message": "Change shortcuts"
+  },
+  "saved": {
+    "message": "Saved."
   }
 }

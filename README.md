@@ -32,6 +32,7 @@ Every guide is on the [documentation website](https://dennis-otto.github.io/play
 - **One tap, no typing.** The display in the hallway, the club or the pub is shared, but everyone plays under their own Autodarts account. A tap on a tile puts that account on the board.
 - **Nobody gets signed out.** The account that steps aside keeps its session parked, so a tap brings it straight back. No password, no sign-in page.
 - **Ready days later.** Autodarts rotates its session tokens; the extension renews every parked account in the background, so a saved account still works next week.
+- **Made for the board display.** A round button on the Autodarts page and a keyboard shortcut open the players right over the page, also in fullscreen and in kiosk mode, where the toolbar of the browser is out of reach.
 - **Private by design.** Everything stays in the browser on that computer and goes only to Autodarts. No analytics, no server of ours, nothing sent anywhere else.
 
 ## How it works
@@ -42,6 +43,7 @@ Autodarts Play keeps the signed-in session as a single value in the browser (a r
 - **The account that steps aside is not signed out at Autodarts.** Its session stays valid; "switching away" only takes it off the page.
 - **Parked sessions are kept fresh.** Because the token rotates, the extension renews each parked account's token in the background.
 - **One change at a time.** A token works only once, so a second tap while a switch is on its way is ignored, and the renewal in the background waits for the switch. A double tap can't sign the previous player out.
+- **A match ends only on purpose.** A switch reloads the page, so on the page of a running match the extension asks first, before it spends a token: "A match is running. Switching ends it on this display."
 - **Password fallback, optional.** If you let the extension remember an account's password, it signs that account back in by itself should its token ever stop working. Accounts that sign in with Google or Apple can't use this.
 
 [Decision 0002](docs/decisions/0002-swap-the-session-not-the-login.md) records why it works this way, and the [security design](docs/security.md) says what is stored and which risks remain.
@@ -63,10 +65,24 @@ Then in Chrome open `chrome://extensions`, turn on **Developer mode**, choose **
 
 ### Add the players
 
-1. Open [play.autodarts.com](https://play.autodarts.com) and sign in as the first person.
-2. Open the extension and choose **Save account**.
-3. Choose **Add account**, sign in as the next person, and save that one too.
-4. From then on, a tap on a tile switches accounts. **Manage accounts** shows the options of each account.
+1. Pin the extension: Chrome puts a new one in the puzzle-piece menu (🧩) of the toolbar, so choose the pin next to **Player Switch for Autodarts** there, and its button stays in the toolbar.
+2. Open [play.autodarts.com](https://play.autodarts.com) and sign in as the first person.
+3. Open the extension and choose **Save account**.
+4. Choose **Add account**, sign in as the next person, and save that one too.
+5. From then on, a tap on a tile switches accounts. **Manage accounts** shows the options of each account.
+
+### Switch from the Autodarts page, also in fullscreen and kiosk mode
+
+A board display often runs in fullscreen (F11) or as a kiosk (`chrome --kiosk`), where the toolbar and its popup are out of reach. So the Autodarts page itself carries a round button in a corner, with the picture of the player. A tap on it shows the players over the page, in large tiles for a touch screen, with everything the popup has: a tap on a tile switches, and **Manage accounts**, **Save account** and **Add account** are there too.
+
+- **Keyboard:** <kbd>Alt</kbd>+<kbd>Shift</kbd>+<kbd>O</kbd> opens and closes the players on the page, <kbd>Alt</kbd>+<kbd>Shift</kbd>+<kbd>P</kbd> opens the popup. In the players, the keys <kbd>1</kbd> to <kbd>9</kbd> pick a player and <kbd>Esc</kbd> closes them. Chrome lets you change both shortcuts under `chrome://extensions/shortcuts`.
+- **Settings:** **Settings** in the popup, or **Details → Extension options** under `chrome://extensions`, turns the button off or moves it to another corner. The shortcut works with the button off as well.
+- **Private:** the players open in a page of the extension, in a frame of its own, so the scripts of the Autodarts page can't read the saved accounts.
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/images/diagrams/switch-from-the-page.dark.svg">
+  <img src="docs/images/diagrams/switch-from-the-page.svg" alt="Switch players from the Autodarts page: In fullscreen or kiosk mode, a tap on the round button in a corner of the Autodarts page, or the keyboard shortcut, opens the switcher over the page. It is a page of the extension in a frame, so the page can't read the accounts. A tap on a player, or the keys 1 to 9, switches; on a match page the switcher asks first, before any token is spent, and the page reloads as the chosen player.">
+</picture>
 
 ### Remember a password (optional)
 

@@ -14,7 +14,7 @@
 
     <p id="status" role="status" aria-live="polite" hidden></p>
 
-    <ul id="profiles" aria-label="Accounts"></ul>
+    <ul id="profiles" data-i18n-label="accounts" aria-label="Accounts"></ul>
 
     <section id="unsaved" hidden>
       <p data-i18n="unsavedText">Someone is signed in on Autodarts who isn't saved here yet.</p>
@@ -25,6 +25,10 @@
       <span class="plus" aria-hidden="true">+</span>
       <span data-i18n="addAccount">Add account</span>
     </button>
+
+    <footer>
+      <button type="button" id="settings" class="link" data-i18n="settings">Settings</button>
+    </footer>
 
     <template id="profile-template">
       <li class="profile">

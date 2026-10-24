@@ -1,0 +1,29 @@
+---
+config:
+  flowchart:
+    wrappingWidth: 400
+---
+flowchart TB
+    accTitle: Spieler direkt auf der Autodarts-Seite wechseln
+    accDescr: Im Vollbild oder Kiosk-Modus öffnet ein Tipp auf den runden Knopf in einer Ecke der Autodarts-Seite, oder das Tastenkürzel, den Wechsler über der Seite. Er ist eine Seite der Erweiterung in einem Rahmen, darum kann die Seite die Konten nicht lesen. Ein Tipp auf einen Spieler, oder die Tasten 1 bis 9, wechselt; auf einer Match-Seite fragt der Wechsler vorher, bevor ein Token verbraucht wird, und die Seite lädt neu mit dem gewählten Spieler.
+
+    button["Ein Tipp auf den Knopf in einer Ecke<br>oder das Tastenkürzel"]
+    switcher["Der Wechsler über der Seite<br>eine Seite der Erweiterung in einem Rahmen:<br>die Seite kann die Konten nicht lesen"]
+    pick["Ein Tipp auf einen Spieler<br>oder die Tasten 1 bis 9"]
+    match{"Läuft auf der Seite<br>ein Match?"}
+    ask["Frage: ein Wechsel beendet das Match<br>auf diesem Display"]
+    keep["Weiterspielen<br>nichts ändert sich"]
+    switch["Wechseln: Sitzung parken,<br>die gewählte eintragen, neu laden"]
+
+    button --> switcher --> pick --> match
+    match -- "nein" --> switch
+    match -- "ja" --> ask
+    ask -- "Trotzdem wechseln" --> switch
+    ask -- "Weiterspielen" --> keep
+
+    classDef bot fill:#526cfe2e,stroke:#526cfe,stroke-width:2px
+    classDef person fill:#f59e0b2e,stroke:#f59e0b,stroke-width:2px
+    classDef done fill:#16a34a2e,stroke:#16a34a,stroke-width:2px
+    class switcher bot
+    class ask person
+    class switch done

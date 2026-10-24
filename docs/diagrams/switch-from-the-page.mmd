@@ -1,0 +1,29 @@
+---
+config:
+  flowchart:
+    wrappingWidth: 400
+---
+flowchart TB
+    accTitle: Switch players from the Autodarts page
+    accDescr: In fullscreen or kiosk mode, a tap on the round button in a corner of the Autodarts page, or the keyboard shortcut, opens the switcher over the page. It is a page of the extension in a frame, so the page can't read the accounts. A tap on a player, or the keys 1 to 9, switches; on a match page the switcher asks first, before any token is spent, and the page reloads as the chosen player.
+
+    button["A tap on the button in a corner<br>or the keyboard shortcut"]
+    switcher["The switcher over the page<br>a page of the extension in a frame:<br>the page can't read the accounts"]
+    pick["A tap on a player<br>or the keys 1 to 9"]
+    match{"Does a match run<br>in the page?"}
+    ask["Ask: switching ends the match<br>on this display"]
+    keep["Keep playing<br>nothing changes"]
+    switch["Switch: park the session,<br>write the chosen one, reload"]
+
+    button --> switcher --> pick --> match
+    match -- "no" --> switch
+    match -- "yes" --> ask
+    ask -- "Switch anyway" --> switch
+    ask -- "Keep playing" --> keep
+
+    classDef bot fill:#526cfe2e,stroke:#526cfe,stroke-width:2px
+    classDef person fill:#f59e0b2e,stroke:#f59e0b,stroke-width:2px
+    classDef done fill:#16a34a2e,stroke:#16a34a,stroke-width:2px
+    class switcher bot
+    class ask person
+    class switch done

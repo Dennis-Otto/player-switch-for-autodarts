@@ -6,11 +6,11 @@ How the code is laid out, how to run the extension from the source, and what the
 
 | Where | What |
 | --- | --- |
-| `src/` | The account logic, in TypeScript, without the browser: `autodarts.ts` talks to Autodarts' sign-in service (renew, sign in, end a session, read who a session belongs to), `state.ts` keeps the saved accounts and which one plays, `switch.ts` is the switch itself, with the page, the storage, the clock, `fetch` and the queue passed in, and `queue.ts` the queue that runs one change of the accounts at a time. Every line, branch and function runs in a test. |
+| `src/` | The account logic, in TypeScript, without the browser: `autodarts.ts` talks to Autodarts' sign-in service (renew, sign in, end a session, read who a session belongs to), `state.ts` keeps the saved accounts and which one plays, `switch.ts` is the switch itself, with the page, the storage, the clock, `fetch` and the queue passed in, `queue.ts` the queue that runs one change of the accounts at a time, and `page.ts` the decisions of the switcher in the page: its settings, what its button shows, whether a match runs in the page and which tile a key picks. Every line, branch and function runs in a test. |
 | `test/` | The tests of `src/`, with fakes for the page, the storage and Autodarts. The `*.property.test.ts` files are [property-based tests](#property-based-tests), which run the code on many generated inputs. |
-| `extension/` | The loadable extension, Manifest V3: `background.js` wires the browser to the logic, `popup.html`, `popup.css` and `popup.js` are the popup, `content.js` runs in the Autodarts page and is the only code that reads or writes the page's stored session, `_locales/` holds the English and German texts. `extension/lib/` is built from `src/` and not committed. |
+| `extension/` | The loadable extension, Manifest V3: `background.js` wires the browser to the logic, `players.js` shows the players and their accounts for both the popup (`popup.html`, `popup.css`, `popup.js`) and the switcher in the page (`switcher.html`, `switcher.css`, `switcher.js`), `options.html` with `options.css` and `options.js` is the options page, `content.js` runs in the Autodarts page, is the only code that reads or writes the page's stored session and shows the button and the frame of the switcher there, `_locales/` holds the English and German texts. `extension/lib/` is built from `src/` and not committed. |
 | `store/` | The texts of the Chrome Web Store listing. |
-| `scripts/` | `check.sh` runs every check, `check-project.sh` the ones of this project (the manifest version against the release, the two languages against each other), `package-extension.sh` builds the store package. |
+| `scripts/` | `check.sh` runs every check, `check-project.sh` the ones of this project (the manifest version against the release, the two languages against each other and against the texts that the pages use, the files the manifest names, and the template of a tile in the switcher against the popup's), `package-extension.sh` builds the store package. |
 
 The one rule that shapes `switch.ts`: Autodarts rotates the refresh token, so the token in the page belongs to the page. The extension reads it only to park it when switching away, writes a token only when a different account takes over, and never renews the token that is live in the page behind the page's back. [Decision 0002](decisions/0002-swap-the-session-not-the-login.md) records why, and the [security design](security.md) what is stored.
 
@@ -24,6 +24,14 @@ Because a token works only once, two changes of the accounts must never run side
 </picture>
 
 The tests in `test/switch.test.ts` run these races against a fake Autodarts that rotates every token it renews and refuses a token that comes back.
+
+### The switcher in the page
+
+On a display in fullscreen or kiosk mode the popup is out of reach, so `content.js` puts a button into the Autodarts page and, on a tap or the shortcut `toggle-switcher`, lays `switcher.html` over the page in a frame. Three rules shape it:
+
+- **The page never sees an account.** The frame is a page of the extension, of another origin than Autodarts, so the scripts of the page can't read into it; the button and the frame sit in a closed shadow root. Only `switcher.html` is a web-accessible resource, and only for the two addresses of Autodarts Play. `content.js` itself learns no more than the player on the button: it asks the service worker with `{ type: "button" }` and never reads the storage.
+- **One way to the accounts.** The switcher sends the service worker the same requests as the popup, through the same `players.js`, so a fix of one is a fix of both. It asks the worker to close it (`{ type: "switcher", action: "close" }`), and the worker tells the content script of the tab it came from.
+- **A match ends only on purpose.** A switch or a sign-out on a match page answers `{ ok: false, reason: "match" }` and spends no token; the popup or the switcher asks the person, and sends the request again with `confirmed: true` on a yes. `mustConfirm` in `src/page.ts` decides it from the address of the tab.
 
 ## Run it from the source
 

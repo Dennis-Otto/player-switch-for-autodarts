@@ -15,6 +15,8 @@ developer or to any third party.
 - **A username and password, only for accounts where you turn on "Remember
   password."** It is stored so the extension can sign that account in again if its
   token stops working. It is off by default, and you can remove it at any time.
+- **The settings of the button on the Autodarts page:** whether it shows, and in
+  which corner.
 
 ## Where data is sent
 
