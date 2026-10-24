@@ -42,7 +42,6 @@ const plain = [
   "extDescription",
   "title",
   "manage",
-  "done",
   "playing",
   "badgeSaved",
   "updateHintLink",

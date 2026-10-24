@@ -15,7 +15,9 @@
 // sends. `window.harness` lets a driver catch the moment between a tap and the answer:
 // harness.hold() keeps the next request waiting until harness.release(),
 // harness.drawn() resolves once the page has drawn what changed, and harness.idle()
-// once no request waits either.
+// once no request waits either. harness.refuse(reply) answers the next request with
+// `reply` and the view as it is, as the worker refuses one, such as
+// { ok: false, reason: "unreachable" }, and test/harness/a11y.mjs shows its error so.
 
 (() => {
   const setup = new URLSearchParams(location.search);
@@ -82,6 +84,8 @@
     renewedAgo: RENEWED[index],
   }));
   let activeId = accounts[0].id;
+  // True after "Add account", until the next sign-in or "Cancel".
+  let adding = false;
 
   /** The view of background.js: the active account renews in the page, not here. */
   function view() {
@@ -98,6 +102,7 @@
         renewalFailingSince: null,
       })),
       unsaved: false,
+      adding,
       updateHint: false,
     };
   }
@@ -119,8 +124,14 @@
       case "removeAccount":
         accounts.splice(accounts.indexOf(account), 1);
         break;
+      case "signout":
+        adding = true;
+        break;
+      case "stopAdding":
+        adding = false;
+        break;
       default:
-        // "view", "adopt", "signout" and "close" change nothing here.
+        // "view", "adopt" and "close" change nothing here.
         break;
     }
     return { ok: true, view: view() };
@@ -167,12 +178,18 @@
 
   let gate = null;
   let pending = 0;
+  let refusal = null;
 
   async function sendMessage(message) {
     pending += 1;
     try {
       if (gate !== null && message.action !== "view") {
         await gate.promise;
+      }
+      if (refusal !== null && message.action !== "view") {
+        const reply = refusal;
+        refusal = null;
+        return { ...reply, view: view() };
       }
       return answer(message);
     } finally {
@@ -190,6 +207,9 @@
     release() {
       gate?.resolve();
       gate = null;
+    },
+    refuse(reply) {
+      refusal = reply;
     },
     /** Resolves once no request waits and the page has drawn the last answer. */
     async idle() {
