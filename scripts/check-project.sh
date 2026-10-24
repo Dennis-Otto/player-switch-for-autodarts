@@ -21,6 +21,13 @@ node scripts/check-locales.mjs
 # tiles of the popup.
 node scripts/check-pages.mjs
 
+# The manifest asks for exactly the permissions, hosts and web-accessible pages that
+# store/permissions.json allows, both store listings justify them, its content security
+# policy connects only to those hosts, and it fits the store. The checker tests itself
+# first, with fixture manifests that each break one rule.
+node --test --test-reporter=dot scripts/check-manifest.test.mjs
+node scripts/check-manifest.mjs
+
 # The help explains every message that tells a player about a problem, in both
 # languages, and Help in the extension leads to it.
 node scripts/check-help.mjs

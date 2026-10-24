@@ -326,8 +326,9 @@
       });
   }
 
-  chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
-    if (message === null || typeof message !== "object" || message.type !== "page") {
+  // Only the service worker of this extension talks to the page.
+  chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+    if (message === null || typeof message !== "object" || message.type !== "page" || sender.id !== chrome.runtime.id) {
       return false;
     }
 
@@ -338,6 +339,11 @@
         return false;
       }
       case "write": {
+        // Only a token goes into the session of the page, never another value.
+        if (typeof message.token !== "string" || message.token === "") {
+          sendResponse({ ok: false });
+          return false;
+        }
         window.localStorage.setItem(SESSION_KEY, message.token);
         sendResponse({ ok: true });
         // Let Autodarts pick up the new session.

@@ -53,16 +53,19 @@ Nicht mit Autodarts verbunden.
 • scripting — um den Knopf einer neuen Version in die Autodarts-Tabs zu bringen,
   die beim Update schon offen sind, damit ein Display im Kiosk-Modus ohne Neuladen
   weiter funktioniert. Es führt nur das eigene Skript der Erweiterung aus, nur auf
-  play.autodarts.com und play.autodarts.io.
-• Web-zugängliche Ressource switcher.html, nur für play.autodarts.com und
-  play.autodarts.io — die Spieler, die der Knopf auf der Autodarts-Seite über der
-  Seite zeigt. Sie ist eine Seite der Erweiterung in einem Rahmen, darum können die
-  Skripte der Autodarts-Seite die gespeicherten Konten nicht daraus lesen.
-• Host-Zugriff auf autodarts.com — um anzumelden, eine Sitzung zu erneuern und
-  zwischen Konten zu verschieben, dieselben Anfragen wie die Autodarts-Website, und
-  um die offenen Autodarts-Tabs zu finden, damit der Wechsel im vorderen wirkt und
-  die anderen neu laden. Adresse und Titel anderer Tabs kann die Erweiterung nicht
-  lesen.
+  play.autodarts.com.
+• Web-zugängliche Ressource switcher.html, nur für play.autodarts.com — die
+  Spieler, die der Knopf auf der Autodarts-Seite über der Seite zeigt. Sie ist eine
+  Seite der Erweiterung in einem Rahmen, darum können die Skripte der
+  Autodarts-Seite die gespeicherten Konten nicht daraus lesen.
+• Host-Zugriff auf play.autodarts.com — um eine Sitzung in die Autodarts-Seite und
+  aus ihr heraus zu bringen, dort den Knopf zu zeigen und die offenen Autodarts-Tabs
+  zu finden, damit der Wechsel im vorderen wirkt und die anderen neu laden. Adresse
+  und Titel anderer Tabs kann die Erweiterung nicht lesen.
+• Host-Zugriff auf api.autodarts.com — um anzumelden, eine Sitzung zu erneuern und
+  zu beenden, dieselben Anfragen wie die Autodarts-Website. Mit keinem anderen
+  Server verbindet sich die Erweiterung, und ihre Content Security Policy setzt das
+  durch.
 
 ## Startseite und Support
 

@@ -9,7 +9,8 @@
 //
 // The popup and the switcher in the Autodarts page (switcher.html) send it the same
 // requests; content.js asks it what the button in the page shows, and it relays the
-// keyboard shortcut and the close of the switcher to the page.
+// keyboard shortcut and the close of the switcher to the page. lib/trust.js decides who
+// may send which request, and keeps the storage out of the reach of content.js.
 import {
   badge,
   nextRunAt,
@@ -20,7 +21,7 @@ import {
   suggestsUpdate,
 } from "./lib/health.js";
 import { welcomes } from "./lib/onboarding.js";
-import { isPlayPage, mustConfirm, SETTINGS_KEY, toButtonView } from "./lib/page.js";
+import { isPlayPage, mustConfirm, PLAY_ORIGINS, SETTINGS_KEY, toButtonView } from "./lib/page.js";
 import { createQueue } from "./lib/queue.js";
 import { EMPTY, forget, forgetCredentials, rememberCredentials, toView } from "./lib/state.js";
 import { ACCOUNTS_KEY, accountsIn, createStore, UnknownStateError } from "./lib/storage.js";
@@ -37,8 +38,9 @@ import {
   syncFromPage,
 } from "./lib/switch.js";
 import { createPage, NoPageError, rankTabs, settleTab, showPage, withPage } from "./lib/tabs.js";
+import { fromExtension, fromExtensionPage, keepFromContentScripts } from "./lib/trust.js";
 
-const TAB_MATCHES = ["https://play.autodarts.com/*", "https://play.autodarts.io/*"];
+const TAB_MATCHES = PLAY_ORIGINS.map((origin) => `${origin}/*`);
 const STORAGE_KEY = ACCOUNTS_KEY;
 // How the renewal went, beside the accounts: see lib/health.js.
 const HEALTH_KEY = "health";
@@ -68,6 +70,10 @@ const store = createStore(chrome.storage.local);
  * shows, instead of dropping it, so that a renewal that keeps failing leaves a trace.
  */
 const logFailure = (what) => (error) => console.error(`Player Switch: ${what} failed.`, error);
+
+// The saved accounts hold tokens and remembered passwords: only the service worker and
+// the pages of the extension may read them, not content.js in the Autodarts page.
+keepFromContentScripts(chrome.storage.local).catch(logFailure("keeping the saved accounts from the Autodarts page"));
 
 const withId = (tabs) => tabs.filter((tab) => typeof tab.id === "number");
 
@@ -241,22 +247,17 @@ function tellPage(tabId, message) {
   chrome.tabs.sendMessage(tabId, { type: "page", ...message }, { frameId: 0 }).catch(() => {});
 }
 
-/**
- * The message comes from a page of the extension, such as the popup or the switcher,
- * not from the content script in the Autodarts page. Only those may see the accounts
- * and change them.
- */
-function fromExtensionPage(sender) {
-  return typeof sender.url === "string" && sender.url.startsWith(chrome.runtime.getURL(""));
-}
-
+// Only a page of the extension, such as the popup or the switcher, may see the accounts
+// and change them; the content script in the Autodarts page may only ask what its
+// button shows.
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-  if (message === null || typeof message !== "object") {
+  if (message === null || typeof message !== "object" || !fromExtension(sender, chrome.runtime.id)) {
     return false;
   }
+  const fromPage = fromExtensionPage(sender, chrome.runtime.id);
   switch (message.type) {
     case "popup":
-      if (!fromExtensionPage(sender)) {
+      if (!fromPage) {
         return false;
       }
       handlePopup(message, tabOf(sender)).then(sendResponse);
@@ -266,7 +267,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       return true;
     case "switcher":
       // The switcher asks to close; only its own tab hears it.
-      if (message.action === "close" && typeof sender.tab?.id === "number") {
+      if (fromPage && message.action === "close" && typeof sender.tab?.id === "number") {
         tellPage(sender.tab.id, { action: "closeSwitcher" });
       }
       return false;
