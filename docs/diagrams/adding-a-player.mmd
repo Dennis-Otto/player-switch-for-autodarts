@@ -1,0 +1,27 @@
+---
+config:
+  flowchart:
+    wrappingWidth: 400
+---
+flowchart TB
+    accTitle: How a new player is saved by itself
+    accDescr: After the install, which signs nobody out, or a tap on Add account, which signs the page out, the extension waits ten minutes for a new account. The new player signs in on Autodarts. Each time an Autodarts page has finished loading, the extension looks for the session. Within the ten minutes, it saves the account once, the icon shows a check mark, and the player plays on. After the ten minutes, or once a player was saved, a sign-in is never saved by itself; the icon shows a plus, and Save account in the popup saves it.
+
+    add["Install: nobody is signed out<br>Add account: the page signs out"]
+    wait["The extension waits<br>ten minutes for a new account"]
+    signin["The new player signs in<br>on Autodarts"]
+    load["An Autodarts page finishes loading"]
+    check{"Still within<br>the ten minutes?"}
+    saved["Saved once, by itself<br>the icon shows ✓, the player plays on"]
+    plus["Not saved by itself<br>the icon shows +, and Save account<br>in the popup saves it"]
+
+    add --> wait --> signin --> load --> check
+    check -- "yes" --> saved
+    check -- "no, or a player came on" --> plus
+
+    classDef bot fill:#526cfe2e,stroke:#526cfe,stroke-width:2px
+    classDef done fill:#16a34a2e,stroke:#16a34a,stroke-width:2px
+    classDef person fill:#f59e0b2e,stroke:#f59e0b,stroke-width:2px
+    class wait,load bot
+    class saved done
+    class signin,plus person

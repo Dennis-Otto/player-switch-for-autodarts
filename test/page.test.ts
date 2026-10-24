@@ -72,18 +72,18 @@ test("initialOf keeps a character outside the basic plane whole", () => {
 });
 
 test("toButtonView shows the account that plays, without its session or password", () => {
-  const state: State = { profiles: [ada, bob], activeId: "a" };
+  const state: State = { profiles: [ada, bob], activeId: "a", addingUntil: null };
   assert.deepEqual(toButtonView(state, { corner: "top-left" }), {
     settings: { showButton: true, corner: "top-left" },
     player: { name: "Ada", picture: "https://p/a.png", initial: "A" },
   });
-  const view = JSON.stringify(toButtonView({ profiles: [ada, bob], activeId: "b" }, undefined));
+  const view = JSON.stringify(toButtonView({ profiles: [ada, bob], activeId: "b", addingUntil: null }, undefined));
   assert.ok(!view.includes("t-bob") && !view.includes("secret"));
 });
 
 test("toButtonView shows no player when none of the saved accounts plays", () => {
   assert.equal(toButtonView(EMPTY, undefined).player, null);
-  assert.equal(toButtonView({ profiles: [ada], activeId: "gone" }, undefined).player, null);
+  assert.equal(toButtonView({ profiles: [ada], activeId: "gone", addingUntil: null }, undefined).player, null);
 });
 
 test("isPlayPage knows both addresses of Autodarts Play and nothing else", () => {

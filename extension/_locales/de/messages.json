@@ -30,6 +30,15 @@
     "message": "Player Switch for Autodarts – neu anmelden: $NAMES$",
     "placeholders": { "names": { "content": "$1" } }
   },
+  "badgeUnsaved": {
+    "message": "Player Switch for Autodarts – ein Konto auf Autodarts ist noch nicht gespeichert",
+    "description": "The tooltip of the toolbar icon while a '+' on it says that someone is signed in on Autodarts who isn't saved yet."
+  },
+  "badgeSaved": {
+    "message": "Player Switch for Autodarts – $NAME$ ist gespeichert",
+    "description": "The tooltip of the toolbar icon for a moment after a new account was saved by itself, while the icon shows a check mark.",
+    "placeholders": { "name": { "content": "$1" } }
+  },
   "renewed": {
     "message": "Erneuert $WHEN$",
     "placeholders": { "when": { "content": "$1" } }
@@ -42,6 +51,13 @@
   },
   "addAccount": {
     "message": "Konto hinzufügen"
+  },
+  "addingText": {
+    "message": "Melde dich auf Autodarts mit dem neuen Spieler an. Das Konto wird von selbst gespeichert."
+  },
+  "savedAccount": {
+    "message": "$NAME$ ist gespeichert. Ein Tipp auf eine Kachel wechselt den Spieler.",
+    "placeholders": { "name": { "content": "$1" } }
   },
   "unsavedText": {
     "message": "Auf Autodarts ist jemand angemeldet, der hier noch nicht gespeichert ist."
@@ -95,10 +111,7 @@
     "message": "Autodarts öffnen"
   },
   "empty": {
-    "message": "Noch keine Konten. Melde dich auf play.autodarts.com an und speichere das Konto dann hier."
-  },
-  "addHint": {
-    "message": "Abgemeldet. Melde dich auf Autodarts mit dem nächsten Konto an und öffne das hier dann wieder zum Speichern."
+    "message": "Noch keine Konten. Wähle „Konto hinzufügen“ und melde dich auf Autodarts an: Jedes Konto wird von selbst gespeichert."
   },
   "error": {
     "message": "Etwas ist schiefgelaufen. Bitte nochmal versuchen."
@@ -178,5 +191,60 @@
   },
   "saved": {
     "message": "Gespeichert."
+  },
+  "help": {
+    "message": "Hilfe"
+  },
+  "helpUrl": {
+    "message": "https://dennis-otto.github.io/player-switch-for-autodarts/de/",
+    "description": "The address of the help, the website of the extension. Do not translate; use the address of its pages in the language of this file, or the English ones."
+  },
+  "report": {
+    "message": "Problem melden",
+    "description": "The link to the bug form, which it fills in with the versions of the extension and the browser."
+  },
+  "welcomeDocTitle": {
+    "message": "Willkommen – Player Switch for Autodarts"
+  },
+  "welcomeTitle": {
+    "message": "Willkommen bei Player Switch"
+  },
+  "welcomeLead": {
+    "message": "Richte das gemeinsame Display in drei Schritten ein. Danach wechselt ein Tipp auf eine Kachel den Spieler."
+  },
+  "welcomePinTitle": {
+    "message": "Symbol anheften"
+  },
+  "welcomePinText": {
+    "message": "Chrome legt neue Erweiterungen hinter das Puzzleteil neben der Adressleiste. Klicke darauf und dann auf die Nadel neben Player Switch for Autodarts, dann bleibt das Symbol in der Symbolleiste."
+  },
+  "pinPictureTitle": {
+    "message": "So heftest du das Symbol an"
+  },
+  "pinPictureText": {
+    "message": "Die Symbolleiste von Chrome: Das Puzzleteil neben der Adressleiste öffnet die Liste der Erweiterungen, und die Nadel neben Player Switch for Autodarts hält sein Symbol in der Symbolleiste.",
+    "description": "The text alternative of the picture that shows how to pin the icon."
+  },
+  "pinPictureMenu": {
+    "message": "Erweiterungen",
+    "description": "The heading of the list of extensions in Chrome, as Chrome names it in this language."
+  },
+  "welcomeFirstTitle": {
+    "message": "Ersten Spieler speichern"
+  },
+  "welcomeFirstText": {
+    "message": "Öffne Autodarts und melde dich an. In den nächsten zehn Minuten wird das Konto von selbst gespeichert, und das Symbol zeigt einen Haken. Wer schon angemeldet ist, wird genauso gespeichert."
+  },
+  "welcomeNextTitle": {
+    "message": "Weitere Spieler hinzufügen"
+  },
+  "welcomeNextText": {
+    "message": "Klicke auf das Symbol, wähle „Konto hinzufügen“ und melde dich als nächster Spieler an: Auch dieses Konto wird von selbst gespeichert."
+  },
+  "welcomePlusText": {
+    "message": "Ein + am Symbol heißt, dass jemand angemeldet ist, der noch nicht gespeichert ist: „Konto speichern“ im Popup speichert das Konto."
+  },
+  "welcomePrivacy": {
+    "message": "Alles bleibt auf diesem Computer und geht nur an Autodarts."
   }
 }

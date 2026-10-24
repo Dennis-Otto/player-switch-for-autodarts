@@ -2,8 +2,8 @@
  * Properties of the stored accounts, checked by fast-check on many generated
  * histories of changes and on stored data of any shape: whatever happened before,
  * the accounts stay in order, a stored password changes only when a person asks,
- * the popup never sees a session or a password, and what the extension stores it
- * reads back the same.
+ * an account is waited for only while nobody plays, the popup never sees a session
+ * or a password, and what the extension stores it reads back the same.
  */
 import assert from "node:assert/strict";
 import { test } from "node:test";
@@ -20,13 +20,16 @@ import {
   find,
   forget,
   forgetCredentials,
+  isAdding,
   park,
   parked,
   parseState,
   rememberCredentials,
   setActive,
   type State,
+  startAdding,
   stash,
+  stopAdding,
   toView,
 } from "../src/state.ts";
 import "./properties.ts";
@@ -62,6 +65,8 @@ const change = fc.oneof(
   fc.record({ kind: fc.constant("forget" as const), id }),
   fc.record({ kind: fc.constant("rememberCredentials" as const), id, credentials }),
   fc.record({ kind: fc.constant("forgetCredentials" as const), id }),
+  fc.record({ kind: fc.constant("startAdding" as const), until: now }),
+  fc.record({ kind: fc.constant("stopAdding" as const) }),
 );
 type Change = typeof change extends fc.Arbitrary<infer T> ? T : never;
 
@@ -85,6 +90,10 @@ function apply(state: State, step: Change): State {
       return rememberCredentials(state, step.id, step.credentials);
     case "forgetCredentials":
       return forgetCredentials(state, step.id);
+    case "startAdding":
+      return startAdding(state, step.until);
+    case "stopAdding":
+      return stopAdding(state);
   }
 }
 
@@ -116,7 +125,33 @@ test("every change keeps each account once, in the order of the popup, and the a
         // The active account never needs a new sign-in, and the background never renews it.
         assert.equal(state.activeId === null ? false : find(state, state.activeId)?.needsSignIn, false);
         assert.ok(parked(state).every((profile) => profile.token !== null && profile.id !== state.activeId));
+        // A new account is waited for only while no account of the extension plays.
+        assert.ok(state.addingUntil === null || state.activeId === null);
       }
+    }),
+  );
+});
+
+test("a new account is waited for from its start until a player comes on or it is stopped", () => {
+  fc.assert(
+    fc.property(changes, now, (steps, until) => {
+      let state = EMPTY;
+      for (const step of steps) {
+        const before = state;
+        state = apply(state, step);
+        if (step.kind === "startAdding") {
+          assert.equal(state.addingUntil, before.activeId === null ? step.until : before.addingUntil);
+        } else if (step.kind === "stopAdding" || state.activeId !== null) {
+          assert.equal(state.addingUntil, null);
+        } else {
+          assert.equal(state.addingUntil, before.addingUntil);
+        }
+      }
+      // The window is open up to its end, and closed from then on.
+      const open = startAdding(deactivate(state), until);
+      assert.ok(until === 0 || isAdding(open, until - 1));
+      assert.ok(!isAdding(open, until));
+      assert.ok(!isAdding(stopAdding(open), 0));
     }),
   );
 });
@@ -204,6 +239,7 @@ test("what the extension stores, it reads back the same", () => {
 const almostState = fc.record(
   {
     activeId: fc.oneof(id, fc.anything()),
+    addingUntil: fc.oneof(now, fc.double(), fc.anything()),
     profiles: fc.array(
       fc.oneof(
         fc.record(
@@ -244,7 +280,10 @@ test("parseState reads stored data of any shape, keeping only what is an account
         const kept = profile.credentials;
         assert.ok(kept === null || (kept.username !== "" && kept.password !== ""));
       }
+      const ids = state.profiles.map((profile) => profile.id);
+      assert.equal(new Set(ids).size, ids.length, "each account is read once");
       assert.ok(state.activeId === null || find(state, state.activeId) !== undefined);
+      assert.ok(state.addingUntil === null || (Number.isFinite(state.addingUntil) && state.activeId === null));
       // Reading what was read changes nothing.
       assert.deepEqual(parseState(state), state);
     }),
@@ -254,10 +293,11 @@ test("parseState reads stored data of any shape, keeping only what is an account
 test("the popup sees no session and no password of any account", () => {
   const stored = fc.oneof(almostState, changes.map((steps) => history(steps).at(-1)));
   fc.assert(
-    fc.property(stored, fc.boolean(), (value, pageHasSession) => {
+    fc.property(stored, fc.boolean(), now, (value, pageHasSession, at) => {
       const state = parseState(value);
-      const view = toView(state, pageHasSession);
+      const view = toView(state, pageHasSession, at);
       assert.equal(view.unsaved, pageHasSession && state.activeId === null);
+      assert.equal(view.adding, state.addingUntil !== null && at < state.addingUntil);
       assert.equal(view.profiles.length, state.profiles.length);
       for (const [index, shown] of view.profiles.entries()) {
         const profile = state.profiles[index];

@@ -20,6 +20,8 @@ developer or to any third party.
 - **The time of the last renewal**, and whether Autodarts turned every account
   away in it, so the extension can catch up after the computer was off and tell you
   when it may need an update.
+- **Until when a new account is being added**, for ten minutes after "Add account"
+  or the install, so that the next sign-in on Autodarts is saved by itself.
 
 ## Where data is sent
 
@@ -28,6 +30,11 @@ The extension talks only to Autodarts (`api.autodarts.com` and
 between accounts — the same requests the Autodarts website itself makes. It opens
 no other connection, contacts no analytics or tracking service, and the developer
 receives no data from it.
+
+"Help" and "Report a problem" in the popup and on the welcome page open the website
+of the extension and its bug form on GitHub in a new tab. The bug form is filled in
+with the version of the extension and the name and major version of the browser,
+and with nothing else; GitHub receives it only when you submit the form yourself.
 
 ## What it does not do
 

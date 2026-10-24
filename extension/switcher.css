@@ -159,6 +159,10 @@ input {
   margin-top: 16px;
 }
 
+.waiting {
+  font-size: 15px;
+}
+
 #unsaved p {
   font-size: 15px;
 }

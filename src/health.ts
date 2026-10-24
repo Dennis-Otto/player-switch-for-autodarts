@@ -144,19 +144,28 @@ export interface Attention {
 
 /** The text on the toolbar icon, and the names that its tooltip lists. */
 export interface Badge {
-  /** The number of accounts that have to sign in again, or "" when there is none. */
+  /**
+   * "+" while the page holds a session that no account keeps yet, so that it gets
+   * saved; otherwise the number of accounts that have to sign in again, or "".
+   */
   text: string;
-  /** Their names, as a list in the given language, or "" when there is none. */
+  /** The accounts that have to sign in again, as a list in the given language, or "". */
   names: string;
+  /** What the text stands for, which picks the color of the badge and its tooltip. */
+  kind: "unsaved" | "signIn" | "none";
 }
 
-export function badge(profiles: readonly Attention[], locale: string): Badge {
-  const names = profiles.filter((profile) => profile.needsSignIn).map((profile) => profile.name);
-  if (names.length === 0) {
-    return { text: "", names: "" };
+export function badge(profiles: readonly Attention[], locale: string, unsaved = false): Badge {
+  const waiting = profiles.filter((profile) => profile.needsSignIn).map((profile) => profile.name);
+  const names = waiting.length === 0 ? "" : new Intl.ListFormat(locale, { type: "conjunction" }).format(waiting);
+  if (unsaved) {
+    return { text: "+", names, kind: "unsaved" };
   }
-  const text = names.length > BADGE_LIMIT ? `${BADGE_LIMIT}+` : String(names.length);
-  return { text, names: new Intl.ListFormat(locale, { type: "conjunction" }).format(names) };
+  if (waiting.length === 0) {
+    return { text: "", names, kind: "none" };
+  }
+  const text = waiting.length > BADGE_LIMIT ? `${BADGE_LIMIT}+` : String(waiting.length);
+  return { text, names, kind: "signIn" };
 }
 
 /**

@@ -78,7 +78,7 @@ function confirmMatch() {
 }
 
 // The controls that send a request to the service worker.
-const REQUEST_CONTROLS = ".tile, .toggle-remember, .remove, .remember [type=submit], #adopt, #add, #open-page";
+const REQUEST_CONTROLS = ".tile, .toggle-remember, .remove, .remember [type=submit], #adopt, #add, #open-page, #stop-adding";
 
 /** Sets an ARIA state that is true or absent. */
 function mark(element, attribute, on) {
@@ -105,7 +105,8 @@ function avatarOf(profile, image) {
 
 /**
  * Shows the players in the page that loads this module and wires its controls: the
- * list of tiles, "Manage accounts", "Save account" and "Add account". The page carries
+ * list of tiles, "Manage accounts", "Save account", "Add account" and the notice while
+ * a new account is being added, with its "Cancel". The page carries
  * the elements of popup.html, with the template of a tile. With `numbered`, each of
  * the first nine tiles shows its key, and the keys 1 to 9 pick a player. `onRender`
  * runs each time the players are shown anew.
@@ -119,6 +120,7 @@ export function mountPlayers({ numbered = false, onRender = () => {} } = {}) {
   const updateHint = document.querySelector("#update-hint");
   // "Open Autodarts", which only the popup has: the switcher is in an Autodarts page.
   const openPageButton = document.querySelector("#open-page");
+  const adding = document.querySelector("#adding");
 
   let managing = false;
   // True while a request is with the service worker: the page then takes no other tap.
@@ -191,6 +193,9 @@ export function mountPlayers({ numbered = false, onRender = () => {} } = {}) {
       showStatus(t("error"), true);
     } else if (reply.ok === false) {
       showStatus(reply.reason === "unreachable" ? t("unreachable") : (signInHint ?? t("error")), true);
+    } else if (typeof reply.saved === "string") {
+      // A new account signed in before the page could tell; it was saved just now.
+      showStatus(t("savedAccount", reply.saved));
     }
     // "Open Autodarts" shows while no Autodarts tab answers; an answer that doesn't say
     // leaves it as it is. It stays hidden for an account that has to sign in again: the
@@ -210,8 +215,9 @@ export function mountPlayers({ numbered = false, onRender = () => {} } = {}) {
       profiles.append(tile(profile, index));
     });
     unsaved.hidden = !view.unsaved;
+    adding.hidden = view.adding !== true;
     updateHint.hidden = view.updateHint !== true;
-    if (view.profiles.length === 0 && !view.unsaved && !statusBar.classList.contains("is-error")) {
+    if (view.profiles.length === 0 && !view.unsaved && !view.adding && !statusBar.classList.contains("is-error")) {
       showStatus(t("empty"));
     }
     onRender();
@@ -335,12 +341,21 @@ export function mountPlayers({ numbered = false, onRender = () => {} } = {}) {
     void send("openPage");
   });
 
+  // The page signs out, and the account that signs in next is saved by itself: the
+  // notice of #adding says so, as long as the extension waits for it.
   document.querySelector("#add").addEventListener("click", () => {
     if (busy) {
       return;
     }
-    showStatus(t("addHint"));
+    showStatus("");
     void send("signout");
+  });
+
+  document.querySelector("#stop-adding").addEventListener("click", () => {
+    if (busy) {
+      return;
+    }
+    void send("stopAdding");
   });
 
   if (numbered) {

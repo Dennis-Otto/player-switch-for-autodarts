@@ -31,6 +31,15 @@
     "description": "The tooltip of the toolbar icon while accounts have to sign in again. $NAMES$ is a list of their names, such as 'Ada and Bob'.",
     "placeholders": { "names": { "content": "$1" } }
   },
+  "badgeUnsaved": {
+    "message": "Player Switch for Autodarts – an account on Autodarts isn't saved yet",
+    "description": "The tooltip of the toolbar icon while a '+' on it says that someone is signed in on Autodarts who isn't saved yet."
+  },
+  "badgeSaved": {
+    "message": "Player Switch for Autodarts – $NAME$ is saved",
+    "description": "The tooltip of the toolbar icon for a moment after a new account was saved by itself, while the icon shows a check mark.",
+    "placeholders": { "name": { "content": "$1" } }
+  },
   "renewed": {
     "message": "Renewed $WHEN$",
     "description": "When the extension last renewed the parked session of an account. $WHEN$ is a relative time, such as '3 hours ago'.",
@@ -44,6 +53,13 @@
   },
   "addAccount": {
     "message": "Add account"
+  },
+  "addingText": {
+    "message": "Sign in on Autodarts with the new player. The account is saved by itself."
+  },
+  "savedAccount": {
+    "message": "$NAME$ is saved. A tap on a tile switches players.",
+    "placeholders": { "name": { "content": "$1" } }
   },
   "unsavedText": {
     "message": "Someone is signed in on Autodarts who isn't saved here yet."
@@ -97,10 +113,7 @@
     "message": "Open Autodarts"
   },
   "empty": {
-    "message": "No accounts yet. Sign in on play.autodarts.com, then save the account here."
-  },
-  "addHint": {
-    "message": "Signed out. Sign in on Autodarts with the next account, then open this again to save it."
+    "message": "No accounts yet. Choose Add account and sign in on Autodarts: each account is saved by itself."
   },
   "error": {
     "message": "Something went wrong. Please try again."
@@ -180,5 +193,60 @@
   },
   "saved": {
     "message": "Saved."
+  },
+  "help": {
+    "message": "Help"
+  },
+  "helpUrl": {
+    "message": "https://dennis-otto.github.io/player-switch-for-autodarts/",
+    "description": "The address of the help, the website of the extension. Do not translate; use the address of its pages in the language of this file, or the English ones."
+  },
+  "report": {
+    "message": "Report a problem",
+    "description": "The link to the bug form, which it fills in with the versions of the extension and the browser."
+  },
+  "welcomeDocTitle": {
+    "message": "Welcome – Player Switch for Autodarts"
+  },
+  "welcomeTitle": {
+    "message": "Welcome to Player Switch"
+  },
+  "welcomeLead": {
+    "message": "Set up the shared display in three steps. Afterwards, a tap on a tile switches players."
+  },
+  "welcomePinTitle": {
+    "message": "Pin the icon"
+  },
+  "welcomePinText": {
+    "message": "Chrome puts new extensions behind the puzzle piece next to the address bar. Click it, then the pin next to Player Switch for Autodarts, and the icon stays in the toolbar."
+  },
+  "pinPictureTitle": {
+    "message": "How to pin the icon"
+  },
+  "pinPictureText": {
+    "message": "The toolbar of Chrome: the puzzle piece next to the address bar opens the list of extensions, and the pin next to Player Switch for Autodarts keeps its icon in the toolbar.",
+    "description": "The text alternative of the picture that shows how to pin the icon."
+  },
+  "pinPictureMenu": {
+    "message": "Extensions",
+    "description": "The heading of the list of extensions in Chrome, as Chrome names it in this language."
+  },
+  "welcomeFirstTitle": {
+    "message": "Save the first player"
+  },
+  "welcomeFirstText": {
+    "message": "Open Autodarts and sign in. In the next ten minutes, the account is saved by itself, and the icon shows a check mark. Someone who is signed in already is saved the same way."
+  },
+  "welcomeNextTitle": {
+    "message": "Add the next players"
+  },
+  "welcomeNextText": {
+    "message": "Click the icon, choose Add account and sign in as the next player: that account is saved by itself too."
+  },
+  "welcomePlusText": {
+    "message": "A + on the icon means that someone is signed in who isn't saved yet: Save account in the popup saves them."
+  },
+  "welcomePrivacy": {
+    "message": "Everything stays on this computer and goes only to Autodarts."
   }
 }

@@ -28,6 +28,12 @@ export interface State {
   profiles: Profile[];
   /** The account signed in on the page, as far as the extension knows. */
   activeId: string | null;
+  /**
+   * Until when, in milliseconds, a new sign-in on the page is saved by itself, after
+   * "Add account" or the install; null when no account is being added. Only while no
+   * account of the extension plays: an account that comes on ends it.
+   */
+  addingUntil: number | null;
 }
 
 /** What the popup shows of an account: everything but its session and password. */
@@ -43,25 +49,39 @@ export interface View {
   profiles: ProfileView[];
   /** The page has a session that belongs to no account of the extension yet. */
   unsaved: boolean;
+  /** A new sign-in on the page is saved by itself, because an account is being added. */
+  adding: boolean;
 }
 
-export const EMPTY: State = { profiles: [], activeId: null };
+export const EMPTY: State = { profiles: [], activeId: null, addingUntil: null };
 
 /** Reads a stored state, and starts empty from anything it doesn't recognise. */
 export function parseState(stored: unknown): State {
   if (typeof stored !== "object" || stored === null) {
     return EMPTY;
   }
-  const { profiles, activeId } = stored as Record<string, unknown>;
+  const { profiles, activeId, addingUntil } = stored as Record<string, unknown>;
   if (!Array.isArray(profiles)) {
     return EMPTY;
   }
+  // Each account once: of two stored profiles with the same id, the first one counts.
+  const seen = new Set<string>();
   const parsed = profiles.flatMap((entry: unknown) => {
     const profile = parseProfile(entry);
-    return profile === null ? [] : [profile];
+    if (profile === null || seen.has(profile.id)) {
+      return [];
+    }
+    seen.add(profile.id);
+    return [profile];
   });
   const active = typeof activeId === "string" && parsed.some((profile) => profile.id === activeId);
-  return { profiles: parsed, activeId: active ? (activeId as string) : null };
+  // Adding an account ends once one plays, so a stored window beside a player is stale.
+  const adding = !active && typeof addingUntil === "number" && Number.isFinite(addingUntil);
+  return {
+    profiles: parsed,
+    activeId: active ? (activeId as string) : null,
+    addingUntil: adding ? (addingUntil as number) : null,
+  };
 }
 
 function parseProfile(entry: unknown): Profile | null {
@@ -122,7 +142,11 @@ function merge(state: State, identity: Identity): Profile {
 /** Parks a renewed session with its account, which joins the extension if it is new. */
 export function park(state: State, identity: Identity, token: string, now: number): State {
   const profile: Profile = { ...merge(state, identity), token, needsSignIn: false, refreshedAt: now };
-  return { profiles: write(state, profile), activeId: state.activeId === identity.id ? null : state.activeId };
+  return {
+    ...state,
+    profiles: write(state, profile),
+    activeId: state.activeId === identity.id ? null : state.activeId,
+  };
 }
 
 /** Parks a raw token the extension already holds, under an account it already knows. */
@@ -140,16 +164,19 @@ export function stash(state: State, id: string, token: string, now: number): Sta
 /** Records the account, with no session of its own, as the one signed in on the page. */
 export function setActive(state: State, identity: Identity): State {
   const profile: Profile = { ...merge(state, identity), token: null, needsSignIn: false };
-  return { profiles: write(state, profile), activeId: identity.id };
+  return { profiles: write(state, profile), activeId: identity.id, addingUntil: null };
 }
 
-/** The account plays: its parked session moves to the page, which keeps it from now on. */
+/**
+ * The account plays: its parked session moves to the page, which keeps it from now on.
+ * An account being added is then no longer waited for.
+ */
 export function activate(state: State, id: string): State {
   const profile = find(state, id);
   if (profile === undefined) {
     return state;
   }
-  return { profiles: write(state, { ...profile, token: null, needsSignIn: false }), activeId: id };
+  return { profiles: write(state, { ...profile, token: null, needsSignIn: false }), activeId: id, addingUntil: null };
 }
 
 /** The session of the account has ended, and it needs a new one before it can play. */
@@ -159,6 +186,7 @@ export function endSession(state: State, id: string): State {
     return state;
   }
   return {
+    ...state,
     profiles: write(state, { ...profile, token: null, needsSignIn: true, refreshedAt: null }),
     activeId: state.activeId === id ? null : state.activeId,
   };
@@ -169,8 +197,27 @@ export function deactivate(state: State): State {
   return { ...state, activeId: null };
 }
 
+/**
+ * Waits for a new account until the given time: the next session that the page signs in
+ * with is then saved by itself. Only while no account of the extension plays.
+ */
+export function startAdding(state: State, until: number): State {
+  return state.activeId === null ? { ...state, addingUntil: until } : state;
+}
+
+/** No longer waits for a new account. */
+export function stopAdding(state: State): State {
+  return { ...state, addingUntil: null };
+}
+
+/** Whether a new sign-in on the page is saved by itself at the given time. */
+export function isAdding(state: State, now: number): boolean {
+  return state.addingUntil !== null && now < state.addingUntil;
+}
+
 export function forget(state: State, id: string): State {
   return {
+    ...state,
     profiles: state.profiles.filter((profile) => profile.id !== id),
     activeId: state.activeId === id ? null : state.activeId,
   };
@@ -199,7 +246,7 @@ export function parked(state: State): Profile[] {
   return state.profiles.filter((profile) => profile.token !== null && profile.id !== state.activeId);
 }
 
-export function toView(state: State, pageHasSession: boolean): View {
+export function toView(state: State, pageHasSession: boolean, now: number): View {
   const renewing = new Set(parked(state).map((profile) => profile.id));
   return {
     profiles: state.profiles.map((profile) => ({
@@ -214,5 +261,6 @@ export function toView(state: State, pageHasSession: boolean): View {
       renewedAt: renewing.has(profile.id) ? profile.refreshedAt : null,
     })),
     unsaved: pageHasSession && state.activeId === null,
+    adding: isAdding(state, now),
   };
 }
