@@ -3,7 +3,9 @@
  * histories of changes and on stored data of any shape: whatever happened before,
  * the accounts stay in order, a stored password changes only when a person asks,
  * an account is waited for only while nobody plays, the popup never sees a session
- * or a password, and what the extension stores it reads back the same.
+ * or a password, a failing renewal is marked until a session works again, and what
+ * the extension stores it reads back the same, in any version it knows, and never
+ * mistakes a value of another version for accounts.
  */
 import assert from "node:assert/strict";
 import { test } from "node:test";
@@ -17,6 +19,7 @@ import {
   deactivate,
   EMPTY,
   endSession,
+  failRenewal,
   find,
   forget,
   forgetCredentials,
@@ -24,12 +27,15 @@ import {
   park,
   parked,
   parseState,
+  readStored,
   rememberCredentials,
+  STATE_VERSION,
   setActive,
   type State,
   startAdding,
   stash,
   stopAdding,
+  toStored,
   toView,
 } from "../src/state.ts";
 import "./properties.ts";
@@ -61,6 +67,7 @@ const change = fc.oneof(
   fc.record({ kind: fc.constant("setActive" as const), identity }),
   fc.record({ kind: fc.constant("activate" as const), id }),
   fc.record({ kind: fc.constant("endSession" as const), id }),
+  fc.record({ kind: fc.constant("failRenewal" as const), id, now }),
   fc.record({ kind: fc.constant("deactivate" as const) }),
   fc.record({ kind: fc.constant("forget" as const), id }),
   fc.record({ kind: fc.constant("rememberCredentials" as const), id, credentials }),
@@ -82,6 +89,8 @@ function apply(state: State, step: Change): State {
       return activate(state, step.id);
     case "endSession":
       return endSession(state, step.id);
+    case "failRenewal":
+      return failRenewal(state, step.id, step.now);
     case "deactivate":
       return deactivate(state);
     case "forget":
@@ -206,6 +215,14 @@ test("a session goes where the change puts it, whatever happened before", () => 
           assert.equal(profile?.needsSignIn, existed ? true : undefined);
           assert.notEqual(after.activeId, target);
           break;
+        case "failRenewal":
+          // The session stays; only the time when the renewal began to fail is kept.
+          assert.deepEqual(
+            after.profiles.map(({ renewalFailedAt: _, ...rest }) => rest),
+            before.profiles.map(({ renewalFailedAt: _, ...rest }) => rest),
+          );
+          assert.equal(profile?.renewalFailedAt, existed ? (find(before, target)?.renewalFailedAt ?? step.now) : undefined);
+          break;
         case "deactivate":
           assert.equal(after.activeId, null);
           break;
@@ -230,7 +247,44 @@ test("what the extension stores, it reads back the same", () => {
     fc.property(changes, (steps) => {
       for (const state of history(steps)) {
         assert.deepEqual(parseState(JSON.parse(JSON.stringify(state))), state);
+        const stored = JSON.parse(JSON.stringify(toStored(state)));
+        assert.equal(stored.version, STATE_VERSION);
+        assert.deepEqual(readStored(stored), { kind: "accounts", state, outdated: false });
+        // What the releases before the version stored is the same, and comes up to date.
+        assert.deepEqual(readStored(JSON.parse(JSON.stringify(state))), { kind: "accounts", state, outdated: true });
       }
+    }),
+  );
+});
+
+test("a renewal fails for an account until a session of it works again", () => {
+  fc.assert(
+    fc.property(changes, (steps) => {
+      let state = EMPTY;
+      const since = new Map<string, number>();
+      for (const step of steps) {
+        state = apply(state, step);
+        if (step.kind === "failRenewal" && find(state, step.id) !== undefined && !since.has(step.id)) {
+          since.set(step.id, step.now);
+        } else if (["park", "stash", "setActive", "activate", "endSession", "forget"].includes(step.kind)) {
+          // A fresh session, the page or a new sign-in takes over: the mark of the failure goes.
+          since.delete("identity" in step ? step.identity.id : "id" in step ? step.id : "");
+        }
+        for (const profile of state.profiles) {
+          assert.equal(profile.renewalFailedAt, since.get(profile.id) ?? null, profile.id);
+        }
+      }
+    }),
+  );
+});
+
+test("a stored value of a version the extension doesn't know is never taken for accounts", () => {
+  const other = fc.oneof(fc.integer(), fc.double(), fc.string(), fc.boolean(), fc.constant(null), fc.object());
+  fc.assert(
+    fc.property(changes, other, (steps, version) => {
+      fc.pre(version !== STATE_VERSION);
+      const state = history(steps).at(-1) as State;
+      assert.deepEqual(readStored({ ...toStored(state), version }), { kind: "unknown" });
     }),
   );
 });
@@ -251,6 +305,7 @@ const almostState = fc.record(
             token: fc.oneof(text, fc.anything()),
             needsSignIn: fc.oneof(fc.boolean(), fc.anything()),
             refreshedAt: fc.oneof(now, fc.anything()),
+            renewalFailedAt: fc.oneof(now, fc.anything()),
             credentials: fc.oneof(
               fc.record({ username: fc.oneof(text, fc.anything()), password: fc.oneof(text, fc.anything()) }),
               fc.anything(),
@@ -277,6 +332,7 @@ test("parseState reads stored data of any shape, keeping only what is an account
         assert.ok(profile.token === null || (typeof profile.token === "string" && profile.token !== ""));
         assert.equal(typeof profile.needsSignIn, "boolean");
         assert.ok(profile.refreshedAt === null || typeof profile.refreshedAt === "number");
+        assert.ok(profile.renewalFailedAt === null || typeof profile.renewalFailedAt === "number");
         const kept = profile.credentials;
         assert.ok(kept === null || (kept.username !== "" && kept.password !== ""));
       }
@@ -308,6 +364,7 @@ test("the popup sees no session and no password of any account", () => {
           "needsSignIn",
           "picture",
           "remembersPassword",
+          "renewalFailingSince",
           "renewedAt",
           "username",
         ]);
@@ -317,6 +374,7 @@ test("the popup sees no session and no password of any account", () => {
         // A time shows only for a parked session, which the extension renews itself.
         const ownsSession = profile?.token !== null && !shown.active;
         assert.equal(shown.renewedAt, ownsSession ? profile?.refreshedAt : null);
+        assert.equal(shown.renewalFailingSince, ownsSession ? profile?.renewalFailedAt : null);
       }
     }),
   );

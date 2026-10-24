@@ -29,6 +29,8 @@ const explained = [
   "matchTitle",
   "matchText",
   "shortcutNotSet",
+  "renewalFailing",
+  "unknownFormat",
 ];
 
 // Names, labels, buttons, titles and the texts of the welcome page, which the help

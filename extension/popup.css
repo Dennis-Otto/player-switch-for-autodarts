@@ -260,6 +260,12 @@ body.managing .tile:hover {
   font-size: 12px;
 }
 
+.renewal-failing {
+  margin: 0;
+  color: var(--warn);
+  font-size: 12px;
+}
+
 .actions {
   display: flex;
   justify-content: space-between;

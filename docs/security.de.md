@@ -31,6 +31,12 @@ verlässt ihn nie, außer an Autodarts selbst:
   abgewiesen hat, damit die Erweiterung eine Erneuerung nachholt, die sie verpasst hat,
   während der Computer aus war, und ein Update von sich selbst vorschlagen kann. Das
   enthält keinen Token und keinen Namen.
+- **Nur nach dem Wechsel zurück auf eine ältere Version: eine Kopie der gespeicherten
+  Konten**, die eine neuere Version in einem Format gespeichert hat, das diese nicht
+  lesen kann, unter `accounts.backup`, mit ihren Tokens und gemerkten Passwörtern.
+  Diese Version speichert nie über solche Konten; die Kopie ist eine zweite
+  Absicherung. Sie wird gelöscht, sobald wieder eine Version läuft, die die Konten
+  liest, und mit der Erweiterung.
 
 Die Erweiterung meldet nur über den eigenen Anmeldedienst von Autodarts an. Sie liest
 nie einen Token oder ein Passwort von einer anderen Website, und der einzige Code, der

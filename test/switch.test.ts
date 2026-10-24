@@ -446,11 +446,34 @@ test("refreshParked counts every parked account that Autodarts turns away", asyn
   assert.equal(run.state.profiles.every((profile) => profile.needsSignIn), true);
 });
 
-test("refreshParked leaves a parked account alone on a temporary problem", async () => {
+test("refreshParked keeps a parked session on a temporary problem and marks since when renewing fails", async () => {
   const store = new FakeStore(park(EMPTY, ada, "ta", 0));
   const run = await refreshParked(deps(store, new FakePage(null), router({ refresh: offline })));
   assert.equal(find(run.state, "a")?.token, "ta");
+  assert.equal(find(run.state, "a")?.renewalFailedAt, 1000);
+  assert.equal(find(store.state, "a")?.renewalFailedAt, 1000, "the mark is saved");
   assert.deepEqual([run.renewed, run.rejected, run.unreachable], [0, 0, 1]);
+});
+
+test("refreshParked keeps the time of the first failure of a row and clears it once renewing works", async () => {
+  const store = new FakeStore(park(EMPTY, ada, "ta", 0));
+  await refreshParked(deps(store, new FakePage(null), router({ refresh: offline }), () => 1000));
+  const saves = store.saves;
+  const again = await refreshParked(deps(store, new FakePage(null), router({ refresh: offline }), () => 2000));
+  assert.equal(find(again.state, "a")?.renewalFailedAt, 1000);
+  assert.equal(store.saves, saves, "a failure that is marked already saves nothing");
+  const back = await refreshParked(
+    deps(store, new FakePage(null), router({ refresh: () => Promise.resolve(sessionResponse("a", "rolled")) }), () => 3000),
+  );
+  assert.equal(find(back.state, "a")?.renewalFailedAt, null);
+  assert.deepEqual((await readView(deps(store, new FakePage(null), router()))).profiles[0]?.renewalFailingSince, null);
+});
+
+test("the popup shows since when the renewal of a parked account fails", async () => {
+  const store = new FakeStore(park(EMPTY, ada, "ta", 0));
+  await refreshParked(deps(store, new FakePage(null), router({ refresh: offline }), () => 1000));
+  const view = await readView(deps(store, new FakePage(null), router()));
+  assert.equal(view.profiles[0]?.renewalFailingSince, 1000);
 });
 
 test("refreshParked with nothing parked changes nothing", async () => {

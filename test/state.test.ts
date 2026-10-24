@@ -7,6 +7,7 @@ import {
   deactivate,
   EMPTY,
   endSession,
+  failRenewal,
   find,
   forget,
   forgetCredentials,
@@ -14,18 +15,71 @@ import {
   park,
   parked,
   parseState,
+  readStored,
   rememberCredentials,
+  STATE_VERSION,
   setActive,
   type State,
   startAdding,
   stash,
   stopAdding,
+  toStored,
   toView,
 } from "../src/state.ts";
 
 const ada: Identity = { id: "a", username: "ada", name: "Ada", picture: "https://p/a.png" };
 const bob: Identity = { id: "b", username: "bob", name: "Bob", picture: null };
 const cy: Identity = { id: "c", username: "cy", name: "Cy", picture: null };
+
+/** The accounts as release 0.2.0 stored them, with no version: one plays, one is parked. */
+const RELEASE_0_2_0 = {
+  profiles: [
+    { id: "a", username: "ada", name: "Ada", picture: "https://p/a.png", token: null, needsSignIn: false, refreshedAt: null, credentials: null },
+    { id: "b", username: "bob", name: "Bob", picture: null, token: "rt-b", needsSignIn: false, refreshedAt: 1_700_000_000_000, credentials: { username: "bob", password: "pw" } },
+  ],
+  activeId: "a",
+};
+
+test("readStored takes the accounts of a release before the version without losing any", () => {
+  const stored = readStored(JSON.parse(JSON.stringify(RELEASE_0_2_0)));
+  assert.deepEqual(stored, {
+    kind: "accounts",
+    outdated: true,
+    state: {
+      profiles: RELEASE_0_2_0.profiles.map((profile) => ({ ...profile, renewalFailedAt: null })),
+      activeId: "a",
+      addingUntil: null,
+    },
+  });
+});
+
+test("toStored writes the version, which readStored then reads as up to date", () => {
+  const state = parseState(RELEASE_0_2_0);
+  const stored = toStored(state);
+  assert.equal(stored.version, STATE_VERSION);
+  assert.equal(STATE_VERSION, 1);
+  assert.deepEqual(readStored(JSON.parse(JSON.stringify(stored))), { kind: "accounts", state, outdated: false });
+});
+
+test("readStored starts with no account when nothing is stored yet", () => {
+  assert.deepEqual(readStored(undefined), { kind: "accounts", state: EMPTY, outdated: false });
+});
+
+test("readStored keeps a value of a newer or unknown version, or of no state at all, from being read", () => {
+  for (const stored of [
+    { ...RELEASE_0_2_0, version: 2 },
+    { ...RELEASE_0_2_0, version: "1" },
+    { ...RELEASE_0_2_0, version: null },
+    { version: 1, profiles: "no" },
+    { profiles: "no" },
+    { accounts: [] },
+    null,
+    42,
+    "accounts",
+  ]) {
+    assert.deepEqual(readStored(stored), { kind: "unknown" }, JSON.stringify(stored));
+  }
+});
 
 test("parseState starts empty from anything unexpected", () => {
   assert.deepEqual(parseState(null), EMPTY);
@@ -205,7 +259,7 @@ test("toView hides the session and shows what the popup needs", () => {
   state = activate(state, "a");
   const view = toView(state, true, 0);
   assert.deepEqual(view.profiles, [
-    { id: "a", username: "ada", name: "Ada", picture: "https://p/a.png", needsSignIn: false, remembersPassword: true, active: true, renewedAt: null },
+    { id: "a", username: "ada", name: "Ada", picture: "https://p/a.png", needsSignIn: false, remembersPassword: true, active: true, renewedAt: null, renewalFailingSince: null },
   ]);
   assert.equal(view.unsaved, false);
 });
@@ -220,6 +274,34 @@ test("toView shows when the extension last renewed a parked session, and only th
     ["a", null],
     ["b", 20],
     ["c", null],
+  ]);
+});
+
+test("failRenewal marks since when the renewal of an account fails, and a fresh session clears it", () => {
+  let state = park(park(EMPTY, ada, "ta", 10), bob, "tb", 20);
+  state = failRenewal(state, "b", 30);
+  assert.equal(find(state, "b")?.renewalFailedAt, 30);
+  assert.equal(find(state, "b")?.token, "tb", "the session stays for the next try");
+  // The failures go on: the mark keeps the time of the first one.
+  assert.equal(failRenewal(state, "b", 40), state);
+  assert.equal(failRenewal(state, "ghost", 40), state);
+  assert.equal(find(stash(state, "b", "tb2", 50), "b")?.renewalFailedAt, null);
+  assert.equal(find(park(state, bob, "tb2", 50), "b")?.renewalFailedAt, null);
+  assert.equal(find(endSession(state, "b"), "b")?.renewalFailedAt, null);
+  assert.equal(find(activate(state, "b"), "b")?.renewalFailedAt, null);
+  assert.equal(find(setActive(state, bob), "b")?.renewalFailedAt, null);
+  // A new name or picture of the account keeps the mark.
+  assert.equal(find(rememberCredentials(state, "b", { username: "bob", password: "pw" }), "b")?.renewalFailedAt, 30);
+});
+
+test("toView shows since when the renewal fails, only for a parked session", () => {
+  let state = park(park(EMPTY, ada, "ta", 10), bob, "tb", 20);
+  state = failRenewal(failRenewal(state, "a", 30), "b", 40);
+  state = activate(state, "a");
+  const failing = toView(state, true, 0).profiles.map((profile) => [profile.id, profile.renewalFailingSince]);
+  assert.deepEqual(failing, [
+    ["a", null],
+    ["b", 40],
   ]);
 });
 
