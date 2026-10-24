@@ -10,6 +10,8 @@ const manageButton = document.querySelector("#manage");
 const t = (key, substitution) => chrome.i18n.getMessage(key, substitution);
 
 let managing = false;
+// True while a request is with the service worker: the popup then takes no other tap.
+let busy = false;
 
 /** Fills every element that carries a data-i18n key with its translated text. */
 function translate(root) {
@@ -24,12 +26,57 @@ function showStatus(text, isError = false) {
   statusBar.hidden = text === "";
 }
 
+// The controls that send a request to the service worker.
+const REQUEST_CONTROLS = ".tile, .toggle-remember, .remove, .remember [type=submit], #adopt, #add";
+
+/** Sets an ARIA state that is true or absent. */
+function mark(element, attribute, on) {
+  if (on) {
+    element.setAttribute(attribute, "true");
+  } else {
+    element.removeAttribute(attribute);
+  }
+}
+
+/**
+ * Marks the accounts and their actions as busy, or as ready again. They stay focusable
+ * (aria-disabled, not disabled), so the focus stays where it was and a screen reader
+ * reads them as unavailable while the request runs.
+ */
+function setBusy(value) {
+  busy = value;
+  mark(profiles, "aria-busy", value);
+  for (const control of document.querySelectorAll(REQUEST_CONTROLS)) {
+    mark(control, "aria-disabled", value);
+  }
+}
+
 /**
  * Sends one request to the service worker and renders the view it answers with.
- * `signInHint` is what to say when the account has to sign in again.
+ * `signInHint` is what to say when the account has to sign in again. While one
+ * request runs, another is ignored: a double tap switches once.
  */
 async function send(action, extra = {}, signInHint = null) {
-  const reply = await chrome.runtime.sendMessage({ type: "popup", action, ...extra });
+  if (busy) {
+    return;
+  }
+  setBusy(true);
+  try {
+    await request(action, extra, signInHint);
+  } finally {
+    setBusy(false);
+  }
+}
+
+/** Asks the service worker and shows what it answers. */
+async function request(action, extra, signInHint) {
+  let reply;
+  try {
+    reply = await chrome.runtime.sendMessage({ type: "popup", action, ...extra });
+  } catch {
+    // The service worker did not answer, as when it stopped on the way.
+    reply = undefined;
+  }
   if (reply === undefined) {
     showStatus(t("error"), true);
     return;
@@ -90,7 +137,7 @@ function tile(profile) {
   menu.hidden = !managing;
 
   node.querySelector(".tile").addEventListener("click", () => {
-    if (managing || profile.active) {
+    if (busy || managing || profile.active) {
       return;
     }
     showStatus(t("switching", profile.name));
@@ -101,6 +148,9 @@ function tile(profile) {
   const toggle = node.querySelector(".toggle-remember");
   toggle.textContent = profile.remembersPassword ? t("forgetPassword") : t("rememberPassword");
   toggle.addEventListener("click", () => {
+    if (busy) {
+      return;
+    }
     if (profile.remembersPassword) {
       void send("forgetPassword", { id: profile.id });
     } else {
@@ -123,7 +173,7 @@ function tile(profile) {
   });
 
   node.querySelector(".remove").addEventListener("click", () => {
-    if (window.confirm(t("removeConfirm", profile.name))) {
+    if (!busy && window.confirm(t("removeConfirm", profile.name))) {
       void send("removeAccount", { id: profile.id });
     }
   });
@@ -141,11 +191,17 @@ manageButton.addEventListener("click", () => {
 });
 
 document.querySelector("#adopt").addEventListener("click", () => {
+  if (busy) {
+    return;
+  }
   showStatus("");
   void send("adopt");
 });
 
 document.querySelector("#add").addEventListener("click", () => {
+  if (busy) {
+    return;
+  }
   showStatus(t("addHint"));
   void send("signout");
 });

@@ -41,6 +41,7 @@ Autodarts Play keeps the signed-in session as a single value in the browser (a r
 - **Switching** parks the session of the account that was playing, writes the chosen account's session into the page and reloads.
 - **The account that steps aside is not signed out at Autodarts.** Its session stays valid; "switching away" only takes it off the page.
 - **Parked sessions are kept fresh.** Because the token rotates, the extension renews each parked account's token in the background.
+- **One change at a time.** A token works only once, so a second tap while a switch is on its way is ignored, and the renewal in the background waits for the switch. A double tap can't sign the previous player out.
 - **Password fallback, optional.** If you let the extension remember an account's password, it signs that account back in by itself should its token ever stop working. Accounts that sign in with Google or Apple can't use this.
 
 [Decision 0002](docs/decisions/0002-swap-the-session-not-the-login.md) records why it works this way, and the [security design](docs/security.md) says what is stored and which risks remain.
