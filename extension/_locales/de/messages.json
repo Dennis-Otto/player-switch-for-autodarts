@@ -203,8 +203,8 @@
     "message": "Hilfe"
   },
   "helpUrl": {
-    "message": "https://dennis-otto.github.io/player-switch-for-autodarts/de/",
-    "description": "The address of the help, the website of the extension. Do not translate; use the address of its pages in the language of this file, or the English ones."
+    "message": "https://dennis-otto.github.io/player-switch-for-autodarts/de/help.html",
+    "description": "The address of the help page of the website, docs/help.md, which explains every message of the extension. Do not translate; use the address of its page in the language of this file, or the English one, and quote each message in that page."
   },
   "report": {
     "message": "Problem melden",
