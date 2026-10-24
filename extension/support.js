@@ -3,7 +3,7 @@ import { browserName, reportUrl } from "./lib/onboarding.js";
 import { t } from "./players.js";
 
 /**
- * Points each link marked data-link="help" at the website in the language of the
+ * Points each link marked data-link="help" at the help page in the language of the
  * extension, and each one marked data-link="report" at the bug form, filled in with the
  * versions of the extension and the browser alone.
  */

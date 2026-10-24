@@ -20,3 +20,7 @@ node scripts/check-locales.mjs
 # Every file the manifest names must exist, and the switcher in the page must show the
 # tiles of the popup.
 node scripts/check-pages.mjs
+
+# The help explains every message that tells a player about a problem, in both
+# languages, and Help in the extension leads to it.
+node scripts/check-help.mjs

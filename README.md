@@ -17,13 +17,13 @@
 [![REUSE](https://api.reuse.software/badge/github.com/Dennis-Otto/player-switch-for-autodarts)](https://api.reuse.software/info/github.com/Dennis-Otto/player-switch-for-autodarts)
 [![Sponsor](https://img.shields.io/badge/sponsor-%E2%99%A5-db61a2?logo=githubsponsors&logoColor=white)](https://github.com/sponsors/Dennis-Otto)
 
-[**Documentation**](https://dennis-otto.github.io/player-switch-for-autodarts/) · [**Deutsche Anleitung**](https://dennis-otto.github.io/player-switch-for-autodarts/de/) · [Quick start](#quick-start) · [Changelog](https://github.com/Dennis-Otto/player-switch-for-autodarts/blob/main/CHANGELOG.md) · [💛 Sponsor](https://github.com/sponsors/Dennis-Otto)
+[**Documentation**](https://dennis-otto.github.io/player-switch-for-autodarts/) · [**Deutsche Anleitung**](https://dennis-otto.github.io/player-switch-for-autodarts/de/) · [Quick start](#quick-start) · [Help](https://dennis-otto.github.io/player-switch-for-autodarts/help.html) · [Changelog](https://github.com/Dennis-Otto/player-switch-for-autodarts/blob/main/CHANGELOG.md) · [💛 Sponsor](https://github.com/sponsors/Dennis-Otto)
 
 <img src="https://raw.githubusercontent.com/Dennis-Otto/player-switch-for-autodarts/main/docs/images/popup.png" alt="The popup: a list of players with the one playing highlighted and a tile to add an account, and next to it the manage view of an account with the options to remember its password or remove it" width="760">
 
 </div>
 
-Every guide is on the [documentation website](https://dennis-otto.github.io/player-switch-for-autodarts/), in English and [German](https://dennis-otto.github.io/player-switch-for-autodarts/de/).
+Every guide is on the [documentation website](https://dennis-otto.github.io/player-switch-for-autodarts/), in English and [German](https://dennis-otto.github.io/player-switch-for-autodarts/de/): the [help](https://dennis-otto.github.io/player-switch-for-autodarts/help.html), which explains every message of the extension, and the [guide for a shared display](https://dennis-otto.github.io/player-switch-for-autodarts/shared-display.html), with kiosk mode, the start with the computer and an on-screen keyboard.
 
 <sub>💛 If Player Switch is useful to you, you can [support its development](https://github.com/sponsors/Dennis-Otto).</sub>
 
@@ -34,6 +34,7 @@ Every guide is on the [documentation website](https://dennis-otto.github.io/play
 - **Ready days later.** Autodarts rotates its session tokens; the extension renews every parked account in the background, so a saved account still works next week.
 - **Made for the board display.** A round button on the Autodarts page and a keyboard shortcut open the players right over the page, also in fullscreen and in kiosk mode, where the toolbar of the browser is out of reach.
 - **Private by design.** Everything stays in the browser on that computer and goes only to Autodarts. No analytics, no server of ours, nothing sent anywhere else.
+- **No workaround needed.** No signing out and in for every player, no Chrome profile for each of them, no playing as a guest of someone else's account: [why not just …](https://dennis-otto.github.io/player-switch-for-autodarts/#why-not-just) says where each of them falls short.
 
 ## How it works
 
@@ -94,7 +95,7 @@ From then on, a tap on a tile switches accounts, and **Manage accounts** shows t
   <img src="docs/images/diagrams/adding-a-player.svg" alt="How a new player is saved by itself: After the install, which signs nobody out, or a tap on Add account, which signs the page out, the extension waits ten minutes for a new account. The new player signs in on Autodarts. Each time an Autodarts page has finished loading, the extension looks for the session. Within the ten minutes, it saves the account once, the icon shows a check mark, and the player plays on. After the ten minutes, or once a player was saved, a sign-in is never saved by itself; the icon shows a plus, and Save account in the popup saves it.">
 </picture>
 
-The popup links to **Help**, the documentation website, and to **Report a problem**, the bug form, filled in with the versions of the extension and the browser alone.
+The popup links to **Help**, the [help page](https://dennis-otto.github.io/player-switch-for-autodarts/help.html) of the website in the language of the browser, and to **Report a problem**, the bug form, filled in with the versions of the extension and the browser alone.
 
 ### Switch from the Autodarts page, also in fullscreen and kiosk mode
 
@@ -103,6 +104,8 @@ A board display often runs in fullscreen (F11) or as a kiosk (`chrome --kiosk`),
 - **Keyboard:** <kbd>Alt</kbd>+<kbd>Shift</kbd>+<kbd>O</kbd> opens and closes the players on the page, <kbd>Alt</kbd>+<kbd>Shift</kbd>+<kbd>P</kbd> opens the popup. In the players, the keys <kbd>1</kbd> to <kbd>9</kbd> pick a player and <kbd>Esc</kbd> closes them. Chrome lets you change both shortcuts under `chrome://extensions/shortcuts`.
 - **Settings:** **Settings** in the popup, or **Details → Extension options** under `chrome://extensions`, turns the button off or moves it to another corner. The shortcut works with the button off as well.
 - **Private:** the players open in a page of the extension, in a frame of its own, so the scripts of the Autodarts page can't read the saved accounts.
+
+The [guide for a shared display](https://dennis-otto.github.io/player-switch-for-autodarts/shared-display.html) sets up kiosk mode, the start with the computer on Windows and on a Raspberry Pi, an on-screen keyboard for the sign-ins and the power settings that keep every account ready.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/images/diagrams/switch-from-the-page.dark.svg">
@@ -117,6 +120,7 @@ Under **Manage accounts**, choose **Remember password** for an account, and the 
 
 - The way the extension keeps a session is not an official Autodarts interface. A change on Autodarts' side can stop it until the extension is adjusted, and how long a parked token stays valid is up to Autodarts. When Autodarts turns every saved account away in one renewal, the popup tells you to look for an update of the extension rather than sign everyone in again.
 - It is built for a display that the people of a household, club or venue share and trust: anyone at that display can switch to any saved account, which is the point.
+- Something doesn't work? The [help](https://dennis-otto.github.io/player-switch-for-autodarts/help.html) explains every message of the extension and what to do about it.
 
 ## Development
 
