@@ -31,10 +31,22 @@ plugins:
       - locale: de
         name: Deutsch
         build: true
+        # The menu in German; a page without a German one shows the English page.
+        nav_translations:
+          Home: Start
+          A shared display: Gemeinsames Display
+          Help: Hilfe
+          Security design: Sicherheitsdesign
+          Privacy: Datenschutz
+          Development: Entwicklung
+          Releases: Releases
+          Decisions: Entscheidungen
 
 # The menu. A tab in the header for each section.
 nav:
   - Home: index.md
+  - A shared display: shared-display.md
+  - Help: help.md
   - Security design: security.md
   - Privacy: privacy.md
   - Development: development.md

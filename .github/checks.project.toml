@@ -33,3 +33,21 @@
 # why = """..."""
 # fix = """..."""
 # autofix = ["npm run lint -- --fix"]
+
+[step."Checks of this project"]
+problem = """A check of this extension alone failed, and its line in the output names the
+file and the message: the version in `extension/manifest.json` differs from the one of
+the release bot, a message of `extension/_locales/` is missing in a language or used
+nowhere, a file that the manifest names is missing, or the help, `docs/help.md` and
+`docs/help.de.md`, doesn't quote a message that tells a player about a problem."""
+why = """The store ships the manifest with its version, Chrome shows a missing message as
+an empty text, and a player who searches the help for the words on the screen has to
+find them there, in both languages."""
+fix = """Do what the line says. A new message goes into the list `explained` of
+`scripts/check-help.mjs` when it reports a problem or asks a player to act, with an
+entry in both help pages that quotes it word for word, and into the list `plain`
+otherwise. Then run the checks again:"""
+commands = ["bash scripts/check-project.sh"]
+docs = "docs/help.md"
+autofix = """What a message means and what a player does about it needs a person who
+knows the extension, and so does a missing text or file."""

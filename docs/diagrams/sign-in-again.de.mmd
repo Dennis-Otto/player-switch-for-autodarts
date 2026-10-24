@@ -1,0 +1,36 @@
+---
+config:
+  flowchart:
+    wrappingWidth: 400
+---
+flowchart TB
+    accTitle: Was tun, wenn eine Kachel Neu anmelden zeigt
+    accDescr: Zeigen es alle gespeicherten Konten auf einmal, schau zuerst nach einem Update der Erweiterung. Sonst wählt ein Konto, das sich mit Google oder Apple anmeldet, oder eines ohne gemerktes Passwort, Konto hinzufügen und meldet sich einmal auf Autodarts als dieser Spieler an; dieselbe Kachel ist wieder bereit. Ein Konto mit Autodarts-Passwort kann sich stattdessen das Passwort merken lassen und auf die Kachel tippen, und die Erweiterung meldet es von selbst an. Merkt es sich schon ein Passwort, geht dieses nicht mehr: nicht mehr merken und das neue merken.
+
+    tile["Eine Kachel zeigt Neu anmelden"]
+    all{"Zeigen es alle gespeicherten<br>Konten auf einmal?"}
+    update["Zuerst nach einem Update<br>der Erweiterung schauen"]
+    remembers{"Merkt sich das Konto<br>ein Passwort?"}
+    changed["Dieses Passwort geht nicht mehr:<br>Passwort nicht mehr merken,<br>dann das neue merken"]
+    kind{"Hat es ein<br>Autodarts-Passwort?"}
+    add["Konto hinzufügen und einmal<br>auf Autodarts als dieser Spieler anmelden"]
+    remember["Passwort merken,<br>dann auf die Kachel tippen"]
+    ready["Dieselbe Kachel ist wieder bereit"]
+
+    tile --> all
+    all -- "ja" --> update
+    all -- "nein" --> remembers
+    remembers -- "ja" --> changed
+    remembers -- "nein" --> kind
+    kind -- "nein: Google oder Apple" --> add
+    kind -- "ja" --> remember
+    changed --> ready
+    add --> ready
+    remember --> ready
+
+    classDef person fill:#f59e0b2e,stroke:#f59e0b,stroke-width:2px
+    classDef done fill:#16a34a2e,stroke:#16a34a,stroke-width:2px
+    classDef bot fill:#526cfe2e,stroke:#526cfe,stroke-width:2px
+    class tile,update person
+    class changed,add,remember bot
+    class ready done
