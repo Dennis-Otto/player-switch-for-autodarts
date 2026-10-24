@@ -121,20 +121,18 @@
     return { ok: true, view: view() };
   }
 
+  /** A JSON file of the extension, read at once, as Chrome hands out its own. */
+  function extensionFile(path) {
+    const request = new XMLHttpRequest();
+    request.open("GET", chrome.runtime.getURL(path), false);
+    request.send();
+    return request.status === 200 ? JSON.parse(request.responseText) : {};
+  }
+
   // The texts of the extension, read once from its _locales, as Chrome does.
   let messages = null;
   function catalog() {
-    if (messages === null) {
-      const request = new XMLHttpRequest();
-      const extension = new URL("/extension/", location.href);
-      request.open(
-        "GET",
-        new URL(`_locales/${language}/messages.json`, extension),
-        false,
-      );
-      request.send();
-      messages = request.status === 200 ? JSON.parse(request.responseText) : {};
-    }
+    messages ??= extensionFile(`_locales/${language}/messages.json`);
     return messages;
   }
 
@@ -213,6 +211,7 @@
       openOptionsPage: async () => {},
       getURL: (path) =>
         new URL(path, new URL("/extension/", location.href)).href,
+      getManifest: () => extensionFile("manifest.json"),
       onMessage: noListeners,
     },
     storage: {

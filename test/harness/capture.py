@@ -27,6 +27,14 @@ ROOT = Path(__file__).resolve().parents[2]
 ORIGIN = "http://harness.test"
 STUB = ROOT / "test" / "harness" / "chrome-stub.js"
 LANGUAGES = ("en", "de")
+# Whether the stage, or a page in one of its frames, is larger than the window.
+OVERFLOWS = """() => [document, ...[...document.querySelectorAll("iframe")].map(
+    (frame) => frame.contentDocument)].some((page) => {
+        const root = page.scrollingElement;
+        const panel = page.querySelector(".panel");
+        return root.scrollHeight > root.clientHeight || root.scrollWidth > root.clientWidth
+            || (panel !== null && panel.scrollHeight > panel.clientHeight);
+    })"""
 
 
 @dataclass(frozen=True)
@@ -148,7 +156,14 @@ def open_stage(
 
 
 def picture(page: Page, fit: bool) -> Image.Image:
-    """The stage as it stands, or its window."""
+    """The stage as it stands, or its window, which must hold all of the stage: a
+    picture of an exact size, such as one of the store, never cuts anything off."""
+    if not fit and page.evaluate(OVERFLOWS):
+        size = page.viewport_size or {}
+        raise SystemExit(
+            f"{page.url} needs more than {size.get('width')}x{size.get('height')}: "
+            "shorten its text in stage.js or give the picture more room in shots()."
+        )
     options = {"animations": "disabled", "caret": "hide", "scale": "device"}
     data = (
         page.locator("#shot").screenshot(**options)
