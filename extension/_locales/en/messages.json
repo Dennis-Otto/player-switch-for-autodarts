@@ -75,7 +75,10 @@
     "message": "Autodarts can't be reached right now. Try again in a moment."
   },
   "noPage": {
-    "message": "Open or reload play.autodarts.com in a tab, then try again."
+    "message": "Autodarts didn't answer in a tab. Open Autodarts, then try again."
+  },
+  "openPage": {
+    "message": "Open Autodarts"
   },
   "empty": {
     "message": "No accounts yet. Sign in on play.autodarts.com, then save the account here."

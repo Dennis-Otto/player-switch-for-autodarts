@@ -6,6 +6,7 @@ const template = document.querySelector("#profile-template");
 const statusBar = document.querySelector("#status");
 const unsaved = document.querySelector("#unsaved");
 const manageButton = document.querySelector("#manage");
+const openPageButton = document.querySelector("#open-page");
 
 const t = (key, substitution) => chrome.i18n.getMessage(key, substitution);
 
@@ -27,7 +28,7 @@ function showStatus(text, isError = false) {
 }
 
 // The controls that send a request to the service worker.
-const REQUEST_CONTROLS = ".tile, .toggle-remember, .remove, .remember [type=submit], #adopt, #add";
+const REQUEST_CONTROLS = ".tile, .toggle-remember, .remove, .remember [type=submit], #adopt, #add, #open-page";
 
 /** Sets an ARIA state that is true or absent. */
 function mark(element, attribute, on) {
@@ -87,6 +88,11 @@ async function request(action, extra, signInHint) {
     showStatus(t("error"), true);
   } else if (reply.ok === false) {
     showStatus(reply.reason === "unreachable" ? t("unreachable") : (signInHint ?? t("error")), true);
+  }
+  // "Open Autodarts" shows while no Autodarts tab answers, and when an account has to
+  // sign in there again; an answer that doesn't say leaves it as it is.
+  if (reply.page !== undefined) {
+    openPageButton.hidden = reply.page && reply.reason !== "signin";
   }
   if (reply.view !== undefined) {
     render(reply.view);
@@ -196,6 +202,14 @@ document.querySelector("#adopt").addEventListener("click", () => {
   }
   showStatus("");
   void send("adopt");
+});
+
+openPageButton.addEventListener("click", () => {
+  if (busy) {
+    return;
+  }
+  showStatus("");
+  void send("openPage");
 });
 
 document.querySelector("#add").addEventListener("click", () => {

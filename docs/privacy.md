@@ -28,6 +28,9 @@ receives no data from it.
 
 - It does not collect analytics, usage statistics or telemetry.
 - It does not read or store anything from sites other than Autodarts.
+- It does not see your other tabs or your browsing history. It asks for no `tabs`
+  permission: the browser shows it only the tabs that have Autodarts open, so a
+  switch can happen in the one in front and the others can reload.
 - It does not share or sell any data.
 
 ## Your control

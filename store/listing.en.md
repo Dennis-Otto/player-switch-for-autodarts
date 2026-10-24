@@ -34,10 +34,11 @@ Not affiliated with Autodarts.
 ## Permission justifications
 
 • storage — to keep your saved accounts and their sessions on your computer.
-• tabs — to find your open Autodarts tab so a switch takes effect there.
 • alarms — to renew parked sessions in the background so they stay ready.
 • Host access to autodarts.com — to sign in, renew a session and move it between
-  accounts, the same requests the Autodarts website makes.
+  accounts, the same requests the Autodarts website makes, and to find the open
+  Autodarts tabs, so a switch takes effect in the one in front and the others
+  reload. The extension sees no other tab.
 
 ## Category
 

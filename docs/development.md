@@ -6,8 +6,8 @@ How the code is laid out, how to run the extension from the source, and what the
 
 | Where | What |
 | --- | --- |
-| `src/` | The account logic, in TypeScript, without the browser: `autodarts.ts` talks to Autodarts' sign-in service (renew, sign in, end a session, read who a session belongs to), `state.ts` keeps the saved accounts and which one plays, `switch.ts` is the switch itself, with the page, the storage, the clock, `fetch` and the queue passed in, and `queue.ts` the queue that runs one change of the accounts at a time. Every line, branch and function runs in a test. |
-| `test/` | The tests of `src/`, with fakes for the page, the storage and Autodarts. The `*.property.test.ts` files are [property-based tests](#property-based-tests), which run the code on many generated inputs. |
+| `src/` | The account logic, in TypeScript, without the browser: `autodarts.ts` talks to Autodarts' sign-in service (renew, sign in, end a session, read who a session belongs to), `state.ts` keeps the saved accounts and which one plays, `switch.ts` is the switch itself, with the page, the storage, the clock, `fetch` and the queue passed in, `queue.ts` the queue that runs one change of the accounts at a time, and `tabs.ts` finds the Autodarts tab that a switch talks to, reloads the others and opens Autodarts when no tab is open. Every line, branch and function runs in a test. |
+| `test/` | The tests of `src/`, with fakes for the page, the tabs of the browser, the storage and Autodarts. The `*.property.test.ts` files are [property-based tests](#property-based-tests), which run the code on many generated inputs. |
 | `extension/` | The loadable extension, Manifest V3: `background.js` wires the browser to the logic, `popup.html`, `popup.css` and `popup.js` are the popup, `content.js` runs in the Autodarts page and is the only code that reads or writes the page's stored session, `_locales/` holds the English and German texts. `extension/lib/` is built from `src/` and not committed. |
 | `store/` | The texts of the Chrome Web Store listing. |
 | `scripts/` | `check.sh` runs every check, `check-project.sh` the ones of this project (the manifest version against the release, the two languages against each other), `package-extension.sh` builds the store package. |
@@ -24,6 +24,19 @@ Because a token works only once, two changes of the accounts must never run side
 </picture>
 
 The tests in `test/switch.test.ts` run these races against a fake Autodarts that rotates every token it renews and refuses a token that comes back.
+
+### Which tab a switch talks to
+
+Every Autodarts tab of the browser shares one `localStorage`, and with it one session. So `tabs.ts` sends a switch to the tab that the person is looking at: the one shown in the window used last, then one shown in another window, such as the board display beside a laptop, then the one shown most recently. A tab whose content script doesn't answer, as one that was open before the extension was installed or updated, passes the request on to the next. Once the session in the page has changed, every other Autodarts tab reloads, so none plays on as the account before and spends its token when it renews its session.
+
+With no tab that answers, a tap still works: the extension reloads the tab in front, or opens Autodarts behind the popup when no tab is open, and switches there once the page is ready. Autodarts renews its session as it starts, which spends the token in `localStorage`; so the extension first waits until the page has done that, and parks the fresh token of the player before, not the spent one. A switch that worked brings the tab it opened to the front; after one that failed, the popup stays open with the reason.
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="images/diagrams/which-tab.dark.svg">
+  <img src="images/diagrams/which-tab.svg" alt="How a tap finds its Autodarts tab: A tap on a player goes to the Autodarts tab shown in the window used last, then to a tab shown in another window, then to the tab shown most recently. When no tab answers, the extension reloads the tab in front, or opens Autodarts behind the popup when no tab is open, and waits until the page has renewed the session it started with. Then it switches there, and every other Autodarts tab reloads with the new player.">
+</picture>
+
+The extension finds the Autodarts tabs through its access to the Autodarts sites, which lets the browser filter the tabs by their address. It asks for no `tabs` permission, which would show the warning "Read your browsing history" at the install and let it read the address of every tab. The tests in `test/tabs.test.ts` run it against a fake browser whose Autodarts tabs share one session, load for a while and renew their session as they start.
 
 ## Run it from the source
 

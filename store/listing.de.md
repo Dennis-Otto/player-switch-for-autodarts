@@ -36,11 +36,12 @@ Nicht mit Autodarts verbunden.
 ## Begründung der Berechtigungen
 
 • storage — um deine gespeicherten Konten und Sitzungen auf dem Computer zu halten.
-• tabs — um deinen offenen Autodarts-Tab zu finden, damit der Wechsel dort wirkt.
 • alarms — um geparkte Sitzungen im Hintergrund zu erneuern, damit sie bereit
   bleiben.
 • Host-Zugriff auf autodarts.com — um anzumelden, eine Sitzung zu erneuern und
-  zwischen Konten zu verschieben, dieselben Anfragen wie die Autodarts-Website.
+  zwischen Konten zu verschieben, dieselben Anfragen wie die Autodarts-Website, und
+  um die offenen Autodarts-Tabs zu finden, damit der Wechsel im vorderen wirkt und
+  die anderen neu laden. Andere Tabs sieht die Erweiterung nicht.
 
 ## Kategorie
 

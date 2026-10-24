@@ -54,6 +54,7 @@ Autodarts Play keeps the signed-in session as a single value in the browser, a r
 - **The account that steps aside is not signed out at Autodarts.** Its session stays valid; switching away only takes it off the page.
 - **Parked sessions are kept fresh**, because the token rotates.
 - **One change at a time.** A token works only once, so a second tap while a switch is on its way is ignored, and the renewal in the background waits for the switch. A double tap can't sign the previous player out.
+- **The tab in front.** A switch happens on the Autodarts tab you're looking at, and every other Autodarts tab reloads with the new player, so none plays on as the one before. With no Autodarts tab open, a tap opens Autodarts and switches there.
 - **Password fallback, optional.** If you let the extension remember an account's password, it signs that account back in by itself should its token ever stop working. Accounts that sign in with Google or Apple can't use this.
 
 [Decision 0002](decisions/0002-swap-the-session-not-the-login.md) records why it works this way, and the [security design](security.md) what it stores and the risks that remain.
@@ -62,5 +63,6 @@ Autodarts Play keeps the signed-in session as a single value in the browser, a r
 
 - The way the extension keeps a session is not an official Autodarts interface. A change on Autodarts' side can stop it until the extension is adjusted.
 - It is built for a display that the people of a household, club or venue share and trust: anyone at that display can switch to any saved account.
+- It asks only for access to the Autodarts sites, its own storage and a timer for the renewal. It can't see your other tabs or your browsing history.
 
 Not affiliated with Autodarts.
