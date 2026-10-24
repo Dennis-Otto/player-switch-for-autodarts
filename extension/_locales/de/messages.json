@@ -68,7 +68,7 @@
     "placeholders": { "name": { "content": "$1" } }
   },
   "switchSignIn": {
-    "message": "$NAME$ muss sich neu anmelden: einmal auf Autodarts anmelden und das Konto speichern, oder das Passwort merken.",
+    "message": "$NAME$ muss sich neu anmelden: über „Konto hinzufügen“ einmal auf Autodarts anmelden, oder das Passwort merken.",
     "placeholders": { "name": { "content": "$1" } }
   },
   "unreachable": {

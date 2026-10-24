@@ -68,7 +68,7 @@
     "placeholders": { "name": { "content": "$1" } }
   },
   "switchSignIn": {
-    "message": "$NAME$ has to sign in again: sign in once on Autodarts and save the account, or remember the password.",
+    "message": "$NAME$ has to sign in again: use Add account to sign in once on Autodarts, or remember the password.",
     "placeholders": { "name": { "content": "$1" } }
   },
   "unreachable": {

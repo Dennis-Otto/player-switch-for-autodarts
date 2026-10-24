@@ -63,6 +63,6 @@ Autodarts Play speichert die Anmeldung als einen einzigen Wert im Browser, einen
 
 - Die Art, wie die Erweiterung eine Sitzung behält, ist keine offizielle Autodarts-Schnittstelle. Eine Änderung auf Seiten von Autodarts kann sie stoppen, bis die Erweiterung angepasst ist.
 - Sie ist für ein Display gebaut, das sich die Menschen eines Haushalts, Vereins oder Lokals teilen und dem sie vertrauen: Wer an diesem Display steht, kann zu jedem gespeicherten Konto wechseln.
-- Sie fragt nur nach dem Zugriff auf die Autodarts-Seiten, auf ihren eigenen Speicher und auf einen Timer für die Erneuerung. Deine anderen Tabs und deinen Browserverlauf sieht sie nicht.
+- Sie fragt nur nach dem Zugriff auf die Autodarts-Seiten, auf ihren eigenen Speicher und auf einen Timer für die Erneuerung. Adresse und Titel deiner anderen Tabs und deinen Browserverlauf kann sie nicht lesen.
 
 Nicht mit Autodarts verbunden.

@@ -32,6 +32,8 @@ interface FakeTab extends OpenTab {
   silentFor: number;
   /** How many more answers until the page renews the session it started with. */
   renewsIn: number | null;
+  /** The session the page started with, which it renews. */
+  startedWith: string | null;
 }
 
 interface FakeTabOptions {
@@ -43,8 +45,10 @@ interface FakeTabOptions {
 
 /**
  * A browser with Autodarts tabs that share one `localStorage`, as the tabs of one site
- * do. A tab that (re)loads finds no content script for a while, and its page renews
- * the session it starts with, as Autodarts does when it starts.
+ * do. A tab that (re)loads, also after a write or a clear as `content.js` does, finds
+ * no content script for a while, and its page renews the session it started with, as
+ * Autodarts does when it starts. Time passes for every page with each answer of any
+ * tab, so pages that start together renew the same token, as they do in a browser.
  */
 class FakeBrowser implements TabsPort {
   /** The refresh token in the `localStorage` of Autodarts. */
@@ -79,6 +83,7 @@ class FakeBrowser implements TabsPort {
       lastAccessed: options.lastAccessed,
       silentFor: options.silentFor ?? 0,
       renewsIn: null,
+      startedWith: null,
     });
     return this;
   }
@@ -108,32 +113,43 @@ class FakeBrowser implements TabsPort {
         "Could not establish connection. Receiving end does not exist.",
       );
     }
-    await this.starting(tab);
+    await this.tick();
     this.log.push(`${request.action} ${tabId}`);
     switch (request.action) {
       case "read":
         return { token: this.token };
       case "write":
         this.token = request.token;
+        this.load(tab);
         return { ok: true };
       case "clear":
         this.token = null;
+        this.load(tab);
         return { ok: true };
     }
   }
 
-  /** Lets a page that starts renew its session after a few answers. */
-  private async starting(tab: FakeTab): Promise<void> {
-    if (tab.renewsIn === null) {
-      return;
+  /** Lets time pass: each page that starts renews its session after a few ticks. */
+  private async tick(): Promise<void> {
+    for (const tab of this.tabs) {
+      if (tab.renewsIn === null) {
+        continue;
+      }
+      tab.renewsIn -= 1;
+      if (tab.renewsIn > 0) {
+        continue;
+      }
+      tab.renewsIn = null;
+      if (tab.startedWith !== null) {
+        this.token = await this.renew(tab.startedWith);
+      }
     }
-    tab.renewsIn -= 1;
-    if (tab.renewsIn > 0) {
-      return;
-    }
-    tab.renewsIn = null;
-    if (this.token !== null) {
-      this.token = await this.renew(this.token);
+  }
+
+  /** Lets time pass until every page has started. */
+  async idle(): Promise<void> {
+    while (this.tabs.some((tab) => tab.renewsIn !== null)) {
+      await this.tick();
     }
   }
 
@@ -155,6 +171,7 @@ class FakeBrowser implements TabsPort {
       active,
       silentFor: 0,
       renewsIn: null,
+      startedWith: null,
     };
     this.nextId += 1;
     this.load(tab);
@@ -179,6 +196,7 @@ class FakeBrowser implements TabsPort {
   private load(tab: FakeTab): void {
     tab.silentFor = this.loadingFor;
     tab.renewsIn = this.renewsAfter;
+    tab.startedWith = this.token;
   }
 }
 
@@ -273,22 +291,67 @@ test("a new session goes into the tab in front, and every other Autodarts tab re
     .add(2, { windowId: 2, active: true })
     .add(3, { active: true });
   await createPage(browser).writeToken("new");
-  assert.equal(browser.token, "new");
-  assert.deepEqual(browser.log, ["write 3", "reload 2", "reload 1"]);
+  // One tab after another: each reloads once the one before has renewed the session.
+  assert.equal(browser.token, "new+++");
+  assert.deepEqual(browser.log, [
+    "write 3",
+    "read 3",
+    "read 3",
+    "reload 2",
+    "read 2",
+    "read 2",
+    "reload 1",
+    "read 1",
+    "read 1",
+  ]);
+  await browser.idle();
+  assert.equal(browser.token, "new+++");
 });
 
 test("a sign-out clears the session in the tab in front and reloads the others", async () => {
   const browser = new FakeBrowser("old").add(1, { active: true }).add(2);
   await createPage(browser).clearToken();
   assert.equal(browser.token, null);
-  assert.deepEqual(browser.log, ["clear 1", "reload 2"]);
+  // Without a session, a page that starts has nothing to renew and needs no waiting.
+  assert.deepEqual(browser.log, ["clear 1", "read 1", "reload 2", "read 2"]);
 });
 
 test("a tab that closed before its reload doesn't fail the switch", async () => {
   const browser = new FakeBrowser("old").add(1, { active: true }).add(2).add(3);
   browser.closing.add(2);
   await createPage(browser).writeToken("new");
-  assert.deepEqual(browser.log, ["write 1", "reload 2", "reload 3"]);
+  assert.deepEqual(browser.log, [
+    "write 1",
+    "read 1",
+    "read 1",
+    "reload 2",
+    "reload 3",
+    "read 3",
+    "read 3",
+  ]);
+});
+
+test("a tab that doesn't come back after its reload doesn't fail the switch", async () => {
+  const browser = new FakeBrowser("old").add(1, { active: true }).add(2);
+  browser.loadingFor = ANSWER_ATTEMPTS;
+  await createPage(browser).writeToken("new");
+  assert.equal(browser.token, "new");
+  assert.deepEqual(browser.log, ["write 1", "reload 2"]);
+  assert.equal(browser.waits, 2 * (ANSWER_ATTEMPTS - 1));
+});
+
+test("pages that reload after a write renew the new session one at a time, so none is spent twice", async () => {
+  const autodarts = new FakeAutodarts();
+  const browser = withAutodarts(autodarts, autodarts.issue("a"))
+    .add(1, { active: true })
+    .add(2)
+    .add(3, { windowId: 2 });
+  await createPage(browser).writeToken(autodarts.issue("b"));
+  await browser.idle();
+  assert.equal(autodarts.reuses, 0);
+  assert.equal(browser.token, autodarts.live.get("b"));
+  // The written token and one renewal per tab after it: each tab started with a fresh one.
+  assert.equal(autodarts.refreshes.length, 3);
 });
 
 test("a write that reaches only a later tab still reloads the one in front", async () => {
@@ -298,7 +361,14 @@ test("a write that reaches only a later tab still reloads the one in front", asy
     .add(1, { active: true, silentFor: 1 })
     .add(2);
   await createPage(browser).writeToken("new");
-  assert.deepEqual(browser.log, ["write 2", "reload 1"]);
+  assert.deepEqual(browser.log, [
+    "write 2",
+    "read 2",
+    "read 2",
+    "reload 1",
+    "read 1",
+    "read 1",
+  ]);
 });
 
 test("Open Autodarts opens a tab in front when none is open", async () => {
@@ -478,8 +548,19 @@ test("with two windows, a switch happens on the tab in front and the other tab r
   );
   const result = await switchTo(deps(store, browser, autodarts), "b");
   assert.ok(result.ok);
+  await browser.idle();
+  // Both pages renewed Bob's session, one after the other, and his session still works.
+  assert.equal(autodarts.reuses, 0);
   assert.equal(browser.token, autodarts.live.get("b"));
-  assert.deepEqual(browser.log, ["read 2", "write 2", "reload 1"]);
+  assert.deepEqual(browser.log, [
+    "read 2",
+    "write 2",
+    "read 2",
+    "read 2",
+    "reload 1",
+    "read 1",
+    "read 1",
+  ]);
   assert.equal(store.state.activeId, "b");
 });
 

@@ -46,7 +46,7 @@ stored session is `extension/content.js`.
 | The page's session is touched by surprise | Only `content.js` reads or writes it, only under the key `autodarts_refresh_token`, only on `play.autodarts.com` |
 | A switch lands in a hidden tab, or another Autodarts tab plays on as the account before and spends its token | A switch goes to the Autodarts tab shown in the window used last, and every other Autodarts tab reloads once the session in the page has changed, so no tab keeps the account before in memory |
 | A page that starts renews its session while the extension parks it | With no tab that answers, the extension opens or reloads one and waits until the page has renewed the session it started with, so it parks the fresh token of the player before and not a spent one |
-| The extension sees more of the browser than it needs | It asks for no `tabs` permission: it finds the Autodarts tabs through its host access, and the browser shows it no other tab |
+| The extension sees more of the browser than it needs | It asks for no `tabs` permission: it finds the Autodarts tabs through its host access and asks only for them, and the browser gives it the address and title of no other tab |
 
 ## Residual risks
 

@@ -104,9 +104,10 @@ async function ranked(tabs: TabsPort): Promise<OpenTab[]> {
   return rankTabs(all, focused);
 }
 
-/** The answer of a tab to a request, and the other Autodarts tabs. */
+/** The answer of a tab to a request, the tab that answered, and the other Autodarts tabs. */
 interface Delivery {
   reply: unknown;
+  tab: OpenTab;
   others: OpenTab[];
 }
 
@@ -123,7 +124,11 @@ async function deliver(
   for (const tab of candidates) {
     try {
       const reply = await tabs.send(tab.id, request);
-      return { reply, others: candidates.filter((other) => other !== tab) };
+      return {
+        reply,
+        tab,
+        others: candidates.filter((other) => other !== tab),
+      };
     } catch {
       // No content script answers in this tab: try the next one.
     }
@@ -142,15 +147,26 @@ function tokenOf(reply: unknown): string | null {
 /**
  * Changes the session in the page, which reloads the tab that does it, and reloads
  * every other Autodarts tab as well, so none goes on as the account before.
+ *
+ * The tabs reload one after another, each once the one before has renewed the
+ * session it started with. Autodarts renews its session as it starts, and every tab
+ * reads the same token from the shared `localStorage`: two tabs that started at the
+ * same moment would both send that token, and Autodarts takes a token that comes a
+ * second time for a stolen one and ends the session of its account.
  */
 async function change(tabs: TabsPort, request: PageRequest): Promise<void> {
-  const { others } = await deliver(tabs, request);
-  await Promise.all(
-    others.map((other) =>
+  const { tab, others } = await deliver(tabs, request);
+  // The session is in the page already; a tab that doesn't come back fails no switch.
+  await settle(tabs, tab.id).catch(() => undefined);
+  for (const other of others) {
+    try {
+      await tabs.reload(other.id);
+    } catch {
       // A tab that closed in the meantime needs no reload.
-      tabs.reload(other.id).catch(() => undefined),
-    ),
-  );
+      continue;
+    }
+    await settle(tabs, other.id).catch(() => undefined);
+  }
 }
 
 /** The page of `switch.ts`, in the Autodarts tab in front. */

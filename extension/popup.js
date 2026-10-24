@@ -89,10 +89,12 @@ async function request(action, extra, signInHint) {
   } else if (reply.ok === false) {
     showStatus(reply.reason === "unreachable" ? t("unreachable") : (signInHint ?? t("error")), true);
   }
-  // "Open Autodarts" shows while no Autodarts tab answers, and when an account has to
-  // sign in there again; an answer that doesn't say leaves it as it is.
+  // "Open Autodarts" shows while no Autodarts tab answers; an answer that doesn't say
+  // leaves it as it is. It stays hidden for an account that has to sign in again: the
+  // page there is still signed in as the player before, and signing out in it would end
+  // that session, which "Add account" parks first.
   if (reply.page !== undefined) {
-    openPageButton.hidden = reply.page && reply.reason !== "signin";
+    openPageButton.hidden = reply.page;
   }
   if (reply.view !== undefined) {
     render(reply.view);

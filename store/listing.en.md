@@ -38,7 +38,7 @@ Not affiliated with Autodarts.
 • Host access to autodarts.com — to sign in, renew a session and move it between
   accounts, the same requests the Autodarts website makes, and to find the open
   Autodarts tabs, so a switch takes effect in the one in front and the others
-  reload. The extension sees no other tab.
+  reload. The extension can't read the address or title of any other tab.
 
 ## Category
 

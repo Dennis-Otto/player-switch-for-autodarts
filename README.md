@@ -62,7 +62,7 @@ npm run build
 
 Then in Chrome open `chrome://extensions`, turn on **Developer mode**, choose **Load unpacked** and pick the `extension/` folder of this repository.
 
-The extension asks only for access to the Autodarts sites, its own storage and a timer for the renewal. It can't see your other tabs or your browsing history.
+The extension asks only for access to the Autodarts sites, its own storage and a timer for the renewal. It can't read the address or title of your other tabs, or your browsing history.
 
 ### Add the players
 

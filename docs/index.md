@@ -63,6 +63,6 @@ Autodarts Play keeps the signed-in session as a single value in the browser, a r
 
 - The way the extension keeps a session is not an official Autodarts interface. A change on Autodarts' side can stop it until the extension is adjusted.
 - It is built for a display that the people of a household, club or venue share and trust: anyone at that display can switch to any saved account.
-- It asks only for access to the Autodarts sites, its own storage and a timer for the renewal. It can't see your other tabs or your browsing history.
+- It asks only for access to the Autodarts sites, its own storage and a timer for the renewal. It can't read the address or title of your other tabs, or your browsing history.
 
 Not affiliated with Autodarts.

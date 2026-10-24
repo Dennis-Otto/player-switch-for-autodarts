@@ -41,7 +41,8 @@ Nicht mit Autodarts verbunden.
 • Host-Zugriff auf autodarts.com — um anzumelden, eine Sitzung zu erneuern und
   zwischen Konten zu verschieben, dieselben Anfragen wie die Autodarts-Website, und
   um die offenen Autodarts-Tabs zu finden, damit der Wechsel im vorderen wirkt und
-  die anderen neu laden. Andere Tabs sieht die Erweiterung nicht.
+  die anderen neu laden. Adresse und Titel anderer Tabs kann die Erweiterung nicht
+  lesen.
 
 ## Kategorie
 
