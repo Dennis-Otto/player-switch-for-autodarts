@@ -4,10 +4,10 @@
   --fg: #1a1c23;
   --muted: #666b7a;
   --line: #e4e6ee;
-  --accent: #4f66f6;
+  --accent: #4359f0;
   --accent-soft: #eaeefe;
   --accent-fg: #ffffff;
-  --warn: #b26a00;
+  --warn: #965800;
   --warn-soft: #fbeccf;
   --danger: #c23a3a;
   color-scheme: light dark;
@@ -61,15 +61,44 @@ h1 {
   font-weight: 650;
 }
 
+/* A text button: its text stays small, its target is 44 by 44 pixels for a finger. */
 .link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 44px;
+  min-height: 44px;
   border: 0;
-  border-radius: 6px;
+  border-radius: 8px;
   background: none;
-  padding: 2px;
+  padding: 0 8px;
   color: var(--accent);
   font: inherit;
   font-size: 13px;
   cursor: pointer;
+}
+
+/* Its text lines up with the edge of the page, and its target reaches into the space
+   around it, so the header keeps its height. */
+header .link {
+  margin-block: -10px;
+  margin-inline-end: -8px;
+}
+
+/* "Manage accounts" while it is pressed: a pill around its text, inside its target,
+   which the transparent border keeps clear. The tick is a picture only, outside its
+   name. */
+#manage[aria-pressed="true"] {
+  border-block: 8px solid transparent;
+  border-radius: 14px;
+  background: var(--accent-soft) padding-box;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+#manage[aria-pressed="true"]::before {
+  content: "\2713" / "";
+  margin-inline-end: 4px;
 }
 
 .link:hover {
@@ -80,7 +109,8 @@ h1 {
   color: var(--danger);
 }
 
-#status {
+#status,
+#problem {
   margin: 0 0 12px;
   padding: 8px 12px;
   border-radius: 10px;
@@ -89,9 +119,17 @@ h1 {
   font-size: 13px;
 }
 
-#status.is-error {
+#problem {
   background: var(--warn-soft);
   color: var(--warn);
+}
+
+/* With nothing to say, a region takes no room, but stays in the page, so that a screen
+   reader already knows it when its message arrives. */
+#status:empty,
+#problem:empty {
+  margin: 0;
+  padding: 0;
 }
 
 #open-page {
@@ -118,6 +156,10 @@ h1 {
 
 /* The text color, not the amber of the border, keeps the link at a contrast of 4.5:1. */
 .notice a {
+  display: inline-flex;
+  align-items: center;
+  justify-self: start;
+  min-height: 44px;
   color: inherit;
   font-weight: 600;
   text-decoration: underline;
@@ -163,6 +205,7 @@ ul {
 }
 
 .tile {
+  position: relative;
   display: flex;
   align-items: center;
   gap: 12px;
@@ -233,8 +276,28 @@ body.managing .tile:hover {
   flex: none;
   padding: 3px 10px;
   border-radius: 999px;
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 600;
+}
+
+/* The key of a tile, 1 to 9, on the corner of its picture. The popup shows the keys
+   once the keyboard is in use, the switcher on every screen with a keyboard. */
+.key {
+  position: absolute;
+  top: 6px;
+  left: 6px;
+  min-width: 20px;
+  padding: 0 4px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--card);
+  color: var(--muted);
+  font: 600 12px/18px ui-monospace, "Cascadia Mono", "Segoe UI Mono", monospace;
+  text-align: center;
+}
+
+body.popup:not(:has(:focus-visible)) .key {
+  display: none;
 }
 
 .chip.playing {
@@ -266,10 +329,22 @@ body.managing .tile:hover {
   font-size: 12px;
 }
 
+/* The two actions of an account side by side, or one below the other when their texts
+   need the room, as in German; never a text that breaks. */
 .actions {
   display: flex;
+  flex-wrap: wrap;
   justify-content: space-between;
-  gap: 8px;
+  gap: 0 8px;
+  margin: -10px -8px;
+}
+
+.actions .link {
+  white-space: nowrap;
+}
+
+.actions .remove {
+  margin-inline-start: auto;
 }
 
 .remember {
@@ -291,6 +366,7 @@ label {
 }
 
 input {
+  min-height: 44px;
   padding: 9px 10px;
   border: 1px solid var(--line);
   border-radius: 9px;
@@ -312,9 +388,11 @@ input:focus-visible {
   gap: 10px;
 }
 
+/* The transparent border shows as a frame in a contrast theme of the system. */
 .primary {
+  min-height: 44px;
   padding: 9px 16px;
-  border: 0;
+  border: 1px solid transparent;
   border-radius: 9px;
   background: var(--accent);
   color: var(--accent-fg);
@@ -333,6 +411,7 @@ input:focus-visible {
   justify-content: center;
   gap: 8px;
   width: 100%;
+  min-height: 44px;
   margin-top: 12px;
   padding: 11px;
   border: 1px dashed var(--line);
@@ -379,7 +458,7 @@ footer {
   display: flex;
   align-items: baseline;
   justify-content: center;
-  gap: 16px;
+  gap: 8px;
   margin-top: 14px;
   padding-top: 10px;
   border-top: 1px solid var(--line);
@@ -389,6 +468,13 @@ footer {
 /* The muted gray keeps a contrast of 4.5:1 on the background in both themes. */
 footer a,
 footer .link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 44px;
+  min-height: 44px;
+  margin-block: -10px;
+  padding: 0 6px;
   color: var(--muted);
   text-decoration: none;
 }
@@ -424,11 +510,6 @@ footer .link:hover {
   color: var(--muted);
 }
 
-@media (prefers-reduced-motion: reduce) {
-  [aria-disabled="true"] {
-    transition: none;
-  }
-}
 
 .primary.danger {
   background: var(--danger);
@@ -471,4 +552,40 @@ dialog.confirm p {
 .tile:focus-visible {
   outline-offset: -3px;
   border-radius: inherit;
+}
+
+/* Without motion, as the system asks: every change shows at once. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  ::before,
+  ::after {
+    transition: none !important;
+    animation: none !important;
+  }
+}
+
+/* A contrast theme of the system, such as one of Windows, paints every surface in its
+   own colors and drops the shadows: the player who plays, the chips and the pressed
+   "Manage accounts" keep a mark of their own in its colors. */
+@media (forced-colors: active) {
+  .profile.active {
+    border: 3px solid Highlight;
+    box-shadow: none;
+  }
+
+  .chip {
+    border: 1px solid CanvasText;
+  }
+
+  .chip.playing,
+  #manage[aria-pressed="true"] {
+    forced-color-adjust: none;
+    background-color: Highlight;
+    color: HighlightText;
+  }
+
+  [aria-disabled="true"] {
+    opacity: 1;
+    color: GrayText;
+  }
 }

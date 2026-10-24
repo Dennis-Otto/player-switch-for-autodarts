@@ -38,13 +38,17 @@
 problem = """A check of this extension alone failed, and its line in the output names the
 file and the message: the version in `extension/manifest.json` differs from the one of
 the release bot, a message of `extension/_locales/` is missing in a language or used
-nowhere, a file that the manifest names is missing, the help, `docs/help.md` and
-`docs/help.de.md`, doesn't quote a message that tells a player about a problem, a job
-of `.github/workflows/publish-store.yml` lets its runner reach any host, keeps sudo and
-containers, or runs on an image that moves, such as `ubuntu-latest`, or the manifest
-asks for a permission, a host or a web-accessible page that `store/permissions.json`
-doesn't allow, opens the extension wider in another way, or doesn't fit the store
-(`scripts/check-manifest.mjs`)."""
+nowhere, a text or an `aria-label` in a page differs from its English message, a file
+that the manifest names is missing, the help, `docs/help.md` and `docs/help.de.md`,
+doesn't quote a message that tells a player about a problem, a job of
+`.github/workflows/publish-store.yml` lets its runner reach any host, keeps sudo and
+containers, or runs on an image that moves, such as `ubuntu-latest`, the manifest asks
+for a permission, a host or a web-accessible page that `store/permissions.json` doesn't
+allow, opens the extension wider in another way, or doesn't fit the store
+(`scripts/check-manifest.mjs`), or the test of the popup in a browser,
+`test/harness/a11y.mjs`, found a problem of accessibility: a rule of axe-core, a control
+smaller than 44 by 44 pixels, a text smaller than 12 pixels, a button text that breaks,
+or the focus in the wrong place after an action."""
 why = """The store ships the manifest with its version, Chrome shows a missing message as
 an empty text, and a player who searches the help for the words on the screen has to
 find them there, in both languages. The jobs of the store workflow hold the token
@@ -52,7 +56,9 @@ that publishes a version to every user, so a compromised action or package must 
 able to send it anywhere. Chrome disables an installed extension after an update that
 asks for a new permission or host, until someone accepts the new warning in
 `chrome://extensions`, and a board display in kiosk mode then stops switching without
-a word; and every permission is one more way to the saved sessions and passwords."""
+a word; and every permission is one more way to the saved sessions and passwords. The
+popup is used with a finger on a touch display, with a keyboard and with a screen
+reader, which loses its place when the focus falls back to the page."""
 fix = """Do what the line says. A new message goes into the list `explained` of
 `scripts/check-help.mjs` when it reports a problem or asks a player to act, with an
 entry in both help pages that quotes it word for word, and into the list `plain`
@@ -63,7 +69,9 @@ otherwise. A job of the store workflow starts with step-security/harden-runner a
 web-accessible page that the extension really needs goes into `store/permissions.json`
 with its reason, with a line that justifies it in `store/listing.en.md` and
 `store/listing.de.md` and a note in the changelog that the update asks for it;
-otherwise take it out of the manifest again. Then run the checks
+otherwise take it out of the manifest again. A failed test of the popup names the view
+and the element; `npm run test:a11y` runs it alone, in the Chrome or Edge of your
+computer. Then run the checks
 again:"""
 commands = ["bash scripts/check-project.sh"]
 docs = "docs/development.md"
