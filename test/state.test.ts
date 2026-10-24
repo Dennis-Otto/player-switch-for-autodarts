@@ -10,13 +10,16 @@ import {
   find,
   forget,
   forgetCredentials,
+  isAdding,
   park,
   parked,
   parseState,
   rememberCredentials,
   setActive,
   type State,
+  startAdding,
   stash,
+  stopAdding,
   toView,
 } from "../src/state.ts";
 
@@ -63,6 +66,29 @@ test("parseState reads a profile with no token that needs a sign-in", () => {
 test("parseState forgets an active id that names no profile", () => {
   const state = parseState({ activeId: "ghost", profiles: [{ id: "a", username: "ada", name: "Ada" }] });
   assert.equal(state.activeId, null);
+});
+
+test("parseState reads when the adding of an account ends, and only while nobody plays", () => {
+  const profiles = [{ id: "a", username: "ada", name: "Ada" }];
+  assert.equal(parseState({ profiles, addingUntil: 500 }).addingUntil, 500);
+  assert.equal(parseState({ profiles, addingUntil: "soon" }).addingUntil, null);
+  assert.equal(parseState({ profiles, addingUntil: Number.NaN }).addingUntil, null);
+  assert.equal(parseState({ profiles }).addingUntil, null);
+  // A window stored beside a player is stale: a player that comes on ends it.
+  assert.equal(parseState({ profiles, activeId: "a", addingUntil: 500 }).addingUntil, null);
+});
+
+test("parseState keeps the first of two stored profiles with the same id", () => {
+  const state = parseState({
+    profiles: [
+      { id: "a", username: "ada", name: "Ada", token: "t" },
+      { id: "a", username: "ada", name: "Ada again", refreshedAt: 5 },
+    ],
+  });
+  assert.deepEqual(
+    state.profiles.map((profile) => [profile.name, profile.token]),
+    [["Ada", "t"]],
+  );
 });
 
 test("parseState rejects credentials that are not an object", () => {
@@ -177,7 +203,7 @@ test("toView hides the session and shows what the popup needs", () => {
   let state = park(EMPTY, ada, "t", 1);
   state = rememberCredentials(state, "a", { username: "ada", password: "pw" });
   state = activate(state, "a");
-  const view = toView(state, true);
+  const view = toView(state, true, 0);
   assert.deepEqual(view.profiles, [
     { id: "a", username: "ada", name: "Ada", picture: "https://p/a.png", needsSignIn: false, remembersPassword: true, active: true, renewedAt: null },
   ]);
@@ -188,7 +214,7 @@ test("toView shows when the extension last renewed a parked session, and only th
   let state = park(park(park(EMPTY, ada, "ta", 10), bob, "tb", 20), cy, "tc", 30);
   state = activate(state, "a");
   state = endSession(state, "c");
-  const renewed = toView(state, true).profiles.map((profile) => [profile.id, profile.renewedAt]);
+  const renewed = toView(state, true, 0).profiles.map((profile) => [profile.id, profile.renewedAt]);
   // Ada plays, so the page renews her session; Cy has none.
   assert.deepEqual(renewed, [
     ["a", null],
@@ -198,6 +224,45 @@ test("toView shows when the extension last renewed a parked session, and only th
 });
 
 test("toView reports a session that belongs to no account yet", () => {
-  assert.equal(toView(EMPTY, true).unsaved, true);
-  assert.equal(toView(EMPTY, false).unsaved, false);
+  assert.equal(toView(EMPTY, true, 0).unsaved, true);
+  assert.equal(toView(EMPTY, false, 0).unsaved, false);
+});
+
+test("toView says while an account is being added", () => {
+  const state = startAdding(EMPTY, 100);
+  assert.equal(toView(state, false, 99).adding, true);
+  assert.equal(toView(state, false, 100).adding, false);
+  assert.equal(toView(EMPTY, false, 0).adding, false);
+});
+
+test("startAdding waits for a new account until the given time, and stopAdding no longer", () => {
+  const state = startAdding(park(EMPTY, ada, "t", 1), 100);
+  assert.equal(state.addingUntil, 100);
+  assert.ok(isAdding(state, 0));
+  assert.ok(isAdding(state, 99));
+  assert.ok(!isAdding(state, 100));
+  assert.equal(stopAdding(state).addingUntil, null);
+  assert.ok(!isAdding(stopAdding(state), 0));
+  assert.ok(!isAdding(EMPTY, 0));
+});
+
+test("startAdding waits for nobody while an account plays", () => {
+  const state = activate(park(EMPTY, ada, "t", 1), "a");
+  assert.equal(startAdding(state, 100), state);
+});
+
+test("an account that comes on ends the adding, and other changes keep it", () => {
+  let state = startAdding(park(park(EMPTY, ada, "ta", 1), bob, "tb", 1), 100);
+  state = stash(state, "a", "ta2", 2);
+  state = endSession(state, "b");
+  state = rememberCredentials(state, "a", { username: "ada", password: "pw" });
+  state = forgetCredentials(state, "a");
+  state = park(state, cy, "tc", 3);
+  state = forget(state, "c");
+  state = deactivate(state);
+  assert.equal(state.addingUntil, 100);
+  assert.equal(activate(state, "a").addingUntil, null);
+  assert.equal(setActive(state, bob).addingUntil, null);
+  // An account that is unknown doesn't come on, so the adding goes on.
+  assert.equal(activate(state, "ghost").addingUntil, 100);
 });

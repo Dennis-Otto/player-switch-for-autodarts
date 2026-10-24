@@ -10,14 +10,19 @@ import {
   park,
   rememberCredentials,
   setActive,
+  startAdding,
 } from "../src/state.ts";
 import {
+  ADD_WINDOW_MS,
   adoptCurrentSession,
+  adoptNewSignIn,
   type Deps,
   edit,
   readView,
   refreshParked,
   signOutForNewAccount,
+  startAddingAccount,
+  stopAddingAccount,
   switchTo,
   syncFromPage,
 } from "../src/switch.ts";
@@ -35,8 +40,8 @@ const ada: Identity = { id: "a", username: "ada", name: "Ada", picture: null };
 const bob: Identity = { id: "b", username: "bob", name: "Bob", picture: null };
 const cy: Identity = { id: "c", username: "cy", name: "Cy", picture: null };
 
-function deps(store: FakeStore, page: FakePage, fetcher: Deps["fetcher"]): Deps {
-  return { store, page, fetcher, now: () => 1000, queue: createQueue() };
+function deps(store: FakeStore, page: FakePage, fetcher: Deps["fetcher"], now = () => 1000): Deps {
+  return { store, page, fetcher, now, queue: createQueue() };
 }
 
 const rejected = () => Promise.resolve(jsonResponse({}, 400));
@@ -169,6 +174,8 @@ test("signOutForNewAccount keeps the session when the page can't let go", async 
   const store = new FakeStore(setActive(EMPTY, ada));
   await assert.rejects(signOutForNewAccount(deps(store, new FakePage("pa", ["clear"]), router())));
   assert.equal(find(store.state, "a")?.token, "pa");
+  // The page still holds a session, so no new account is waited for.
+  assert.equal(store.state.addingUntil, null);
 });
 
 test("adoptCurrentSession claims the session in the page and keeps it signed in", async () => {
@@ -231,6 +238,131 @@ test("signOutForNewAccount clears an empty page without parking", async () => {
   const state = await signOutForNewAccount(deps(new FakeStore(EMPTY), page, router()));
   assert.equal(state.activeId, null);
   assert.equal(page.clears, 1);
+});
+
+test("signOutForNewAccount waits ten minutes for the new account", async () => {
+  const state = await signOutForNewAccount(deps(new FakeStore(setActive(EMPTY, ada)), new FakePage("pa"), router()));
+  assert.equal(state.addingUntil, 1000 + ADD_WINDOW_MS);
+  assert.equal(ADD_WINDOW_MS, 600_000);
+});
+
+test("adoptNewSignIn saves the session that the new account signs in with", async () => {
+  const store = new FakeStore(park(EMPTY, bob, "tb", 0));
+  const page = new FakePage("pb");
+  const fetcher = router({ refresh: () => Promise.resolve(sessionResponse("a", "fresh")) });
+  await signOutForNewAccount(deps(store, page, fetcher));
+  // Ada signs in on the page that the extension signed out.
+  page.token = "in-page";
+  const result = await adoptNewSignIn(deps(store, page, fetcher));
+  assert.equal(result.kind, "saved");
+  assert.equal(result.kind === "saved" ? result.identity.id : null, "a");
+  assert.equal(result.state.activeId, "a");
+  assert.equal(result.state.addingUntil, null);
+  // The page stays signed in with the fresh token, and Bob stays parked.
+  assert.equal(page.token, "fresh");
+  assert.equal(find(store.state, "b")?.token, "tb");
+});
+
+test("adoptNewSignIn saves only the first new sign-in", async () => {
+  const store = new FakeStore(startAdding(EMPTY, 2000));
+  const page = new FakePage("in-page");
+  const fetcher = counting(router({ refresh: () => Promise.resolve(sessionResponse("a", "fresh")) }));
+  assert.equal((await adoptNewSignIn(deps(store, page, fetcher))).kind, "saved");
+  // Someone else signs in later on, while Ada is saved: that session stays unsaved.
+  page.token = "someone-else";
+  const later = await adoptNewSignIn(deps(store, page, fetcher));
+  assert.equal(later.kind, "idle");
+  assert.equal(fetcher.calls, 1);
+  assert.equal(page.token, "someone-else");
+});
+
+test("adoptNewSignIn waits while the page has no session yet", async () => {
+  const store = new FakeStore(startAdding(EMPTY, 2000));
+  const fetcher = counting(router());
+  const result = await adoptNewSignIn(deps(store, new FakePage(null), fetcher));
+  assert.equal(result.kind, "waiting");
+  assert.equal(result.state.addingUntil, 2000);
+  assert.equal(fetcher.calls, 0);
+  assert.equal(store.saves, 0);
+});
+
+test("adoptNewSignIn waits while the page can't be read", async () => {
+  const store = new FakeStore(startAdding(EMPTY, 2000));
+  const result = await adoptNewSignIn(deps(store, new FakePage("in-page", ["read"]), router()));
+  assert.equal(result.kind, "waiting");
+  assert.equal(store.saves, 0);
+});
+
+test("adoptNewSignIn never saves a sign-in after the window", async () => {
+  const store = new FakeStore(startAdding(EMPTY, 1000));
+  const page = new FakePage("in-page");
+  const fetcher = counting(router());
+  const result = await adoptNewSignIn(deps(store, page, fetcher, () => 1000));
+  assert.equal(result.kind, "idle");
+  assert.equal(fetcher.calls, 0);
+  assert.equal(page.token, "in-page");
+  // The window is closed for good, so a clock set back can't open it again.
+  assert.equal(store.state.addingUntil, null);
+  assert.equal((await adoptNewSignIn(deps(store, page, fetcher, () => 0))).kind, "idle");
+  assert.equal(store.saves, 1);
+});
+
+test("adoptNewSignIn does nothing while no account is being added", async () => {
+  const store = new FakeStore(EMPTY);
+  const fetcher = counting(router());
+  const result = await adoptNewSignIn(deps(store, new FakePage("in-page"), fetcher));
+  assert.equal(result.kind, "idle");
+  assert.equal(fetcher.calls, 0);
+  assert.equal(store.saves, 0);
+});
+
+test("adoptNewSignIn keeps waiting while Autodarts can't be reached", async () => {
+  const store = new FakeStore(startAdding(EMPTY, 2000));
+  const page = new FakePage("in-page");
+  const result = await adoptNewSignIn(deps(store, page, router({ refresh: offline })));
+  assert.equal(result.kind, "waiting");
+  assert.equal(store.state.addingUntil, 2000);
+  assert.equal(page.token, "in-page");
+});
+
+test("adoptNewSignIn drops a dead session and keeps waiting for the next sign-in", async () => {
+  const store = new FakeStore(startAdding(EMPTY, 2000));
+  const page = new FakePage("dead");
+  const result = await adoptNewSignIn(deps(store, page, router({ refresh: rejected })));
+  assert.equal(result.kind, "waiting");
+  assert.equal(page.clears, 1);
+  assert.equal(store.state.addingUntil, 2000);
+});
+
+test("adoptNewSignIn keeps the renewed token when the page can't take it", async () => {
+  const store = new FakeStore(startAdding(EMPTY, 2000));
+  const page = new FakePage("in-page", ["write"]);
+  const fetcher = router({ refresh: () => Promise.resolve(sessionResponse("a", "fresh")) });
+  await assert.rejects(adoptNewSignIn(deps(store, page, fetcher)));
+  assert.equal(find(store.state, "a")?.token, "fresh");
+});
+
+test("startAddingAccount waits for a new account without signing anyone out", async () => {
+  const store = new FakeStore(EMPTY);
+  const page = new FakePage("in-page");
+  const state = await startAddingAccount(deps(store, page, router()));
+  assert.equal(state.addingUntil, 1000 + ADD_WINDOW_MS);
+  assert.equal(page.token, "in-page");
+  assert.equal(page.clears, 0);
+});
+
+test("stopAddingAccount no longer waits for a new account", async () => {
+  const store = new FakeStore(startAdding(EMPTY, 2000));
+  const state = await stopAddingAccount(deps(store, new FakePage(null), router()));
+  assert.equal(state.addingUntil, null);
+});
+
+test("a switch to a saved account ends the adding", async () => {
+  const store = new FakeStore(startAdding(park(EMPTY, ada, "ta", 0), 2000));
+  const page = new FakePage(null);
+  const result = await switchTo(deps(store, page, router({ refresh: () => Promise.resolve(sessionResponse("a", "fa")) })), "a");
+  assert.ok(result.ok);
+  assert.equal(result.state.addingUntil, null);
 });
 
 test("signOutForNewAccount does not park a session it can't place", async () => {
@@ -316,6 +448,12 @@ test("readView shows the accounts and whether the page holds a session", async (
   assert.equal(view.unsaved, true);
 });
 
+test("readView says while an account is being added", async () => {
+  const store = new FakeStore(startAdding(EMPTY, 2000));
+  assert.equal((await readView(deps(store, new FakePage(null), router()))).adding, true);
+  assert.equal((await readView(deps(store, new FakePage(null), router(), () => 2000))).adding, false);
+});
+
 test("readView counts a missing page as no session", async () => {
   const store = new FakeStore(EMPTY);
   const view = await readView(deps(store, new FakePage(null, ["read"]), router()));
@@ -393,6 +531,19 @@ test("a sign-out right after a switch parks the player who just came on", async 
   assert.equal(board.page.token, null);
   assert.equal(find(board.store.state, "b")?.token, board.autodarts.live.get("b"));
   assertEverySessionKept(board);
+});
+
+test("two loads of the page save the new account once and spend its token once", async () => {
+  const autodarts = new FakeAutodarts();
+  const store = new FakeStore(startAdding(EMPTY, 2000));
+  const page = new FakePage(autodarts.issue("a"));
+  const board = deps(store, page, autodarts.fetch);
+  const [first, second] = await Promise.all([adoptNewSignIn(board), adoptNewSignIn(board)]);
+  assert.deepEqual([first.kind, second.kind], ["saved", "idle"]);
+  assert.equal(autodarts.refreshes.length, 1);
+  assert.equal(autodarts.reuses, 0);
+  assert.equal(page.token, autodarts.live.get("a"));
+  assert.equal(store.state.activeId, "a");
 });
 
 test("a password remembered during a switch is kept", async () => {

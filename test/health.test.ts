@@ -150,14 +150,20 @@ const bob = { name: "Bob", needsSignIn: true };
 const cy = { name: "Cy", needsSignIn: true };
 
 test("the badge is empty while nobody has to sign in again", () => {
-  assert.deepEqual(badge([], "en"), { text: "", names: "" });
-  assert.deepEqual(badge([ada], "en"), { text: "", names: "" });
+  assert.deepEqual(badge([], "en"), { text: "", names: "", kind: "none" });
+  assert.deepEqual(badge([ada], "en", false), { text: "", names: "", kind: "none" });
 });
 
 test("the badge counts the accounts that have to sign in again and names them", () => {
-  assert.deepEqual(badge([ada, bob], "en"), { text: "1", names: "Bob" });
-  assert.deepEqual(badge([ada, bob, cy], "en"), { text: "2", names: "Bob and Cy" });
-  assert.deepEqual(badge([bob, cy], "de"), { text: "2", names: "Bob und Cy" });
+  assert.deepEqual(badge([ada, bob], "en"), { text: "1", names: "Bob", kind: "signIn" });
+  assert.deepEqual(badge([ada, bob, cy], "en"), { text: "2", names: "Bob and Cy", kind: "signIn" });
+  assert.deepEqual(badge([bob, cy], "de"), { text: "2", names: "Bob und Cy", kind: "signIn" });
+});
+
+test("the badge shows a plus while the page holds a session that no account keeps yet", () => {
+  assert.deepEqual(badge([ada], "en", true), { text: "+", names: "", kind: "unsaved" });
+  // The tooltip still names who has to sign in again.
+  assert.deepEqual(badge([ada, bob, cy], "en", true), { text: "+", names: "Bob and Cy", kind: "unsaved" });
 });
 
 test("the badge stays short with many accounts", () => {

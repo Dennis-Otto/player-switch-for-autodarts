@@ -1,8 +1,9 @@
 /**
  * Properties of switching, checked by fast-check on many generated evenings at a
  * shared display: taps on accounts, the page renewing and losing its session,
- * Autodarts ending sessions and going offline, an Autodarts tab that is gone, and
- * passwords kept, wrong or changed, in any order.
+ * Autodarts ending sessions and going offline, an Autodarts tab that is gone, the
+ * page loading while an account is being added or long after, and passwords kept,
+ * wrong or changed, in any order.
  *
  * A fake Autodarts rotates the refresh tokens as the real one does: a renewed token
  * is spent. Whatever happens, the extension keeps the rule of `switch.ts` and loses
@@ -19,15 +20,19 @@ import {
   find,
   forget,
   forgetCredentials,
+  isAdding,
   parked,
   parseState,
   rememberCredentials,
   type State,
 } from "../src/state.ts";
 import {
+  ADD_WINDOW_MS,
   adoptCurrentSession,
+  adoptNewSignIn,
   type Deps,
   type PagePort,
+  type PickUp,
   refreshParked,
   signOutForNewAccount,
   type Store,
@@ -169,6 +174,8 @@ const action = fc.oneof(
   { weight: 3, arbitrary: fc.record({ kind: fc.constant("adopt" as const), failing }) },
   { weight: 2, arbitrary: fc.record({ kind: fc.constant("signOut" as const), failing }) },
   { weight: 2, arbitrary: fc.record({ kind: fc.constant("sync" as const), failing }) },
+  // An Autodarts page finished loading: the service worker saves a new sign-in.
+  { weight: 3, arbitrary: fc.record({ kind: fc.constant("pageLoads" as const), failing }) },
   { weight: 2, arbitrary: fc.record({ kind: fc.constant("refresh" as const) }) },
   {
     weight: 1,
@@ -185,6 +192,8 @@ const event = fc.oneof(
   { weight: 1, arbitrary: fc.record({ kind: fc.constant("pageSignsOut" as const) }) },
   { weight: 1, arbitrary: fc.record({ kind: fc.constant("sessionsEnd" as const), id: account }) },
   { weight: 1, arbitrary: fc.record({ kind: fc.constant("passwordChanges" as const), id: account }) },
+  // Long enough for an account that is being added to be waited for no longer.
+  { weight: 1, arbitrary: fc.record({ kind: fc.constant("timePasses" as const) }) },
   {
     weight: 2,
     arbitrary: fc.record({
@@ -212,15 +221,17 @@ interface World {
   page: Page;
   store: JsonStore;
   deps: Deps;
+  /** The time of the last reading of the clock, which each reading moves on. */
+  clock: { now: number };
 }
 
 function world(): World {
   const autodarts = new FakeAutodarts();
   const page = new Page();
   const store = new JsonStore();
-  let clock = 0;
-  const deps: Deps = { fetcher: autodarts.fetch, page, store, now: () => ++clock, queue: createQueue() };
-  return { autodarts, page, store, deps };
+  const clock = { now: 0 };
+  const deps: Deps = { fetcher: autodarts.fetch, page, store, now: () => ++clock.now, queue: createQueue() };
+  return { autodarts, page, store, deps, clock };
 }
 
 /** Every account signs in on the page once and is saved, as on the first evening. */
@@ -266,14 +277,19 @@ function happen(w: World, step: Event): void {
     case "passwordChanges":
       autodarts.passwords.set(step.id, `${autodarts.passwords.get(step.id)}+`);
       return;
+    case "timePasses":
+      w.clock.now += ADD_WINDOW_MS;
+      return;
     case "outage":
       autodarts.outage = step.outage;
       return;
   }
 }
 
+type Result = SwitchResult | PickUp | Error | undefined;
+
 /** Runs an action of the extension; the error it threw, if any, is the result. */
-async function run(w: World, step: Action): Promise<SwitchResult | Error | undefined> {
+async function run(w: World, step: Action): Promise<Result> {
   const { autodarts, deps, page, store } = w;
   page.failing = new Set("failing" in step ? step.failing : []);
   try {
@@ -289,6 +305,8 @@ async function run(w: World, step: Action): Promise<SwitchResult | Error | undef
       case "sync":
         await syncFromPage(deps);
         return undefined;
+      case "pageLoads":
+        return await adoptNewSignIn(deps);
       case "refresh":
         await refreshParked(deps);
         return undefined;
@@ -337,6 +355,7 @@ function assertSound(w: World): void {
   const ids = state.profiles.map((profile) => profile.id);
   assert.equal(new Set(ids).size, ids.length, "each account is stored once");
   assert.ok(state.activeId === null || ids.includes(state.activeId), "the active account is stored");
+  assert.ok(state.addingUntil === null || state.activeId === null, "a new account is waited for while nobody plays");
   assert.equal(
     state.activeId === null ? false : find(state, state.activeId)?.needsSignIn,
     false,
@@ -361,15 +380,19 @@ interface Before {
   playing: string | null;
   usable: Set<string>;
   renewed: number;
+  /** Whether a new sign-in is saved by itself at the next reading of the clock. */
+  adding: boolean;
 }
 
 function snapshot(w: World): Before {
+  const state = w.store.state;
   return {
-    state: w.store.state,
+    state,
     page: w.page.token,
     playing: w.autodarts.holder(w.page.token),
     usable: usable(w),
     renewed: w.autodarts.renewed.length,
+    adding: isAdding(state, w.clock.now + 1),
   };
 }
 
@@ -378,7 +401,7 @@ function assertKept(
   w: World,
   extension: Action,
   before: Before,
-  result: SwitchResult | Error | undefined,
+  result: Result,
 ): void {
   const { autodarts, page } = w;
   const after = w.store.state;
@@ -391,9 +414,10 @@ function assertKept(
       `unexpected ${result.name}: ${result.message}`,
     );
   }
-  // Only adopting renews the token that is live in the page; it writes the fresh
-  // one straight back.
-  if (extension.kind !== "adopt" && before.page !== null) {
+  // Only adopting renews the token that is live in the page, and saving a new sign-in
+  // while an account is being added; both write the fresh one straight back.
+  const adopts = extension.kind === "adopt" || (extension.kind === "pageLoads" && before.adding);
+  if (!adopts && before.page !== null) {
     const renewed = autodarts.renewed.slice(before.renewed);
     assert.ok(!renewed.includes(before.page), "renewed the page's session");
   }
@@ -415,18 +439,23 @@ function assertKept(
   if (result === undefined && extension.kind === "signOut") {
     assert.equal(page.token, null);
     assert.equal(after.activeId, null);
+    assert.notEqual(after.addingUntil, null, "the new account is waited for");
+  }
+  if (extension.kind === "pageLoads") {
+    assertPickedUp(w, before, result as PickUp | Error);
   }
   if (result === undefined && extension.kind === "sync" && page.token === null) {
     assert.equal(after.activeId, null);
   }
   if (extension.kind === "switch" && result !== undefined && !(result instanceof Error)) {
+    const switched = result as SwitchResult;
     const target = find(before.state, extension.id);
-    if (result.ok) {
+    if (switched.ok) {
       assert.ok(target === undefined || after.activeId === extension.id);
       if (target !== undefined && before.state.activeId !== extension.id) {
         assert.equal(autodarts.holder(page.token), extension.id, "the page plays the account");
       }
-    } else if (result.reason === "unreachable") {
+    } else if (switched.reason === "unreachable") {
       assert.deepEqual(after, before.state);
       assert.equal(page.token, before.page);
     } else {
@@ -434,6 +463,29 @@ function assertKept(
       assert.ok(!before.usable.has(extension.id), `${extension.id} could still play`);
     }
   }
+}
+
+/** What a page that finished loading promises: a sign-in is saved only while an account is being added. */
+function assertPickedUp(w: World, before: Before, result: PickUp | Error): void {
+  const { autodarts, page } = w;
+  const after = w.store.state;
+  if (!before.adding) {
+    // Outside the window, nothing is saved and no token is spent; the window closes for good.
+    assert.ok(!(result instanceof Error) && result.kind === "idle");
+    assert.deepEqual(after, { ...before.state, addingUntil: null });
+    assert.equal(autodarts.renewed.length, before.renewed, "spent a token outside the window");
+    return;
+  }
+  if (!(result instanceof Error) && result.kind === "saved") {
+    // The account of the page is saved, plays on, and is no longer waited for.
+    assert.equal(result.identity.id, before.playing);
+    assert.equal(after.activeId, before.playing);
+    assert.equal(after.addingUntil, null);
+    assert.equal(autodarts.holder(page.token), before.playing, "the page stays signed in");
+    return;
+  }
+  // Without a sign-in to save yet, the window stays open for the next load.
+  assert.notEqual(after.addingUntil, null, "the new account is still waited for");
 }
 
 test("over any evening, the extension loses no usable session and never renews the page's own", async () => {

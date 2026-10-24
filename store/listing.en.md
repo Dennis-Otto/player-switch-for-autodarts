@@ -19,7 +19,8 @@ back in.
 
 How it works:
 
-• Save each account once. A tap on a tile puts that account on the board.
+• Save each account once: after "Add account", the next sign-in on Autodarts is
+  saved by itself. A tap on a tile puts that account on the board.
 • The account that steps aside stays signed in, so a tap brings it straight back.
 • Parked accounts are kept ready in the background, so they still work days later.
 • Made for the board display: a round button on the Autodarts page, and the

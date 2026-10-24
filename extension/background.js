@@ -3,7 +3,8 @@
 // It holds no account logic of its own — only the wiring. Every read and change of
 // the accounts goes through lib/switch.js, which runs them one at a time in the queue
 // below, so a double tap or the background renewal can't spend a token twice. When
-// to renew, and what the toolbar icon says, lib/health.js decides.
+// to renew, and what the toolbar icon says, lib/health.js decides; when the welcome
+// page opens, lib/onboarding.js.
 //
 // The popup and the switcher in the Autodarts page (switcher.html) send it the same
 // requests; content.js asks it what the button in the page shows, and it relays the
@@ -17,15 +18,19 @@ import {
   recordRun,
   suggestsUpdate,
 } from "./lib/health.js";
+import { welcomes } from "./lib/onboarding.js";
 import { isPlayPage, mustConfirm, SETTINGS_KEY, toButtonView } from "./lib/page.js";
 import { createQueue } from "./lib/queue.js";
 import { forget, forgetCredentials, parseState, rememberCredentials } from "./lib/state.js";
 import {
   adoptCurrentSession,
+  adoptNewSignIn,
   edit,
   readView,
   refreshParked,
   signOutForNewAccount,
+  startAddingAccount,
+  stopAddingAccount,
   switchTo,
   syncFromPage,
 } from "./lib/switch.js";
@@ -36,9 +41,18 @@ const STORAGE_KEY = "accounts";
 // How the renewal went, beside the accounts: see lib/health.js.
 const HEALTH_KEY = "health";
 const REFRESH_ALARM = "refresh-parked";
-// The badge of the accounts that have to sign in again: white on a dark red.
-const BADGE_COLOR = "#b3261e";
+// The colors of the badge, each with white text at a contrast of at least 4.5:1: a dark
+// red for the accounts that have to sign in again, an indigo for a session on the page
+// that no account keeps yet, and a green for an account that was just saved.
+const BADGE_COLORS = { signIn: "#b3261e", none: "#b3261e", unsaved: "#3949ab" };
+const SAVED_COLOR = "#1e7e34";
 const BADGE_TEXT_COLOR = "#ffffff";
+// How long the check mark of a saved account stays on the icon.
+const SAVED_BADGE_MS = 4000;
+// When to look for the session of a new sign-in after an Autodarts page has finished
+// loading: Autodarts stores it a moment after the page has loaded, so the extension
+// looks again a few times. Within 15 seconds, while the service worker is awake.
+const PICK_UP_DELAYS_MS = [0, 1000, 2000, 4000, 8000];
 // How long a request to Autodarts may take. The account changes wait for each other,
 // so one request that never ends would hold up every tap after it.
 const REQUEST_TIMEOUT_MS = 20_000;
@@ -130,7 +144,9 @@ async function mustAskFirst(tab, message) {
 async function runAction(message, tab) {
   const deps = { ...shared, page: await pageFor(tab) };
   switch (message.action) {
-    case "view":
+    case "view": {
+      // A new account that signed in before the page told the worker is saved now.
+      const picked = await adoptNewSignIn(deps).catch(() => null);
       // A missing page here is normal (the popup may be open with no Autodarts tab).
       try {
         await syncFromPage(deps);
@@ -140,7 +156,8 @@ async function runAction(message, tab) {
         }
         return { ok: true, page: false };
       }
-      return { ok: true, page: true };
+      return picked?.kind === "saved" ? { ok: true, page: true, saved: picked.identity.name } : { ok: true, page: true };
+    }
     case "switch": {
       if (await mustAskFirst(tab, message)) {
         return { ok: false, reason: "match" };
@@ -166,6 +183,9 @@ async function runAction(message, tab) {
     case "openPage":
       await showPage(tabs);
       return { ok: true, page: true };
+    case "stopAdding":
+      await stopAddingAccount(deps);
+      return { ok: true };
     case "remember":
       await edit(deps, (state) =>
         rememberCredentials(state, message.id, { username: message.username, password: message.password }),
@@ -269,11 +289,79 @@ chrome.commands.onCommand.addListener((command, tab) => {
   }
 });
 
-/** Shows on the toolbar icon how many accounts have to sign in again, and who. */
-async function showBadge(state) {
-  const { text, names } = badge(state.profiles, t("locale"));
-  await chrome.action.setBadgeText({ text });
-  await chrome.action.setTitle({ title: names === "" ? t("extName") : t("badgeTitle", names) });
+// Until when the check mark of a saved account shows, which the badge then waits for.
+let confirmingUntil = 0;
+// The text on the badge now, so that closing a tab looks again only after a "+".
+let badgeText = "";
+
+async function setBadge(text, color, title) {
+  badgeText = text;
+  await Promise.all([
+    chrome.action.setBadgeText({ text }),
+    chrome.action.setBadgeBackgroundColor({ color }),
+    chrome.action.setTitle({ title }),
+  ]);
+}
+
+/**
+ * Shows on the toolbar icon a "+" while the Autodarts page holds a session that no
+ * account keeps yet, and otherwise how many accounts have to sign in again; the tooltip
+ * says who.
+ */
+async function showBadge() {
+  if (Date.now() < confirmingUntil) {
+    return;
+  }
+  const view = await readView({ ...shared, page: createPage(tabs) });
+  const { text, names, kind } = badge(view.profiles, t("locale"), view.unsaved);
+  const lines = [];
+  if (kind === "unsaved") {
+    lines.push(t("badgeUnsaved"));
+  }
+  if (names !== "") {
+    lines.push(t("badgeTitle", names));
+  }
+  await setBadge(text, BADGE_COLORS[kind], lines.length === 0 ? t("extName") : lines.join("\n"));
+}
+
+/** Confirms on the toolbar icon, for a moment, that a new account was saved by itself. */
+async function confirmSaved(name) {
+  confirmingUntil = Date.now() + SAVED_BADGE_MS;
+  setTimeout(() => {
+    confirmingUntil = 0;
+    showBadge().catch(() => {});
+  }, SAVED_BADGE_MS);
+  // A check mark, white on green.
+  await setBadge("\u2713", SAVED_COLOR, t("badgeSaved", name));
+}
+
+const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+/**
+ * After an Autodarts tab has finished loading: saves the session of a new account that
+ * signed in there while an account is being added, and keeps the badge current, also for
+ * a session that Autodarts stores a moment after the load.
+ */
+async function pickUp(tab) {
+  const deps = { ...shared, page: createPage(tabs, tab.id) };
+  for (const delay of PICK_UP_DELAYS_MS) {
+    await sleep(delay);
+    const result = await adoptNewSignIn(deps).catch(() => null);
+    if (result?.kind === "saved") {
+      await confirmSaved(result.identity.name);
+      return;
+    }
+    await showBadge();
+  }
+}
+
+/**
+ * The first start after the install: waits for the first account, so that the session
+ * that Autodarts signs in with next is saved by itself, and shows the welcome page, once.
+ */
+async function welcome() {
+  await startAddingAccount({ ...shared, page: createPage(tabs) });
+  await chrome.tabs.create({ url: chrome.runtime.getURL("welcome.html") });
 }
 
 function scheduleRefresh(when) {
@@ -314,9 +402,9 @@ let started = null;
  */
 function ensureRenewal() {
   started ??= (async () => {
-    const [alarm, health, state] = await Promise.all([chrome.alarms.get(REFRESH_ALARM), loadHealth(), store.load()]);
+    const [alarm, health] = await Promise.all([chrome.alarms.get(REFRESH_ALARM), loadHealth()]);
     // The badge must not hold up the renewal, nor a failure of it stop the renewal.
-    showBadge(state).catch(() => {});
+    showBadge().catch(() => {});
     const plan = planStart(alarm !== undefined, health, shared.now());
     if (plan.alarmAt !== null) {
       await scheduleRefresh(plan.alarmAt);
@@ -331,7 +419,21 @@ function ensureRenewal() {
 // Every change of the accounts, from the popup or the renewal, updates the badge.
 chrome.storage.onChanged.addListener((changes, area) => {
   if (area === "local" && STORAGE_KEY in changes) {
-    showBadge(parseState(changes[STORAGE_KEY].newValue)).catch(() => {});
+    showBadge().catch(() => {});
+  }
+});
+
+// An Autodarts page that finished loading may hold the session of a new sign-in.
+chrome.tabs.onUpdated.addListener((_tabId, change, tab) => {
+  if (change.status === "complete" && isPlayPage(tab.url)) {
+    pickUp(tab).catch(() => {});
+  }
+});
+
+// A closed tab may have held the session that the "+" stood for.
+chrome.tabs.onRemoved.addListener(() => {
+  if (badgeText === "+") {
+    showBadge().catch(() => {});
   }
 });
 
@@ -342,12 +444,16 @@ chrome.alarms.onAlarm.addListener((alarm) => {
 });
 
 // The browser starts, or the extension is installed or updated: these wake the
-// service worker, whose start then runs the check below.
+// service worker, whose start then runs the check below. Only the install opens the
+// welcome page.
 chrome.runtime.onStartup.addListener(ensureRenewal);
 chrome.runtime.onInstalled.addListener((details) => {
   void ensureRenewal();
   if (details.reason === "install" || details.reason === "update") {
     injectIntoOpenTabs().catch(() => {});
+  }
+  if (welcomes(details.reason)) {
+    welcome().catch(() => {});
   }
 });
 
@@ -365,7 +471,6 @@ async function injectIntoOpenTabs() {
   }
 }
 
-chrome.action.setBadgeBackgroundColor({ color: BADGE_COLOR }).catch(() => {});
 // Chrome sets the color of the badge text since version 110; an older one picks its own.
 chrome.action.setBadgeTextColor?.({ color: BADGE_TEXT_COLOR })?.catch(() => {});
 void ensureRenewal();

@@ -19,8 +19,9 @@ einzutippen, ohne Ab- und wieder Anmelden.
 
 So funktioniert es:
 
-• Jedes Konto einmal speichern. Ein Tipp auf eine Kachel bringt das Konto aufs
-  Board.
+• Jedes Konto einmal speichern: Nach „Konto hinzufügen“ wird die nächste Anmeldung
+  auf Autodarts von selbst gespeichert. Ein Tipp auf eine Kachel bringt das Konto
+  aufs Board.
 • Das Konto, das Platz macht, bleibt angemeldet und kommt mit einem Tipp zurück.
 • Geparkte Konten werden im Hintergrund bereitgehalten und gehen auch Tage später
   noch.

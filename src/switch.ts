@@ -12,10 +12,16 @@
  * `deps.queue`, one at a time, and loads the accounts only when its turn has come:
  * a double tap or the background renewal can't spend a token twice or save over the
  * work of another.
+ *
+ * Adding an account needs no second visit to the popup: "Add account" opens a window
+ * of ten minutes, and the first session that the page signs in with during it is
+ * saved by itself, once. After the window, a sign-in on the page is never saved
+ * without a tap.
  */
 import {
   type AuthError,
   type Fetch,
+  type Identity,
   type Session,
   readIdentity,
   refreshSession,
@@ -28,14 +34,20 @@ import {
   deactivate,
   endSession,
   find,
+  isAdding,
   park,
   parked,
   type Profile,
   type State,
+  startAdding,
   stash,
+  stopAdding,
   toView,
   type View,
 } from "./state.ts";
+
+/** How long after "Add account" a new sign-in on the page is saved by itself. */
+export const ADD_WINDOW_MS = 10 * 60 * 1000;
 
 /** The session in the page, where the Autodarts app reads and writes it. */
 export interface PagePort {
@@ -136,7 +148,7 @@ export function readView(deps: Deps): Promise<View> {
       (token) => token !== null,
       () => false,
     );
-    return toView(state, hasSession);
+    return toView(state, hasSession, deps.now());
   });
 }
 
@@ -154,30 +166,92 @@ export function edit(deps: Deps, change: (state: State) => State): Promise<State
  * written straight back, so the page stays signed in.
  */
 export function adoptCurrentSession(deps: Deps): Promise<State> {
-  return deps.queue(() => adopt(deps));
+  return deps.queue(async () => {
+    const state = await deps.store.load();
+    const token = await deps.page.readToken();
+    if (token === null) {
+      return commit(deps, deactivate(state));
+    }
+    return (await claim(deps, state, token)).state;
+  });
 }
 
-async function adopt(deps: Deps): Promise<State> {
-  let state = await deps.store.load();
-  const token = await deps.page.readToken();
-  if (token === null) {
-    return commit(deps, deactivate(state));
-  }
+/**
+ * Saves the account of a session in the page and lets it play on. Because reading who
+ * it is rotates the token, the fresh token is written straight back. A session that
+ * Autodarts turns away leaves the page; `identity` is then null.
+ */
+async function claim(deps: Deps, loaded: State, token: string): Promise<{ state: State; identity: Identity | null }> {
   let session: Session;
   try {
     session = await refreshSession(deps.fetcher, token);
   } catch (error) {
     if ((error as AuthError).kind === "rejected") {
       await deps.page.clearToken();
-      return commit(deps, deactivate(state));
+      return { state: await commit(deps, deactivate(loaded)), identity: null };
     }
     throw error;
   }
   // The page's token is spent now: keep the fresh one before the page can fail.
   const identity = readIdentity(session.accessToken);
-  state = await commit(deps, park(state, identity, session.refreshToken, deps.now()));
+  const state = await commit(deps, park(loaded, identity, session.refreshToken, deps.now()));
   await deps.page.writeToken(session.refreshToken);
-  return commit(deps, activate(state, identity.id));
+  return { state: await commit(deps, activate(state, identity.id)), identity };
+}
+
+/**
+ * What became of a page that finished loading: the new account it signed in with was
+ * saved, an account is being added but no session is there to save yet, or no account
+ * is being added.
+ */
+export type PickUp =
+  | { kind: "saved"; state: State; identity: Identity }
+  | { kind: "waiting"; state: State }
+  | { kind: "idle"; state: State };
+
+/**
+ * Saves the session that a new account signed in with on the page, while an account is
+ * being added: the service worker asks each time an Autodarts page has finished
+ * loading. Outside the window it changes nothing and spends no token, so a sign-in
+ * later on is never saved by itself; a window that has run out is closed for good.
+ */
+export function adoptNewSignIn(deps: Deps): Promise<PickUp> {
+  return deps.queue(async (): Promise<PickUp> => {
+    const state = await deps.store.load();
+    if (!isAdding(state, deps.now())) {
+      return { kind: "idle", state: state.addingUntil === null ? state : await commit(deps, stopAdding(state)) };
+    }
+    // A page that is still loading, or on the sign-in form, has no session yet.
+    const token = await deps.page.readToken().catch(() => null);
+    if (token === null) {
+      return { kind: "waiting", state };
+    }
+    try {
+      const claimed = await claim(deps, state, token);
+      return claimed.identity === null
+        ? { kind: "waiting", state: claimed.state }
+        : { kind: "saved", state: claimed.state, identity: claimed.identity };
+    } catch (error) {
+      // Autodarts can't be reached for now: the next load of the page tries again.
+      if ((error as AuthError).kind === "unreachable") {
+        return { kind: "waiting", state };
+      }
+      throw error;
+    }
+  });
+}
+
+/**
+ * Waits for a new account from now on, as after the install, without signing anyone
+ * out: the next session that the page signs in with is saved by itself.
+ */
+export function startAddingAccount(deps: Deps): Promise<State> {
+  return edit(deps, (state) => startAdding(state, deps.now() + ADD_WINDOW_MS));
+}
+
+/** No longer waits for a new account, as when the person cancels "Add account". */
+export function stopAddingAccount(deps: Deps): Promise<State> {
+  return edit(deps, stopAdding);
 }
 
 /** How a switch ended, for the popup to show. */
@@ -225,8 +299,9 @@ async function bringOn(deps: Deps, id: string): Promise<SwitchResult> {
 }
 
 /**
- * Signs the page out so that a new account can sign in. The account playing now
- * keeps its session parked first, so it is not lost.
+ * Signs the page out so that a new account can sign in, and waits for it: the session
+ * that the page signs in with next, within the window, is saved by itself. The account
+ * playing now keeps its session parked first, so it is not lost.
  */
 export function signOutForNewAccount(deps: Deps): Promise<State> {
   return deps.queue(() => signOut(deps));
@@ -240,7 +315,7 @@ async function signOut(deps: Deps): Promise<State> {
     state = await commit(deps, stash(state, state.activeId, outgoing, deps.now()));
   }
   await deps.page.clearToken();
-  return commit(deps, deactivate(state));
+  return commit(deps, startAdding(deactivate(state), deps.now() + ADD_WINDOW_MS));
 }
 
 /** How a renewal of the parked sessions ended: the accounts, and how each one went. */

@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title data-i18n="welcomeDocTitle">Welcome – Player Switch for Autodarts</title>
+    <link rel="icon" href="icons/icon-48.png" />
+    <link rel="stylesheet" href="welcome.css" />
+  </head>
+  <body>
+    <main>
+      <header class="hero">
+        <img src="icons/icon-128.png" alt="" width="80" height="80" />
+        <h1 data-i18n="welcomeTitle">Welcome to Player Switch</h1>
+        <p class="lead" data-i18n="welcomeLead">Set up the shared display in three steps. Afterwards, a tap on a tile switches players.</p>
+      </header>
+
+      <ol class="steps">
+        <li class="step">
+          <h2 data-i18n="welcomePinTitle">Pin the icon</h2>
+          <p data-i18n="welcomePinText">Chrome puts new extensions behind the puzzle piece next to the address bar. Click it, then the pin next to Player Switch for Autodarts, and the icon stays in the toolbar.</p>
+          <figure>
+            <svg class="pin-picture" viewBox="0 0 560 190" role="img" aria-labelledby="pin-title pin-desc" xmlns="http://www.w3.org/2000/svg">
+              <title id="pin-title" data-i18n="pinPictureTitle">How to pin the icon</title>
+              <desc id="pin-desc" data-i18n="pinPictureText">The toolbar of Chrome: the puzzle piece next to the address bar opens the list of extensions, and the pin next to Player Switch for Autodarts keeps its icon in the toolbar.</desc>
+              <!-- The toolbar, with the address bar, the puzzle piece and the menu. -->
+              <rect class="bar" x="0" y="0" width="560" height="56" rx="12" />
+              <rect class="field" x="16" y="12" width="370" height="32" rx="16" />
+              <text class="url" x="36" y="33">play.autodarts.com</text>
+              <circle class="ring" cx="428" cy="28" r="19" />
+              <g class="glyph">
+                <rect x="419" y="22" width="15" height="14" rx="2" />
+                <circle cx="426.5" cy="21" r="3.5" />
+                <circle cx="435" cy="29" r="3.5" />
+              </g>
+              <circle class="dot" cx="476" cy="28" r="11" />
+              <g class="glyph">
+                <circle cx="526" cy="20" r="2.2" />
+                <circle cx="526" cy="28" r="2.2" />
+                <circle cx="526" cy="36" r="2.2" />
+              </g>
+              <!-- The page below the toolbar. -->
+              <rect class="skeleton" x="16" y="78" width="200" height="12" rx="6" />
+              <rect class="skeleton" x="16" y="102" width="160" height="12" rx="6" />
+              <rect class="skeleton" x="16" y="126" width="184" height="12" rx="6" />
+              <!-- The list of extensions that the puzzle piece opens. -->
+              <rect class="card" x="236" y="66" width="308" height="112" rx="12" />
+              <text class="heading" x="256" y="98" data-i18n="pinPictureMenu">Extensions</text>
+              <image href="icons/icon-48.png" x="256" y="124" width="30" height="30" />
+              <text class="name" x="298" y="144">Player Switch for Autodarts</text>
+              <circle class="ring" cx="514" cy="139" r="17" />
+              <g class="glyph" transform="rotate(45 514 139)">
+                <rect x="509" y="128" width="10" height="13" rx="2" />
+                <rect x="506" y="140" width="16" height="3" rx="1.5" />
+                <rect x="513" y="142" width="2" height="9" />
+              </g>
+              <!-- The order of the two clicks. -->
+              <circle class="step-mark" cx="452" cy="9" r="10" />
+              <text class="step-number" x="452" y="13.5">1</text>
+              <circle class="step-mark" cx="536" cy="118" r="10" />
+              <text class="step-number" x="536" y="122.5">2</text>
+            </svg>
+          </figure>
+        </li>
+        <li class="step">
+          <h2 data-i18n="welcomeFirstTitle">Save the first player</h2>
+          <p data-i18n="welcomeFirstText">Open Autodarts and sign in. In the next ten minutes, the account is saved by itself, and the icon shows a check mark. Someone who is signed in already is saved the same way.</p>
+          <p>
+            <a class="button" href="https://play.autodarts.com/" target="_blank" rel="noopener noreferrer" data-i18n="openPage">Open Autodarts</a>
+          </p>
+        </li>
+        <li class="step">
+          <h2 data-i18n="welcomeNextTitle">Add the next players</h2>
+          <p data-i18n="welcomeNextText">Click the icon, choose Add account and sign in as the next player: that account is saved by itself too.</p>
+          <p class="hint" data-i18n="welcomePlusText">A + on the icon means that someone is signed in who isn't saved yet: Save account in the popup saves them.</p>
+        </li>
+      </ol>
+
+      <footer>
+        <p data-i18n="welcomePrivacy">Everything stays on this computer and goes only to Autodarts.</p>
+        <p class="links">
+          <a href="https://dennis-otto.github.io/player-switch-for-autodarts/" target="_blank" rel="noopener noreferrer" data-link="help" data-i18n="help">Help</a>
+          <a href="https://github.com/Dennis-Otto/player-switch-for-autodarts/issues/new?template=bug_report.yml" target="_blank" rel="noopener noreferrer" data-link="report" data-i18n="report">Report a problem</a>
+        </p>
+      </footer>
+    </main>
+
+    <script type="module" src="welcome.js"></script>
+  </body>
+</html>

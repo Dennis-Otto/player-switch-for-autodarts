@@ -2,3 +2,4 @@
 # know: names, terms and words of its trade, one per line.
 autodarts
 Umschalt
+Willkommensseite
