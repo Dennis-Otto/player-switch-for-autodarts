@@ -37,7 +37,12 @@ Every guide is on the [documentation website](https://dennis-otto.github.io/play
 
 ## How it works
 
-Autodarts Play keeps the signed-in session as a single value in the browser (a rotating refresh token in `localStorage`). The extension keeps that value per account and swaps it when you switch:
+Autodarts Play keeps the signed-in session as a single value in the browser (a rotating refresh token in `localStorage`). The extension keeps that value per account and swaps it when you switch.
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/images/diagrams/switch-flow.dark.svg">
+  <img src="docs/images/diagrams/switch-flow.svg" alt="What a tap on a player does: Ada plays, and a tap on Bob switches. The extension renews Bob's session at Autodarts with his parked token or, when Autodarts refuses the token, with his remembered password. When that fails, the page stays as it is and no token is lost: Bob has to sign in again when Autodarts refused him, and a tap later tries again when Autodarts couldn't be reached. Otherwise the extension saves Bob's fresh token, parks Ada's session from the page, still valid at Autodarts, writes Bob's session into the page and reloads it, and every other Autodarts tab reloads as Bob.">
+</picture>
 
 - **Switching** parks the session of the account that was playing, writes the chosen account's session into the page and reloads.
 - **The account that steps aside is not signed out at Autodarts.** Its session stays valid; "switching away" only takes it off the page.
@@ -47,6 +52,13 @@ Autodarts Play keeps the signed-in session as a single value in the browser (a r
 - **The tab in front.** A switch happens on the Autodarts tab you're looking at, and every other Autodarts tab reloads with the new player, so none plays on as the one before. With no Autodarts tab open, a tap opens Autodarts and switches there.
 - **A match ends only on purpose.** A switch reloads the page, so on the page of a running match the extension asks first, before it spends a token: "A match is running. Switching ends it on this display."
 - **Password fallback, optional.** If you let the extension remember an account's password, it signs that account back in by itself should its token ever stop working. Accounts that sign in with Google or Apple can't use this.
+
+Over days and weeks, a saved account moves between these states:
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/images/diagrams/account-states.dark.svg">
+  <img src="docs/images/diagrams/account-states.svg" alt="The life of a saved account: An account that signs in on the page is saved by itself after Add account or the install, or with Save account, and it plays. When another player comes on, or Add account signs the page out, its session is parked, still valid at Autodarts, and a tap brings it back. Every 12 hours the extension renews each parked session, with its token or a remembered password. When Autodarts turns an account away, in a renewal or at a tap, or it signs out on the page, it has to sign in again, and the toolbar badge counts it: remember its password and tap it, or sign in once with Add account. Remove account deletes an account with its token and password, whatever its state.">
+</picture>
 
 [Decision 0002](docs/decisions/0002-swap-the-session-not-the-login.md) records why it works this way, and the [security design](docs/security.md) says what is stored and which risks remain.
 

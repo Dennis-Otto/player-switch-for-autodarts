@@ -25,11 +25,17 @@ developer or to any third party.
 
 ## Where data is sent
 
-The extension talks only to Autodarts (`api.autodarts.com` and
+The extension talks to Autodarts (`api.autodarts.com` and
 `play.autodarts.com`), over HTTPS, to sign in, renew a session and move the session
-between accounts — the same requests the Autodarts website itself makes. It opens
-no other connection, contacts no analytics or tracking service, and the developer
-receives no data from it.
+between accounts — the same requests the Autodarts website itself makes. The popup
+and the switcher also show each player's picture from the address Autodarts gives
+for it, as the Autodarts website does. The extension opens no other connection,
+contacts no analytics or tracking service, and the developer receives no data from it.
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="images/diagrams/data-flow.dark.svg">
+  <img src="images/diagrams/data-flow.svg" alt="Where the data goes: Everything stays in the browser on this computer. The popup and the switcher ask the service worker, which keeps a token per account, a password only when one is remembered, the settings of the button, the time of the last renewal, whether Autodarts turned every account away in it, and until when a new account is being added in chrome.storage.local. It moves a session into the Autodarts page and reads the outgoing one out of it only through content.js, the one script that reads or writes the session in the page's localStorage. To renew a token, sign in with a password or end a session, it talks to api.autodarts.com over HTTPS, the same service the Autodarts page itself uses. The popup and the switcher show each player's picture from the address Autodarts gives for it. Nothing else goes anywhere: no server of the developer, no analytics; Help and Report a problem only open a page in a new tab.">
+</picture>
 
 "Help" and "Report a problem" in the popup and on the welcome page open the website
 of the extension and its bug form on GitHub in a new tab. The bug form is filled in
