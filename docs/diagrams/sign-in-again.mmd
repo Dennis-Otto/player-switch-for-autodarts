@@ -1,0 +1,36 @@
+---
+config:
+  flowchart:
+    wrappingWidth: 400
+---
+flowchart TB
+    accTitle: What to do when a tile says Sign in again
+    accDescr: When every saved account says it at once, look for an update of the extension first. Otherwise, an account that signs in with Google or Apple, or one without a remembered password, chooses Add account and signs in once on Autodarts as that player; the same tile is ready again. An account with an Autodarts password can instead remember its password and tap the tile, and the extension signs it in by itself. When it remembers a password already, that password no longer works: forget it and remember the new one.
+
+    tile["A tile says Sign in again"]
+    all{"Do all saved accounts<br>say it at once?"}
+    update["Look for an update<br>of the extension first"]
+    remembers{"Does the account<br>remember a password?"}
+    changed["That password no longer works:<br>Forget password,<br>then remember the new one"]
+    kind{"Does it have an<br>Autodarts password?"}
+    add["Add account, and sign in once<br>on Autodarts as that player"]
+    remember["Remember password,<br>then tap the tile"]
+    ready["The same tile is ready again"]
+
+    tile --> all
+    all -- "yes" --> update
+    all -- "no" --> remembers
+    remembers -- "yes" --> changed
+    remembers -- "no" --> kind
+    kind -- "no: Google or Apple" --> add
+    kind -- "yes" --> remember
+    changed --> ready
+    add --> ready
+    remember --> ready
+
+    classDef person fill:#f59e0b2e,stroke:#f59e0b,stroke-width:2px
+    classDef done fill:#16a34a2e,stroke:#16a34a,stroke-width:2px
+    classDef bot fill:#526cfe2e,stroke:#526cfe,stroke-width:2px
+    class tile,update person
+    class changed,add,remember bot
+    class ready done

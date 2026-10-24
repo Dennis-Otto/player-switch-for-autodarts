@@ -1,0 +1,31 @@
+---
+config:
+  flowchart:
+    wrappingWidth: 400
+---
+flowchart TB
+    accTitle: Set up a shared display
+    accDescr: Install Player Switch, then save every player once: each signs in on Autodarts after Add account. On a display that shows the toolbar, pin the icon; in fullscreen or kiosk mode, players switch with the button on the Autodarts page or the keyboard shortcut. Let the computer start Chrome in kiosk mode by itself, give it an on-screen keyboard for the sign-ins, and keep the browser running, so that the renewal every 12 hours keeps every parked account ready.
+
+    install["Install Player Switch"]
+    players["Save every player once:<br>Add account, then sign in on Autodarts"]
+    toolbar{"Does the display<br>show the toolbar?"}
+    pin["Pin the icon"]
+    button["The button on the Autodarts page<br>or Alt+Shift+O"]
+    start["Start Chrome in kiosk mode<br>with the computer"]
+    keyboard["An on-screen keyboard<br>for the sign-ins"]
+    ready["Keep the browser running:<br>the renewal every 12 hours<br>keeps every account ready"]
+
+    install --> players --> toolbar
+    toolbar -- "yes" --> pin
+    toolbar -- "no: fullscreen or kiosk" --> button
+    pin --> start
+    button --> start
+    start --> keyboard --> ready
+
+    classDef person fill:#f59e0b2e,stroke:#f59e0b,stroke-width:2px
+    classDef done fill:#16a34a2e,stroke:#16a34a,stroke-width:2px
+    classDef bot fill:#526cfe2e,stroke:#526cfe,stroke-width:2px
+    class install,players person
+    class pin,button,start,keyboard bot
+    class ready done

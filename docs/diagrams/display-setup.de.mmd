@@ -1,0 +1,31 @@
+---
+config:
+  flowchart:
+    wrappingWidth: 400
+---
+flowchart TB
+    accTitle: Ein gemeinsames Display einrichten
+    accDescr: Installiere Player Switch und speichere dann jeden Spieler einmal: Jeder meldet sich nach Konto hinzufügen auf Autodarts an. An einem Display, das die Symbolleiste zeigt, hefte das Symbol an; im Vollbild oder Kiosk-Modus wechseln die Spieler mit dem Knopf auf der Autodarts-Seite oder dem Tastenkürzel. Lass den Computer Chrome von selbst im Kiosk-Modus starten, gib ihm eine Bildschirmtastatur für die Anmeldungen und lass den Browser laufen, damit die Erneuerung alle 12 Stunden jedes geparkte Konto bereit hält.
+
+    install["Player Switch installieren"]
+    players["Jeden Spieler einmal speichern:<br>Konto hinzufügen, dann auf Autodarts anmelden"]
+    toolbar{"Zeigt das Display<br>die Symbolleiste?"}
+    pin["Das Symbol anheften"]
+    button["Der Knopf auf der Autodarts-Seite<br>oder Alt+Umschalt+O"]
+    start["Chrome mit dem Computer<br>im Kiosk-Modus starten"]
+    keyboard["Eine Bildschirmtastatur<br>für die Anmeldungen"]
+    ready["Den Browser laufen lassen:<br>Die Erneuerung alle 12 Stunden<br>hält jedes Konto bereit"]
+
+    install --> players --> toolbar
+    toolbar -- "ja" --> pin
+    toolbar -- "nein: Vollbild oder Kiosk" --> button
+    pin --> start
+    button --> start
+    start --> keyboard --> ready
+
+    classDef person fill:#f59e0b2e,stroke:#f59e0b,stroke-width:2px
+    classDef done fill:#16a34a2e,stroke:#16a34a,stroke-width:2px
+    classDef bot fill:#526cfe2e,stroke:#526cfe,stroke-width:2px
+    class install,players person
+    class pin,button,start,keyboard bot
+    class ready done

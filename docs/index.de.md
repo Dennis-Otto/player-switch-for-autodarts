@@ -12,7 +12,7 @@ hide:
 
 Das Display im Flur, im Verein oder in der Kneipe teilen sich alle, aber jede Person spielt unter ihrem eigenen Autodarts-Konto. Die Erweiterung behält die Anmeldung jedes gespeicherten Kontos auf diesem Computer und wechselt mit einem einzigen Tipp: kein Passwort, keine Anmeldeseite, und das Konto, das Platz macht, ist sofort wieder da, sobald es jemand antippt.
 
-[:material-download: Installieren](https://github.com/Dennis-Otto/player-switch-for-autodarts#quick-start){ .md-button .md-button--primary } [:material-shield-check: Sicherheitsdesign](security.md){ .md-button } [:material-file-document-outline: Datenschutz](privacy.md){ .md-button }
+[:material-download: Installieren](https://github.com/Dennis-Otto/player-switch-for-autodarts#quick-start){ .md-button .md-button--primary } [:material-monitor-dashboard: Display einrichten](shared-display.md){ .md-button } [:material-lifebuoy: Hilfe](help.md){ .md-button } [:material-shield-check: Sicherheitsdesign](security.md){ .md-button } [:material-file-document-outline: Datenschutz](privacy.md){ .md-button }
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="images/switch.de.dark.gif">
@@ -49,6 +49,12 @@ Das Display im Flur, im Verein oder in der Kneipe teilen sich alle, aber jede Pe
 
 </div>
 
+## Warum nicht einfach … {#why-not-just}
+
+- **… sich für jeden Spieler ab- und wieder anmelden?** Jeder Wechsel heißt, E-Mail und Passwort am Display einzutippen, oft auf einem Touchscreen vor allen anderen, und ein Konto, das sich mit Google oder Apple anmeldet, braucht dafür jedes Mal diesen Dienst und oft ein Handy. Mit Player Switch meldet sich jeder Spieler einmal an, und danach wechselt ein Tipp.
+- **… jedem Spieler ein eigenes Chrome-Profil geben?** Jedes Profil ist ein eigenes Fenster, das einzeln eingerichtet und angemeldet bleiben muss, und zum Wechseln braucht es das Profilmenü von Chrome, das Vollbild und Kiosk-Modus ausblenden. Mit Player Switch sind die Spieler einen Tipp entfernt, direkt auf der Autodarts-Seite, in einem einzigen Fenster.
+- **… die anderen als Gäste dazunehmen?** Das geht schnell, aber die Darts eines Gastes zählen für kein eigenes Konto: keine eigene Statistik und keine eigene Match-Historie. Mit Player Switch spielt jeder unter seinem eigenen Konto.
+
 ## Einrichten
 
 Nach der Installation öffnet sich eine Willkommensseite mit drei Schritten:
@@ -62,7 +68,7 @@ Nach der Installation öffnet sich eine Willkommensseite mit drei Schritten:
   <img src="images/diagrams/adding-a-player.de.svg" alt="So wird ein neuer Spieler von selbst gespeichert: Nach der Installation, die niemanden abmeldet, oder einem Tipp auf Konto hinzufügen, der die Seite abmeldet, wartet die Erweiterung zehn Minuten auf ein neues Konto. Der neue Spieler meldet sich auf Autodarts an. Jedes Mal, wenn eine Seite von Autodarts fertig geladen ist, sucht die Erweiterung nach der Sitzung. Innerhalb der zehn Minuten speichert sie das Konto einmal, das Symbol zeigt einen Haken, und der Spieler spielt weiter. Nach den zehn Minuten, oder sobald ein Spieler gespeichert ist, wird keine Anmeldung von selbst gespeichert; das Symbol zeigt ein Plus, und Konto speichern im Popup speichert sie.">
 </picture>
 
-Die Erweiterung speichert eine neue Anmeldung nur in den zehn Minuten nach **Konto hinzufügen** oder der Installation von selbst, nur einmal und nur, solange kein gespeichertes Konto spielt: Eine spätere Anmeldung wird nie ohne einen Tipp gespeichert. **Abbrechen** im Popup oder im Umschalter beendet das Warten früher. Ein `+` am Symbol heißt, dass jemand angemeldet ist, der noch nicht gespeichert ist, und **Konto speichern** im Popup speichert das Konto. **Hilfe** und **Problem melden** unten im Popup führen zu dieser Website und zum Fehlerformular, in das sie nur die Versionen der Erweiterung und des Browsers eintragen.
+Die Erweiterung speichert eine neue Anmeldung nur in den zehn Minuten nach **Konto hinzufügen** oder der Installation von selbst, nur einmal und nur, solange kein gespeichertes Konto spielt: Eine spätere Anmeldung wird nie ohne einen Tipp gespeichert. **Abbrechen** im Popup oder im Umschalter beendet das Warten früher. Ein `+` am Symbol heißt, dass jemand angemeldet ist, der noch nicht gespeichert ist, und **Konto speichern** im Popup speichert das Konto. **Hilfe** und **Problem melden** unten im Popup führen zur [Hilfe](help.md), die jede Meldung der Erweiterung erklärt, und zum Fehlerformular, in das sie nur die Versionen der Erweiterung und des Browsers eintragen.
 
 ## Am Board-Display
 
@@ -72,6 +78,8 @@ Ein Board-Display läuft oft im Vollbild oder als Kiosk, wo die Symbolleiste mit
 - **Ein Match endet nur mit Absicht:** Auf der Seite eines laufenden Matches fragt ein Wechsel vorher, bevor er einen Token verbraucht.
 - **Deine Ecke:** **Einstellungen** im Popup blendet den Knopf aus oder setzt ihn in eine andere Ecke.
 - **Privat:** Die Spieler öffnen sich in einer Seite der Erweiterung, in einem eigenen Rahmen, darum können die Skripte der Autodarts-Seite die gespeicherten Konten nicht lesen.
+
+Die [Anleitung für ein gemeinsames Display](shared-display.md) richtet alles ein: den Kiosk-Modus, den Start mit dem Computer, eine Bildschirmtastatur für die Anmeldungen und die Energieeinstellungen, die jedes Konto bereit halten.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="images/switcher.de.dark.png">

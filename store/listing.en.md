@@ -29,11 +29,14 @@ How it works:
 • On the page of a running match, a switch asks first, so a match never ends by
   surprise.
 • Optional: let the extension remember a password, and it signs an account back in
-  by itself if its session ever stops working (accounts that use Google or Apple to
-  sign in don't need this).
+  by itself if its session ever stops working. Accounts that sign in with Google or
+  Apple can't use this, because they have no Autodarts password to remember.
 
 Everything stays on your computer. The extension talks only to Autodarts, collects
 no analytics and sends nothing to anyone else. See the privacy policy for details.
+
+The support page explains every message of the extension, and it links a guide for
+a board display in kiosk mode that starts with the computer.
 
 Not affiliated with Autodarts.
 
@@ -53,6 +56,16 @@ Not affiliated with Autodarts.
   accounts, the same requests the Autodarts website makes, and to find the open
   Autodarts tabs, so a switch takes effect in the one in front and the others
   reload. The extension can't read the address or title of any other tab.
+
+## Homepage and support URLs
+
+- Homepage URL: <https://dennis-otto.github.io/player-switch-for-autodarts/>
+- Support URL: <https://dennis-otto.github.io/player-switch-for-autodarts/help.html>,
+  the help, which explains every message of the extension and links the guide for a
+  shared display.
+
+The store takes each address once for every language; the English pages link their
+German ones in the language switch of their header.
 
 ## Category
 
