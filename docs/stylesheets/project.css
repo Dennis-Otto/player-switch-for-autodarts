@@ -1,0 +1,14 @@
+/* The styles of this website alone, beside those of the blueprint.
+
+   The hooks show a GIF of a <picture> for each scheme, NAME.gif and NAME.dark.gif, as
+   the videos beside them, which lose the #only-light and #only-dark that Material hides
+   the picture of the other scheme by; so each video hides here in the other scheme. */
+[data-md-color-scheme="default"] .md-typeset video.blueprint-video[src*=".dark."],
+[data-md-color-scheme="slate"] .md-typeset video.blueprint-video:not([src*=".dark."]) {
+  display: none;
+}
+
+/* The popup keeps the width of the GIF it takes the place of, which the page gives. */
+.md-typeset video.blueprint-video[src*="switch"] {
+  max-width: 396px;
+}

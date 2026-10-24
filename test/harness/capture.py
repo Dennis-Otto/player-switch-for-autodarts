@@ -15,11 +15,13 @@ from __future__ import annotations
 
 import io
 import mimetypes
+import subprocess
 import sys
 from dataclasses import dataclass
 from pathlib import Path
 from urllib.parse import unquote, urlsplit
 
+import imageio_ffmpeg
 from PIL import Image
 from playwright.sync_api import Browser, Page, Route, sync_playwright
 
@@ -250,6 +252,36 @@ def animation(frames: list[tuple[Image.Image, int]], out: Path, path: str) -> No
     print(
         f"{path}: {width}x{height}, {len(frames)} frames, {size} KiB", file=sys.stderr
     )
+    film(target, canvases[0])
+
+
+def film(gif: Path, first: Image.Image) -> None:
+    """Writes the video and the poster beside the GIF, NAME.mp4 and NAME.webp, which
+    the website shows in its place: a video that the reader can pause, that plays only
+    while it is in view and stays still for a reader who asks for less motion (WCAG
+    2.2.2), and the first frame until it plays. ffmpeg makes the video from the GIF,
+    whose colours are exact, as H.264 with its index first, so that it starts while it
+    loads, an even width and height, which yuv420p needs, and one thread, so that its
+    bytes are the same on every run."""
+    video = gif.with_suffix(".mp4")
+    subprocess.run(
+        [
+            imageio_ffmpeg.get_ffmpeg_exe(),
+            *("-loglevel", "error", "-y", "-i", str(gif)),
+            *("-vf", "crop=trunc(iw/2)*2:trunc(ih/2)*2"),
+            *("-c:v", "libx264", "-preset", "veryslow", "-crf", "28"),
+            *("-pix_fmt", "yuv420p", "-movflags", "+faststart", "-an"),
+            *("-map_metadata", "-1", "-fflags", "+bitexact", "-flags:v", "+bitexact"),
+            *("-threads", "1", "-x264-params", "threads=1"),
+            str(video),
+        ],
+        check=True,
+    )
+    poster = gif.with_suffix(".webp")
+    first.save(poster, "WEBP", quality=85, method=6)
+    for made in (video, poster):
+        size = made.stat().st_size // 1024
+        print(f"{made.relative_to(gif.parents[2])}: {size} KiB", file=sys.stderr)
 
 
 def main(out: Path) -> None:

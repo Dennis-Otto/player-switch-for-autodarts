@@ -12,9 +12,10 @@
 # .github/social-preview.html, and the pictures of the extension from its real pages,
 # with made-up accounts (test/harness/, docs/development.md#pictures):
 #
-# - docs/images/switch.gif, an animated tap that switches players, for the README and
-#   the website, and the popup's "Manage accounts" (manage.png) and the switcher on a
-#   board display (switcher.png), each also .dark and in German (.de, .de.dark);
+# - docs/images/switch.gif, an animated tap that switches players, for the README, and
+#   switch.mp4 and switch.webp beside it, the video and its poster for the website,
+#   and the popup's "Manage accounts" (manage.png) and the switcher on a board
+#   display (switcher.png), each also .dark and in German (.de, .de.dark);
 # - store/images/, the screenshots (1280×800) and the promo tiles (440×280 and
 #   1400×560) of the Chrome Web Store, in English (.en) and German (.de).
 #
@@ -32,7 +33,7 @@ fi
 npm run --silent build
 
 # The browser and the Python of Playwright, at the version of playwright in
-# test/harness/requirements.in. Renovate keeps both current.
+# test/harness/requirements.in: Renovate updates both in one pull request.
 image="mcr.microsoft.com/playwright/python:v1.63.0-noble@sha256:72bd171a9ffc2b4b59532aaa6210e21014d07093120dc25528870c0b840da1f0"
 # Git Bash on Windows: keep the container's paths and mount the Windows path.
 export MSYS_NO_PATHCONV=1

@@ -40,3 +40,7 @@ nav:
   - Development: development.md
   - Releases: releases.md
   - Decisions: decisions/README.md
+
+# The styles of this website alone, beside those of the blueprint.
+extra_css:
+  - stylesheets/project.css

@@ -5,4 +5,13 @@
 {
   $schema: "https://docs.renovatebot.com/renovate-schema.json",
   extends: ["local>Dennis-Otto/player-switch-for-autodarts//.github/renovate-blueprint.json5"],
+  packageRules: [
+    {
+      // The Playwright image of scripts/screenshots.sh and the playwright of
+      // test/harness/requirements.txt, which drives the browser of that image, move
+      // together in one pull request, so that the driver never meets another browser.
+      matchPackageNames: ["mcr.microsoft.com/playwright/python", "playwright"],
+      groupName: "Playwright",
+    },
+  ],
 }

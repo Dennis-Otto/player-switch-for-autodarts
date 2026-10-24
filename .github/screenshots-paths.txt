@@ -10,9 +10,11 @@ scripts/social-preview.sh
 extension/popup.*
 extension/switcher.*
 extension/players.js
+extension/support.js
 extension/icons/**
 extension/_locales/**
 src/health.ts
+src/onboarding.ts
 src/page.ts
 # The stage, the stand-in for Chrome and the tools that render them.
 test/harness/**

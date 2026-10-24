@@ -1,6 +1,9 @@
 # The tools of test/harness/capture.py in the Playwright image of scripts/screenshots.sh:
-# Playwright drives its browser, Pillow writes the animation. Keep playwright at the
-# version of the image. requirements.txt pins them with their hashes:
+# Playwright drives its browser, Pillow writes the animation and its poster, and
+# imageio-ffmpeg brings the ffmpeg that makes the video of the website from it.
+# playwright stays at the version of the image: Renovate updates both in one pull
+# request (.github/renovate.json5). requirements.txt pins them with their hashes:
 #   uv pip compile --generate-hashes --python-version=3.12.3 --output-file=requirements.txt requirements.in
 playwright==1.63.0
 pillow==13.0.0
+imageio-ffmpeg==0.6.0

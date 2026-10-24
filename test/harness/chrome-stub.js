@@ -200,7 +200,14 @@
     async drawn() {
       await frame();
       await Promise.all(
-        document.getAnimations().map((animation) => animation.finished),
+        // An animation that loops forever never finishes; it doesn't wait for it.
+        document
+          .getAnimations()
+          .filter(
+            (animation) =>
+              animation.effect?.getComputedTiming().iterations !== Infinity,
+          )
+          .map((animation) => animation.finished),
       );
       await frame();
     },
