@@ -3,10 +3,12 @@ name: Release
 # The release bot. release-please keeps a pull request for the next release, up to
 # date with main. Its version follows from the Conventional Commit titles merged
 # since the last release (fix: a patch, feat: a minor, ! or BREAKING CHANGE: a major
-# version) and is decided anew with every merge. What the pull requests wrote under
-# "## Unreleased" of CHANGELOG.md becomes the section of the release; without it,
-# the section lists the pull requests. Merging the pull request creates the release
-# as a draft, with its tag. The jobs below attach the package, its SBOMs (SPDX and
+# version) and is decided anew with every merge. What the pull requests wrote in the
+# fragments of changelog.d/ and under "## Unreleased" of CHANGELOG.md becomes the
+# section of the release, and the fragments leave with it; without such text, the
+# section lists the pull requests. Merging the pull request creates the release
+# as a draft, on a tag that this workflow signs first, and the build checks the tag
+# before anything else. The jobs below attach the package, its SBOMs (SPDX and
 # CycloneDX), the licenses of its third-party components, the advisories that don't
 # affect it (OpenVEX) and its signed provenance, write the notes, make the
 # release public, announce it in the discussions, and then deliver it where the
@@ -18,10 +20,12 @@ name: Release
 on:
   push:
     branches: [main]
-  # Merges that auto-merge does with the token of a workflow, such as those of
-  # Dependabot's updates, start no workflow; so the release bot looks every hour too.
+  # Every merge into main is a push of the release app or of a person, which starts
+  # the release bot at once. The schedule is only a safety net, for a push that GitHub
+  # lost and a tag that a failed run left to sign: GitHub runs schedules as it can,
+  # often hours late, and the bot-health bot starts a run that it missed.
   schedule:
-    - cron: "25 * * * *"
+    - cron: "25 5 * * *"
   workflow_dispatch:
 
 permissions: {}
@@ -34,7 +38,7 @@ jobs:
   release-please:
     name: release pull request
     if: ${{ !github.event.repository.fork }}
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 10
     # The environment holds the private key of the release app; only main may use it.
     environment:
@@ -50,6 +54,8 @@ jobs:
     outputs:
       created: ${{ steps.release.outputs.release_created == 'true' || steps.beta.outputs.tag != '' || steps.resume.outputs.tag != '' }}
       tag: ${{ steps.release.outputs.tag_name || steps.beta.outputs.tag || steps.resume.outputs.tag }}
+      # The commit that the tag has to point at, which the build checks.
+      sha: ${{ steps.release.outputs.sha || steps.beta.outputs.sha || steps.resume.outputs.sha }}
       version: ${{ steps.release.outputs.version || steps.beta.outputs.version || steps.resume.outputs.version }}
       major: ${{ steps.release.outputs.major || steps.resume.outputs.major }}
     steps:
@@ -57,6 +63,20 @@ jobs:
         uses: step-security/harden-runner@ccd8616d44fd3846e67624a50d5aad6d37bf2d25 # v2.22.1
         with:
           egress-policy: audit
+      # Without the release app of the owner, release-please still keeps its pull
+      # request, but as the token of the job, which starts none of its checks, and no
+      # run can sign a release tag: the run says what to set up.
+      - name: Explain a missing release app
+        if: vars.RELEASE_AUTOMATION_CLIENT_ID == ''
+        run: |
+          echo "::warning::This repository names no release app in the variable RELEASE_AUTOMATION_CLIENT_ID, so the release pull request starts no checks and no release can be published; python3 .github/blueprint.py checklist shows how to set one up."
+          {
+            echo "### No release app"
+            echo
+            echo "This repository names no release app in the variable \`RELEASE_AUTOMATION_CLIENT_ID\`. Release-please keeps the release pull request with the token of the job, which starts none of its checks, and only the release app may create and sign a release tag, so no release can be published."
+            echo
+            echo "\`python3 .github/blueprint.py checklist\` shows how to register the app of the owner, with a link that fills in its permissions, and how to name it in \`.github/repository.toml\`."
+          } >> "$GITHUB_STEP_SUMMARY"
       - name: Create a token of the release app
         id: app
         if: vars.RELEASE_AUTOMATION_CLIENT_ID != ''
@@ -70,26 +90,6 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-      # The merge of the release pull request: its tag comes first, signed, and
-      # release-please creates the release on it.
-      - name: Sign the tag of the release that this merge makes
-        if: github.event_name == 'push' && steps.app.outputs.token != ''
-        env:
-          GH_TOKEN: ${{ steps.app.outputs.token }}
-          MESSAGE: ${{ github.event.head_commit.message }}
-        run: |
-          subject="${MESSAGE%%$'\n'*}"
-          if [[ "$subject" != "chore: release "* ]]; then
-            echo "No release pull request was merged."
-            exit 0
-          fi
-          tag="v$(jq -r '.["."]' .release-please-manifest.json)"
-          if gh api "repos/$GITHUB_REPOSITORY/git/ref/tags/$tag" --silent 2>/dev/null; then
-            echo "The tag $tag exists already."
-            exit 0
-          fi
-          bash .github/sign-tag.sh "$tag"
-          echo "The tag $tag is signed." >> "$GITHUB_STEP_SUMMARY"
       - name: Have the release pull request rebuilt on the current main
         if: steps.app.outputs.token != ''
         env:
@@ -116,6 +116,64 @@ jobs:
                 gh pr edit "$number" --body "$(printf '%s\n\n%s\n' "$body" "<!-- The release bot rebuilds this pull request on the current main. -->")"
               fi
             done
+      # A merged release pull request: its tag comes first, signed, and release-please
+      # creates the release on it. Every run looks, not only the push of the merge, so
+      # that a run that is lost or fails early leaves the signing to the next one; a tag
+      # is locked for good once a release stands on it. A tag that exists already must
+      # be the one that the release workflow signed at the merge, such as that of a run
+      # that failed after it pushed the tag; any other stops the release here.
+      - name: Sign the tag of a release that a merged release pull request makes
+        id: sign
+        if: steps.app.outputs.token != ''
+        env:
+          GH_TOKEN: ${{ steps.app.outputs.token }}
+        run: |
+          set -euo pipefail
+          # The merged release pull requests that wait for their release, as release-please
+          # finds them, each with the commit of its merge and the version it releases. The
+          # list of pull requests, unlike their search, doesn't lag behind a merge. GitHub
+          # fails for a moment now and then, so it asks three times.
+          for attempt in 1 2 3; do
+            # The variables of the query are GraphQL's, not the shell's.
+            # shellcheck disable=SC2016
+            if pending="$(gh api graphql -F owner="${GITHUB_REPOSITORY%/*}" -F name="${GITHUB_REPOSITORY#*/}" \
+              -f query='query($owner: String!, $name: String!) { repository(owner: $owner, name: $name) {
+                pullRequests(labels: ["autorelease: pending"], states: MERGED, baseRefName: "main", first: 10, orderBy: {field: UPDATED_AT, direction: DESC}) {
+                  nodes { mergeCommit { oid file(path: ".release-please-manifest.json") { object { ... on Blob { text } } } } } } } }' \
+              --jq '.data.repository.pullRequests.nodes[].mergeCommit | "\(.oid) \(.file.object.text | fromjson | .["."])"')"; then
+              break
+            fi
+            if ((attempt == 3)); then
+              echo "::error::The merged release pull requests could not be read."
+              exit 1
+            fi
+            sleep $((attempt * 10))
+          done
+          if [[ -z "$pending" ]]; then
+            echo "No merged release pull request waits for its release."
+            exit 0
+          fi
+          while read -r -u 3 commit version; do
+            tag="v$version"
+            bash .github/sign-tag.sh "$tag" "$commit"
+            echo "The tag $tag is signed." >> "$GITHUB_STEP_SUMMARY"
+          done 3<<<"$pending"
+          echo "signed=true" >> "$GITHUB_OUTPUT"
+      # A squash commit carries the description of its pull request, such as the
+      # release notes that Renovate quotes, and a line of it that the strict parser of
+      # release-please takes for a footer makes it skip the commit, title included,
+      # in a run that passes. release-please reads the override in the description
+      # of a pull request instead: its title and the lines Release-As and BREAKING
+      # CHANGE, which blueprint.py commit-overrides writes into each merged one since
+      # the last release. The token of the job starts no workflow with the edit.
+      - name: Give release-please the title of each merged pull request
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          script=.github/blueprint.py
+          [[ -f "$script" ]] || script=blueprint.py
+          python3 "$script" --repo "$GITHUB_REPOSITORY" commit-overrides | tee -a "$GITHUB_STEP_SUMMARY"
       - name: Update the release pull request, or create the release
         id: release
         uses: googleapis/release-please-action@45996ed1f6d02564a971a2fa1b5860e934307cf7 # v5.0.0
@@ -125,6 +183,11 @@ jobs:
           token: ${{ steps.app.outputs.token || secrets.GITHUB_TOKEN }}
           config-file: release-please-config.json
           manifest-file: .release-please-manifest.json
+          # Releases only on the tags that the step above signed: a release pull request
+          # merged after it looked, or a run without the release app, would get a tag
+          # without a signature, which the build refuses and nobody can delete. Its
+          # release waits for the next run, which signs the tag first.
+          skip-github-release: ${{ steps.sign.outputs.signed != 'true' }}
       - name: Take up a release that an earlier run left as a draft
         id: resume
         # A run that failed after the release was created leaves it as a draft, with
@@ -140,13 +203,16 @@ jobs:
             echo "No draft of v$version to finish."
             exit 0
           fi
+          # The merge of the release pull request, the last commit that changed the version.
+          sha="$(gh api "repos/$GITHUB_REPOSITORY/commits?path=.release-please-manifest.json&sha=$GITHUB_SHA&per_page=1" --jq '.[0].sha')"
           {
             echo "tag=v$version"
+            echo "sha=$sha"
             echo "version=$version"
             echo "major=${version%%.*}"
           } >> "$GITHUB_OUTPUT"
           echo "The draft of v$version is built and published now." >> "$GITHUB_STEP_SUMMARY"
-      - name: Write the text of Unreleased into the release pull request
+      - name: Write the text of Unreleased and of the fragments into the release pull request
         if: steps.app.outputs.token != ''
         env:
           # The commit goes through GitHub's API as the release app: GitHub signs it,
@@ -169,21 +235,42 @@ jobs:
               head="$(gh api "repos/$GH_REPO/git/ref/heads/$branch" --jq .object.sha)"
               version="$(gh api "${raw[@]}" "repos/$GH_REPO/contents/.release-please-manifest.json?ref=$head" | jq -r '.["."]')"
               gh api "${raw[@]}" "repos/$GH_REPO/contents/CHANGELOG.md?ref=$head" > "$RUNNER_TEMP/branch.md"
-              python3 "$script" changelog release "$version" CHANGELOG.md "$RUNNER_TEMP/branch.md" > "$RUNNER_TEMP/release.md"
-              if cmp -s "$RUNNER_TEMP/release.md" "$RUNNER_TEMP/branch.md"; then
+              # The section of the release takes in the text of Unreleased and the
+              # fragments in changelog.d/ of main; the same commit deletes the fragments.
+              python3 "$script" changelog release "$version" CHANGELOG.md "$RUNNER_TEMP/branch.md" \
+                --taken "$RUNNER_TEMP/taken" > "$RUNNER_TEMP/release.md"
+              # Only those that the branch still has: an earlier run deleted them already,
+              # and the next run takes in one that reached main after this checkout.
+              listed='[]'
+              if [[ -s "$RUNNER_TEMP/taken" ]] &&
+                ! listed="$(gh api "repos/$GH_REPO/contents/changelog.d?ref=$head" --jq '[.[].path]' 2> "$RUNNER_TEMP/error")"; then
+                # A branch without the folder has no fragment to delete.
+                if ! grep -q "HTTP 404" "$RUNNER_TEMP/error"; then
+                  cat "$RUNNER_TEMP/error" >&2
+                  exit 1
+                fi
+                listed='[]'
+              fi
+              # Without a line end (-j), which the jq.exe of Git Bash writes as CRLF.
+              deletions="$(jq -R . "$RUNNER_TEMP/taken" | jq -scj --argjson listed "$listed" 'map(select(IN($listed[])) | {path: .})')"
+              if cmp -s "$RUNNER_TEMP/release.md" "$RUNNER_TEMP/branch.md" && [[ "$deletions" == '[]' ]]; then
                 echo "The changelog of $version is up to date."
                 continue
               fi
               echo "Writing the changelog of $version into $branch."
+              # A file, not a process substitution, which the jq.exe of Git Bash can't open.
+              base64 --wrap=0 "$RUNNER_TEMP/release.md" > "$RUNNER_TEMP/release.b64"
               jq --null-input --arg repo "$GH_REPO" --arg branch "$branch" --arg head "$head" \
                 --arg headline "chore: write the changelog of $version" \
-                --rawfile contents <(base64 --wrap=0 "$RUNNER_TEMP/release.md") \
+                --rawfile contents "$RUNNER_TEMP/release.b64" \
+                --argjson deletions "$deletions" \
                 '{query: "mutation($input: CreateCommitOnBranchInput!) { createCommitOnBranch(input: $input) { commit { oid } } }",
                   variables: {input: {
                     branch: {repositoryNameWithOwner: $repo, branchName: $branch},
                     expectedHeadOid: $head,
                     message: {headline: $headline},
-                    fileChanges: {additions: [{path: "CHANGELOG.md", contents: $contents}]}}}}' |
+                    fileChanges: ({additions: [{path: "CHANGELOG.md", contents: $contents}]}
+                      + if $deletions == [] then {} else {deletions: $deletions} end)}}}' |
                 gh api graphql --input - --jq .data.createCommitOnBranch.commit.oid
             done
       - name: Merge a release of dependency updates once its checks pass
@@ -248,8 +335,11 @@ jobs:
           bash .github/sign-tag.sh "v$version"
           gh release create "v$version" --draft --prerelease --verify-tag \
             --title "v$version" --notes-file "$RUNNER_TEMP/beta.md"
-          echo "tag=v$version" >> "$GITHUB_OUTPUT"
-          echo "version=$version" >> "$GITHUB_OUTPUT"
+          {
+            echo "tag=v$version"
+            echo "sha=$GITHUB_SHA"
+            echo "version=$version"
+          } >> "$GITHUB_OUTPUT"
           echo "The beta v$version of $next is on its way." >> "$GITHUB_STEP_SUMMARY"
 
   # The build runs in a reusable workflow of its own, so that the provenance of the
@@ -269,12 +359,13 @@ jobs:
     secrets: inherit
     with:
       tag: ${{ needs.release-please.outputs.tag }}
+      sha: ${{ needs.release-please.outputs.sha }}
       version: ${{ needs.release-please.outputs.version }}
 
   publish:
     name: publish the release
     needs: [release-please, assets]
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 5
     permissions:
       contents: write
@@ -311,7 +402,7 @@ jobs:
     name: deliver to PyPI
     needs: [release-please, publish]
     if: vars.PUBLISH_TO == 'pypi'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 10
     # Trusted publishing: PyPI accepts this workflow and environment, no token.
     environment:
@@ -336,7 +427,7 @@ jobs:
     name: deliver to npm
     needs: [release-please, publish]
     if: vars.PUBLISH_TO == 'npm'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 10
     # Trusted publishing with provenance: npm accepts this workflow, no token.
     environment:
@@ -369,7 +460,7 @@ jobs:
     name: deliver to GHCR
     needs: [release-please, publish]
     if: vars.PUBLISH_TO == 'ghcr'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 30
     permissions:
       attestations: write
@@ -425,7 +516,7 @@ jobs:
     name: deliver to the Nextcloud App Store
     needs: [release-please, publish]
     if: vars.PUBLISH_TO == 'nextcloud-appstore'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 10
     environment:
       name: release
@@ -470,7 +561,7 @@ jobs:
     needs: [release-please, publish]
     # A prerelease leaves the major tag at the last release.
     if: vars.PUBLISH_TO == 'github-action' && !contains(needs.release-please.outputs.tag, '-')
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 5
     permissions:
       contents: write

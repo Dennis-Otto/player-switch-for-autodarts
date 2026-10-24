@@ -20,7 +20,7 @@ concurrency:
 jobs:
   check:
     name: check (node)
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 15
     steps:
       - name: Record the network traffic of the job
@@ -29,6 +29,9 @@ jobs:
           egress-policy: audit
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
+          # The merge of a pull request into main, and its head as the second
+          # parent, onto which the fix bot commits.
+          fetch-depth: 2
           persist-credentials: false
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
@@ -38,3 +41,52 @@ jobs:
         run: npm ci --ignore-scripts
       - name: Run the checks
         run: bash scripts/check.sh
+      # The LCOV report of the test runner of Node, which npm test writes as
+      # lcov.info, for the coverage in the report of the PR coach.
+      - name: Keep the coverage report
+        if: always() && hashFiles('lcov.info') != ''
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: coverage
+          path: lcov.info
+          retention-days: 14
+      # The fix bot: the commands of autofix in .github/checks.toml fix what they
+      # can of what the checks found, on the head of the pull request or on main.
+      # After the checks, the bot commits the files that they changed onto a branch
+      # of this repository, suggests them on a pull request from a fork, or keeps one
+      # pull request with the fixes of main.
+      - name: Fix what a command can fix
+        id: fix
+        if: failure() && contains(fromJSON('["pull_request", "push"]'), github.event_name)
+        env:
+          CHECK: "check (node)"
+          EVENT: ${{ github.event_name }}
+        run: |
+          # The head of the pull request, onto which the bot commits, not its merge
+          # into main.
+          if [[ "$EVENT" == pull_request ]]; then
+            git checkout --quiet --force --detach HEAD^2
+          fi
+          script=.github/blueprint.py
+          [[ -f "$script" ]] || script=blueprint.py
+          python3 "$script" fix run "$CHECK" --keep "$RUNNER_TEMP/fixes" >> "$GITHUB_STEP_SUMMARY"
+      - name: Keep the fixes for the fix bot
+        if: failure() && steps.fix.outcome == 'success'
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: fixes-check
+          path: ${{ runner.temp }}/fixes/
+          # Fixes of files in .github/ as well.
+          include-hidden-files: true
+          if-no-files-found: ignore
+          retention-days: 3
+      # The PR coach: what failed, why it matters and how to fix it, in the summary
+      # of the check and as its annotation, from .github/checks.toml.
+      - name: Explain the failure
+        if: failure()
+        env:
+          CHECK: "check (node)"
+        run: |
+          script=.github/blueprint.py
+          [[ -f "$script" ]] || script=blueprint.py
+          python3 "$script" coach explain "$CHECK"
