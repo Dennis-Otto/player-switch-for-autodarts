@@ -569,7 +569,6 @@ dialog.confirm p {
    "Manage accounts" keep a mark of their own in its colors. */
 @media (forced-colors: active) {
   .profile.active {
-    forced-color-adjust: none;
     border: 3px solid Highlight;
     box-shadow: none;
   }

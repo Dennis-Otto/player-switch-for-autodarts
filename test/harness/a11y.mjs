@@ -382,6 +382,8 @@ describe("the popup in the settings of the system", { skip: browser === null }, 
     assert.notEqual(active.color, other.color);
     assert.equal(active.width, "3px");
     assert.notEqual(chip.background, "rgba(0, 0, 0, 0)");
+    const inside = await page.evaluate(() => getComputedStyle(document.querySelector(".profile.active .name")).forcedColorAdjust);
+    assert.equal(inside, "auto", "the text of the active tile keeps the colors of the contrast theme");
     await page.context().close();
   });
 

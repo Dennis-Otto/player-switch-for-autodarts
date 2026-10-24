@@ -14,5 +14,3 @@
 - After a switch, the popup no longer keeps saying "Switching to …".
 - A contrast theme of Windows keeps the player who plays and the chips apart, and with
   reduced motion in the system, nothing in the popup moves.
-- The title of the popup and of the options page follows the language of the
-  extension.
