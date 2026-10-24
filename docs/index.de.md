@@ -14,7 +14,10 @@ Das Display im Flur, im Verein oder in der Kneipe teilen sich alle, aber jede Pe
 
 [:material-download: Installieren](https://github.com/Dennis-Otto/player-switch-for-autodarts#quick-start){ .md-button .md-button--primary } [:material-monitor-dashboard: Display einrichten](shared-display.md){ .md-button } [:material-lifebuoy: Hilfe](help.md){ .md-button } [:material-shield-check: Sicherheitsdesign](security.md){ .md-button } [:material-file-document-outline: Datenschutz](privacy.md){ .md-button }
 
-![Das Popup: eine Liste der Spieler, der aktive hervorgehoben, dazu eine Kachel zum Hinzufügen eines Kontos; daneben die Verwalten-Ansicht eines Kontos mit den Optionen, das Passwort zu merken oder das Konto zu entfernen](images/popup.png)
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="images/switch.de.dark.gif">
+  <img src="images/switch.de.gif" alt="Das Popup von Player Switch: Mia Keller spielt; ein Tipp auf Jonas Berg zeigt „Wechsle zu Jonas Berg …“, dann spielt Jonas Berg." width="396">
+</picture>
 
 ## Das kann die Erweiterung
 
@@ -79,6 +82,11 @@ Ein Board-Display läuft oft im Vollbild oder als Kiosk, wo die Symbolleiste mit
 Die [Anleitung für ein gemeinsames Display](shared-display.md) richtet alles ein: den Kiosk-Modus, den Start mit dem Computer, eine Bildschirmtastatur für die Anmeldungen und die Energieeinstellungen, die jedes Konto bereit halten.
 
 <picture>
+  <source media="(prefers-color-scheme: dark)" srcset="images/switcher.de.dark.png">
+  <img src="images/switcher.de.png" alt="Der Wechsler über einem Match am Board-Display: die Spieler in großen Kacheln mit den Tasten 1 bis 4, Mia Keller spielt, dazu Konten verwalten, Konto hinzufügen und ein Knopf zum Schließen.">
+</picture>
+
+<picture>
   <source media="(prefers-color-scheme: dark)" srcset="images/diagrams/switch-from-the-page.de.dark.svg">
   <img src="images/diagrams/switch-from-the-page.de.svg" alt="Spieler direkt auf der Autodarts-Seite wechseln: Im Vollbild oder Kiosk-Modus öffnet ein Tipp auf den runden Knopf in einer Ecke der Autodarts-Seite, oder das Tastenkürzel, den Wechsler über der Seite. Er ist eine Seite der Erweiterung in einem Rahmen, darum kann die Seite die Konten nicht lesen. Ein Tipp auf einen Spieler, oder die Tasten 1 bis 9, wechselt; auf einer Match-Seite fragt der Wechsler vorher, bevor ein Token verbraucht wird, und die Seite lädt neu mit dem gewählten Spieler.">
 </picture>
@@ -99,6 +107,11 @@ Autodarts Play speichert die Anmeldung als einen einzigen Wert im Browser, einen
 - **Eine Änderung nach der anderen.** Ein Token gilt nur einmal, deshalb zählt ein zweiter Tipp nicht, solange ein Wechsel läuft, und die Erneuerung im Hintergrund wartet, bis der Wechsel fertig ist. Ein Doppeltipp meldet den vorigen Spieler nicht ab.
 - **Der Tab vorne.** Der Wechsel passiert im Autodarts-Tab, den du gerade siehst, und jeder andere Autodarts-Tab lädt mit dem neuen Spieler neu, damit keiner als der vorige weiterspielt. Ist kein Autodarts-Tab offen, öffnet ein Tipp Autodarts und wechselt dort.
 - **Passwort-Rückfall, optional.** Wenn du die Erweiterung ein Passwort merken lässt, meldet sie das Konto von selbst neu an, falls sein Token einmal nicht mehr geht. Konten, die sich mit Google oder Apple anmelden, können das nicht nutzen.
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="images/manage.de.dark.png">
+  <img src="images/manage.de.png" alt="Konten verwalten im Popup: jedes Konto mit „Passwort merken“ oder „Passwort nicht mehr merken“ und „Konto entfernen“, und bei jedem geparkten Konto, wann es zuletzt erneuert wurde, etwa „Erneuert vor 2 Stunden“." width="396">
+</picture>
 
 Über Tage und Wochen wechselt ein gespeichertes Konto zwischen diesen Zuständen:
 

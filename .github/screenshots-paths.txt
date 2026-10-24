@@ -6,3 +6,15 @@
 .github/social-preview.html
 .github/social-preview/Dockerfile
 scripts/social-preview.sh
+# The pages of the extension that the pictures show, their texts and their code.
+extension/popup.*
+extension/switcher.*
+extension/players.js
+extension/support.js
+extension/icons/**
+extension/_locales/**
+src/health.ts
+src/onboarding.ts
+src/page.ts
+# The stage, the stand-in for Chrome and the tools that render them.
+test/harness/**

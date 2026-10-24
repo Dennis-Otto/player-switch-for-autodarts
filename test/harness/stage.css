@@ -1,0 +1,336 @@
+/* The backdrops of the pictures of scripts/screenshots.sh, around the real popup and
+   switcher of the extension. Neutral on purpose: no logo and no look of Autodarts. */
+:root {
+    /* The same as the pages in the frames, or else Chrome paints the frames opaque. */
+    color-scheme: light dark;
+    --stage: #e8ebf3;
+    --ink: #1a1c23;
+    --muted: #535867;
+    --accent: #4f66f6;
+    --accent-soft: #dfe5ff;
+    --shadow: 0 22px 54px rgb(28 34 64 / 0.2), 0 3px 10px rgb(28 34 64 / 0.08);
+    --edge: rgb(28 34 64 / 0.06);
+}
+
+@media (prefers-color-scheme: dark) {
+    :root {
+        --stage: #0b0d12;
+        --ink: #eceef4;
+        --muted: #a3a9b8;
+        --accent: #8ea2ff;
+        --accent-soft: #23283a;
+        --shadow: 0 22px 54px rgb(0 0 0 / 0.55), 0 3px 10px rgb(0 0 0 / 0.3);
+        --edge: rgb(255 255 255 / 0.08);
+    }
+}
+
+* {
+    box-sizing: border-box;
+}
+
+html,
+body {
+    margin: 0;
+    background: var(--stage);
+    color: var(--ink);
+    font:
+        16px / 1.45 system-ui,
+        sans-serif;
+    -webkit-font-smoothing: antialiased;
+}
+
+iframe {
+    display: block;
+    border: 0;
+    color-scheme: inherit;
+}
+
+/* The popup as Chrome shows it below its button: a window with round corners. */
+.window {
+    position: relative;
+    width: fit-content;
+    border-radius: 14px;
+    overflow: hidden;
+    box-shadow:
+        var(--shadow),
+        0 0 0 1px var(--edge);
+}
+
+/* A finger that taps, for the animation: a dot, then a ring that fades. */
+.touch {
+    position: absolute;
+    width: 44px;
+    height: 44px;
+    margin: -22px 0 0 -22px;
+    border-radius: 50%;
+    background: rgb(79 102 246 / 0.32);
+    box-shadow: 0 0 0 2px rgb(79 102 246 / 0.55);
+    pointer-events: none;
+}
+
+.touch.fading {
+    transform: scale(1.6);
+    background: rgb(79 102 246 / 0.12);
+    box-shadow: 0 0 0 2px rgb(79 102 246 / 0.22);
+}
+
+/* layout=frame: the popup alone, for the README and the website. */
+.frame {
+    display: inline-block;
+    padding: 28px;
+}
+
+/* layout=board: the switcher over a match on a board display. */
+.board {
+    position: relative;
+    width: 100vw;
+    height: 100vh;
+    overflow: hidden;
+}
+
+.board iframe {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+}
+
+/* A made-up match screen: the players and their scores at the top, the darts of the
+   turn at the bottom, where they show beside the switcher; in no one's design. */
+.match {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    padding: 2.5vh 4vw;
+    background: radial-gradient(120% 90% at 50% 0%, #253055 0%, #10131d 62%);
+    color: #f5f7ff;
+}
+
+.match .players,
+.match .darts {
+    display: flex;
+    justify-content: space-between;
+    gap: 2vw;
+}
+
+.match .player {
+    display: flex;
+    align-items: center;
+    gap: 2vw;
+    padding: 1vh 2.4vw;
+    border-radius: 2vh;
+    background: rgb(255 255 255 / 0.06);
+}
+
+.match .player.up {
+    background: rgb(142 162 255 / 0.2);
+    box-shadow: inset 0 0 0 2px rgb(142 162 255 / 0.6);
+}
+
+.match .name {
+    font-size: 3.4vh;
+    font-weight: 600;
+}
+
+.match .score {
+    font-size: 7vh;
+    font-weight: 800;
+    line-height: 1;
+    letter-spacing: -0.03em;
+}
+
+.match .darts {
+    justify-content: center;
+}
+
+.match .darts span {
+    min-width: 10vw;
+    padding: 1vh 1.5vw;
+    border-radius: 1.4vh;
+    background: rgb(255 255 255 / 0.1);
+    font-size: 3.4vh;
+    font-weight: 600;
+    text-align: center;
+}
+
+/* layout=store: a picture of the store listing, the text left, the extension right. */
+.store,
+.marquee {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    align-items: center;
+    gap: 48px;
+    width: 100vw;
+    height: 100vh;
+    padding: 0 48px 0 64px;
+    background:
+        radial-gradient(
+            70% 90% at 82% 50%,
+            var(--accent-soft) 0%,
+            transparent 70%
+        ),
+        var(--stage);
+}
+
+.copy {
+    max-width: 330px;
+}
+
+.eyebrow {
+    margin: 0 0 10px;
+    color: var(--accent);
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+h1 {
+    margin: 0 0 14px;
+    font-size: 38px;
+    font-weight: 800;
+    line-height: 1.08;
+    letter-spacing: -0.025em;
+}
+
+.lead {
+    margin: 0 0 22px;
+    color: var(--muted);
+    font-size: 16px;
+}
+
+.points {
+    display: grid;
+    gap: 10px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    font-size: 15px;
+}
+
+.points li {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.points .mark {
+    display: grid;
+    place-items: center;
+    flex: none;
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    background: var(--accent-soft);
+    color: var(--accent);
+    font-size: 13px;
+    font-weight: 700;
+}
+
+.note {
+    position: absolute;
+    left: 64px;
+    bottom: 18px;
+    margin: 0;
+    color: var(--muted);
+    font-size: 11px;
+}
+
+/* A display with the switcher on it, smaller than life. */
+.screen {
+    padding: 12px;
+    border-radius: 22px;
+    background: #1d2130;
+    box-shadow: var(--shadow);
+}
+
+.screen .board {
+    width: 720px;
+    height: 520px;
+    border-radius: 10px;
+    zoom: 0.55;
+}
+
+/* The display takes more room, so its text is smaller. */
+.store.wide h1 {
+    font-size: 30px;
+}
+
+.store.wide .lead {
+    font-size: 15px;
+}
+
+.store.wide .points {
+    font-size: 14px;
+}
+
+/* layout=promo: the small promo tile of the store. */
+.promo {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    align-items: center;
+    gap: 16px;
+    width: 100vw;
+    height: 100vh;
+    padding: 0 18px;
+    background: linear-gradient(135deg, #4f66f6 0%, #7c4ff6 100%);
+    color: #ffffff;
+}
+
+.promo img {
+    width: 64px;
+    height: 64px;
+}
+
+.promo .name {
+    margin: 0;
+    font-size: 22px;
+    font-weight: 800;
+    line-height: 1.05;
+    letter-spacing: -0.02em;
+}
+
+.promo .for {
+    display: block;
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 0;
+    opacity: 0.85;
+}
+
+.promo .tagline {
+    margin: 8px 0 0;
+    font-size: 12px;
+    font-weight: 500;
+    line-height: 1.3;
+}
+
+/* layout=marquee: the large promo tile of the store. */
+.marquee {
+    grid-template-columns: auto auto;
+    justify-content: center;
+    gap: 96px;
+}
+
+.marquee .copy {
+    max-width: 440px;
+}
+
+.marquee .brand {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 18px;
+}
+
+.marquee .brand img {
+    width: 56px;
+    height: 56px;
+}
+
+.marquee .brand span {
+    font-size: 20px;
+    font-weight: 700;
+}

@@ -24,10 +24,23 @@ The first listing is done by hand, once:
 
 1. A [Chrome Web Store developer account](https://chrome.google.com/webstore/devconsole): a Google account, the developer agreement and a one-off registration fee. A hobby project published privately and for free is not a trader account under the EEA consumer rules.
 2. **Add new item**, upload the zip.
-3. The **store listing**: the title, the short and the detailed description, the category and the permission justifications are ready to paste in [`store/listing.en.md`](https://github.com/Dennis-Otto/player-switch-for-autodarts/blob/main/store/listing.en.md) and [`store/listing.de.md`](https://github.com/Dennis-Otto/player-switch-for-autodarts/blob/main/store/listing.de.md); the screenshots in the required 1280×800 are `docs/images/store-1.png` and `docs/images/store-2.png`.
+3. The **store listing**: the title, the short and the detailed description, the category and the permission justifications are ready to paste in [`store/listing.en.md`](https://github.com/Dennis-Otto/player-switch-for-autodarts/blob/main/store/listing.en.md) and [`store/listing.de.md`](https://github.com/Dennis-Otto/player-switch-for-autodarts/blob/main/store/listing.de.md); the pictures are in `store/images/`, as [the images of the store](#the-images-of-the-store) lists them.
 4. **Privacy practices**: the single purpose and the justifications from the listing texts; the data the extension handles is *authentication information*, kept on the computer and sent only to Autodarts; it uses no remote code; the privacy policy URL is <https://dennis-otto.github.io/player-switch-for-autodarts/privacy.html>. The store takes one address for every language; the English page links its German one, <https://dennis-otto.github.io/player-switch-for-autodarts/de/privacy.html>, in the language switch of its header. The homepage and support URLs, the latter the help, are in `store/listing.en.md` as well.
 5. **Distribution**: public, or unlisted while a small circle tests it; free.
 6. Submit for review. Google reviews every version, usually within a few days.
+
+## The images of the store
+
+`bash scripts/screenshots.sh` renders every picture of the listing from the real popup and switcher, with made-up accounts, in exactly the size that the store asks for, and the screenshot bot keeps them current with every change of the popup ([how](development.md#pictures)). The store takes them under **Store listing → Graphic assets**, first for the default language, English, and then, with the language of the listing switched to German, the `.de` files for the German one:
+
+| Slot in the dashboard | Size | Files |
+| --- | --- | --- |
+| Store icon | 128×128 | `extension/icons/icon-128.png` |
+| Screenshots, in this order | 1280×800 | `store/images/screenshot-1.en.png` (the players), `screenshot-2.en.png` (**Manage accounts**), `screenshot-3.en.png` (the switcher on a board display) |
+| Small promo tile | 440×280 | `store/images/promo-small.en.png` |
+| Marquee promo tile | 1400×560 | `store/images/marquee.en.png` |
+
+The pictures show no logo and no design of Autodarts, and each screenshot says that the extension is not affiliated with Autodarts. A new picture of the store comes into `test/harness/capture.py` and `test/harness/stage.js`; a change of one reaches the store only by hand, as the listing texts do.
 
 ## Later versions
 
