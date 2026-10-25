@@ -55,6 +55,7 @@ Autodarts Play keeps the signed-in session as a single value in the browser (a r
 - **You see who needs attention.** When an account has to sign in again, the toolbar icon shows how many, and its tooltip names them, so nobody finds out only when they want to play. If Autodarts turns every saved account away at once, the popup says that Autodarts may have changed how it signs in and links to the known problems and updates.
 - **One change at a time.** A token works only once, so a second tap while a switch is on its way is ignored, and the renewal in the background waits for the switch. A double tap can't sign the previous player out.
 - **The tab in front.** A switch happens on the Autodarts tab you're looking at, and every other Autodarts tab reloads with the new player, so none plays on as the one before. With no Autodarts tab open, a tap opens Autodarts and switches there.
+- **Updates need no reload.** Chrome updates an extension silently, and a page that was open before gets no new script by itself. The extension brings its script into the open Autodarts tabs after each install and update, and again into a tab that doesn't answer when you tap, so a display that keeps Autodarts open for days switches straight after an update, and a running match goes on.
 - **A match ends only on purpose.** A switch reloads the page, so on the page of a running match the extension asks first, before it spends a token: "A match is running. Switching ends it on this display."
 - **Password fallback, optional.** If you let the extension remember an account's password, it signs that account back in by itself should its token ever stop working. Accounts that sign in with Google or Apple can't use this.
 
@@ -82,7 +83,7 @@ npm run build
 
 Then in Chrome open `chrome://extensions`, turn on **Developer mode**, choose **Load unpacked** and pick the `extension/` folder of this repository.
 
-The extension asks only for access to `play.autodarts.com` and `api.autodarts.com`, its own storage, a timer for the renewal and the right to run its own script in the Autodarts tabs after an update. It can't read the address or title of your other tabs, or your browsing history. Its content security policy lets it connect to `api.autodarts.com` alone, and the script that it runs in the Autodarts page can't read the saved accounts; the [security design](docs/security.md#trust-boundaries) has the details.
+The extension asks only for access to `play.autodarts.com` and `api.autodarts.com`, its own storage, a timer for the renewal and the right to run its own script in the Autodarts tabs after an update, or in a tab where it stopped answering. It can't read the address or title of your other tabs, or your browsing history. Its content security policy lets it connect to `api.autodarts.com` alone, and the script that it runs in the Autodarts page can't read the saved accounts; the [security design](docs/security.md#trust-boundaries) has the details.
 
 ### Add the players
 

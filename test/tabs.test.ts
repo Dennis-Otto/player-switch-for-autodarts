@@ -8,6 +8,7 @@ import { type Deps, signOutForNewAccount, switchTo } from "../src/switch.ts";
 import {
   ANSWER_ATTEMPTS,
   createPage,
+  injectAll,
   NoPageError,
   type OpenTab,
   type PageRequest,
@@ -15,6 +16,7 @@ import {
   POLL_MS,
   preparePage,
   rankTabs,
+  reach,
   SETTLE_ATTEMPTS,
   settleTab,
   showPage,
@@ -29,8 +31,13 @@ const bob: Identity = { id: "b", username: "bob", name: "Bob", picture: null };
 
 /** A tab of the fake browser, with how its page is doing. */
 interface FakeTab extends OpenTab {
-  /** How many more requests find no content script, as while the tab loads. */
+  /**
+   * How many more requests find no content script, as while the tab loads, or until
+   * the extension runs one there, as in a tab that was open before an update.
+   */
   silentFor: number;
+  /** Whether the browser refuses to run a script in the tab, as in a discarded tab. */
+  blocked: boolean;
   /** How many more answers until the page renews the session it started with. */
   renewsIn: number | null;
   /** The session the page started with, which it renews. */
@@ -42,6 +49,7 @@ interface FakeTabOptions {
   active?: boolean;
   lastAccessed?: number;
   silentFor?: number;
+  blocked?: boolean;
 }
 
 /**
@@ -83,6 +91,7 @@ class FakeBrowser implements TabsPort {
       active: options.active ?? false,
       lastAccessed: options.lastAccessed,
       silentFor: options.silentFor ?? 0,
+      blocked: options.blocked ?? false,
       renewsIn: null,
       startedWith: null,
     });
@@ -127,7 +136,23 @@ class FakeBrowser implements TabsPort {
         this.token = null;
         this.load(tab);
         return { ok: true };
+      case "toggleSwitcher":
+        return { ok: true };
     }
+  }
+
+  /**
+   * Runs the content script in a tab: from then on it answers, as Chrome runs the
+   * script once the page is ready, also in a page that still loads.
+   */
+  inject(tabId: number): Promise<void> {
+    this.log.push(`inject ${tabId}`);
+    const tab = this.tabs.find((candidate) => candidate.id === tabId);
+    if (tab === undefined || tab.blocked) {
+      return Promise.reject(new Error(`Cannot access the tab ${tabId}.`));
+    }
+    tab.silentFor = 0;
+    return Promise.resolve();
   }
 
   /** Lets time pass: each page that starts renews its session after a few ticks. */
@@ -171,6 +196,7 @@ class FakeBrowser implements TabsPort {
       windowId: this.focused ?? 1,
       active,
       silentFor: 0,
+      blocked: false,
       renewsIn: null,
       startedWith: null,
     };
@@ -268,18 +294,46 @@ test("a preferred tab that closed leaves the request to the tab in front", async
   assert.deepEqual(browser.log, ["read 1"]);
 });
 
-test("when the tab in front has no content script that answers, the next one takes the request", async () => {
+test("a tab in front whose content script doesn't answer gets the one of this version and takes the request", async () => {
+  // As after an update of the extension: the tab in front runs the script of the version
+  // before, which no longer answers, and would stay so for good without a new one.
   const browser = new FakeBrowser("t")
     .add(1)
-    .add(2, { active: true, silentFor: 1 });
+    .add(2, { active: true, silentFor: 99 });
   assert.equal(await createPage(browser).readToken(), "t");
+  assert.deepEqual(browser.log, ["inject 2", "read 2"]);
+});
+
+test("when the browser can't run the content script in the tab in front, the next one takes the request", async () => {
+  const browser = new FakeBrowser("t")
+    .add(1)
+    .add(2, { active: true, silentFor: 99, blocked: true });
+  assert.equal(await createPage(browser).readToken(), "t");
+  assert.deepEqual(browser.log, ["inject 2", "read 1"]);
+});
+
+test("a tab that has the content script answers without a second one", async () => {
+  const browser = new FakeBrowser("t").add(1, { active: true });
+  assert.deepEqual(await reach(browser, 1, { type: "page", action: "read" }), {
+    token: "t",
+  });
   assert.deepEqual(browser.log, ["read 1"]);
+});
+
+test("a tab that doesn't answer even with the content script of this version fails the request", async () => {
+  // As in a page whose frame went away while the script ran.
+  const browser = new FakeBrowser("t").add(1, { active: true, silentFor: 99 });
+  browser.inject = () => Promise.resolve();
+  await assert.rejects(
+    reach(browser, 1, { type: "page", action: "read" }),
+    /Receiving end does not exist/,
+  );
 });
 
 test("the page fails with NoPageError when no tab answers, or none is open", async () => {
   const silent = new FakeBrowser("t")
-    .add(1, { silentFor: 5 })
-    .add(2, { silentFor: 5 });
+    .add(1, { silentFor: 5, blocked: true })
+    .add(2, { silentFor: 5, blocked: true });
   await assert.rejects(createPage(silent).readToken(), NoPageError);
   await assert.rejects(
     createPage(new FakeBrowser("t")).writeToken("n"),
@@ -369,14 +423,33 @@ test("pages that reload after a write renew the new session one at a time, so no
   assert.equal(autodarts.refreshes.length, 3);
 });
 
-test("a write that reaches only a later tab still reloads the one in front", async () => {
-  // As after an update of the extension: the tab in front runs the content script of the
-  // version before, which no longer answers, and a reload gives it the new one.
+test("after an update, a write goes into the tab in front without reloading it first", async () => {
+  // Both tabs run the content script of the version before, which no longer answers.
   const browser = new FakeBrowser("old")
-    .add(1, { active: true, silentFor: 1 })
+    .add(1, { active: true, silentFor: 99 })
+    .add(2, { silentFor: 99 });
+  await createPage(browser).writeToken("new");
+  assert.deepEqual(browser.log, [
+    "inject 1",
+    "write 1",
+    "read 1",
+    "read 1",
+    "reload 2",
+    "read 2",
+    "read 2",
+  ]);
+  assert.equal(browser.token, "new++");
+});
+
+test("a write that reaches only a later tab still reloads the one in front", async () => {
+  // As with a tab in front that the browser discarded: no script runs there until a
+  // reload loads the page again.
+  const browser = new FakeBrowser("old")
+    .add(1, { active: true, silentFor: 1, blocked: true })
     .add(2);
   await createPage(browser).writeToken("new");
   assert.deepEqual(browser.log, [
+    "inject 1",
     "write 2",
     "read 2",
     "read 2",
@@ -400,10 +473,54 @@ test("Open Autodarts brings the tab in front forward and leaves a tab that answe
   assert.deepEqual(browser.log, ["focus 2", "read 2"]);
 });
 
-test("Open Autodarts reloads a tab whose content script doesn't answer", async () => {
-  const browser = new FakeBrowser("t").add(1, { active: true, silentFor: 1 });
+test("Open Autodarts gives a tab without a content script the one of this version, and no reload", async () => {
+  const browser = new FakeBrowser("t").add(1, { active: true, silentFor: 99 });
   await showPage(browser);
-  assert.deepEqual(browser.log, ["focus 1", "reload 1"]);
+  assert.deepEqual(browser.log, ["focus 1", "inject 1", "read 1"]);
+});
+
+test("Open Autodarts reloads a tab that no content script reaches", async () => {
+  const browser = new FakeBrowser("t").add(1, {
+    active: true,
+    silentFor: 1,
+    blocked: true,
+  });
+  await showPage(browser);
+  assert.deepEqual(browser.log, ["focus 1", "inject 1", "reload 1"]);
+});
+
+test("the keyboard shortcut reaches a tab that was open before an update", async () => {
+  const browser = new FakeBrowser("t").add(1, { active: true, silentFor: 99 });
+  assert.deepEqual(
+    await reach(browser, 1, { type: "page", action: "toggleSwitcher" }),
+    { ok: true },
+  );
+  assert.deepEqual(browser.log, ["inject 1", "toggleSwitcher 1"]);
+});
+
+test("an install or an update runs the content script in every open Autodarts tab", async () => {
+  const browser = new FakeBrowser("t")
+    .add(1, { active: true, silentFor: 99 })
+    .add(2, { silentFor: 99, blocked: true })
+    .add(3, { windowId: 2, silentFor: 99 });
+  // A tab that refuses the script, as a discarded one, stops none of the others.
+  await injectAll(browser);
+  assert.deepEqual(browser.log, ["inject 1", "inject 2", "inject 3"]);
+  assert.deepEqual(
+    browser.tabs.map((tab) => tab.silentFor),
+    [0, 99, 0],
+  );
+});
+
+test("an install or an update leaves out a tab that the browser can't address", async () => {
+  const browser = new FakeBrowser("t").add(1);
+  browser.query = () =>
+    Promise.resolve([
+      { windowId: 1, active: true },
+      { id: 1, windowId: 1, active: false },
+    ]);
+  await injectAll(browser);
+  assert.deepEqual(browser.log, ["inject 1"]);
 });
 
 test("with no tab open, a tab opens behind the popup and the task runs once it answers", async () => {
@@ -471,14 +588,20 @@ test("a tab that opens without an id ends in NoPageError", async () => {
 });
 
 test("open tabs that don't answer: the one in front reloads, and no new tab opens", async () => {
-  // As after an update of the extension: no tab answers until a reload gives it the
-  // content script of the new version.
+  // As with tabs that the browser discarded: no tab answers, and no script runs in one,
+  // until a reload loads its page again.
   const browser = new FakeBrowser(null)
-    .add(1, { silentFor: 9 })
-    .add(2, { active: true, silentFor: 9 });
+    .add(1, { silentFor: 9, blocked: true })
+    .add(2, { active: true, silentFor: 9, blocked: true });
   const page = createPage(browser);
   assert.equal(await withPage(browser, () => page.readToken()), null);
-  assert.deepEqual(browser.log, ["reload 2", "read 2", "read 2"]);
+  assert.deepEqual(browser.log, [
+    "inject 2",
+    "inject 1",
+    "reload 2",
+    "read 2",
+    "read 2",
+  ]);
   assert.equal(browser.tabs.length, 2);
 });
 
@@ -576,6 +699,29 @@ test("with two windows, a switch happens on the tab in front and the other tab r
     "read 1",
     "read 1",
   ]);
+  assert.equal(store.state.activeId, "b");
+});
+
+test("after an update, a switch with two tabs open reloads only the other tab and spends no token twice", async () => {
+  const autodarts = new FakeAutodarts();
+  // Both tabs were open before the update, so the content script in each of them was cut
+  // off; the tab on the board display in window 1 is the one in front.
+  const browser = withAutodarts(autodarts, autodarts.issue("a"))
+    .add(1, { windowId: 2, active: true, silentFor: 99 })
+    .add(2, { windowId: 1, active: true, silentFor: 99 });
+  const store = new FakeStore(
+    setActive(park(EMPTY, bob, autodarts.issue("b"), 0), ada),
+  );
+  const result = await switchTo(deps(store, browser, autodarts), "b");
+  assert.ok(result.ok);
+  await browser.idle();
+  assert.deepEqual(browser.log.slice(0, 3), ["inject 2", "read 2", "write 2"]);
+  assert.ok(!browser.log.includes("reload 2"));
+  assert.ok(browser.log.includes("reload 1"));
+  // Both tabs show Bob, nobody's session was sent twice, and Ada's parked token works.
+  assert.equal(autodarts.reuses, 0);
+  assert.equal(browser.token, autodarts.live.get("b"));
+  assert.equal(find(store.state, "a")?.token, autodarts.live.get("a"));
   assert.equal(store.state.activeId, "b");
 });
 
