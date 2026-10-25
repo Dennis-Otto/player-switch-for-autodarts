@@ -1,0 +1,43 @@
+---
+config:
+  flowchart:
+    wrappingWidth: 400
+---
+flowchart TB
+    accTitle: How the end-to-end tests work
+    accDescr: npm run e2e, and the workflow E2E for a pull request that changes the extension, for main and every night, builds extension/lib from src/ and starts Playwright. For each test, Playwright's Chromium starts with a profile of its own and loads the real extension from extension/, as chrome://extensions loads it unpacked. The test taps through the real popup, the switcher in the page and the Autodarts tabs, and the service worker and content.js do the rest. The browser resolves play.autodarts.com and api.autodarts.com to the fake Autodarts on 127.0.0.1 and no other host, so nothing reaches the real Autodarts. The fake page keeps its token in localStorage and renews it as it starts; the fake sign-in service rotates every refresh token and refuses one that comes back. After each test, a token sent twice, a request that the fake has no answer for or an error of the service worker fails it, and a failed test keeps its trace and screenshots.
+
+    start["npm run e2e, or the workflow E2E<br>for a pull request that changes the extension,<br>for main and every night"]
+    build["npm run build<br>extension/lib from src/"]
+    start --> build
+
+    subgraph browser ["Playwright's Chromium, a new profile for each test"]
+        direction TB
+        test["The test taps like a player<br>test/e2e/*.spec.ts"]
+        pages["The real popup, the switcher in the page<br>and the Autodarts tabs with content.js"]
+        worker["The service worker, background.js<br>with lib/ built from src/"]
+        test --> pages
+        pages <--> worker
+    end
+    build --> test
+
+    resolver["--host-resolver-rules<br>play.autodarts.com and api.autodarts.com<br>go to 127.0.0.1, no other host resolves"]
+    pages --> resolver
+    worker --> resolver
+
+    subgraph fake ["The fake Autodarts, test/e2e/fake/"]
+        direction TB
+        page["play.html and play.js<br>the token in localStorage,<br>renewed as the page starts"]
+        auth["autodarts.ts, the sign-in service<br>rotates every refresh token,<br>refuses one that comes back"]
+    end
+    resolver --> page
+    resolver --> auth
+
+    verdict["After each test: no token sent twice,<br>no request without an answer,<br>no error of the service worker;<br>a failed test keeps its trace and screenshots"]
+    page --> verdict
+    auth --> verdict
+
+    classDef bot fill:#526cfe2e,stroke:#526cfe,stroke-width:2px
+    classDef done fill:#16a34a2e,stroke:#16a34a,stroke-width:2px
+    class start bot
+    class verdict done

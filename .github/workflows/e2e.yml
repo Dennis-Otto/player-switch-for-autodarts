@@ -1,0 +1,238 @@
+name: E2E
+
+# The end-to-end tests: the built extension in Playwright's Chromium, loaded as
+# chrome://extensions loads it unpacked, against a fake Autodarts on the runner
+# (test/e2e/). Every push to main, every night and every manual run tests
+# everything. A pull request runs the tests only when it changes what they run: the
+# extension, its code in src/, the tests, the packages or this workflow; one that
+# changes only the documentation skips them. Either way the job "e2e" reports the
+# result, and it is the check that main requires (.github/repository.project.toml).
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  schedule:
+    # Every night, also as an early warning against a new version of Chromium in a
+    # Playwright update.
+    - cron: "41 2 * * *"
+  workflow_dispatch:
+
+permissions: {}
+
+concurrency:
+  group: e2e-${{ github.event.pull_request.number || github.run_id }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+# With pipefail: a command that fails inside a pipeline fails its step too.
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  changes:
+    name: changes
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      pull-requests: read # the list of the files that a pull request changes
+    outputs:
+      run: ${{ steps.files.outputs.run }}
+    steps:
+      # The files of the pull request come from GitHub's API; no step needs sudo or
+      # Docker.
+      - name: Block every host that the job doesn't need
+        uses: step-security/harden-runner@ccd8616d44fd3846e67624a50d5aad6d37bf2d25 # v2.22.1
+        with:
+          egress-policy: block
+          allowed-endpoints: >
+            api.github.com:443
+          disable-sudo-and-containers: true
+      # No checkout and no action of a third party: the files of the pull request
+      # come from the API, as in pull-request-title.yml.
+      - name: Decide whether the tests have to run
+        id: files
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+          EVENT: ${{ github.event_name }}
+          NUMBER: ${{ github.event.pull_request.number }}
+          CHANGED: ${{ github.event.pull_request.changed_files }}
+        run: |
+          # What the tests run: the extension and its code in src/, which the build
+          # turns into extension/lib/, the tests with the fake Autodarts, the
+          # configurations of the build and of Playwright, the locked packages, and
+          # this workflow.
+          tested='^(extension/|src/|test/e2e/|playwright\.config\.ts$|tsconfig(\.build)?\.json$|package(-lock)?\.json$|\.nvmrc$|\.github/workflows/e2e\.yml$)'
+          # When in doubt, the tests run.
+          run=true
+          if [[ "$EVENT" != pull_request ]]; then
+            reason="A run of $EVENT tests everything."
+          elif ((${CHANGED:-0} >= 3000)); then
+            reason="The pull request changes $CHANGED files, more than the API lists; the tests run."
+          # A renamed file counts by its old name too: moving a file away runs the tests.
+          elif ! files="$(gh api "repos/$GH_REPO/pulls/$NUMBER/files" --paginate \
+            --jq '.[] | .filename, (.previous_filename // empty)')"; then
+            reason="The files of the pull request are unknown; the tests run."
+            echo "::warning::$reason"
+          elif first="$(grep -E -m 1 "$tested" <<<"$files")"; then
+            reason="The pull request changes $first, which the tests run; they run."
+          else
+            run=false
+            reason="The pull request changes nothing that the tests run; they are skipped."
+          fi
+          echo "run=$run" >> "$GITHUB_OUTPUT"
+          echo "$reason" >> "$GITHUB_STEP_SUMMARY"
+      # Without sudo and Docker, Harden-Runner removes Docker with apt-get while the
+      # job runs. A job that ends first hangs in "Cleaning up orphan processes" until
+      # its timeout, so it waits for apt-get, also after a failure.
+      - name: Wait until Harden-Runner has removed Docker
+        if: always()
+        run: |
+          for _ in {1..120}; do
+            pgrep -x 'apt-get|dpkg' >/dev/null || exit 0
+            sleep 1
+          done
+          echo "::warning::Harden-Runner still removes Docker after two minutes; the job may hang until its timeout."
+
+  browser:
+    name: browser
+    needs: changes
+    if: needs.changes.outputs.run == 'true'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    steps:
+      # GitHub for the checkout, and for Node.js should the runner image lack its
+      # version; npm for the packages; and, when the cache has no Chromium of this
+      # version, Playwright's download server, which sends the download of Chrome for
+      # Testing on to Google's storage. The tests themselves reach no host: the
+      # browser resolves only the fake Autodarts on the runner. The hosts of the
+      # Actions service itself, which keeps the cache and the artifact, are allowed
+      # anyway.
+      - name: Block every host that the job doesn't need
+        uses: step-security/harden-runner@ccd8616d44fd3846e67624a50d5aad6d37bf2d25 # v2.22.1
+        with:
+          egress-policy: block
+          disable-sudo-and-containers: true
+          allowed-endpoints: >
+            api.github.com:443
+            github.com:443
+            objects.githubusercontent.com:443
+            release-assets.githubusercontent.com:443
+            registry.npmjs.org:443
+            cdn.playwright.dev:443
+            playwright.download.prss.microsoft.com:443
+            storage.googleapis.com:443
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - name: Install the locked packages
+        run: npm ci --ignore-scripts
+      # The browser belongs to the version of playwright-core in package-lock.json,
+      # so a new version of Playwright downloads its own Chromium once.
+      - name: Find the version of Playwright
+        id: playwright
+        run: echo "version=$(jq -r '.packages["node_modules/playwright-core"].version' package-lock.json)" >> "$GITHUB_OUTPUT"
+      - name: Restore the browser of this version
+        id: browser
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-chromium-${{ runner.os }}-${{ steps.playwright.outputs.version }}
+      - name: Download the browser
+        if: steps.browser.outputs.cache-hit != 'true'
+        run: npx --no -- playwright install --no-shell chromium
+      - name: Run the end-to-end tests
+        run: npm run e2e
+      # Each failed test keeps its trace, with every step, request and snapshot of
+      # the page, and its screenshots; the HTML report lists them all.
+      - name: Keep the traces and screenshots of a failed run
+        if: failure()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: e2e-${{ github.run_attempt }}
+          path: |
+            test/e2e/results/
+            test/e2e/report/
+          if-no-files-found: ignore
+          retention-days: 14
+      # The PR coach: what failed, why it matters and how to fix it, in the summary
+      # of the check and as its annotation, from .github/checks.project.toml.
+      - name: Explain the failure
+        if: failure()
+        env:
+          CHECK: browser
+        run: python3 .github/blueprint.py coach explain "$CHECK"
+
+  # The one check of the end-to-end tests that main requires. A skipped job reports
+  # nothing that a required check could wait for, so this job always runs: it passes
+  # when the tests passed, or when the pull request had nothing for them to test, and
+  # fails when they failed, were cancelled or didn't run.
+  gate:
+    name: e2e
+    if: always()
+    needs: [changes, browser]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    steps:
+      # The gate reads the results of the other jobs; it needs no sudo or Docker, and
+      # github.com only for the explanations of the PR coach after a failure.
+      - name: Block every host that the job doesn't need
+        uses: step-security/harden-runner@ccd8616d44fd3846e67624a50d5aad6d37bf2d25 # v2.22.1
+        with:
+          egress-policy: block
+          allowed-endpoints: >
+            github.com:443
+          disable-sudo-and-containers: true
+      - name: Pass when the tests that had to run passed
+        env:
+          WANTED: ${{ needs.changes.outputs.run }}
+          CHANGES: ${{ needs.changes.result }}
+          BROWSER: ${{ needs.browser.result }}
+        run: |
+          {
+            echo "- changes: $CHANGES"
+            echo "- browser: $BROWSER"
+          } | tee -a "$GITHUB_STEP_SUMMARY"
+          # Skipped tests pass only when the job "changes" decided that they had
+          # nothing to do.
+          if [[ "$CHANGES" != success ]] ||
+            ! [[ "$BROWSER" == success || ("$WANTED" != true && "$BROWSER" == skipped) ]]; then
+            echo "::error::The end-to-end tests had to run and didn't pass; the jobs above show why."
+            exit 1
+          fi
+          if [[ "$WANTED" == true ]]; then
+            echo "The end-to-end tests passed." >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "Nothing that the end-to-end tests run changed; they didn't have to run." >> "$GITHUB_STEP_SUMMARY"
+          fi
+      - name: Wait until Harden-Runner has removed Docker
+        if: always()
+        run: |
+          for _ in {1..120}; do
+            pgrep -x 'apt-get|dpkg' >/dev/null || exit 0
+            sleep 1
+          done
+          echo "::warning::Harden-Runner still removes Docker after two minutes; the job may hang until its timeout."
+      # The PR coach needs .github/blueprint.py and the explanations, nothing else.
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        if: failure()
+        with:
+          persist-credentials: false
+          sparse-checkout: .github
+      # The PR coach: what failed, why it matters and how to fix it, in the summary
+      # of the check and as its annotation, from .github/checks.project.toml. The job
+      # "browser" explains its own failure as well.
+      - name: Explain the failure
+        if: failure()
+        env:
+          CHECK: e2e
+        run: python3 .github/blueprint.py coach explain "$CHECK"

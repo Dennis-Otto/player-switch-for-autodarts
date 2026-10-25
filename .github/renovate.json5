@@ -9,8 +9,11 @@
     {
       // The Playwright image of scripts/screenshots.sh and the playwright of
       // test/harness/requirements.txt, which drives the browser of that image, move
-      // together in one pull request, so that the driver never meets another browser.
-      matchPackageNames: ["mcr.microsoft.com/playwright/python", "playwright"],
+      // together in one pull request, so that the driver never meets another browser;
+      // @playwright/test of the end-to-end tests and playwright-core of the
+      // accessibility test move with them, so that the pictures and the tests see the
+      // same version of Chromium, and npm keeps one copy of playwright-core.
+      matchPackageNames: ["mcr.microsoft.com/playwright/python", "playwright", "@playwright/test", "playwright-core"],
       groupName: "Playwright",
     },
   ],

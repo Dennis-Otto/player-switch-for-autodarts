@@ -26,5 +26,5 @@ renovate_runner: hub
 sample_code: true
 sponsor: Dennis-Otto
 successor: false
-test_workflows: ''
+test_workflows: E2E
 topics: autodarts,darts,dartboard,chrome-extension,browser-extension,chrome,google-chrome,manifest-v3,account-switcher,account-switching,multi-account,shared-display,kiosk,touchscreen,session-management,typescript
