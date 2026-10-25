@@ -215,19 +215,23 @@ function problemOf(reply, signInHint) {
   return signInHint ?? t("error");
 }
 
-/** Asks whether a switch may end the match that runs in the page. */
-function confirmMatch() {
+/**
+ * Asks whether a request may end the match that runs in the page: a switch, or a
+ * removal that signs the player out there.
+ */
+function confirmMatch(action) {
+  const signsOut = action === "removeAccount" || action === "forgetAll";
   return confirmDialog({
     title: t("matchTitle"),
-    text: t("matchText"),
-    confirm: t("matchConfirm"),
+    text: signsOut ? t("matchSignOutText") : t("matchText"),
+    confirm: signsOut ? t("matchSignOutConfirm") : t("matchConfirm"),
     cancel: t("matchCancel"),
   });
 }
 
 // The controls that send a request to the service worker.
 const REQUEST_CONTROLS =
-  ".tile, .toggle-remember, .remove, .save-remember, #adopt, #add, #open-page, #stop-adding";
+  ".tile, .toggle-remember, .remove, .save-remember, #adopt, #add, #open-page, #stop-adding, #forget-all";
 
 // The controls of a tile, so that the focus comes back to the same one when the tiles
 // are drawn anew after a request.
@@ -297,6 +301,8 @@ export function mountPlayers({ numbered = false, onRender = () => {} } = {}) {
   const openPageButton = document.querySelector("#open-page");
   const adding = document.querySelector("#adding");
   const addButton = document.querySelector("#add");
+  // "Forget all accounts", which shows in "Manage accounts" while an account is saved.
+  const forgetAllButton = document.querySelector("#forget-all");
 
   let managing = false;
   // True while a request is with the service worker: the page then takes no other tap.
@@ -378,7 +384,7 @@ export function mountPlayers({ numbered = false, onRender = () => {} } = {}) {
       (reply.reason === "pin" || reply.reason === "match")
     ) {
       if (reply.reason === "match") {
-        if (!(await confirmMatch())) {
+        if (!(await confirmMatch(action))) {
           showStatus("");
           render(reply.view);
           return reply;
@@ -417,6 +423,10 @@ export function mountPlayers({ numbered = false, onRender = () => {} } = {}) {
     } else if (typeof reply.saved === "string") {
       // A new account signed in before the page could tell; it was saved just now.
       showStatus(t("savedAccount", reply.saved));
+    } else if (typeof reply.ended === "boolean") {
+      // A removal: a session that Autodarts didn't end lasts until it expires, which
+      // the person hears at once.
+      showStatus(removalText(message, reply.ended), !reply.ended);
     } else {
       // Done: the tiles show how it ended, so "Switching to …" goes.
       showStatus("");
@@ -434,6 +444,16 @@ export function mountPlayers({ numbered = false, onRender = () => {} } = {}) {
     return reply;
   }
 
+  /** What a removal says: that Autodarts ended the sessions, or couldn't be reached. */
+  function removalText(message, ended) {
+    if (message.action === "forgetAll") {
+      return ended ? t("forgotAll") : t("forgotAllOffline");
+    }
+    // The accounts that show are still those before the removal.
+    const name = shown.find((profile) => profile.id === message.id)?.name ?? "";
+    return ended ? t("removed", name) : t("removedOffline", name);
+  }
+
   function render(view) {
     const before = focusBefore();
     shown = view.profiles;
@@ -445,10 +465,14 @@ export function mountPlayers({ numbered = false, onRender = () => {} } = {}) {
     unsaved.hidden = !view.unsaved;
     adding.hidden = view.adding !== true;
     updateHint.hidden = view.updateHint !== true;
+    showForgetAll();
+    // The hint for no account, unless a message says what just happened, such as that
+    // every account is forgotten.
     if (
       view.profiles.length === 0 &&
       !view.unsaved &&
       !view.adding &&
+      statusBar.textContent === "" &&
       problemBar.textContent === ""
     ) {
       showStatus(t("empty"));
@@ -633,6 +657,30 @@ export function mountPlayers({ numbered = false, onRender = () => {} } = {}) {
     return node;
   }
 
+  /** Shows "Forget all accounts" in "Manage accounts" while an account is saved. */
+  function showForgetAll() {
+    if (forgetAllButton !== null) {
+      forgetAllButton.hidden = !managing || shown.length === 0;
+    }
+  }
+
+  /** Opens or closes "Manage accounts"; closing it forgets the manager PIN. */
+  function setManaging(value) {
+    managing = value;
+    if (!managing) {
+      managerPin = null;
+    }
+    document.body.classList.toggle("managing", managing);
+    manageButton.setAttribute("aria-pressed", String(managing));
+    for (const menu of profiles.querySelectorAll(".menu")) {
+      menu.hidden = !managing;
+    }
+    for (const button of profiles.querySelectorAll(".tile")) {
+      button.inert = managing;
+    }
+    showForgetAll();
+  }
+
   // "Manage accounts" is a toggle with a name that stays: pressed, it shows the actions
   // of every account, and pressed again, the tiles. While a manager PIN guards it, it
   // opens only with that PIN, which it forgets again as it closes.
@@ -646,17 +694,28 @@ export function mountPlayers({ numbered = false, onRender = () => {} } = {}) {
         return;
       }
     }
-    managing = !managing;
-    if (!managing) {
-      managerPin = null;
+    setManaging(!managing);
+  });
+
+  // Forgets every account after a yes, as before the display changes hands. "Manage
+  // accounts" closes once they are gone, and with it the manager PIN, which is gone too.
+  forgetAllButton?.addEventListener("click", async () => {
+    if (busy) {
+      return;
     }
-    document.body.classList.toggle("managing", managing);
-    manageButton.setAttribute("aria-pressed", String(managing));
-    for (const menu of profiles.querySelectorAll(".menu")) {
-      menu.hidden = !managing;
+    const confirmed = await confirmDialog({
+      title: t("forgetAll"),
+      text: t("forgetAllConfirm"),
+      confirm: t("forgetAll"),
+      cancel: t("cancel"),
+    });
+    if (!confirmed) {
+      return;
     }
-    for (const button of profiles.querySelectorAll(".tile")) {
-      button.inert = managing;
+    const reply = await send("forgetAll");
+    if (reply?.ok === true) {
+      setManaging(false);
+      manageButton.focus();
     }
   });
 

@@ -107,19 +107,46 @@ export function signIn(
   return postSession(fetcher, "/login", { username, password });
 }
 
-/** Ends a session at Autodarts; a session that can't be ended expires by itself. */
+/**
+ * Ends a session at Autodarts, with the request that Autodarts Play sends when a
+ * player signs out: the refresh token alone, without the client, which the sign-out
+ * doesn't ask for. True when the session is over: Autodarts ended it (it answers
+ * 2xx, also for a token it doesn't know), or it refused the token as dead (400 or
+ * 401 with `invalid_grant`, as for a renewal). Any other refusal means Autodarts
+ * didn't accept the request itself, for example because it asks for another field
+ * now, so the session may still be alive. False then, and when Autodarts couldn't be
+ * reached; the session then lasts until it expires by itself, and the extension
+ * forgets it all the same.
+ */
 export async function revokeSession(
   fetcher: Fetch,
   refreshToken: string,
-): Promise<void> {
+): Promise<boolean> {
+  let response: Response;
   try {
-    await fetcher(`${AUTH_BASE}/logout`, {
+    response = await fetcher(`${AUTH_BASE}/logout`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ refresh_token: refreshToken }),
     });
   } catch {
-    // Nothing more to do: the extension forgets the session either way.
+    return false;
+  }
+  if (response.ok) {
+    return true;
+  }
+  if (response.status !== 400 && response.status !== 401) {
+    return false;
+  }
+  try {
+    const body: unknown = await response.json();
+    return (
+      typeof body === "object" &&
+      body !== null &&
+      (body as { error?: unknown }).error === "invalid_grant"
+    );
+  } catch {
+    return false;
   }
 }
 

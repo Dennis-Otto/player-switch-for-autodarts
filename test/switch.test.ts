@@ -18,9 +18,12 @@ import {
   adoptNewSignIn,
   type Deps,
   edit,
+  forgetAll,
   leaveDisplay,
+  type Removal,
   readView,
   refreshParked,
+  removeAccount,
   signOutForNewAccount,
   startAddingAccount,
   stopAddingAccount,
@@ -860,5 +863,277 @@ test("a password remembered during a switch is kept", async () => {
   ]);
   assert.equal(board.store.state.activeId, "b");
   assert.equal(find(board.store.state, "c")?.credentials?.username, "cy");
+  assertEverySessionKept(board);
+});
+
+/** A sign-in service that ends sessions and keeps what it was asked, by the token. */
+function signOuts(
+  answer: (token: string) => Promise<Response> = () =>
+    Promise.resolve(new Response(null, { status: 204 })),
+): Deps["fetcher"] & { ended: string[] } {
+  const ended: string[] = [];
+  const fetcher = router({
+    logout: (_url, init) => {
+      const { refresh_token: token } = JSON.parse(String(init.body)) as {
+        refresh_token: string;
+      };
+      ended.push(token);
+      return answer(token);
+    },
+  });
+  return Object.assign(fetcher, { ended });
+}
+
+/** Ada plays on the page; Bob is parked, and Cy is parked with a remembered password. */
+function display(): FakeStore {
+  return new FakeStore(
+    rememberCredentials(
+      park(park(setActive(EMPTY, ada), bob, "tb", 0), cy, "tc", 0),
+      "c",
+      { username: "cy", password: "pw-cy" },
+    ),
+  );
+}
+
+/** Whether a removal forgot the accounts, and whether Autodarts ended their sessions. */
+function outcome(removal: Removal): { kind: string; ended?: boolean } {
+  return removal.kind === "removed"
+    ? { kind: removal.kind, ended: removal.ended }
+    : { kind: removal.kind };
+}
+
+test("removeAccount ends the parked session at Autodarts before it forgets the account", async () => {
+  const store = display();
+  const page = new FakePage("ta");
+  let savesAtSignOut = -1;
+  const fetcher = signOuts(() => {
+    savesAtSignOut = store.saves;
+    return Promise.resolve(new Response(null, { status: 204 }));
+  });
+  let asked = false;
+  const removal = await removeAccount(deps(store, page, fetcher), "b", () => {
+    asked = true;
+    return Promise.resolve(true);
+  });
+  assert.deepEqual(fetcher.ended, ["tb"]);
+  assert.equal(savesAtSignOut, 0, "the session ends before the account goes");
+  assert.deepEqual(outcome(removal), { kind: "removed", ended: true });
+  assert.equal(find(store.state, "b"), undefined);
+  assert.equal(store.state, removal.state);
+  // Ada plays on: the page is neither asked nor changed.
+  assert.equal(asked, false);
+  assert.equal(page.token, "ta");
+  assert.equal(page.clears, 0);
+  assert.equal(store.state.activeId, "a");
+});
+
+test("removeAccount forgets the account when Autodarts can't be reached, and says so", async () => {
+  for (const answer of [
+    () => Promise.reject(new TypeError("Failed to fetch")),
+    () => Promise.resolve(jsonResponse({}, 503)),
+  ]) {
+    const store = display();
+    const fetcher = signOuts(answer);
+    const removal = await removeAccount(
+      deps(store, new FakePage("ta"), fetcher),
+      "c",
+    );
+    assert.deepEqual(fetcher.ended, ["tc"]);
+    assert.deepEqual(outcome(removal), { kind: "removed", ended: false });
+    // The account and its remembered password are gone all the same.
+    assert.equal(find(store.state, "c"), undefined);
+    assert.equal(store.saves, 1);
+  }
+});
+
+test("removeAccount of the account that plays signs the page out and ends the session it held", async () => {
+  const store = display();
+  const page = new FakePage("ta");
+  const fetcher = signOuts();
+  let asked = 0;
+  const removal = await removeAccount(deps(store, page, fetcher), "a", () => {
+    asked += 1;
+    return Promise.resolve(true);
+  });
+  assert.equal(asked, 1);
+  assert.equal(page.clears, 1);
+  assert.equal(page.token, null);
+  assert.deepEqual(fetcher.ended, ["ta"]);
+  assert.deepEqual(outcome(removal), { kind: "removed", ended: true });
+  assert.equal(find(store.state, "a"), undefined);
+  assert.equal(store.state.activeId, null);
+  // The parked accounts keep their sessions.
+  assert.equal(find(store.state, "b")?.token, "tb");
+  assert.equal(find(store.state, "c")?.token, "tc");
+});
+
+test("removeAccount of the account that plays changes nothing while the page may not sign out", async () => {
+  const store = display();
+  const page = new FakePage("ta");
+  const fetcher = counting(signOuts());
+  const removal = await removeAccount(deps(store, page, fetcher), "a", () =>
+    Promise.resolve(false),
+  );
+  assert.deepEqual(outcome(removal), { kind: "match" });
+  assert.equal(removal.state, store.state);
+  assert.equal(fetcher.calls, 0, "no session ended");
+  assert.equal(store.saves, 0);
+  assert.equal(page.clears, 0);
+  assert.equal(find(store.state, "a")?.id, "a");
+});
+
+test("removeAccount of the account that plays fails without a page before anything changes", async () => {
+  const store = display();
+  const page = new FakePage("ta", ["read"]);
+  const fetcher = counting(signOuts());
+  await assert.rejects(
+    removeAccount(deps(store, page, fetcher), "a"),
+    /no page/,
+  );
+  assert.equal(fetcher.calls, 0);
+  assert.equal(store.saves, 0);
+  assert.equal(find(store.state, "a")?.id, "a");
+});
+
+test("removeAccount of the account that plays, after the page signed out by itself, ends nothing more", async () => {
+  const store = display();
+  const page = new FakePage(null);
+  const fetcher = counting(signOuts());
+  const removal = await removeAccount(deps(store, page, fetcher), "a");
+  assert.deepEqual(outcome(removal), { kind: "removed", ended: true });
+  assert.equal(fetcher.calls, 0);
+  assert.equal(page.clears, 0);
+  assert.equal(find(store.state, "a"), undefined);
+});
+
+test("removeAccount of an account without a session ends nothing, and one that is gone changes nothing", async () => {
+  const store = new FakeStore(endSession(park(EMPTY, bob, "tb", 0), "b"));
+  const fetcher = counting(signOuts());
+  const board = deps(store, new FakePage(null), fetcher);
+  assert.deepEqual(outcome(await removeAccount(board, "b")), {
+    kind: "removed",
+    ended: true,
+  });
+  assert.deepEqual(store.state.profiles, []);
+  assert.deepEqual(outcome(await removeAccount(board, "b")), {
+    kind: "removed",
+    ended: true,
+  });
+  assert.equal(fetcher.calls, 0);
+  assert.equal(store.saves, 1);
+});
+
+test("forgetAll ends every session, signs the page out, forgets every account and then wipes", async () => {
+  const store = display();
+  const page = new FakePage("ta");
+  const fetcher = signOuts();
+  const wipes: number[] = [];
+  const removal = await forgetAll(deps(store, page, fetcher), () => {
+    wipes.push(store.state.profiles.length);
+    return Promise.resolve();
+  });
+  assert.deepEqual([...fetcher.ended].sort(), ["ta", "tb", "tc"]);
+  assert.equal(page.token, null);
+  assert.equal(page.clears, 1);
+  assert.deepEqual(store.state, EMPTY);
+  assert.deepEqual(wipes, [0], "the wipe runs once the accounts are gone");
+  assert.deepEqual(outcome(removal), { kind: "removed", ended: true });
+});
+
+test("forgetAll forgets everything when a session can't be ended, and says so", async () => {
+  const store = display();
+  const fetcher = signOuts((token) =>
+    token === "tb"
+      ? Promise.reject(new TypeError("Failed to fetch"))
+      : Promise.resolve(new Response(null, { status: 204 })),
+  );
+  let wiped = false;
+  const removal = await forgetAll(
+    deps(store, new FakePage("ta"), fetcher),
+    () => {
+      wiped = true;
+      return Promise.resolve();
+    },
+  );
+  assert.equal(fetcher.ended.length, 3, "each session is asked to end");
+  assert.deepEqual(outcome(removal), { kind: "removed", ended: false });
+  assert.deepEqual(store.state, EMPTY);
+  assert.ok(wiped);
+});
+
+test("forgetAll changes nothing while the page may not sign out", async () => {
+  const store = display();
+  const page = new FakePage("ta");
+  const fetcher = counting(signOuts());
+  let wiped = false;
+  const removal = await forgetAll(
+    deps(store, page, fetcher),
+    () => {
+      wiped = true;
+      return Promise.resolve();
+    },
+    () => Promise.resolve(false),
+  );
+  assert.deepEqual(outcome(removal), { kind: "match" });
+  assert.equal(fetcher.calls, 0);
+  assert.equal(store.saves, 0);
+  assert.equal(page.clears, 0);
+  assert.equal(wiped, false);
+});
+
+test("forgetAll leaves a session in the page that no account keeps, and asks nothing for it", async () => {
+  const store = new FakeStore(park(EMPTY, bob, "tb", 0));
+  const page = new FakePage("t-someone");
+  const fetcher = signOuts();
+  let asked = false;
+  await forgetAll(
+    deps(store, page, fetcher),
+    () => Promise.resolve(),
+    () => {
+      asked = true;
+      return Promise.resolve(true);
+    },
+  );
+  assert.deepEqual(fetcher.ended, ["tb"]);
+  assert.equal(page.token, "t-someone");
+  assert.equal(asked, false);
+});
+
+test("forgetAll with no account wipes all the same", async () => {
+  const fetcher = counting(signOuts());
+  let wiped = false;
+  const removal = await forgetAll(
+    deps(new FakeStore(), new FakePage(null), fetcher),
+    () => {
+      wiped = true;
+      return Promise.resolve();
+    },
+  );
+  assert.deepEqual(outcome(removal), { kind: "removed", ended: true });
+  assert.equal(fetcher.calls, 0);
+  assert.ok(wiped);
+});
+
+test("a removal during a renewal ends the session once and spends no other token twice", async () => {
+  const board = race();
+  const [, removal] = await Promise.all([
+    refreshParked(board.deps),
+    removeAccount(board.deps, "c"),
+  ]);
+  assert.deepEqual(outcome(removal), { kind: "removed", ended: true });
+  assert.equal(find(board.store.state, "c"), undefined);
+  assert.equal(board.autodarts.live.has("c"), false, "Cy's session ended");
+  assert.equal(board.autodarts.logouts.length, 1);
+  assertEverySessionKept(board);
+});
+
+test("a double tap on Remove ends the session once", async () => {
+  const board = race();
+  await Promise.all([
+    removeAccount(board.deps, "b"),
+    removeAccount(board.deps, "b"),
+  ]);
+  assert.equal(board.autodarts.logouts.length, 1);
+  assert.equal(board.autodarts.live.has("b"), false);
   assertEverySessionKept(board);
 });

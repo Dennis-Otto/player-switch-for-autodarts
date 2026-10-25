@@ -78,6 +78,14 @@ class MemoryKeys implements KeyStore {
     this.key ??= key;
     return Promise.resolve(this.key);
   }
+
+  clear(): Promise<void> {
+    if (this.fail) {
+      return Promise.reject(new Error("the key store is down"));
+    }
+    this.key = undefined;
+    return Promise.resolve();
+  }
 }
 
 /** The vault of a browser profile with a key of its own. */
@@ -373,6 +381,49 @@ test("the copy goes once the stored accounts are in a format the store reads aga
     writes,
     "with no copy left, a reading writes nothing",
   );
+});
+
+test("clear forgets the accounts, the copy of a newer version and the key, so no copy of the storage opens", async () => {
+  const keys = new MemoryKeys();
+  const area = new FakeArea({ other: "kept" });
+  const store = createStore(area, createVault(keys));
+  await store.save(shared);
+  // A copy of the storage, as a backup of the browser profile holds it.
+  const copy = new FakeArea(Object.fromEntries(area.data));
+  area.data.set(BACKUP_KEY, NEWER);
+
+  await store.clear();
+
+  assert.equal(area.data.has(ACCOUNTS_KEY), false);
+  assert.equal(area.data.has(BACKUP_KEY), false);
+  assert.equal(area.data.get("other"), "kept", "only the accounts are its own");
+  assert.equal(keys.key, undefined);
+  assert.deepEqual(await store.load(), EMPTY);
+  // With the key gone, the copy holds no session and no password that opens: Ada, who
+  // was parked, has to sign in again; Bob played, and the page kept his session.
+  const restored = await createStore(copy, createVault(keys)).load();
+  assert.deepEqual(
+    restored.profiles.map(({ id, token, credentials, needsSignIn }) => ({
+      id,
+      token,
+      credentials,
+      needsSignIn,
+    })),
+    [
+      { id: "a", token: null, credentials: null, needsSignIn: true },
+      { id: "b", token: null, credentials: null, needsSignIn: false },
+    ],
+  );
+});
+
+test("clear removes the accounts first, so none is left when the key store fails", async () => {
+  const keys = new MemoryKeys();
+  const area = new FakeArea();
+  const store = createStore(area, createVault(keys));
+  await store.save(shared);
+  keys.fail = true;
+  await assert.rejects(store.clear(), /the key store is down/);
+  assert.equal(area.data.has(ACCOUNTS_KEY), false);
 });
 
 test("accountsIn shows the stored accounts without their secrets, and none while their format is unknown", async () => {

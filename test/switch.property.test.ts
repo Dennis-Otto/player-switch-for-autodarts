@@ -22,7 +22,6 @@ import { AuthError, type Fetch } from "../src/autodarts.ts";
 import { createQueue, type Queue } from "../src/queue.ts";
 import {
   find,
-  forget,
   forgetCredentials,
   isAdding,
   parked,
@@ -37,7 +36,9 @@ import {
   type Deps,
   type PagePort,
   type PickUp,
+  type Removal,
   refreshParked,
+  removeAccount,
   type Store,
   type SwitchResult,
   signOutForNewAccount,
@@ -115,6 +116,15 @@ class FakeAutodarts {
         return Promise.resolve(jsonResponse({ error: "invalid_grant" }, 401));
       }
       return Promise.resolve(sessionResponse(account, this.issue(account)));
+    }
+    if (url.endsWith("/logout")) {
+      // The sign-out ends the session of its token, and only that one.
+      const token = body.refresh_token as string;
+      if (this.holder(token) === null) {
+        return Promise.resolve(jsonResponse({ error: "invalid_grant" }, 400));
+      }
+      this.spend(token);
+      return Promise.resolve(new Response(null, { status: 204 }));
     }
     return Promise.reject(new Error(`unexpected request to ${url}`));
   };
@@ -380,7 +390,7 @@ function happen(w: World, step: Event): void {
   }
 }
 
-type Result = SwitchResult | PickUp | Error | undefined;
+type Result = SwitchResult | PickUp | Removal | Error | undefined;
 
 /** Runs an action of the extension; the error it threw, if any, is the result. */
 async function run(w: World, step: Action): Promise<Result> {
@@ -418,8 +428,7 @@ async function run(w: World, step: Action): Promise<Result> {
         await store.save(forgetCredentials(store.state, step.id));
         return undefined;
       case "remove":
-        await store.save(forget(store.state, step.id));
-        return undefined;
+        return await removeAccount(deps, step.id);
     }
   } catch (error) {
     return error as Error;
@@ -484,6 +493,42 @@ function assertSound(w: World): void {
       `${profile.id} keeps a session of ${holder}`,
     );
   }
+}
+
+/**
+ * A removal forgets the account, and ends each of its sessions at Autodarts unless
+ * Autodarts can't be reached, which the reply then says: the parked one, or, while it
+ * played, the one in the page, which signs out.
+ */
+function assertRemoved(
+  w: World,
+  id: string,
+  before: Before,
+  removal: Removal,
+): void {
+  const { autodarts, page } = w;
+  assert.equal(removal.kind, "removed");
+  assert.equal(find(w.store.state, id), undefined, `${id} is forgotten`);
+  const played = before.state.activeId === id;
+  if (played) {
+    assert.equal(page.token, null, "the page signs out with the account");
+  }
+  const sessions = [
+    find(before.state, id)?.token ?? null,
+    played ? before.page : null,
+  ];
+  const alive = sessions.some((token) => autodarts.holder(token) === id);
+  const ended = removal.kind === "removed" && removal.ended;
+  // An ended session is over; one that is not ended is only for an outage, in which
+  // the extension can't tell a session that had ended already from a live one.
+  assert.ok(
+    !(ended && alive),
+    "the reply says the session ended, and it lives",
+  );
+  assert.ok(
+    ended || autodarts.outage !== "none",
+    "the reply says the session lives on, and Autodarts answered",
+  );
 }
 
 /** What the world looked like before an action of the extension. */
@@ -559,6 +604,9 @@ function assertKept(
       "the page stays signed in",
     );
     assert.ok(before.playing !== null || page.token === null);
+  }
+  if (extension.kind === "remove" && !(result instanceof Error)) {
+    assertRemoved(w, extension.id, before, result as Removal);
   }
   if (result === undefined && extension.kind === "signOut") {
     assert.equal(page.token, null);

@@ -92,12 +92,40 @@
     "message": "Supprimer le compte"
   },
   "removeConfirm": {
-    "message": "Supprimer $NAME$ de cet écran ? Reconnectez-vous pour ajouter à nouveau le compte.",
+    "message": "Supprimer $NAME$ de cet écran ? Sa session sur Autodarts prend fin elle aussi. Reconnectez-vous pour ajouter à nouveau le compte.",
     "placeholders": {
       "name": {
         "content": "$1"
       }
     }
+  },
+  "removed": {
+    "message": "$NAME$ est supprimé et déconnecté d'Autodarts.",
+    "placeholders": {
+      "name": {
+        "content": "$1"
+      }
+    }
+  },
+  "removedOffline": {
+    "message": "$NAME$ est supprimé de cet écran. Autodarts est injoignable, la session n'y prendra donc fin qu'à son expiration.",
+    "placeholders": {
+      "name": {
+        "content": "$1"
+      }
+    }
+  },
+  "forgetAll": {
+    "message": "Oublier tous les comptes"
+  },
+  "forgetAllConfirm": {
+    "message": "Chaque compte est déconnecté d'Autodarts et supprimé de cet écran, avec son mot de passe mémorisé. Les PIN et les réglages repartent de zéro, comme après l'installation."
+  },
+  "forgotAll": {
+    "message": "Tous les comptes sont oubliés et déconnectés d'Autodarts."
+  },
+  "forgotAllOffline": {
+    "message": "Tous les comptes sont oubliés sur cet écran. Autodarts est injoignable, leurs sessions n'y prendront donc fin qu'à leur expiration."
   },
   "passwordHint": {
     "message": "Utilisé seulement quand la connexion enregistrée ne fonctionne plus. Il reste sur cet ordinateur et n'est envoyé qu'à Autodarts."
@@ -185,6 +213,12 @@
   },
   "matchCancel": {
     "message": "Continuer à jouer"
+  },
+  "matchSignOutText": {
+    "message": "Déconnecter le joueur y met fin sur cet écran."
+  },
+  "matchSignOutConfirm": {
+    "message": "Déconnecter quand même"
   },
   "commandPopup": {
     "message": "Ouvrir la fenêtre pop-up"

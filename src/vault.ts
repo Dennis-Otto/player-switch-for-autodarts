@@ -35,6 +35,8 @@ export interface KeyStore {
    * a key is never replaced and nothing sealed with it is lost.
    */
   add(key: CryptoKey): Promise<CryptoKey>;
+  /** Deletes the stored key, the only way that one is ever replaced. */
+  clear(): Promise<void>;
 }
 
 export interface Vault {
@@ -46,6 +48,12 @@ export interface Vault {
    * the key store fails.
    */
   open(sealed: Sealed, place: string): Promise<string | null>;
+  /**
+   * Deletes the key, as "Forget all accounts" does: nothing sealed so far opens again,
+   * not even from a copy of the storage, and the next sealing makes a new key. The
+   * caller runs it while nothing else seals or opens a secret.
+   */
+  forget(): Promise<void>;
 }
 
 const encoder = new TextEncoder();
@@ -114,6 +122,12 @@ export function createVault(
         // Another key, another place or a changed value: AES-GCM refuses all three alike.
         return null;
       }
+    },
+    async forget() {
+      await keys.clear();
+      // The key in memory goes too: a secret sealed with it would open nowhere after a
+      // restart of the worker, which loads no key and makes a new one.
+      pending = null;
     },
   };
 }
@@ -210,6 +224,12 @@ export function keyStoreIn(factory: IDBFactory): KeyStore {
           table.put(key, ACCOUNTS_KEY_NAME);
           found(key);
         };
+      }),
+    clear: () =>
+      // The transaction completes only once the key is deleted.
+      inTable<undefined>("readwrite", (table, found) => {
+        table.delete(ACCOUNTS_KEY_NAME);
+        found(undefined);
       }),
   };
 }

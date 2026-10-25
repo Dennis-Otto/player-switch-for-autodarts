@@ -41,6 +41,8 @@ Zo werkt het:
   vanzelf weer in als de sessie ooit niet meer werkt. Accounts die met Google of
   Apple inloggen, kunnen dat niet gebruiken, omdat ze geen Autodarts-wachtwoord
   hebben om te onthouden.
+• Een verwijderd account wordt ook bij Autodarts afgemeld, en "Alle accounts
+  vergeten" maakt het scherm leeg voordat het van eigenaar wisselt.
 
 Alles blijft op je computer. De extensie praat alleen met Autodarts, verzamelt geen
 statistieken en stuurt niets naar iemand anders. Het privacybeleid geeft de

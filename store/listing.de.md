@@ -40,6 +40,8 @@ So funktioniert es:
   neu an, falls die Sitzung einmal nicht mehr geht. Konten, die sich mit Google oder
   Apple anmelden, können das nicht nutzen, weil sie kein Autodarts-Passwort haben,
   das sich die Erweiterung merken könnte.
+• Ein entferntes Konto wird auch bei Autodarts abgemeldet, und „Alle Konten
+  vergessen“ leert das Display, bevor es den Besitzer wechselt.
 
 Alles bleibt auf deinem Computer. Die Erweiterung spricht nur mit Autodarts, sammelt
 keine Statistiken und schickt nichts an Dritte. Details in der Datenschutzerklärung.

@@ -107,14 +107,44 @@ test("revokeSession tells Autodarts to end the session", async () => {
   let called = false;
   const fetcher: Fetch = () => {
     called = true;
-    return Promise.resolve(jsonResponse({}));
+    return Promise.resolve(new Response(null, { status: 204 }));
   };
-  await revokeSession(fetcher, "token");
+  assert.equal(await revokeSession(fetcher, "token"), true);
   assert.ok(called);
 });
 
-test("revokeSession ignores a failure", async () => {
-  await assert.doesNotReject(revokeSession(throwing, "token"));
+test("revokeSession counts a session that had ended already as over", async () => {
+  for (const status of [400, 401]) {
+    const fetcher = answer(jsonResponse({ error: "invalid_grant" }, status));
+    assert.equal(await revokeSession(fetcher, "token"), true);
+  }
+});
+
+test("revokeSession doesn't count another refusal as the end of the session", async () => {
+  for (const status of [400, 401]) {
+    for (const body of [
+      jsonResponse({ error: "invalid_request" }, status),
+      jsonResponse({ error: "unauthorized_client" }, status),
+      jsonResponse(null, status),
+      jsonResponse({}, status),
+      new Response("Bad Request", { status }),
+    ]) {
+      assert.equal(await revokeSession(answer(body), "token"), false);
+    }
+  }
+});
+
+test("revokeSession says so when Autodarts didn't end the session", async () => {
+  for (const status of [404, 429, 500, 503]) {
+    assert.equal(
+      await revokeSession(answer(jsonResponse({}, status)), "token"),
+      false,
+    );
+  }
+});
+
+test("revokeSession answers false instead of failing when Autodarts can't be reached", async () => {
+  assert.equal(await revokeSession(throwing, "token"), false);
 });
 
 test("readIdentity takes the account from the claims", () => {

@@ -78,6 +78,14 @@ und das Popup und die Spieler auf der Autodarts-Seite sagen:
 
 **Was du tust:** **Weiterspielen** ändert nichts. **Trotzdem wechseln** wechselt, und das Match endet auf diesem Display.
 
+Wer den Spieler entfernt, der gerade spielt, oder **Alle Konten vergessen** wählt, meldet die Seite ab, und die Erweiterung fragt vorher genauso:
+
+> Ein Match läuft
+>
+> Das Abmelden beendet es auf diesem Display.
+
+**Weiterspielen** ändert auch hier nichts; **Trotzdem abmelden** macht weiter, und das Match endet auf diesem Display.
+
 ### Player Switch wurde aktualisiert {#updated}
 
 > Player Switch wurde aktualisiert. Die Seite neu laden, um es zu nutzen? Ein laufendes Match endet auf diesem Bildschirm.
@@ -128,11 +136,31 @@ und das Popup und die Spieler auf der Autodarts-Seite sagen:
 
 ### Einen Spieler entfernen {#remove}
 
-> Bob von diesem Display entfernen? Zum Wiederherstellen einfach neu anmelden.
+> Bob von diesem Display entfernen? Die Sitzung bei Autodarts endet ebenfalls. Zum Wiederherstellen einfach neu anmelden.
 
-**Was es bedeutet:** **Konto entfernen** unter **Konten verwalten** fragt das, bevor es das Konto aus der Erweiterung löscht: seine gespeicherte Sitzung und ein gemerktes Passwort. Bei Autodarts ändert sich nichts.
+**Was es bedeutet:** **Konto entfernen** unter **Konten verwalten** fragt das, bevor es das Konto aus der Erweiterung löscht, mit seiner gespeicherten Sitzung und einem gemerkten Passwort. Vorher meldet es das Konto bei Autodarts ab, damit keine Kopie der Sitzung mehr funktioniert, etwa in einer Sicherung des Computers. Spielt der Spieler gerade auf der Seite, meldet sich auch die Seite ab; während eines Matches fragt die Erweiterung vorher.
 
-**Was du tust:** Bestätige, um es zu entfernen. Ein Spieler, der gerade auf der Seite spielt, bleibt dort angemeldet, bis er sich auf Autodarts abmeldet oder jemand wechselt.
+**Was du tust:** Bestätige, um es zu entfernen. Das Popup sagt dann „Bob ist entfernt und bei Autodarts abgemeldet.“
+
+### Autodarts ist beim Entfernen nicht erreichbar {#removed-offline}
+
+> Bob ist von diesem Display entfernt. Autodarts ist nicht erreichbar, daher endet die Sitzung dort erst, wenn sie abläuft.
+
+oder nach **Alle Konten vergessen**:
+
+> Alle Konten sind auf diesem Display vergessen. Autodarts ist nicht erreichbar, daher enden ihre Sitzungen dort erst, wenn sie ablaufen.
+
+**Was es bedeutet:** Die Erweiterung hat das Konto oder alle Konten vergessen, mit den Sitzungen und den gemerkten Passwörtern, aber Autodarts hat auf die Abmeldung nicht geantwortet, etwa weil das Internet oder Autodarts gerade ausgefallen ist. Die Erweiterung behält keine Kopie der Sitzung, also kann niemand von diesem Display aus damit spielen; Autodarts würde sie annehmen, bis sie abläuft.
+
+**Was du tust:** Nichts muss passieren. Bevor ein Display den Besitzer wechselt, wähle **Alle Konten vergessen**, solange Autodarts erreichbar ist, damit jede Sitzung sofort endet.
+
+### Alle Konten vergessen {#forget-all}
+
+> Jedes Konto wird bei Autodarts abgemeldet und mit seinem gemerkten Passwort von diesem Display entfernt. Die PINs und die Einstellungen beginnen wie nach der Installation von vorn.
+
+**Was es bedeutet:** **Alle Konten vergessen**, unter den Spielern in **Konten verwalten**, fragt das, bevor es die Erweiterung leert, etwa bevor ein Display verkauft, verschenkt oder aus einem Verein abgegeben wird. Es meldet jedes gespeicherte Konto bei Autodarts ab, auch den Spieler auf der Seite, und löscht dann alles, was die Erweiterung speichert: die Konten, die gemerkten Passwörter, den Schlüssel, der sie versiegelt, die PINs für Verein und Kneipe und die Einstellungen. Ist eine Manager-PIN gesetzt, fragt es zuerst nach ihr.
+
+**Was du tust:** Bestätige, um sie zu leeren. Das Popup sagt dann „Alle Konten sind vergessen und bei Autodarts abgemeldet.“, und die Erweiterung ist wie nach der Installation: **Konto hinzufügen** speichert den nächsten Spieler. Eine Sitzung auf der Seite, die die Erweiterung nie gespeichert hat, bleibt; melde sie auf Autodarts ab.
 
 ### Nicht festgelegt {#shortcut-not-set}
 
@@ -252,9 +280,10 @@ Die Erweiterung ist für Google Chrome 140 oder neuer gemacht, unter Windows, ma
 
 ### Alles entfernen
 
-- **Ein Konto:** **Konten verwalten**, das Konto, **Konto entfernen**. Das löscht seine gespeicherte Sitzung und ein gemerktes Passwort.
+- **Ein Konto:** **Konten verwalten**, das Konto, **Konto entfernen**. Das meldet es bei Autodarts ab und löscht seine gespeicherte Sitzung und ein gemerktes Passwort.
 - **Nur ein Passwort:** **Passwort nicht mehr merken** löscht es, und das Konto bleibt.
-- **Alles:** Entferne die Erweiterung unter `chrome://extensions`, und Chrome löscht alles, was sie gespeichert hat. Wer zuletzt gespielt hat, bleibt auf der Autodarts-Seite angemeldet, bis er sich dort abmeldet.
+- **Alles:** **Konten verwalten**, [**Alle Konten vergessen**](#forget-all). Das meldet jedes Konto bei Autodarts ab und löscht alles, was die Erweiterung gespeichert hat, auch die PINs und die Einstellungen.
+- **Die Erweiterung selbst:** Entferne sie unter `chrome://extensions`, und Chrome löscht alles, was sie gespeichert hat. Das meldet niemanden bei Autodarts ab: Die geparkten Sitzungen laufen weiter, bis sie ablaufen, und wer zuletzt gespielt hat, bleibt auf der Autodarts-Seite angemeldet, bis er sich dort abmeldet. Wähle deshalb zuerst **Alle Konten vergessen**.
 
 Die [Datenschutzerklärung](privacy.md) zählt alles auf, was die Erweiterung speichert.
 
