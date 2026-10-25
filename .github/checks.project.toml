@@ -79,3 +79,48 @@ autofix = """What a message means and what a player does about it needs a person
 knows the extension, and so does a missing text or file, which hosts a job of the
 store workflow needs, and whether the extension may ask for a permission is a decision
 of its maintainers."""
+
+[check."browser"]
+title = "The end-to-end tests in Chromium"
+problem = """A test of the built extension in Playwright's Chromium, against the fake
+Autodarts of `test/e2e/fake/`, failed: the summary of the check names the test and
+the line that failed. A test fails as well when a refresh token reached the fake
+sign-in service a second time, when a request went to a host that the fake doesn't
+answer, when the service worker logged an error, or when it didn't start at all, as
+after a wrong import path in `background.js` or a permission missing from the
+manifest."""
+why = """These tests run what Chrome runs and the unit tests don't: the manifest, the
+service worker with its imports of `lib/`, the content script in the Autodarts page,
+the popup and the switcher. A release with such a failure would break on every
+display, and the review of the Chrome Web Store takes days for each fix. A refresh
+token sent twice ends the session of a player at Autodarts."""
+fix = """Run the tests on your machine, open the trace of the test that failed and fix
+what it shows. The trace shows each step with the page, its console and its
+requests; the artifact `e2e-<attempt>` of the run has the traces, the screenshots and
+the HTML report of the CI. Then push:"""
+commands = [
+  "npm ci",
+  "npx playwright install --no-shell chromium",
+  "npm run e2e",
+  "npx playwright show-trace test/e2e/results/<test>/trace.zip",
+]
+docs = "docs/development.md#end-to-end-tests"
+autofix = """A test in a browser that fails needs a person who knows what the extension
+should do there; no command can make it pass."""
+
+[check."e2e"]
+title = "The end-to-end tests"
+problem = """The end-to-end tests had to run for this pull request, because it changes
+the extension, `src/`, the tests, the packages or `.github/workflows/e2e.yml`, and
+they didn't pass: the job *browser* of the workflow E2E failed, was cancelled or
+didn't run. Its summary names the test that failed."""
+why = """This is the check that `main` requires for the end-to-end tests. They run the
+extension as Chrome runs it, against a fake Autodarts, so a broken manifest, import,
+message or popup, or a refresh token sent twice, never reaches the Chrome Web Store."""
+fix = """Fix the failure that the job *browser* explains, run the tests on your machine
+and push; a run that was cancelled or didn't run gets a new one with
+*Re-run all jobs* in the workflow E2E:"""
+commands = ["npm run e2e"]
+docs = "docs/development.md#end-to-end-tests"
+autofix = """A test in a browser that fails needs a person who knows what the extension
+should do there; no command can make it pass."""

@@ -1,0 +1,4 @@
+# What a run of the end-to-end tests leaves behind: the traces and screenshots of
+# the tests that failed, and the HTML report.
+/results/
+/report/
