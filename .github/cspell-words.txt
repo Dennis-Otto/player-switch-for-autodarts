@@ -5,5 +5,6 @@ autodarts
 Browsererweiterung
 Browserprofil
 Inkognitofenster
+mozilla
 Umschalt
 Willkommensseite

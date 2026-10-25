@@ -27,8 +27,9 @@ const GREASE = /not.a.brand/i;
 
 /**
  * The browser and its major version for a bug report, such as "Google Chrome 130": its
- * own brand before that of Chromium, and, where the browser lists no brands, the version
- * of Chrome in its user agent. Nothing else of the browser goes into the report.
+ * own brand before that of Chromium, and, where the browser lists no brands, as Firefox
+ * doesn't, the version of Firefox or Chrome in its user agent. Nothing else of the
+ * browser goes into the report.
  */
 export function browserName(
   brands: readonly Brand[] | undefined,
@@ -38,6 +39,10 @@ export function browserName(
   const named = known.find(({ brand }) => brand !== "Chromium") ?? known[0];
   if (named !== undefined) {
     return `${named.brand} ${named.version}`;
+  }
+  const firefox = /Firefox\/(\d+)/.exec(userAgent);
+  if (firefox !== null) {
+    return `Firefox ${firefox[1]}`;
   }
   const chrome = /Chrome\/(\d+)/.exec(userAgent);
   return chrome === null ? "unknown" : `Chrome ${chrome[1]}`;

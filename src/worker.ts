@@ -833,7 +833,11 @@ export function startWorker(api: ChromeApi, platform: Platform): StartedWorker {
     if (request === null || !fromExtension(sender, api.runtime.id)) {
       return false;
     }
-    const fromPage = fromExtensionPage(sender, api.runtime.id);
+    const fromPage = fromExtensionPage(
+      sender,
+      api.runtime.id,
+      api.runtime.getURL(""),
+    );
     switch (request.type) {
       case "popup":
         if (!fromPage) {

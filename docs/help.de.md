@@ -170,7 +170,7 @@ Unter **Einstellungen** steht bei einem Tastenkürzel:
 
 **Was es bedeutet:** Das Tastenkürzel hat keine Tasten, weil eine andere Erweiterung sie zuerst hatte oder sie entfernt wurden.
 
-**Was du tust:** **Tastenkürzel ändern** öffnet `chrome://extensions/shortcuts`; gib ihm Tasten, die keine andere Erweiterung nutzt. Der Knopf auf der Autodarts-Seite geht auch ohne Tastenkürzel.
+**Was du tust:** **Tastenkürzel ändern** öffnet die Tastenkürzel des Browsers: `chrome://extensions/shortcuts` in Chrome, `edge://extensions/shortcuts` in Edge, und in Firefox `about:addons`, wo das Zahnradmenü **Tastenkürzel für Erweiterungen verwalten** hat; gib ihm Tasten, die keine andere Erweiterung nutzt. Der Knopf auf der Autodarts-Seite geht auch ohne Tastenkürzel.
 
 ### Die PIN eines Spielers {#player-pin}
 
@@ -260,7 +260,7 @@ Die Erweiterung speichert eine Anmeldung nur in den zehn Minuten nach **Konto hi
 
 ### Der Knopf auf der Autodarts-Seite fehlt
 
-**Einstellungen** im Popup, oder **Details → Erweiterungsoptionen** unter `chrome://extensions`, blendet den Knopf ein und wählt seine Ecke. Ist er an und fehlt trotzdem? Lade die Autodarts-Seite neu. Das Tastenkürzel <kbd>Alt</kbd>+<kbd>Umschalt</kbd>+<kbd>O</kbd> öffnet die Spieler auch ohne Knopf.
+**Einstellungen** im Popup, oder **Details → Erweiterungsoptionen** unter `chrome://extensions` (`edge://extensions` in Edge, **Einstellungen** von Player Switch unter `about:addons` in Firefox), blendet den Knopf ein und wählt seine Ecke. Ist er an und fehlt trotzdem? Lade die Autodarts-Seite neu. Das Tastenkürzel <kbd>Alt</kbd>+<kbd>Umschalt</kbd>+<kbd>O</kbd> öffnet die Spieler auch ohne Knopf.
 
 ### Wer kann unter meinem Konto spielen?
 
@@ -283,7 +283,7 @@ Die Erweiterung ist für Google Chrome 140 oder neuer gemacht, unter Windows, ma
 - **Ein Konto:** **Konten verwalten**, das Konto, **Konto entfernen**. Das meldet es bei Autodarts ab und löscht seine gespeicherte Sitzung und ein gemerktes Passwort.
 - **Nur ein Passwort:** **Passwort nicht mehr merken** löscht es, und das Konto bleibt.
 - **Alles:** **Konten verwalten**, [**Alle Konten vergessen**](#forget-all). Das meldet jedes Konto bei Autodarts ab und löscht alles, was die Erweiterung gespeichert hat, auch die PINs und die Einstellungen.
-- **Die Erweiterung selbst:** Entferne sie unter `chrome://extensions`, und Chrome löscht alles, was sie gespeichert hat. Das meldet niemanden bei Autodarts ab: Die geparkten Sitzungen laufen weiter, bis sie ablaufen, und wer zuletzt gespielt hat, bleibt auf der Autodarts-Seite angemeldet, bis er sich dort abmeldet. Wähle deshalb zuerst **Alle Konten vergessen**.
+- **Die Erweiterung selbst:** Entferne sie unter `chrome://extensions` (`edge://extensions` in Edge, **Entfernen** im Menü von Player Switch unter `about:addons` in Firefox), und der Browser löscht alles, was sie gespeichert hat. Das meldet niemanden bei Autodarts ab: Die geparkten Sitzungen laufen weiter, bis sie ablaufen, und wer zuletzt gespielt hat, bleibt auf der Autodarts-Seite angemeldet, bis er sich dort abmeldet. Wähle deshalb zuerst **Alle Konten vergessen**.
 
 Die [Datenschutzerklärung](privacy.md) zählt alles auf, was die Erweiterung speichert.
 

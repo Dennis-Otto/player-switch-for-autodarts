@@ -11,6 +11,9 @@ Alles, was die Erweiterung behält, bleibt im Browser auf deinem eigenen Compute
 lokalen Speicher der Erweiterung (`chrome.storage.local`). Es geht nie an den
 Entwickler oder an Dritte. Nur die Erweiterung selbst kann es lesen, nicht die
 Autodarts-Seite und nicht das Skript, das die Erweiterung in dieser Seite ausführt.
+Firefox kann den Speicher nicht vor diesem Skript verbergen, das nichts daraus liest,
+es aber könnte und die Tokens und Passwörter dort nur verschlüsselt fände
+([Sicherheitsdesign](security.md#firefox)).
 
 - **Ein Sitzungs-Token von Autodarts für jedes gespeicherte Konto**, damit ein Konto
   ohne neue Anmeldung wieder spielen kann. Die Erweiterung erneuert diese Token bei
@@ -56,6 +59,12 @@ Adresse, die Autodarts dafür angibt, wie die Autodarts-Website. Sie öffnet kei
 andere Verbindung, spricht mit keinem Dienst für Statistiken oder Tracking, und der
 Entwickler bekommt keine Daten von ihr. Ihre Content Security Policy lässt sie nur mit
 `api.autodarts.com` verbinden, darum sperrt der Browser selbst jede andere Verbindung.
+
+Firefox zeigt bei der Installation, dass das Add-on *Authentifizierungsdaten*
+sendet: Das sind die Sitzungstokens und, bei einem Konto, dessen Passwort du dir
+merken lässt, Benutzername und Passwort, die wie hier beschrieben an den
+Anmeldedienst von Autodarts gehen, und nirgendwohin sonst. Der Chrome Web Store
+führt dasselbe unter seinen Datenschutzpraktiken.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="images/diagrams/data-flow.de.dark.svg">

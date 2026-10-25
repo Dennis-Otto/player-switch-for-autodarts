@@ -54,6 +54,19 @@ test("without brands, the browser is the Chrome of its user agent", () => {
   assert.equal(browserName([], "Something else"), "unknown");
 });
 
+test("Firefox, which lists no brands, is the Firefox of its user agent", () => {
+  const agent =
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:140.0) Gecko/20100101 Firefox/140.0";
+  assert.equal(browserName(undefined, agent), "Firefox 140");
+  assert.equal(
+    browserName(
+      [],
+      "Mozilla/5.0 (Android 15; Mobile; rv:144.0) Gecko/144.0 Firefox/144.0",
+    ),
+    "Firefox 144",
+  );
+});
+
 test("the bug report carries the versions of the extension and the browser, and nothing else", () => {
   const url = new URL(reportUrl("0.3.0", "Google Chrome 130"));
   assert.equal(`${url.origin}${url.pathname}`, `${REPOSITORY}/issues/new`);

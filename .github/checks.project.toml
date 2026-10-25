@@ -49,8 +49,12 @@ doesn't quote a message that tells a player about a problem, a job of
 `.github/workflows/publish-store.yml` lets its runner reach any host, keeps sudo and
 containers, or runs on an image that moves, such as `ubuntu-latest`, the manifest asks
 for a permission, a host or a web-accessible page that `store/permissions.json` doesn't
-allow, opens the extension wider in another way, or doesn't fit the store
-(`scripts/check-manifest.mjs`), or the test of the popup in a browser,
+allow, opens the extension wider in another way, doesn't fit the store, or no longer
+runs the same `background.js` in Firefox, under the id and from the versions of Firefox
+that it names, with the data that `store/permissions.json` declares
+(`scripts/check-manifest.mjs`), addons-linter, the linter of addons.mozilla.org, found an
+error in the extension or a warning that `scripts/check-firefox.mjs` doesn't accept
+with its reason, or the test of the popup in a browser,
 `test/harness/a11y.mjs`, found a problem of accessibility: a rule of axe-core, a control
 smaller than 44 by 44 pixels, a text smaller than 12 pixels, a button text that breaks,
 or the focus in the wrong place after an action."""
@@ -62,7 +66,9 @@ that publishes a version to every user, so a compromised action or package must 
 able to send it anywhere. Chrome disables an installed extension after an update that
 asks for a new permission or host, until someone accepts the new warning in
 `chrome://extensions`, and a board display in kiosk mode then stops switching without
-a word; and every permission is one more way to the saved sessions and passwords. The
+a word; and every permission is one more way to the saved sessions and passwords.
+Firefox refuses an add-on with an error of addons-linter, and addons.mozilla.org
+reviews it with the same rules. The
 popup is used with a finger on a touch display, with a keyboard and with a screen
 reader, which loses its place when the focus falls back to the page."""
 fix = """Do what the line says. A new message goes into the list `explained` of
@@ -75,7 +81,9 @@ otherwise. A job of the store workflow starts with step-security/harden-runner a
 web-accessible page that the extension really needs goes into `store/permissions.json`
 with its reason, with a line that justifies it in every store listing,
 `store/listing.<code>.md`, and a note in the changelog that the update asks for it;
-otherwise take it out of the manifest again. A folder of `extension/_locales/` is
+otherwise take it out of the manifest again. A finding of addons-linter names its file,
+line and code: fix it, or, for a warning that has to stay, add its code with the reason
+to `ACCEPTED` in `scripts/check-firefox.mjs`. A folder of `extension/_locales/` is
 named with a code that Chrome knows, such as `nl` or `pt_BR`, and holds a complete
 `messages.json`; add or remove `store/listing.<code>.md` so that every language has one
 listing; a language without `docs/help.<code>.md` sets its message `helpUrl` to the

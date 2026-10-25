@@ -8,6 +8,7 @@ import {
   isMatchPage,
   isPlayPage,
   mustConfirm,
+  openShortcuts,
   PLAY_ORIGINS,
   parseSettings,
   tileForKey,
@@ -189,4 +190,40 @@ test("tileForKey picks no tile for another key or past the last tile", () => {
   for (const key of ["0", "10", "a", "Escape", " ", "", "١"]) {
     assert.equal(tileForKey(key, 9), null, key);
   }
+});
+
+test("openShortcuts uses the shortcut settings of Firefox where they exist", async () => {
+  const calls: string[] = [];
+  const commands = {
+    openShortcutSettings(this: unknown) {
+      calls.push(this === commands ? "firefox" : "unbound");
+      return Promise.resolve();
+    },
+  };
+  await openShortcuts({
+    commands,
+    tabs: {
+      create: ({ url }) => {
+        calls.push(url);
+        return Promise.resolve();
+      },
+    },
+  });
+  assert.deepEqual(calls, ["firefox"]);
+});
+
+test("openShortcuts opens the shortcuts page of Chrome and Edge otherwise", async () => {
+  const calls: string[] = [];
+  const tabs = {
+    create: ({ url }: { url: string }) => {
+      calls.push(url);
+      return Promise.resolve();
+    },
+  };
+  await openShortcuts({ tabs });
+  await openShortcuts({ commands: {}, tabs });
+  assert.deepEqual(calls, [
+    "chrome://extensions/shortcuts",
+    "chrome://extensions/shortcuts",
+  ]);
 });

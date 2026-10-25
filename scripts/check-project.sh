@@ -30,6 +30,13 @@ node scripts/check-pages.mjs
 node --test --test-reporter=dot scripts/check-manifest.test.mjs
 node scripts/check-manifest.mjs
 
+# Firefox and Edge run the same extension as Chrome. addons-linter, the linter of
+# addons.mozilla.org that `web-ext lint` runs, finds no error in it and only the
+# warnings that scripts/check-firefox.mjs accepts with their reason (decision 0012).
+# The checker tests itself first, with made-up results of the linter.
+node --test --test-reporter=dot scripts/check-firefox.test.mjs
+node scripts/check-firefox.mjs
+
 # The help explains every message that tells a player about a problem, in English and
 # German, and Help in every language of the extension leads to it, or to the English
 # help where the website has none in that language.

@@ -170,7 +170,7 @@ Under **Settings**, a shortcut says:
 
 **What it means:** the shortcut has no keys, because another extension had them first or they were removed.
 
-**What to do:** **Change shortcuts** opens `chrome://extensions/shortcuts`; give it keys that no other extension uses. The button on the Autodarts page works without a shortcut.
+**What to do:** **Change shortcuts** opens the shortcuts of the browser: `chrome://extensions/shortcuts` in Chrome, `edge://extensions/shortcuts` in Edge, and in Firefox `about:addons`, where the gear menu has **Manage Extension Shortcuts**; give it keys that no other extension uses. The button on the Autodarts page works without a shortcut.
 
 ### The PIN of a player {#player-pin}
 
@@ -260,7 +260,7 @@ The extension saves a sign-in by itself only in the ten minutes after **Add acco
 
 ### The button on the Autodarts page is missing
 
-**Settings** in the popup, or **Details → Extension options** under `chrome://extensions`, turns the button on and picks its corner. Is it on and still missing? Reload the Autodarts page. The keyboard shortcut <kbd>Alt</kbd>+<kbd>Shift</kbd>+<kbd>O</kbd> opens the players with the button off as well.
+**Settings** in the popup, or **Details → Extension options** under `chrome://extensions` (`edge://extensions` in Edge, **Options** of Player Switch under `about:addons` in Firefox), turns the button on and picks its corner. Is it on and still missing? Reload the Autodarts page. The keyboard shortcut <kbd>Alt</kbd>+<kbd>Shift</kbd>+<kbd>O</kbd> opens the players with the button off as well.
 
 ### Who can play under my account?
 
@@ -283,7 +283,7 @@ It is made for Google Chrome 140 or newer, on Windows, macOS, Linux and ChromeOS
 - **One account:** **Manage accounts**, the account, **Remove account**. That signs it out at Autodarts and deletes its saved session and any remembered password.
 - **Only a password:** **Forget password** deletes it, and the account stays.
 - **Everything:** **Manage accounts**, [**Forget all accounts**](#forget-all). That signs every account out at Autodarts and deletes all that the extension kept, the PINs and the settings as well.
-- **The extension itself:** remove it under `chrome://extensions`, and Chrome deletes everything that it kept. That signs nobody out at Autodarts: the parked sessions last until they expire, and whoever played last stays signed in on the Autodarts page until they sign out there. So choose **Forget all accounts** first.
+- **The extension itself:** remove it under `chrome://extensions` (`edge://extensions` in Edge, **Remove** in the menu of Player Switch under `about:addons` in Firefox), and the browser deletes everything that it kept. That signs nobody out at Autodarts: the parked sessions last until they expire, and whoever played last stays signed in on the Autodarts page until they sign out there. So choose **Forget all accounts** first.
 
 The [privacy policy](privacy.md) lists everything that the extension keeps.
 

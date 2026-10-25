@@ -25,24 +25,43 @@ export function fromExtension(sender: Sender, extensionId: string): boolean {
   return extensionId !== "" && sender.id === extensionId;
 }
 
+/** The schemes under which a browser serves the pages of an extension: Chrome and Edge, and Firefox. */
+const EXTENSION_SCHEMES: readonly string[] = [
+  "chrome-extension:",
+  "moz-extension:",
+];
+
 /**
  * Whether the message comes from a page of this extension, such as the popup or the
  * switcher in its frame, and not from the content script, whose address is the one of
  * the Autodarts page. Only those pages may see the accounts and change them.
+ *
+ * `pagesAt` is where the browser serves the pages of this extension, as
+ * `chrome.runtime.getURL("")` says: `chrome-extension://<id>/` in Chrome and Edge, and
+ * `moz-extension://<uuid>/` in Firefox, whose host is a random one of this installation
+ * and not the id of the extension.
  */
 export function fromExtensionPage(
   sender: Sender,
   extensionId: string,
+  pagesAt: string,
 ): boolean {
   if (
     !fromExtension(sender, extensionId) ||
     typeof sender.url !== "string" ||
-    !URL.canParse(sender.url)
+    !URL.canParse(sender.url) ||
+    !URL.canParse(pagesAt)
   ) {
     return false;
   }
   const url = new URL(sender.url);
-  return url.protocol === "chrome-extension:" && url.host === extensionId;
+  const pages = new URL(pagesAt);
+  return (
+    EXTENSION_SCHEMES.includes(pages.protocol) &&
+    pages.host !== "" &&
+    url.protocol === pages.protocol &&
+    url.host === pages.host
+  );
 }
 
 /** Who may read and change a storage area of the extension, as `chrome.storage.AccessLevel` has it. */

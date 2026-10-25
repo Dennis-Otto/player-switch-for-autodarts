@@ -51,3 +51,7 @@ allow-dependencies-licenses:
   # (CC-BY-SA-4.0).
   - pkg:npm/%40cspell/dict-django
   - pkg:npm/%40cspell/dict-en-common-misspellings
+  # The URI parser that addons-linter brings in through ESLint, a tool of the checks
+  # (scripts/check-firefox.mjs) that no release ships: BSD-2-Clause, which the review
+  # reads as BSD-2-Clause AND BSD-2-Clause-Views.
+  - pkg:npm/uri-js

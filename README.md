@@ -75,7 +75,11 @@ Over days and weeks, a saved account moves between these states:
 
 ### Install
 
-**From the Chrome Web Store** — once the listing is live, install it in one click from its store page; updates then arrive on their own. The link goes here when it is. It needs Google Chrome 140 or newer, or a browser built on Chromium 140 or newer, such as Microsoft Edge.
+**From the Chrome Web Store** — once the listing is live, install it in one click from its store page; updates then arrive on their own. The link goes here when it is. It needs Google Chrome 140 or newer, or a browser built on Chromium 140 or newer.
+
+**In Microsoft Edge 140 or newer** — Edge runs the same package. Turn on **Allow extensions from other stores** under `edge://extensions` and install it from the Chrome Web Store, or load it unpacked as below. A listing in Edge Add-ons follows.
+
+**In Firefox 140 or newer, to try it out** — Firefox runs the same package too, as a preview that has not yet been tested by hand in Firefox. Until it is listed on addons.mozilla.org, build it as below, open `about:debugging#/runtime/this-firefox`, choose **Load Temporary Add-on…** and pick `extension/manifest.json`; Firefox removes it again when it closes. The add-on's page in `about:addons` lists, and addons.mozilla.org will ask at the install, that the add-on sends authentication information: the sessions and remembered passwords go to the sign-in service of Autodarts, and nowhere else. Firefox can't keep the extension's storage from its script in the Autodarts page, so set up a display in a club or a pub with Chrome or Edge; the [security design](docs/security.md#firefox) explains why. Firefox for Android is not tested.
 
 **Unpacked, from the source:**
 
@@ -84,7 +88,7 @@ npm ci
 npm run build
 ```
 
-Then in Chrome open `chrome://extensions`, turn on **Developer mode**, choose **Load unpacked** and pick the `extension/` folder of this repository.
+Then in Chrome open `chrome://extensions`, or `edge://extensions` in Edge, turn on **Developer mode**, choose **Load unpacked** and pick the `extension/` folder of this repository. [Firefox and Edge](docs/development.md#firefox-and-edge) says what differs in the other browsers and how to check a release in them.
 
 The extension asks only for access to `play.autodarts.com` and `api.autodarts.com`, its own storage, a timer for the renewal and the right to run its own script in the Autodarts tabs after an update, or in a tab where it stopped answering. It can't read the address or title of your other tabs, or your browsing history. Its content security policy lets it connect to `api.autodarts.com` alone, and the script that it runs in the Autodarts page can't read the saved accounts; the [security design](docs/security.md#trust-boundaries) has the details.
 
@@ -109,8 +113,8 @@ The popup links to **Help**, the [help page](https://dennis-otto.github.io/playe
 
 A board display often runs in fullscreen (F11) or as a kiosk (`chrome --kiosk`), where the toolbar and its popup are out of reach. So the Autodarts page itself carries a round button in a corner, with the picture of the player. A tap on it shows the players over the page, in large tiles for a touch screen, with everything the popup has: a tap on a tile switches, and **Manage accounts**, **Save account** and **Add account** are there too.
 
-- **Keyboard:** <kbd>Alt</kbd>+<kbd>Shift</kbd>+<kbd>O</kbd> opens and closes the players on the page, <kbd>Alt</kbd>+<kbd>Shift</kbd>+<kbd>P</kbd> opens the popup. In the players, the keys <kbd>1</kbd> to <kbd>9</kbd> pick a player and <kbd>Esc</kbd> closes them. Chrome lets you change both shortcuts under `chrome://extensions/shortcuts`.
-- **Settings:** **Settings** in the popup, or **Details → Extension options** under `chrome://extensions`, turns the button off or moves it to another corner. The shortcut works with the button off as well.
+- **Keyboard:** <kbd>Alt</kbd>+<kbd>Shift</kbd>+<kbd>O</kbd> opens and closes the players on the page, <kbd>Alt</kbd>+<kbd>Shift</kbd>+<kbd>P</kbd> opens the popup. In the players, the keys <kbd>1</kbd> to <kbd>9</kbd> pick a player and <kbd>Esc</kbd> closes them. **Change shortcuts** in the settings changes both: `chrome://extensions/shortcuts` in Chrome, `edge://extensions/shortcuts` in Edge, and in Firefox `about:addons`, the gear menu, **Manage Extension Shortcuts**.
+- **Settings:** **Settings** in the popup, or **Details → Extension options** under `chrome://extensions` (`edge://extensions` in Edge, **Options** of Player Switch under `about:addons` in Firefox), turns the button off or moves it to another corner. The shortcut works with the button off as well.
 - **Private:** the players open in a page of the extension, in a frame of its own, so the scripts of the Autodarts page can't read the saved accounts.
 
 The [guide for a shared display](https://dennis-otto.github.io/player-switch-for-autodarts/shared-display.html) sets up kiosk mode, the start with the computer on Windows and on a Raspberry Pi, an on-screen keyboard for the sign-ins and the power settings that keep every account ready.

@@ -27,7 +27,7 @@ import {
   playerRowView,
   venueReport,
 } from "../options-model.ts";
-import { parseSettings, SETTINGS_KEY } from "../page.ts";
+import { openShortcuts, parseSettings, SETTINGS_KEY } from "../page.ts";
 import { confirmDialog, pinDialog } from "./dialogs.ts";
 import { find, t, translate } from "./dom.ts";
 
@@ -308,7 +308,7 @@ idleMinutes.addEventListener("change", saveIdle);
 idleHouse.addEventListener("change", saveIdle);
 
 find("#shortcuts").addEventListener("click", () => {
-  void chrome.tabs.create({ url: "chrome://extensions/shortcuts" });
+  void openShortcuts(chrome);
 });
 
 /** Shows the settings, once the manager PIN opened them or when none is set. */

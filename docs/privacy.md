@@ -9,7 +9,10 @@ it handles. It is short because the extension collects almost nothing.
 Everything the extension keeps stays in the browser on your own computer, in the
 extension's local storage (`chrome.storage.local`). It is never sent to the
 developer or to any third party. Only the extension itself can read it, not the
-Autodarts page, and not the script that the extension runs in that page.
+Autodarts page, and not the script that the extension runs in that page. Firefox
+can't keep the storage from that script, which reads nothing from it but could, and
+would find the tokens and passwords there only encrypted
+([security design](security.md#firefox)).
 
 - **An Autodarts session token for each saved account**, so an account can play
   again without signing in. The extension renews these tokens with Autodarts.
@@ -51,6 +54,12 @@ for it, as the Autodarts website does. The extension opens no other connection,
 contacts no analytics or tracking service, and the developer receives no data from it.
 Its content security policy lets it connect to `api.autodarts.com` alone, so the
 browser itself blocks any other connection.
+
+Firefox shows at the install that the add-on sends *authentication information*:
+that is the session tokens, and the username and password of an account whose
+password you remember, which go to the sign-in service of Autodarts as described
+here, and nowhere else. The Chrome Web Store lists the same under its privacy
+practices.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="images/diagrams/data-flow.dark.svg">

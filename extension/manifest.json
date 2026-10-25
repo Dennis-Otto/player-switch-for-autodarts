@@ -6,6 +6,20 @@
   "default_locale": "en",
   "minimum_chrome_version": "140",
   "homepage_url": "https://dennis-otto.github.io/player-switch-for-autodarts/",
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "player-switch-for-autodarts@dennis-otto.github.io",
+      "strict_min_version": "140.0",
+      "data_collection_permissions": {
+        "required": [
+          "authenticationInfo"
+        ]
+      }
+    },
+    "gecko_android": {
+      "strict_min_version": "142.0"
+    }
+  },
   "icons": {
     "16": "icons/icon-16.png",
     "48": "icons/icon-48.png",
@@ -34,6 +48,9 @@
   },
   "background": {
     "service_worker": "lib/background.js",
+    "scripts": [
+      "lib/background.js"
+    ],
     "type": "module"
   },
   "content_scripts": [
