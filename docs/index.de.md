@@ -97,7 +97,7 @@ Die [Anleitung für ein gemeinsames Display](shared-display.md) richtet alles ei
 - **Der Fokus bleibt an seinem Platz:** Nach einem Wechsel bleibt er auf dem Spieler, der jetzt spielt, nach dem Entfernen springt er zur selben Aktion des Kontos an dessen Stelle, und **Abbrechen** führt dorthin zurück, wo du herkamst.
 - **Klar für Screenreader:** Die Kachel des Spielers, der spielt, ist die aktuelle, **Konten verwalten** sagt, ob es an ist, die Aktionen unter einer Kachel tragen den Namen ihres Kontos, und ein Fehler wird sofort vorgelesen.
 - **Gemacht für den Finger:** Jedes Bedienelement ist mindestens 44 mal 44 Pixel groß und kein Text kleiner als 12 Pixel; ein Kontrastdesign von Windows hält den Spieler, der spielt, und die Hinweise auseinander, und mit reduzierter Bewegung im System bewegt sich nichts.
-- **Getestet:** Bei jeder Änderung öffnet ein Test das Popup in Chrome und prüft es mit [axe-core](https://github.com/dequelabs/axe-core), in beiden Sprachen und beiden Farbschemata, und geht jede Aktion allein mit der Tastatur durch.
+- **Getestet:** Bei jeder Änderung öffnet ein Test das Popup in Chrome und prüft es mit [axe-core](https://github.com/dequelabs/axe-core), in allen fünf Sprachen und beiden Farbschemata, und geht jede Aktion allein mit der Tastatur durch.
 
 ## So funktioniert es
 
@@ -137,6 +137,7 @@ Autodarts Play speichert die Anmeldung als einen einzigen Wert im Browser, einen
 - Sie ist für ein Display gebaut, das sich die Menschen eines Haushalts, Vereins oder Lokals teilen und dem sie vertrauen: Wer an diesem Display steht, kann zu jedem gespeicherten Konto wechseln. Wo nicht jeder jeden kennt, bringt der [Modus für Verein und Kneipe](shared-display.md#venue-mode) eine Manager-PIN, eine PIN pro Spieler und die Rückkehr zu einem Hauskonto nach einer Pause, nie während eines Matches.
 - Die gespeicherten Sitzungen und gemerkten Passwörter liegen verschlüsselt, mit einem Schlüssel, den der Browser für die Erweiterung behält und nie herausgibt. Ein Werkzeug oder eine Kopie, die den Speicher der Erweiterung liest, findet darin keinen Token und kein Passwort.
 - Die gespeicherten Konten tragen die Version ihres Formats. Wer zu einer älteren Version der Erweiterung zurückgeht, verliert die Konten nicht, die eine neuere gespeichert hat: Die ältere lässt sie unverändert, behält eine Kopie, und das Popup bittet um ein Update.
+- Sie spricht Deutsch, Englisch, Niederländisch, Französisch und Spanisch, in der Sprache, in der Chrome läuft, und Englisch in jeder anderen. Die Hilfe und diese Website gibt es auf Deutsch und Englisch; **Hilfe** auf Niederländisch, Französisch oder Spanisch führt zur englischen Hilfe. [Eine Sprache hinzufügen](development.md#add-a-language) (auf Englisch) sagt, wie eine weitere dazukommt.
 - Sie fragt nur nach dem Zugriff auf die Autodarts-Seiten, auf ihren eigenen Speicher, auf einen Timer für die Erneuerung und auf das Recht, nach einem Update oder in einem Tab, in dem es nicht mehr antwortet, ihr eigenes Skript in den Autodarts-Tabs auszuführen. Adresse und Titel deiner anderen Tabs und deinen Browserverlauf kann sie nicht lesen.
 
 Nicht mit Autodarts verbunden.

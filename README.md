@@ -38,6 +38,7 @@ Every guide is on the [documentation website](https://dennis-otto.github.io/play
 - **Made for the board display.** A round button on the Autodarts page and a keyboard shortcut open the players right over the page, also in fullscreen and in kiosk mode, where the toolbar of the browser is out of reach.
 - **Ready for a club or pub.** An optional venue mode guards **Manage accounts** and the settings with a manager PIN, lets each player protect their account with a PIN of their own, and returns the display to a house account after a break, never during a match: [the venue mode](https://dennis-otto.github.io/player-switch-for-autodarts/shared-display.html#venue-mode).
 - **For a keyboard, a screen reader and a finger.** The keys 1 to 9 pick a player, the focus keeps its place after every action, errors are read out at once, and every control is at least 44 by 44 pixels. A test checks the popup with axe-core for every change.
+- **In five languages.** The popup, the players on the page, the welcome page and the settings speak English, German, Dutch, French and Spanish, in the language that Chrome runs in. The help and the website are in English and German.
 - **Private by design.** Everything stays in the browser on that computer and goes only to Autodarts. No analytics, no server of ours, nothing sent anywhere else.
 - **No workaround needed.** No signing out and in for every player, no Chrome profile for each of them, no playing as a guest of someone else's account: [why not just …](https://dennis-otto.github.io/player-switch-for-autodarts/#why-not-just) says where each of them falls short.
 
@@ -141,7 +142,7 @@ Under **Manage accounts**, choose **Remember password** for an account, and the 
 
 ## Development
 
-Contributions are welcome. [CONTRIBUTING.md](CONTRIBUTING.md) has the rules and the checks, [docs/development.md](docs/development.md) explains how the code is laid out, how to run the extension from the source and what the tests check, among them property-based tests that run the account logic on generated inputs and end-to-end tests that run the built extension in a real Chromium against a fake Autodarts, and [docs/releases.md](docs/releases.md) how a release reaches the Chrome Web Store.
+Contributions are welcome. [CONTRIBUTING.md](CONTRIBUTING.md) has the rules and the checks, [docs/development.md](docs/development.md) explains how the code is laid out, how to run the extension from the source and what the tests check, among them property-based tests that run the account logic on generated inputs and end-to-end tests that run the built extension in a real Chromium against a fake Autodarts, and [docs/releases.md](docs/releases.md) how a release reaches the Chrome Web Store. A translation into another language is welcome: [Add a language](docs/development.md#add-a-language) says what it takes.
 
 ## Support and security
 

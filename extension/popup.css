@@ -392,6 +392,8 @@ input:focus-visible {
 
 .form-actions {
     display: flex;
+    /* A longer translation puts the second button on its own line, not on two. */
+    flex-wrap: wrap;
     align-items: center;
     justify-content: flex-end;
     gap: 10px;

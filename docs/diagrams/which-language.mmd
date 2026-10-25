@@ -1,0 +1,27 @@
+---
+config:
+  flowchart:
+    wrappingWidth: 400
+---
+flowchart TB
+    accTitle: Which language a player sees
+    accDescr: Chrome gives the extension the texts of its own language. When extension/_locales has that language, English, German, Dutch, French or Spanish, the popup, the switcher in the page, the welcome page, the settings and the tooltip of the icon show it, with names and times in its format; any other language shows English, the default of the manifest. Help leads to the help in that language when the website has it, as for German, and to the English help otherwise.
+
+    chrome["Chrome runs in a language,<br>such as Dutch"]
+    has{"Does extension/_locales<br>have it?"}
+    own["Every text in that language:<br>the popup, the switcher in the page,<br>the welcome page, the settings<br>and the tooltip of the icon,<br>with names and times in its format"]
+    english["Every text in English,<br>the default of the manifest"]
+    site{"Does the website have<br>the help in it?"}
+    helpOwn["Help leads to the help<br>in that language, as for German"]
+    helpEnglish["Help leads to the English help"]
+
+    chrome --> has
+    has -- yes --> own --> site
+    has -- no --> english --> helpEnglish
+    site -- yes --> helpOwn
+    site -- no --> helpEnglish
+
+    classDef bot fill:#526cfe2e,stroke:#526cfe,stroke-width:2px
+    classDef done fill:#16a34a2e,stroke:#16a34a,stroke-width:2px
+    class own,english bot
+    class helpOwn,helpEnglish done

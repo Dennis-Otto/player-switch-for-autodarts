@@ -5,8 +5,9 @@
 // for any text, such as the name of an example player. Every other message is listed
 // as one that needs no entry, so that each new message is sorted into one of the two
 // lists. It also checks that "Help" in the extension leads to the help in the language
-// of the extension. Run by scripts/check-project.sh; no dependencies.
-import { readFileSync } from "node:fs";
+// of the extension, or to the English help for a language that the website doesn't
+// have, such as Dutch. Run by scripts/check-project.sh; no dependencies.
+import { existsSync, readdirSync, readFileSync } from "node:fs";
 
 const read = (path) =>
   readFileSync(new URL(`../${path}`, import.meta.url), "utf8");
@@ -144,10 +145,23 @@ const plain = [
 
 // The address of the website, from which the help of each language has its own.
 const site = /^site_url:\s*(\S+)\s*$/m.exec(read("mkdocs.yml"))?.[1];
-const languages = [
-  { code: "en", page: "docs/help.md", url: `${site}help.html` },
-  { code: "de", page: "docs/help.de.md", url: `${site}de/help.html` },
-];
+// The languages of the extension, each with the page of its help: docs/help.md for
+// English, docs/help.<code>.md for another language of the website, such as German,
+// and none for a language that the website doesn't have, such as Dutch, whose "Help"
+// leads to the English help.
+const languages = readdirSync(
+  new URL("../extension/_locales/", import.meta.url),
+)
+  .sort()
+  .map((code) => {
+    if (code === "en") {
+      return { code, page: "docs/help.md", url: `${site}help.html` };
+    }
+    const page = `docs/help.${code}.md`;
+    return existsSync(new URL(`../${page}`, import.meta.url))
+      ? { code, page, url: `${site}${code}/help.html` }
+      : { code, page: null, url: `${site}help.html` };
+  });
 
 const problems = [];
 
@@ -199,6 +213,14 @@ if (site === undefined) {
 }
 for (const { code, page, url } of languages) {
   const messages = JSON.parse(read(`extension/_locales/${code}/messages.json`));
+  if (page === null) {
+    if (site !== undefined && messages.helpUrl?.message !== url) {
+      problems.push(
+        `the message "helpUrl" of the language ${code} is "${messages.helpUrl?.message}"; the website has no help in this language, so it leads to the English one, ${url}`,
+      );
+    }
+    continue;
+  }
   let text;
   try {
     text = readable(read(page));
@@ -229,6 +251,7 @@ if (problems.length > 0) {
   }
   process.exit(1);
 }
+const pages = languages.filter(({ page }) => page !== null);
 console.log(
-  `The help quotes the ${explained.length} messages that need it, in both languages, and Help in the extension leads to it.`,
+  `The help quotes the ${explained.length} messages that need it, in ${pages.map(({ code }) => code).join(" and ")}, and Help in each of the ${languages.length} languages of the extension leads to it.`,
 );

@@ -97,7 +97,7 @@ The [guide for a shared display](shared-display.md) sets it all up: kiosk mode, 
 - **The focus keeps its place:** after a switch it stays on the player who plays now, after a removal it moves to the same action of the account in its place, and **Cancel** leads back to where you came from.
 - **Clear to a screen reader:** the tile of the player who plays is the current one, **Manage accounts** says whether it is on, the actions below a tile carry the name of its account, and an error is read out at once.
 - **Made for a finger:** every control is at least 44 by 44 pixels and no text is smaller than 12 pixels; a contrast theme of Windows keeps the player who plays and the chips apart, and with reduced motion in the system nothing moves.
-- **Tested:** for every change, a test opens the popup in Chrome and checks it with [axe-core](https://github.com/dequelabs/axe-core), in both languages and both color schemes, and walks through every action with the keyboard alone.
+- **Tested:** for every change, a test opens the popup in Chrome and checks it with [axe-core](https://github.com/dequelabs/axe-core), in all five languages and both color schemes, and walks through every action with the keyboard alone.
 
 ## How it works
 
@@ -137,6 +137,7 @@ Over days and weeks, a saved account moves between these states:
 - It is built for a display that the people of a household, club or venue share and trust: anyone at that display can switch to any saved account. Where not everyone knows everyone, the [venue mode](shared-display.md#venue-mode) adds a manager PIN, a PIN per player and a return to a house account after a break, never during a match.
 - The saved sessions and remembered passwords are stored encrypted, with a key that the browser keeps for the extension and never hands out. A tool or a copy that reads the storage of the extension finds no token and no password in it.
 - The saved accounts carry the version of their format. Going back to an older version of the extension never wipes accounts that a newer one saved: the older one leaves them untouched, keeps a copy, and the popup asks you to update.
+- It speaks English, German, Dutch, French and Spanish, in the language that Chrome runs in, and English in any other. The help and this website are in English and German; **Help** in Dutch, French or Spanish leads to the English help. [Add a language](development.md#add-a-language) says how another one comes in.
 - It asks only for access to the Autodarts sites, its own storage, a timer for the renewal and the right to run its own script in the Autodarts tabs after an update, or in a tab where it stopped answering. It can't read the address or title of your other tabs, or your browsing history.
 
 Not affiliated with Autodarts.

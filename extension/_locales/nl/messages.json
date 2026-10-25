@@ -1,0 +1,283 @@
+{
+  "locale": {
+    "message": "nl",
+    "description": "The language code of this translation, used to format names and times. Do not translate; use the code of the language of this file."
+  },
+  "extName": {
+    "message": "Player Switch for Autodarts"
+  },
+  "extDescription": {
+    "message": "Wissel op een gedeeld scherm met één tik tussen Autodarts-accounts, zonder opnieuw in te loggen."
+  },
+  "title": {
+    "message": "Wie speelt er?"
+  },
+  "manage": {
+    "message": "Accounts beheren"
+  },
+  "playing": {
+    "message": "Speelt"
+  },
+  "needsSignIn": {
+    "message": "Opnieuw inloggen"
+  },
+  "badgeTitle": {
+    "message": "Player Switch for Autodarts – opnieuw inloggen: $NAMES$",
+    "placeholders": {
+      "names": {
+        "content": "$1"
+      }
+    }
+  },
+  "badgeUnsaved": {
+    "message": "Player Switch for Autodarts – een account op Autodarts is nog niet opgeslagen"
+  },
+  "badgeSaved": {
+    "message": "Player Switch for Autodarts – $NAME$ is opgeslagen",
+    "placeholders": {
+      "name": {
+        "content": "$1"
+      }
+    }
+  },
+  "renewed": {
+    "message": "Vernieuwd $WHEN$",
+    "placeholders": {
+      "when": {
+        "content": "$1"
+      }
+    }
+  },
+  "renewalFailing": {
+    "message": "Vernieuwen mislukt sinds $WHEN$; de extensie blijft het proberen.",
+    "placeholders": {
+      "when": {
+        "content": "$1"
+      }
+    }
+  },
+  "updateHintText": {
+    "message": "Autodarts heeft misschien de manier van inloggen veranderd. Kijk of er een update van Player Switch is."
+  },
+  "updateHintLink": {
+    "message": "Bekende problemen en updates"
+  },
+  "addAccount": {
+    "message": "Account toevoegen"
+  },
+  "addingText": {
+    "message": "Log op Autodarts in met de nieuwe speler. Het account wordt vanzelf opgeslagen."
+  },
+  "savedAccount": {
+    "message": "$NAME$ is opgeslagen. Een tik op een tegel wisselt van speler.",
+    "placeholders": {
+      "name": {
+        "content": "$1"
+      }
+    }
+  },
+  "unsavedText": {
+    "message": "Er is iemand op Autodarts ingelogd die hier nog niet is opgeslagen."
+  },
+  "saveAccount": {
+    "message": "Account opslaan"
+  },
+  "rememberPassword": {
+    "message": "Wachtwoord onthouden"
+  },
+  "forgetPassword": {
+    "message": "Wachtwoord wissen"
+  },
+  "remove": {
+    "message": "Account verwijderen"
+  },
+  "removeConfirm": {
+    "message": "$NAME$ van dit scherm verwijderen? Log opnieuw in om het account weer toe te voegen.",
+    "placeholders": {
+      "name": {
+        "content": "$1"
+      }
+    }
+  },
+  "passwordHint": {
+    "message": "Wordt alleen gebruikt als de opgeslagen login niet meer werkt. Het blijft op deze computer en gaat alleen naar Autodarts."
+  },
+  "usernameLabel": {
+    "message": "Gebruikersnaam of e-mailadres"
+  },
+  "passwordLabel": {
+    "message": "Wachtwoord"
+  },
+  "save": {
+    "message": "Opslaan"
+  },
+  "cancel": {
+    "message": "Annuleren"
+  },
+  "switching": {
+    "message": "Wisselen naar $NAME$…",
+    "placeholders": {
+      "name": {
+        "content": "$1"
+      }
+    }
+  },
+  "switchSignIn": {
+    "message": "$NAME$ moet opnieuw inloggen: kies Account toevoegen om één keer op Autodarts in te loggen, of kies Wachtwoord onthouden.",
+    "placeholders": {
+      "name": {
+        "content": "$1"
+      }
+    }
+  },
+  "unreachable": {
+    "message": "Autodarts is nu niet bereikbaar. Probeer het zo opnieuw."
+  },
+  "noPage": {
+    "message": "Autodarts reageerde in geen enkel tabblad. Open Autodarts en probeer het opnieuw."
+  },
+  "unknownFormat": {
+    "message": "Je opgeslagen accounts komen van een nieuwere versie van Player Switch. Werk de extensie bij om ze te gebruiken; deze versie laat ze ongemoeid."
+  },
+  "openPage": {
+    "message": "Autodarts openen"
+  },
+  "empty": {
+    "message": "Nog geen accounts. Kies Account toevoegen en log in op Autodarts: elk account wordt vanzelf opgeslagen."
+  },
+  "error": {
+    "message": "Er ging iets mis. Probeer het opnieuw."
+  },
+  "accounts": {
+    "message": "Accounts"
+  },
+  "settings": {
+    "message": "Instellingen"
+  },
+  "close": {
+    "message": "Sluiten"
+  },
+  "keysHint": {
+    "message": "Toetsen 1 tot en met 9 kiezen een speler, Esc sluit."
+  },
+  "switchButton": {
+    "message": "Van speler wisselen"
+  },
+  "reloadAfterUpdate": {
+    "message": "Player Switch is bijgewerkt. De pagina opnieuw laden om het te gebruiken? Een lopende wedstrijd eindigt dan op dit scherm."
+  },
+  "switchButtonPlaying": {
+    "message": "$NAME$ speelt. Van speler wisselen",
+    "placeholders": {
+      "name": {
+        "content": "$1"
+      }
+    }
+  },
+  "matchTitle": {
+    "message": "Er loopt een wedstrijd"
+  },
+  "matchText": {
+    "message": "Wisselen beëindigt de wedstrijd op dit scherm."
+  },
+  "matchConfirm": {
+    "message": "Toch wisselen"
+  },
+  "matchCancel": {
+    "message": "Verder spelen"
+  },
+  "commandPopup": {
+    "message": "De pop-up openen"
+  },
+  "commandToggle": {
+    "message": "De spelers op de Autodarts-pagina tonen of verbergen"
+  },
+  "optionsButton": {
+    "message": "De knop op de Autodarts-pagina"
+  },
+  "optionShowButton": {
+    "message": "De knop op de Autodarts-pagina tonen"
+  },
+  "optionShowButtonHint": {
+    "message": "Een tik erop toont de spelers over de pagina, ook op volledig scherm en in kioskmodus, waar de werkbalk buiten bereik is. De sneltoets opent ze ook."
+  },
+  "optionCorner": {
+    "message": "Hoek van de knop"
+  },
+  "cornerBottomRight": {
+    "message": "Rechtsonder"
+  },
+  "cornerBottomLeft": {
+    "message": "Linksonder"
+  },
+  "cornerTopRight": {
+    "message": "Rechtsboven"
+  },
+  "cornerTopLeft": {
+    "message": "Linksboven"
+  },
+  "optionShortcuts": {
+    "message": "Sneltoetsen"
+  },
+  "shortcutNotSet": {
+    "message": "Niet ingesteld"
+  },
+  "changeShortcuts": {
+    "message": "Sneltoetsen wijzigen"
+  },
+  "saved": {
+    "message": "Opgeslagen."
+  },
+  "help": {
+    "message": "Help"
+  },
+  "helpUrl": {
+    "message": "https://dennis-otto.github.io/player-switch-for-autodarts/help.html",
+    "description": "The address of the help page of the website, docs/help.md, which explains every message of the extension. Do not translate; use the address of its page in the language of this file, or the English one, and quote each message in that page."
+  },
+  "report": {
+    "message": "Een probleem melden"
+  },
+  "welcomeDocTitle": {
+    "message": "Welkom – Player Switch for Autodarts"
+  },
+  "welcomeTitle": {
+    "message": "Welkom bij Player Switch"
+  },
+  "welcomeLead": {
+    "message": "Richt het gedeelde scherm in drie stappen in. Daarna wisselt een tik op een tegel van speler."
+  },
+  "welcomePinTitle": {
+    "message": "Maak het pictogram vast"
+  },
+  "welcomePinText": {
+    "message": "Chrome zet nieuwe extensies achter het puzzelstukje naast de adresbalk. Klik erop en daarna op de punaise naast Player Switch for Autodarts, dan blijft het pictogram in de werkbalk."
+  },
+  "pinPictureTitle": {
+    "message": "Zo maak je het pictogram vast"
+  },
+  "pinPictureText": {
+    "message": "De werkbalk van Chrome: het puzzelstukje naast de adresbalk opent de lijst met extensies, en de punaise naast Player Switch for Autodarts houdt het pictogram in de werkbalk."
+  },
+  "pinPictureMenu": {
+    "message": "Extensies"
+  },
+  "welcomeFirstTitle": {
+    "message": "Sla de eerste speler op"
+  },
+  "welcomeFirstText": {
+    "message": "Open Autodarts en log in. Binnen tien minuten wordt het account vanzelf opgeslagen en toont het pictogram een vinkje. Wie al is ingelogd, wordt op dezelfde manier opgeslagen."
+  },
+  "welcomeNextTitle": {
+    "message": "Voeg de volgende spelers toe"
+  },
+  "welcomeNextText": {
+    "message": "Klik op het pictogram, kies Account toevoegen en log in als de volgende speler: ook dat account wordt vanzelf opgeslagen."
+  },
+  "welcomePlusText": {
+    "message": "Een + op het pictogram betekent dat er iemand is ingelogd die nog niet is opgeslagen: met Account opslaan in de pop-up sla je die op."
+  },
+  "welcomePrivacy": {
+    "message": "Alles blijft op deze computer en gaat alleen naar Autodarts."
+  }
+}

@@ -1,0 +1,283 @@
+{
+  "locale": {
+    "message": "es",
+    "description": "The language code of this translation, used to format names and times. Do not translate; use the code of the language of this file."
+  },
+  "extName": {
+    "message": "Player Switch for Autodarts"
+  },
+  "extDescription": {
+    "message": "Cambia entre cuentas de Autodarts en una pantalla compartida con un solo toque, sin volver a iniciar sesión."
+  },
+  "title": {
+    "message": "¿Quién juega?"
+  },
+  "manage": {
+    "message": "Gestionar cuentas"
+  },
+  "playing": {
+    "message": "Jugando"
+  },
+  "needsSignIn": {
+    "message": "Volver a iniciar sesión"
+  },
+  "badgeTitle": {
+    "message": "Player Switch for Autodarts – volver a iniciar sesión: $NAMES$",
+    "placeholders": {
+      "names": {
+        "content": "$1"
+      }
+    }
+  },
+  "badgeUnsaved": {
+    "message": "Player Switch for Autodarts – una cuenta con la sesión iniciada en Autodarts aún no está guardada"
+  },
+  "badgeSaved": {
+    "message": "Player Switch for Autodarts – la cuenta de $NAME$ está guardada",
+    "placeholders": {
+      "name": {
+        "content": "$1"
+      }
+    }
+  },
+  "renewed": {
+    "message": "Renovada $WHEN$",
+    "placeholders": {
+      "when": {
+        "content": "$1"
+      }
+    }
+  },
+  "renewalFailing": {
+    "message": "La renovación falla desde el $WHEN$; la extensión lo sigue intentando.",
+    "placeholders": {
+      "when": {
+        "content": "$1"
+      }
+    }
+  },
+  "updateHintText": {
+    "message": "Puede que Autodarts haya cambiado su forma de iniciar sesión. Comprueba si hay una actualización de Player Switch."
+  },
+  "updateHintLink": {
+    "message": "Problemas conocidos y actualizaciones"
+  },
+  "addAccount": {
+    "message": "Añadir cuenta"
+  },
+  "addingText": {
+    "message": "Inicia sesión en Autodarts con el nuevo jugador. La cuenta se guarda sola."
+  },
+  "savedAccount": {
+    "message": "La cuenta de $NAME$ está guardada. Un toque en una tarjeta cambia de jugador.",
+    "placeholders": {
+      "name": {
+        "content": "$1"
+      }
+    }
+  },
+  "unsavedText": {
+    "message": "Alguien tiene la sesión iniciada en Autodarts y aún no está guardado aquí."
+  },
+  "saveAccount": {
+    "message": "Guardar cuenta"
+  },
+  "rememberPassword": {
+    "message": "Recordar contraseña"
+  },
+  "forgetPassword": {
+    "message": "Borrar contraseña"
+  },
+  "remove": {
+    "message": "Eliminar cuenta"
+  },
+  "removeConfirm": {
+    "message": "¿Eliminar a $NAME$ de esta pantalla? Vuelve a iniciar sesión para añadir la cuenta de nuevo.",
+    "placeholders": {
+      "name": {
+        "content": "$1"
+      }
+    }
+  },
+  "passwordHint": {
+    "message": "Solo se usa cuando el inicio de sesión guardado deja de funcionar. Se queda en este ordenador y solo va a Autodarts."
+  },
+  "usernameLabel": {
+    "message": "Nombre de usuario o correo electrónico"
+  },
+  "passwordLabel": {
+    "message": "Contraseña"
+  },
+  "save": {
+    "message": "Guardar"
+  },
+  "cancel": {
+    "message": "Cancelar"
+  },
+  "switching": {
+    "message": "Cambiando a $NAME$…",
+    "placeholders": {
+      "name": {
+        "content": "$1"
+      }
+    }
+  },
+  "switchSignIn": {
+    "message": "$NAME$ tiene que volver a iniciar sesión: usa Añadir cuenta para iniciar sesión una vez en Autodarts, o elige Recordar contraseña.",
+    "placeholders": {
+      "name": {
+        "content": "$1"
+      }
+    }
+  },
+  "unreachable": {
+    "message": "No se puede acceder a Autodarts ahora mismo. Inténtalo de nuevo en un momento."
+  },
+  "noPage": {
+    "message": "Autodarts no respondió en ninguna pestaña. Abre Autodarts y vuelve a intentarlo."
+  },
+  "unknownFormat": {
+    "message": "Tus cuentas guardadas vienen de una versión más reciente de Player Switch. Actualiza la extensión para usarlas; esta versión no las modifica."
+  },
+  "openPage": {
+    "message": "Abrir Autodarts"
+  },
+  "empty": {
+    "message": "Aún no hay cuentas. Elige Añadir cuenta e inicia sesión en Autodarts: cada cuenta se guarda sola."
+  },
+  "error": {
+    "message": "Algo salió mal. Inténtalo de nuevo."
+  },
+  "accounts": {
+    "message": "Cuentas"
+  },
+  "settings": {
+    "message": "Ajustes"
+  },
+  "close": {
+    "message": "Cerrar"
+  },
+  "keysHint": {
+    "message": "Las teclas del 1 al 9 eligen un jugador; Esc cierra."
+  },
+  "switchButton": {
+    "message": "Cambiar de jugador"
+  },
+  "reloadAfterUpdate": {
+    "message": "Player Switch se ha actualizado. ¿Recargar la página para usarlo? Una partida en curso termina en esta pantalla."
+  },
+  "switchButtonPlaying": {
+    "message": "Juega $NAME$. Cambiar de jugador",
+    "placeholders": {
+      "name": {
+        "content": "$1"
+      }
+    }
+  },
+  "matchTitle": {
+    "message": "Hay una partida en curso"
+  },
+  "matchText": {
+    "message": "Si cambias, termina en esta pantalla."
+  },
+  "matchConfirm": {
+    "message": "Cambiar de todos modos"
+  },
+  "matchCancel": {
+    "message": "Seguir jugando"
+  },
+  "commandPopup": {
+    "message": "Abrir la ventana emergente"
+  },
+  "commandToggle": {
+    "message": "Mostrar u ocultar los jugadores en la página de Autodarts"
+  },
+  "optionsButton": {
+    "message": "El botón en la página de Autodarts"
+  },
+  "optionShowButton": {
+    "message": "Mostrar el botón en la página de Autodarts"
+  },
+  "optionShowButtonHint": {
+    "message": "Un toque en él muestra los jugadores sobre la página, también en pantalla completa y en modo quiosco, donde la barra de herramientas queda fuera de alcance. El atajo de teclado también los abre."
+  },
+  "optionCorner": {
+    "message": "Esquina del botón"
+  },
+  "cornerBottomRight": {
+    "message": "Abajo a la derecha"
+  },
+  "cornerBottomLeft": {
+    "message": "Abajo a la izquierda"
+  },
+  "cornerTopRight": {
+    "message": "Arriba a la derecha"
+  },
+  "cornerTopLeft": {
+    "message": "Arriba a la izquierda"
+  },
+  "optionShortcuts": {
+    "message": "Atajos de teclado"
+  },
+  "shortcutNotSet": {
+    "message": "Sin definir"
+  },
+  "changeShortcuts": {
+    "message": "Cambiar atajos"
+  },
+  "saved": {
+    "message": "Guardado."
+  },
+  "help": {
+    "message": "Ayuda"
+  },
+  "helpUrl": {
+    "message": "https://dennis-otto.github.io/player-switch-for-autodarts/help.html",
+    "description": "The address of the help page of the website, docs/help.md, which explains every message of the extension. Do not translate; use the address of its page in the language of this file, or the English one, and quote each message in that page."
+  },
+  "report": {
+    "message": "Informar de un problema"
+  },
+  "welcomeDocTitle": {
+    "message": "Bienvenida – Player Switch for Autodarts"
+  },
+  "welcomeTitle": {
+    "message": "Te damos la bienvenida a Player Switch"
+  },
+  "welcomeLead": {
+    "message": "Configura la pantalla compartida en tres pasos. Después, un toque en una tarjeta cambia de jugador."
+  },
+  "welcomePinTitle": {
+    "message": "Fija el icono"
+  },
+  "welcomePinText": {
+    "message": "Chrome coloca las extensiones nuevas detrás de la pieza de puzle junto a la barra de direcciones. Haz clic en ella y luego en la chincheta junto a Player Switch for Autodarts, y el icono se queda en la barra de herramientas."
+  },
+  "pinPictureTitle": {
+    "message": "Cómo fijar el icono"
+  },
+  "pinPictureText": {
+    "message": "La barra de herramientas de Chrome: la pieza de puzle junto a la barra de direcciones abre la lista de extensiones, y la chincheta junto a Player Switch for Autodarts mantiene su icono en la barra de herramientas."
+  },
+  "pinPictureMenu": {
+    "message": "Extensiones"
+  },
+  "welcomeFirstTitle": {
+    "message": "Guarda el primer jugador"
+  },
+  "welcomeFirstText": {
+    "message": "Abre Autodarts e inicia sesión. En los diez minutos siguientes, la cuenta se guarda sola y el icono muestra una marca de verificación. Quien ya tenga la sesión iniciada se guarda de la misma forma."
+  },
+  "welcomeNextTitle": {
+    "message": "Añade a los siguientes jugadores"
+  },
+  "welcomeNextText": {
+    "message": "Haz clic en el icono, elige Añadir cuenta e inicia sesión como el siguiente jugador: esa cuenta también se guarda sola."
+  },
+  "welcomePlusText": {
+    "message": "Un + en el icono significa que alguien tiene la sesión iniciada sin estar guardado aún: Guardar cuenta, en la ventana emergente, lo guarda."
+  },
+  "welcomePrivacy": {
+    "message": "Todo se queda en este ordenador y solo va a Autodarts."
+  }
+}
