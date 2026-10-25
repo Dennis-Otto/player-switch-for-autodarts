@@ -48,7 +48,7 @@ Every release after the first reaches the store on its own: the workflow [`publi
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="images/diagrams/store-delivery.dark.svg">
-  <img src="images/diagrams/store-delivery.svg" alt="How a release reaches the Chrome Web Store: After every release, every day at 00:17 UTC and when started by hand with a tag, the workflow signs in to the Chrome Web Store and asks for the state of the item. A refresh token that Google turns away, a rejected release, a warning, a takedown or a review of more than 7 days fail the run, with the reason and the fix in its summary, and the bot-health sweep of the night keeps an issue open. While a review is pending, the run ends with a note, and a later day delivers the release. When the store has the release already, nothing happens. Otherwise a job without any secret builds the zip from the tag and keeps it as an artifact, and a job that reaches only Google uploads it and submits it for review.">
+  <img src="images/diagrams/store-delivery.svg" alt="How a release reaches the Chrome Web Store: After every release, every day at 00:17 UTC and when started by hand with a tag, the workflow signs in to the Chrome Web Store and asks for the state of the item. A sign-in that Google turns away, a rejected release, a warning, a takedown or a review of more than 7 days fail the run, with the reason and the fix in its summary, and the bot-health sweep of the night keeps an issue open. While a review is pending, the run ends with a note, and a later day delivers the release. When the store has the release already, nothing happens. Otherwise a job without any secret builds the zip from the tag and keeps it as an artifact, and a job that reaches only Google uploads it and submits it for review.">
 </picture>
 
 Every run writes a table into its summary: the release, the version that the store publishes and the one submitted since, each with its state, the days that a pending review has taken, and whether Google warned the item or took it down. `scripts/store-status.ts` decides, and its tests cover every row of this table:
@@ -66,12 +66,79 @@ Every run writes a table into its summary: the release, the version that the sto
 | Google took the item down | Fails, and delivers nothing; a start by hand with the tag of the fixing release delivers it. |
 | It has a higher version than the release | Fails: the store takes only a version above its own. |
 
-The days of a review count from the artifact of the delivery, or from the release of the version when it went to the store another way. The workflow needs this one-time set-up:
+The days of a review count from the artifact of the delivery, or from the release of the version when it went to the store another way.
+
+### The one-time set-up
+
+The workflow needs the IDs of the item and of the publisher, and a way to sign in to Google, which the two jobs that talk to the store each take by themselves. The better way needs no stored secret: GitHub issues each run an OIDC token, which Google trades for an access token of a service account, and only for a run of this workflow on `main` ([decision 0010](decisions/0010-sign-in-to-the-store-without-a-stored-secret.md)). The other way, with which the store delivery started, is an OAuth client and a refresh token of the developer account, the secrets of the environment `chrome-web-store`: the workflow takes it as long as the variables of the first way aren't set.
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="images/diagrams/store-sign-in.dark.svg">
+  <img src="images/diagrams/store-sign-in.svg" alt="How the workflow signs in to the Chrome Web Store: Each of the two jobs that talk to the store signs in by itself. With the variables CWS_WORKLOAD_IDENTITY_PROVIDER and CWS_SERVICE_ACCOUNT set, the job asks GitHub for its OIDC token, which names the repository, the branch and the workflow. Google's Security Token Service trades it for a federated token only when the condition of the provider admits this repository, the branch main and publish-store.yml, and IAM trades that for an access token of the service account for 20 minutes. Without the variables, Google issues the access token for the OAuth client and the refresh token, the secrets of the environment chrome-web-store. Either way the token stays in a file of the job, and the Chrome Web Store takes it when the Developer Dashboard names its account. A sign-in that Google turns away fails the run, with the reason and the fix.">
+</picture>
+
+Either way starts in Google Cloud and in the dashboard:
 
 1. In the [Google Cloud Console](https://console.cloud.google.com/), create a project and enable the **Chrome Web Store API** for it.
-2. Under **APIs & Services → OAuth consent screen**, create the consent screen as an external app with your own address as a test user, then set its publishing status to **In production**: while it stays in testing, Google expires every refresh token after seven days.
-3. Under **Credentials**, create an **OAuth client ID** of the type **Desktop app** and note its client ID and client secret.
-4. Get a refresh token with the scope `https://www.googleapis.com/auth/chromewebstore`: open this address in the browser, signed in as the developer, and allow the access (Google warns about an unverified app; your own app is fine):
+2. In the [Developer Dashboard](https://chrome.google.com/webstore/devconsole), note the **item ID**, the 32 letters in the address of the item, and the **publisher ID** under **Publisher → Settings**, and turn on 2-step verification for the account, which Google requires for publishing by API. Set the two IDs as variables of the repository:
+
+    ```sh
+    gh variable set CWS_EXTENSION_ID --body ITEM_ID
+    gh variable set CWS_PUBLISHER_ID --body PUBLISHER_ID
+    ```
+
+#### Sign in without a stored secret
+
+A pool of Workload Identity Federation in the Google Cloud project takes the OIDC tokens of GitHub, under a condition of its provider: the repository, by its ID, which a new repository of the same name doesn't get, the branch `main` and the workflow `publish-store.yml`. So no branch, fork or other workflow can trade a token, not even the Release workflow, whose jobs get OIDC tokens to sign the provenance. The pool may act as a service account that has no role in the project, and the Developer Dashboard admits that service account to the item.
+
+1. In the [Cloud Shell](https://console.cloud.google.com/home/dashboard?cloudshell=true) of the project, or wherever `gcloud` is signed in, create the pool, its provider and the service account, with the ID of the project in place of `PROJECT_ID`:
+
+    ```sh
+    project=PROJECT_ID
+    repo=Dennis-Otto/player-switch-for-autodarts
+    repo_id="$(curl -s "https://api.github.com/repos/$repo" | jq -r .id)"
+    number="$(gcloud projects describe "$project" --format='value(projectNumber)')"
+    gcloud services enable iamcredentials.googleapis.com sts.googleapis.com --project "$project"
+    gcloud iam workload-identity-pools create github --project "$project" \
+      --location global --display-name GitHub
+    gcloud iam workload-identity-pools providers create-oidc player-switch --project "$project" \
+      --location global --workload-identity-pool github --display-name "Player Switch for Autodarts" \
+      --issuer-uri https://token.actions.githubusercontent.com \
+      --attribute-mapping 'google.subject=assertion.sub,attribute.repository_id=assertion.repository_id' \
+      --attribute-condition "assertion.repository_id == '$repo_id' && assertion.ref == 'refs/heads/main' && assertion.workflow_ref == '$repo/.github/workflows/publish-store.yml@refs/heads/main'"
+    gcloud iam service-accounts create chrome-web-store --project "$project" \
+      --display-name "Chrome Web Store delivery"
+    gcloud iam service-accounts add-iam-policy-binding "chrome-web-store@$project.iam.gserviceaccount.com" \
+      --project "$project" --role roles/iam.workloadIdentityUser \
+      --member "principalSet://iam.googleapis.com/projects/$number/locations/global/workloadIdentityPools/github/attribute.repository_id/$repo_id"
+    echo "CWS_WORKLOAD_IDENTITY_PROVIDER=projects/$number/locations/global/workloadIdentityPools/github/providers/player-switch"
+    echo "CWS_SERVICE_ACCOUNT=chrome-web-store@$project.iam.gserviceaccount.com"
+    ```
+
+2. In the [Developer Dashboard](https://chrome.google.com/webstore/devconsole), under **Account**, add the address of the service account, `chrome-web-store@PROJECT_ID.iam.gserviceaccount.com`. A publisher has one service account.
+3. Set the two values that the last lines printed as variables of the repository, and start the workflow by hand, which checks the sign-in:
+
+    ```sh
+    gh variable set CWS_WORKLOAD_IDENTITY_PROVIDER --body projects/NUMBER/locations/global/workloadIdentityPools/github/providers/player-switch
+    gh variable set CWS_SERVICE_ACCOUNT --body chrome-web-store@PROJECT_ID.iam.gserviceaccount.com
+    gh workflow run publish-store.yml
+    ```
+
+4. Once that run passes, the secrets of the other way are of no use and could still publish a version, and each run warns of them until they are gone. Delete them, delete the OAuth client under **APIs & Services → Credentials** of the project, which ends the refresh token at Google too, and remove the line `secrets = [...]` of `[environments.chrome-web-store]` from [`repository.project.toml`](https://github.com/Dennis-Otto/player-switch-for-autodarts/blob/main/.github/repository.project.toml) in a pull request; the table itself stays, as it keeps the environment to `main`:
+
+    ```sh
+    gh secret delete CWS_CLIENT_ID --env chrome-web-store
+    gh secret delete CWS_CLIENT_SECRET --env chrome-web-store
+    gh secret delete CWS_REFRESH_TOKEN --env chrome-web-store
+    ```
+
+Nothing of this expires: the access token lasts 20 minutes, longer than either job may run, and each run gets a new one.
+
+#### Sign in with a refresh token
+
+1. Under **APIs & Services → OAuth consent screen**, create the consent screen as an external app with your own address as a test user, then set its publishing status to **In production**: while it stays in testing, Google expires every refresh token after seven days.
+2. Under **Credentials**, create an **OAuth client ID** of the type **Desktop app** and note its client ID and client secret.
+3. Get a refresh token with the scope `https://www.googleapis.com/auth/chromewebstore`: open this address in the browser, signed in as the developer, and allow the access (Google warns about an unverified app; your own app is fine):
 
     ```text
     https://accounts.google.com/o/oauth2/v2/auth?client_id=CLIENT_ID&redirect_uri=http://localhost:1&response_type=code&scope=https://www.googleapis.com/auth/chromewebstore&access_type=offline&prompt=consent
@@ -84,23 +151,24 @@ The days of a review count from the artifact of the delivery, or from the releas
     ```
 
     The answer holds the `refresh_token`.
-5. In the [Developer Dashboard](https://chrome.google.com/webstore/devconsole), note the **item ID**, the 32 letters in the address of the item, and the **publisher ID** under **Publisher → Settings**, and turn on 2-step verification for the account, which Google requires for publishing by API.
-6. Set the three secrets in the environment `chrome-web-store`, which the settings bot creates from [`repository.project.toml`](https://github.com/Dennis-Otto/player-switch-for-autodarts/blob/main/.github/repository.project.toml), and the two IDs as variables of the repository:
+4. Set the three secrets in the environment `chrome-web-store`, which the settings bot creates from [`repository.project.toml`](https://github.com/Dennis-Otto/player-switch-for-autodarts/blob/main/.github/repository.project.toml):
 
     ```sh
     gh secret set CWS_CLIENT_ID --env chrome-web-store
     gh secret set CWS_CLIENT_SECRET --env chrome-web-store
     gh secret set CWS_REFRESH_TOKEN --env chrome-web-store
-    gh variable set CWS_EXTENSION_ID --body ITEM_ID
-    gh variable set CWS_PUBLISHER_ID --body PUBLISHER_ID
     ```
 
 ### When a run fails
 
 A failed run names the reason and the fix in its summary and in an annotation, and the bot-health sweep of the night opens an issue with the label `bot-failure`, which the next run that passes closes:
 
-- **Google turned the refresh token away** (`invalid_grant`): [renew it](#renew-the-refresh-token).
-- **Google doesn't know the OAuth client**: set `CWS_CLIENT_ID` and `CWS_CLIENT_SECRET` again from **Credentials** of the Google Cloud project (steps 3 and 6).
+- **Google turned the refresh token away** (`invalid_grant`): [renew it](#renew-the-refresh-token), or [sign in without a stored secret](#sign-in-without-a-stored-secret).
+- **Google doesn't know the OAuth client**: set `CWS_CLIENT_ID` and `CWS_CLIENT_SECRET` again from **Credentials** of the Google Cloud project (steps 2 and 4 of the refresh token).
+- **A variable of the sign-in without a stored secret is missing or has the wrong form**: set both `CWS_WORKLOAD_IDENTITY_PROVIDER`, `projects/` with the number of the project, not its ID, and no `//iam.googleapis.com/` in front, and `CWS_SERVICE_ACCOUNT`, the address of the service account, as in step 3 of [the sign-in without a stored secret](#sign-in-without-a-stored-secret); or delete both for the refresh token.
+- **Google's Security Token Service turned the OIDC token of GitHub away**: the error from Google in the run says why. Most often the provider was deleted or disabled, or its condition doesn't admit the run: one started by hand on another branch than `main`, or after the repository or the workflow got a new name or owner. **IAM & Admin → Workload Identity Federation** of the project shows the condition, which step 1 of [the sign-in without a stored secret](#sign-in-without-a-stored-secret) sets.
+- **Google issued no access token of the service account**: the pool lacks the role *Workload Identity User* on the service account, or the project the IAM Service Account Credentials API; step 1 of [the sign-in without a stored secret](#sign-in-without-a-stored-secret) enables the API with `gcloud services enable` and grants the role with `add-iam-policy-binding`.
+- **The store didn't tell the status of the item** with a 401 or 403 after the sign-in without a stored secret: the Developer Dashboard doesn't name the service account under **Account** (step 2 of [the sign-in without a stored secret](#sign-in-without-a-stored-secret)).
 - **Rejected**: the mail of Google and the [Developer Dashboard](https://chrome.google.com/webstore/devconsole) say why. Fix the cause and release a new version; when only the listing or the privacy practices had to change, change them in the dashboard and start the workflow by hand with the tag, which submits the same version again.
 - **Warned or taken down**: the dashboard says which policy and until when. Fix it there or with a new release, and ask for a review. A warned item gets the new release from the daily run; for a taken-down item, start the workflow by hand with the tag of the fixing release.
 - **In review for more than 7 days**: look in the dashboard whether Google asks for anything, or contact the support of the Chrome Web Store. A new permission makes a review take longer.
@@ -110,7 +178,7 @@ A run that failed for a reason of GitHub or of the network needs nothing: the ne
 
 ### Renew the refresh token
 
-The daily sign-in keeps the refresh token in use, so Google doesn't expire it after six months without use. It still ends when the password of the Google account changes, when someone removes the access of the app under **Security → Third-party connections** of the account, or when the consent screen goes back to testing (step 2). Then get a new one as in step 4, set it, and start the workflow by hand to check it:
+With the [sign-in without a stored secret](#sign-in-without-a-stored-secret), there is no token to renew. Otherwise, the daily sign-in keeps the refresh token in use, so Google doesn't expire it after six months without use. It still ends when the password of the Google account changes, when someone removes the access of the app under **Security → Third-party connections** of the account, or when the consent screen goes back to testing (step 1 of [the refresh token](#sign-in-with-a-refresh-token)). Then get a new one as in step 3, set it as in step 4, and start the workflow by hand to check it:
 
 ```sh
 gh secret set CWS_REFRESH_TOKEN --env chrome-web-store
@@ -119,14 +187,16 @@ gh workflow run publish-store.yml
 
 ### The network of the jobs
 
-The jobs that hold the secrets of the store could publish a version to every user, so each job of the workflow reaches only the hosts that it needs: [Harden-Runner](https://github.com/step-security/harden-runner) blocks every other one with `egress-policy: block`, and the jobs run without sudo and containers, on `ubuntu-24.04`, an image that doesn't move to a new release of Ubuntu by itself.
+The jobs that sign in to the store could publish a version to every user, so each job of the workflow reaches only the hosts that it needs: [Harden-Runner](https://github.com/step-security/harden-runner) blocks every other one with `egress-policy: block`, and the jobs run without sudo and containers, on `ubuntu-24.04`, an image that doesn't move to a new release of Ubuntu by itself.
 
 | Job | Secrets | Hosts |
 | --- | --- | --- |
-| *the state of the store* | the OAuth client and the refresh token | GitHub, `oauth2.googleapis.com`, `chromewebstore.googleapis.com` |
+| *the state of the store* | none, or the OAuth client and the refresh token | GitHub, `oauth2.googleapis.com`, `sts.googleapis.com`, `iamcredentials.googleapis.com`, `chromewebstore.googleapis.com` |
 | *the package of the release* | none | GitHub, `registry.npmjs.org` |
-| *deliver to the Chrome Web Store* | the OAuth client and the refresh token | `oauth2.googleapis.com`, `chromewebstore.googleapis.com` |
+| *deliver to the Chrome Web Store* | none, or the OAuth client and the refresh token | `oauth2.googleapis.com`, `sts.googleapis.com`, `iamcredentials.googleapis.com`, `chromewebstore.googleapis.com` |
 
-GitHub means `api.github.com`, `github.com` and the two hosts of its downloads, for Node.js should the runner image lack its version; the hosts of the Actions service itself, such as those of the artifacts, are open to every job. The job that uploads runs no code of the repository and no npm package: it takes the zip of the job before it as an artifact. When a new version of an action needs another host, its run fails at the blocked request, and the insights of Harden-Runner, linked in the log of its first step, name the host to add to `allowed-endpoints`. `scripts/check-project.sh` fails when a job of the workflow goes back to recording its traffic only, gives up `disable-sudo-and-containers` or runs on `ubuntu-latest`.
+`oauth2.googleapis.com` is for the refresh token, `sts.googleapis.com` and `iamcredentials.googleapis.com` for the sign-in without a stored secret. Only the two jobs that sign in may ask GitHub for an OIDC token (`id-token: write`), and `test/publish-store.test.ts` fails when another job may, or when the sign-in of one job differs from that of the other.
 
-The package is not attached to the GitHub release: a release is immutable once published, and only the isolated build of the release workflow could add a file with its signed provenance; the artifact of the run holds it instead. [Decision 0003](decisions/0003-deliver-each-release-to-the-chrome-web-store.md) and [decision 0005](decisions/0005-look-after-the-store-every-day-from-a-closed-network.md) record the reasons.
+GitHub means `api.github.com`, `github.com` and the two hosts of its downloads, for Node.js should the runner image lack its version; the hosts of the Actions service itself, such as those of the artifacts and of the OIDC token, are open to every job. The job that uploads runs no code of the repository and no npm package: it takes the zip of the job before it as an artifact. When a new version of an action needs another host, its run fails at the blocked request, and the insights of Harden-Runner, linked in the log of its first step, name the host to add to `allowed-endpoints`. `scripts/check-project.sh` fails when a job of the workflow goes back to recording its traffic only, gives up `disable-sudo-and-containers` or runs on `ubuntu-latest`.
+
+The package is not attached to the GitHub release: a release is immutable once published, and only the isolated build of the release workflow could add a file with its signed provenance; the artifact of the run holds it instead. [Decision 0003](decisions/0003-deliver-each-release-to-the-chrome-web-store.md), [decision 0005](decisions/0005-look-after-the-store-every-day-from-a-closed-network.md) and [decision 0010](decisions/0010-sign-in-to-the-store-without-a-stored-secret.md) record the reasons.
