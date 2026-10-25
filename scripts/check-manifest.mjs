@@ -3,15 +3,17 @@
 // refuses. It checks that:
 //
 // - the permissions, the hosts and the web-accessible pages are exactly those that
-//   store/permissions.json allows, each with its reason, and that both store listings
-//   justify each of them and nothing else;
+//   store/permissions.json allows, each with its reason, and that the store listing of
+//   every language justifies each of them and nothing else;
 // - nothing opens the extension wider: no externally_connectable, no optional or
 //   sandboxed extras, no content script in the world of the page, and a content
 //   security policy that runs only the extension's own scripts and connects only to the
 //   hosts of the manifest;
 // - the manifest names a minimum version of Chrome and a homepage, its icons have the
 //   sizes it declares, and the name and description in every language, and the short
-//   descriptions of the listings, fit the limits of the store.
+//   descriptions of the listings, fit the limits of the store, and each language of
+//   the extension has a store listing, store/listing.<code>.md, and each listing a
+//   language of the extension.
 //
 // Run by scripts/check-project.sh; scripts/check-manifest.test.mjs tests it. No dependencies.
 import { existsSync, readdirSync, readFileSync } from "node:fs";
@@ -31,7 +33,7 @@ export const WHY =
   "Chrome disables an installed extension after an update that asks for a new permission or host, until someone " +
   "accepts the new warning in chrome://extensions, and a board display in kiosk mode then stops switching without " +
   "a word. So store/permissions.json allows each permission, host and web-accessible page with its reason, and " +
-  "both store listings justify it.";
+  "every store listing justifies it.";
 
 /** Keys that open the extension wider than it needs, and why each is left out. */
 const FORBIDDEN = {
@@ -84,7 +86,7 @@ function compare(problems, what, asked, allowed) {
     if (!(entry in allowed)) {
       problems.push(
         `extension/manifest.json asks for the ${what} ${entry}, which store/permissions.json doesn't allow. ` +
-          "Remove it, or add it there with its reason and justify it in both store listings.",
+          "Remove it, or add it there with its reason and justify it in every store listing.",
       );
     }
   }
@@ -92,7 +94,7 @@ function compare(problems, what, asked, allowed) {
     if (!asked.includes(entry)) {
       problems.push(
         `store/permissions.json allows the ${what} ${entry}, which extension/manifest.json doesn't ask for. ` +
-          "Remove it there and from both store listings.",
+          "Remove it there and from every store listing.",
       );
     }
   }
@@ -254,10 +256,36 @@ function checkDetails(problems, manifest, locales, imageSize) {
   }
 }
 
-/** The headings of the sections of a listing that the checks read, in English and German. */
-const SHORT_DESCRIPTION = /^## (?:Short description|Kurzbeschreibung)/m;
+/** The headings of the sections of a listing that the checks read, in each language of the listings. */
+const SHORT_DESCRIPTION =
+  /^## (?:Short description|Kurzbeschreibung|Korte beschrijving|Description courte|Descripción breve)/m;
 const JUSTIFICATIONS =
-  /^## (?:Permission justifications|Begründung der Berechtigungen)/m;
+  /^## (?:Permission justifications|Begründung der Berechtigungen|Rechtvaardiging van de machtigingen|Justification des autorisations|Justificación de los permisos)/m;
+
+/** The language of a listing, from its path, such as nl for store/listing.nl.md. */
+export const LISTING_PATH = /^store\/listing\.([A-Za-z0-9_]+)\.md$/;
+
+/** Each language of the extension has a store listing, and each listing a language. */
+function checkLanguages(problems, locales, listings) {
+  const languages = new Set(
+    Object.keys(listings).map((file) => LISTING_PATH.exec(file)?.[1]),
+  );
+  for (const code of Object.keys(locales)) {
+    if (!languages.has(code)) {
+      problems.push(
+        `The extension speaks ${code}, but store/listing.${code}.md is missing; the store would show the listing of another language to its users.`,
+      );
+    }
+  }
+  for (const file of Object.keys(listings)) {
+    const code = LISTING_PATH.exec(file)?.[1];
+    if (!(code in locales)) {
+      problems.push(
+        `${file} is the listing of a language that the extension doesn't speak; the store takes a listing only for a language of extension/_locales/.`,
+      );
+    }
+  }
+}
 
 /** The store listings: their short descriptions, and that they justify exactly what the manifest asks for. */
 function checkListings(problems, manifest, listings) {
@@ -341,6 +369,7 @@ export function checkManifest({
   checkPolicy(problems, manifest);
   checkDetails(problems, manifest, locales, imageSize);
   checkListings(problems, manifest, listings);
+  checkLanguages(problems, locales, listings);
   return problems;
 }
 
@@ -371,7 +400,7 @@ function main() {
   );
   const listings = Object.fromEntries(
     readdirSync(new URL("store/", root))
-      .filter((name) => /^listing\.[a-z]+\.md$/.test(name))
+      .filter((name) => LISTING_PATH.test(`store/${name}`))
       .map((name) => [`store/${name}`, read(`store/${name}`)]),
   );
   const imageSize = (path) => {
@@ -394,7 +423,7 @@ function main() {
   }
   console.log(
     `The manifest asks for the ${manifest.permissions.length} permissions and ${manifest.host_permissions.length} hosts ` +
-      `that store/permissions.json allows, both listings justify them, and its policy connects only to those hosts.`,
+      `that store/permissions.json allows, the listings of its ${Object.keys(locales).length} languages justify them, and its policy connects only to those hosts.`,
   );
 }
 

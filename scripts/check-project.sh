@@ -13,9 +13,10 @@ if [[ "$manifest" != "$release" ]]; then
 fi
 echo "The manifest version is $manifest."
 
-# Every message the UI asks for must exist in both languages, every message must be
-# asked for, the two language files must carry the same keys, and the texts and names
-# that the pages carry themselves must read as their English messages.
+# Every language of extension/_locales must carry the messages of English with the
+# same placeholders and its own code in "locale", every message the UI asks for must
+# exist, every message must be asked for, and the texts and names that the pages carry
+# themselves must read as their English messages.
 node scripts/check-locales.mjs
 
 # Every file the manifest names must exist, and the switcher in the page must show the
@@ -23,14 +24,15 @@ node scripts/check-locales.mjs
 node scripts/check-pages.mjs
 
 # The manifest asks for exactly the permissions, hosts and web-accessible pages that
-# store/permissions.json allows, both store listings justify them, its content security
-# policy connects only to those hosts, and it fits the store. The checker tests itself
+# store/permissions.json allows, the store listing of every language justifies them,
+# its content security policy connects only to those hosts, and it fits the store. The checker tests itself
 # first, with fixture manifests that each break one rule.
 node --test --test-reporter=dot scripts/check-manifest.test.mjs
 node scripts/check-manifest.mjs
 
-# The help explains every message that tells a player about a problem, in both
-# languages, and Help in the extension leads to it.
+# The help explains every message that tells a player about a problem, in English and
+# German, and Help in every language of the extension leads to it, or to the English
+# help where the website has none in that language.
 node scripts/check-help.mjs
 
 # The workflow that holds the token of the Chrome Web Store lets each of its jobs reach

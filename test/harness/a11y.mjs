@@ -2,7 +2,7 @@
 // with chrome-stub.js in place of Chrome and its made-up accounts, as the pictures of
 // scripts/screenshots.sh show it (capture.py). axe-core checks the list, "Manage
 // accounts", the form of a remembered password, the question before a removal and an
-// error, in both languages and both color schemes, and the switcher in the Autodarts
+// error, in every language and both color schemes, and the switcher in the Autodarts
 // page; the page itself checks that every control is a target of 44 by 44 pixels, that
 // no text is smaller than 12 pixels and that no button text breaks. A walk with the
 // keyboard alone through every action checks where the focus lands, and the contrast
@@ -14,7 +14,7 @@
 // of the browser and every other request fails. Run by scripts/check-project.sh, or
 // alone with `npm run test:a11y`, which builds extension/lib/ first.
 import assert from "node:assert/strict";
-import { existsSync } from "node:fs";
+import { existsSync, readdirSync } from "node:fs";
 import { readFile } from "node:fs/promises";
 import { createRequire } from "node:module";
 import { extname, relative, resolve } from "node:path";
@@ -112,7 +112,8 @@ async function open({
     colorScheme: scheme,
     forcedColors,
     reducedMotion: "reduce",
-    locale: lang === "de" ? "de-DE" : "en-US",
+    // A folder such as pt_BR is the tag pt-BR.
+    locale: lang === "en" ? "en-US" : lang.replace("_", "-"),
     timezoneId: "Europe/Berlin",
   });
   await context.route("**/*", serve);
@@ -248,11 +249,23 @@ after(() => browser?.close());
 const tile = (id) => `[data-id="demo-${id}"] .tile`;
 const control = (id, kind) => `[data-id="demo-${id}"] ${kind}`;
 
+// Every language of the extension, so that a long word of a translation that breaks a
+// button or a text that a language misses shows here.
+const LANGUAGES = readdirSync(
+  new URL("../../extension/_locales/", import.meta.url),
+).sort();
+
 describe("the popup in axe-core", { skip: browser === null }, () => {
-  for (const lang of ["en", "de"]) {
+  for (const lang of LANGUAGES) {
     for (const scheme of ["light", "dark"]) {
       test(`every view, in ${lang} and ${scheme}`, async () => {
         const page = await open({ lang, scheme });
+        // In its own language, not in the English that Chrome falls back to.
+        assert.equal(
+          await page.getAttribute("html", "lang"),
+          lang.replace("_", "-"),
+          `the popup shows ${lang} in English: add it to LANGUAGES in test/harness/chrome-stub.js`,
+        );
         await check(page, "the list");
 
         // An error, read out at once: a switch that Autodarts can't take.
@@ -263,6 +276,18 @@ describe("the popup in axe-core", { skip: browser === null }, () => {
         await settle(page);
         assert.notEqual(await page.textContent("#problem"), "");
         await check(page, "an error");
+
+        // The question before a switch ends the match that runs in the page.
+        await page.evaluate(() =>
+          window.harness.refuse({ ok: false, reason: "match" }),
+        );
+        await page.click(tile("jonasberg"));
+        await settle(page);
+        assert.equal(await page.locator("dialog[open]").count(), 1);
+        await check(page, "the question before ending a match");
+        await page.click('dialog[open] button[value="cancel"]');
+        await settle(page);
+        assert.equal(await page.locator("dialog[open]").count(), 0);
 
         await page.click("#manage");
         await settle(page);
