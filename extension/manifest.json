@@ -33,7 +33,7 @@
     }
   },
   "background": {
-    "service_worker": "background.js",
+    "service_worker": "lib/background.js",
     "type": "module"
   },
   "content_scripts": [
@@ -42,7 +42,7 @@
         "https://play.autodarts.com/*"
       ],
       "js": [
-        "content.js"
+        "lib/content.js"
       ],
       "run_at": "document_start"
     }

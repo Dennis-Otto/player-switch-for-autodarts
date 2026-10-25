@@ -81,7 +81,8 @@ page were taken over.
 
 The extension signs in only through Autodarts' own auth service. It never reads a
 token or a password from any other site, and the only code that touches the page's
-stored session is `extension/content.js`.
+stored session is the content script, `src/content.ts`, which the build writes
+as `extension/lib/content.js`.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="images/diagrams/data-flow.dark.svg">

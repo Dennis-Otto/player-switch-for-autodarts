@@ -9,8 +9,9 @@ scripts/social-preview.sh
 # The pages of the extension that the pictures show, their texts and their code.
 extension/popup.*
 extension/switcher.*
-extension/players.js
-extension/support.js
+src/pages/**
+src/popup-model.ts
+src/messages.ts
 extension/icons/**
 extension/_locales/**
 src/health.ts

@@ -7,11 +7,12 @@
 // the format of names and times. Every message that the extension asks for exists,
 // every message is asked for somewhere, and the pages show the English message where
 // they carry a text or a name of their own, so that a page read before its texts
-// arrive, or a screen reader, says the same. It reads every page and script of
-// extension/ (not the built lib/) and the manifest. scripts/check-manifest.mjs checks
+// arrive, or a screen reader, says the same. It reads every page of
+// extension/ and the manifest, and the code of src/ that the pages, the service worker
+// and the content script are built from (not the built lib/). scripts/check-manifest.mjs checks
 // the lengths that the store allows for the name and the description in each language.
-// Run by scripts/check-project.sh, or with another folder of the same kind, for its
-// tests, as node scripts/check-locales.mjs FOLDER; no dependencies.
+// Run by scripts/check-project.sh, or with other folders of the same kind, for its
+// tests, as node scripts/check-locales.mjs FOLDER [CODE]; no dependencies.
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { pathToFileURL } from "node:url";
@@ -21,6 +22,13 @@ const root =
   folder === undefined
     ? new URL("../extension/", import.meta.url)
     : pathToFileURL(`${resolve(folder)}/`);
+// The code of the extension, in src/, or in the second folder of a test.
+const sourceRoot =
+  folder === undefined
+    ? new URL("../src/", import.meta.url)
+    : process.argv[3] === undefined
+      ? null
+      : pathToFileURL(`${resolve(process.argv[3])}/`);
 const text = (path) => readFileSync(new URL(path, root), "utf8");
 
 /** The language of the source texts, which every other one translates. */
@@ -170,9 +178,21 @@ const patterns = [
 const files = readdirSync(root).filter(
   (name) => /\.(?:html|js)$/.test(name) || name === "manifest.json",
 );
+// Each source with the path that a problem names.
+const sources = files.map((file) => [`extension/${file}`, text(file)]);
+if (sourceRoot !== null) {
+  for (const file of readdirSync(sourceRoot, { recursive: true })) {
+    if (/\.ts$/.test(file)) {
+      const path = file.replaceAll("\\", "/");
+      sources.push([
+        `src/${path}`,
+        readFileSync(new URL(path, sourceRoot), "utf8"),
+      ]);
+    }
+  }
+}
 const used = new Map();
-for (const file of files) {
-  const source = text(file);
+for (const [file, source] of sources) {
   for (const pattern of patterns) {
     for (const match of source.matchAll(pattern)) {
       used.set(match[1], used.get(match[1]) ?? file);
@@ -181,7 +201,7 @@ for (const file of files) {
 }
 for (const [key, file] of used) {
   if (!enKeys.has(key)) {
-    problems.push(`extension/${file} uses "${key}", which no message defines`);
+    problems.push(`${file} uses "${key}", which no message defines`);
   }
 }
 for (const key of enKeys) {
@@ -265,5 +285,5 @@ if (problems.length > 0) {
   fail();
 }
 console.log(
-  `The ${catalogs.size} languages (${[...catalogs.keys()].join(", ")}) define the same ${enKeys.size} messages with the same placeholders, the ${files.length} files of the extension use every one, and its pages carry the English texts.`,
+  `The ${catalogs.size} languages (${[...catalogs.keys()].join(", ")}) define the same ${enKeys.size} messages with the same placeholders, the ${sources.length} files of the extension use every one, and its pages carry the English texts.`,
 );

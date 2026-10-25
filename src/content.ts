@@ -1,6 +1,6 @@
 // Runs inside the Autodarts Play page, and does two things there.
 //
-// It is the only file that touches the page's stored session: it reads, writes and
+// It is the only code that touches the page's stored session: it reads, writes and
 // clears the refresh token that Autodarts keeps in window.localStorage, on behalf of
 // the service worker.
 //
@@ -11,8 +11,11 @@
 // Autodarts, so the scripts of the page can't read the accounts out of it. The button
 // and the frame sit in a closed shadow root, apart from the styles of the page.
 //
-// A content script can't import a module: what the button shows (the settings of the
-// options page, the player) comes from the service worker, which takes it from lib/.
+// A content script can't be a module, so this file imports nothing and exports nothing:
+// the compiler writes it as a classic script, lib/content.js, and takes the types of the
+// messages from messages.ts alone. What the button shows (the settings of the options
+// page, the player) comes from the service worker, which takes it from the other
+// modules. The key of the session is the one of autodarts.ts, which a test checks.
 //
 // While the venue mode returns the display after a break, the service worker asks it to
 // say when someone touches, clicks, scrolls or types on the page: only that it
@@ -24,6 +27,18 @@
 // old one steps aside. Everything sits in a function, so a second run declares nothing
 // twice.
 (() => {
+  type PageRequest = import("./messages.ts").PageRequest;
+  type PageButtonView = import("./messages.ts").PageButtonView;
+  type ButtonPlayer = import("./page.ts").ButtonPlayer;
+
+  /** The parts of the switcher in the page, made on first use. */
+  interface Ui {
+    host: HTMLElement;
+    root: ShadowRoot;
+    button: HTMLButtonElement;
+    frame: HTMLIFrameElement | null;
+  }
+
   // The service worker can also run this script itself, in a tab that it picked by its
   // address just before; a tab that went to another site in between gets nothing here.
   if (location.origin !== "https://play.autodarts.com") {
@@ -33,25 +48,36 @@
   // Marks the elements of the page that the open switcher made inert, so that the script
   // of a later version can make them usable again when it takes over.
   const INERT_MARK = "data-player-switch-inert";
+  // The inputs on the page that the venue mode counts, and how often it hears of them.
+  const INPUTS = ["pointerdown", "keydown", "wheel", "touchstart"] as const;
+  const ACTIVITY_EVERY_MS = 15_000;
 
-  const t = (key, substitution) => chrome.i18n.getMessage(key, substitution);
+  const t = (key: string, substitution?: string) =>
+    chrome.i18n.getMessage(key, substitution);
   // False once an update or a removal of the extension cut this script off from it.
   const alive = () => chrome.runtime?.id !== undefined;
 
+  // What the scripts of this extension leave in the isolated world of the page, which the
+  // scripts of the page don't share.
+  const world = globalThis as typeof globalThis & {
+    playerSwitchAlive?: () => boolean;
+  };
   // A script of this extension that is still linked to it runs here already, as when a
   // tab that was still loading got the script twice: that one stays.
   if (
-    typeof globalThis.playerSwitchAlive === "function" &&
-    globalThis.playerSwitchAlive()
+    typeof world.playerSwitchAlive === "function" &&
+    world.playerSwitchAlive()
   ) {
     return;
   }
-  globalThis.playerSwitchAlive = alive;
+  world.playerSwitchAlive = alive;
   // The button of a script that was cut off steps aside, and the page it made inert works again.
   for (const old of document.querySelectorAll("player-switch-ui")) {
     old.remove();
   }
-  for (const element of document.querySelectorAll(`[${INERT_MARK}]`)) {
+  for (const element of document.querySelectorAll<HTMLElement>(
+    `[${INERT_MARK}]`,
+  )) {
     element.inert = false;
     element.removeAttribute(INERT_MARK);
   }
@@ -145,22 +171,21 @@
   `;
 
   // The button, the frame while it is open, and the shadow root that holds them.
-  let ui = null;
+  let ui: Ui | null = null;
   // What the button shows, as the service worker last said; hidden until it has.
-  let view = {
+  let view: PageButtonView = {
     settings: { showButton: false, corner: "bottom-right" },
     player: null,
     reportActivity: false,
   };
-  // When the page last told the worker of an input, and how often it does at most.
-  const ACTIVITY_EVERY_MS = 15_000;
+  // When the page last told the worker of an input.
   let reportedAt = 0;
   // The elements of the page that the open switcher made inert, and where the focus was.
-  let inerted = [];
-  let opener = null;
+  let inerted: HTMLElement[] = [];
+  let opener: Element | null = null;
 
   /** The button and its shadow root, made on first use. */
-  function ensureUi() {
+  function ensureUi(): Ui {
     if (ui === null) {
       const host = document.createElement("player-switch-ui");
       const root = host.attachShadow({ mode: "closed" });
@@ -183,7 +208,7 @@
    * Puts the button where it shows: into the element that the page shows in fullscreen,
    * which hides everything outside it, or else at the end of the body.
    */
-  function place() {
+  function place(): void {
     if (!alive()) {
       retire();
       return;
@@ -191,13 +216,14 @@
     const full = document.fullscreenElement;
     const parent =
       full !== null && full !== document.documentElement ? full : document.body;
-    if (parent !== null && ui.host.parentNode !== parent) {
-      parent.append(ui.host);
+    const host = (ui as Ui).host;
+    if (parent !== null && host.parentNode !== parent) {
+      parent.append(host);
     }
   }
 
   /** A symbol of two arrows that swap, for the button while none of the saved accounts plays. */
-  function swapIcon() {
+  function swapIcon(): SVGSVGElement {
     const ns = "http://www.w3.org/2000/svg";
     const svg = document.createElementNS(ns, "svg");
     svg.setAttribute("viewBox", "0 0 24 24");
@@ -214,7 +240,7 @@
     return svg;
   }
 
-  function letter(initial) {
+  function letter(initial: string): HTMLSpanElement {
     const span = document.createElement("span");
     span.textContent = initial;
     span.setAttribute("aria-hidden", "true");
@@ -222,7 +248,7 @@
   }
 
   /** The face of the button: the picture of the player, their initial, or the symbol. */
-  function face(player) {
+  function face(player: ButtonPlayer | null): Element {
     if (player === null) {
       return swapIcon();
     }
@@ -240,7 +266,7 @@
     return image;
   }
 
-  function drawButton() {
+  function drawButton(): void {
     const { button } = ensureUi();
     const { settings, player } = view;
     const label =
@@ -255,9 +281,13 @@
   }
 
   /** While the switcher is open, the rest of the page takes no focus and no tap. */
-  function makePageInert() {
-    for (const element of ui.host.parentNode.children) {
-      if (element !== ui.host && !element.inert) {
+  function makePageInert(current: Ui): void {
+    for (const element of (current.host.parentNode as ParentNode).children) {
+      if (
+        element !== current.host &&
+        element instanceof HTMLElement &&
+        !element.inert
+      ) {
         element.inert = true;
         element.setAttribute(INERT_MARK, "");
         inerted.push(element);
@@ -265,7 +295,7 @@
     }
   }
 
-  function restorePage() {
+  function restorePage(): void {
     for (const element of inerted) {
       element.inert = false;
       element.removeAttribute(INERT_MARK);
@@ -273,7 +303,7 @@
     inerted = [];
   }
 
-  function openSwitcher() {
+  function openSwitcher(): void {
     const current = ensureUi();
     if (current.frame !== null || current.host.parentNode === null) {
       return;
@@ -288,10 +318,10 @@
     current.root.append(frame);
     current.frame = frame;
     current.button.setAttribute("aria-expanded", "true");
-    makePageInert();
+    makePageInert(current);
   }
 
-  function closeSwitcher() {
+  function closeSwitcher(): void {
     if (ui === null || ui.frame === null) {
       return;
     }
@@ -305,21 +335,22 @@
     opener = null;
     if (
       back !== null &&
+      "focus" in back &&
       back !== ui.host &&
       back !== document.body &&
       back.isConnected
     ) {
-      back.focus();
+      (back as HTMLElement | SVGElement).focus();
     } else if (!ui.button.hidden) {
       ui.button.focus();
     }
   }
 
   /** Tells the worker that someone used the page, when the venue mode asks for it. */
-  function reportActivity() {
+  function reportActivity(): void {
     const now = Date.now();
     if (
-      view.reportActivity !== true ||
+      !view.reportActivity ||
       now - reportedAt < ACTIVITY_EVERY_MS ||
       !alive()
     ) {
@@ -332,10 +363,8 @@
     });
   }
 
-  const INPUTS = ["pointerdown", "keydown", "wheel", "touchstart"];
-
   /** Takes the button and the switcher of this script, which was cut off, off the page. */
-  function retire() {
+  function retire(): void {
     for (const type of INPUTS) {
       window.removeEventListener(type, reportActivity, true);
     }
@@ -346,7 +375,7 @@
     restorePage();
   }
 
-  function toggleSwitcher() {
+  function toggleSwitcher(): void {
     if (!alive()) {
       // The extension was updated and this tab didn't get the new script. Only a reload
       // brings it, and on a match page that ends the match, so it asks first there.
@@ -366,7 +395,7 @@
     }
   }
 
-  function start() {
+  function start(): void {
     ensureUi();
     document.addEventListener("fullscreenchange", place);
     // Seen before the page itself sees them, and never held up: the page stays as fast.
@@ -378,7 +407,7 @@
     }
     chrome.runtime
       .sendMessage({ type: "button" })
-      .then((reply) => {
+      .then((reply: PageButtonView | null | undefined) => {
         if (
           reply !== undefined &&
           reply !== null &&
@@ -393,64 +422,65 @@
       });
   }
 
-  // Only the service worker of this extension talks to the page.
-  chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-    if (
-      message === null ||
-      typeof message !== "object" ||
-      message.type !== "page" ||
-      sender.id !== chrome.runtime.id
-    ) {
-      return false;
-    }
-
+  /** Does what the service worker asks, and answers it. */
+  function answer(
+    message: PageRequest,
+    sendResponse: (response: unknown) => void,
+  ): void {
     switch (message.action) {
-      case "read": {
-        const token = window.localStorage.getItem(SESSION_KEY);
-        sendResponse({ token });
-        return false;
-      }
-      case "write": {
+      case "read":
+        sendResponse({ token: window.localStorage.getItem(SESSION_KEY) });
+        return;
+      case "write":
         // Only a token goes into the session of the page, never another value.
         if (typeof message.token !== "string" || message.token === "") {
           sendResponse({ ok: false });
-          return false;
+          return;
         }
         window.localStorage.setItem(SESSION_KEY, message.token);
         sendResponse({ ok: true });
         // Let Autodarts pick up the new session.
         window.location.reload();
-        return false;
-      }
-      case "clear": {
+        return;
+      case "clear":
         window.localStorage.removeItem(SESSION_KEY);
         sendResponse({ ok: true });
         window.location.reload();
-        return false;
-      }
-      case "button": {
+        return;
+      case "button":
         // The settings or the player changed.
         view = message.view;
         drawButton();
         sendResponse({ ok: true });
-        return false;
-      }
-      case "toggleSwitcher": {
+        return;
+      case "toggleSwitcher":
         // The keyboard shortcut, which works with the button hidden as well.
         toggleSwitcher();
         sendResponse({ ok: true });
-        return false;
-      }
-      case "closeSwitcher": {
+        return;
+      case "closeSwitcher":
         closeSwitcher();
         sendResponse({ ok: true });
-        return false;
-      }
-      default: {
-        return false;
-      }
+        return;
     }
-  });
+  }
+
+  // Only the service worker of this extension talks to the page; a request of a shape
+  // that it doesn't know gets no answer.
+  chrome.runtime.onMessage.addListener(
+    (message: unknown, sender, sendResponse) => {
+      if (
+        message === null ||
+        typeof message !== "object" ||
+        (message as { type?: unknown }).type !== "page" ||
+        sender.id !== chrome.runtime.id
+      ) {
+        return false;
+      }
+      answer(message as PageRequest, sendResponse);
+      return false;
+    },
+  );
 
   if (document.body === null) {
     document.addEventListener("DOMContentLoaded", start, { once: true });

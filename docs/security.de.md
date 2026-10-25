@@ -86,7 +86,8 @@ nicht, wenn jemand den Prozess der Seite übernähme.
 
 Die Erweiterung meldet nur über den eigenen Anmeldedienst von Autodarts an. Sie liest
 nie einen Token oder ein Passwort von einer anderen Website, und der einzige Code, der
-die gespeicherte Sitzung der Seite berührt, ist `extension/content.js`.
+die gespeicherte Sitzung der Seite berührt, ist das Content-Skript, `src/content.ts`,
+das der Build als `extension/lib/content.js` schreibt.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="images/diagrams/data-flow.de.dark.svg">

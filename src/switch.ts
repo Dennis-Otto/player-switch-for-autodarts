@@ -293,14 +293,13 @@ export function stopAddingAccount(deps: Deps): Promise<State> {
   return edit(deps, stopAdding);
 }
 
-/** How a switch ended, for the popup to show. */
-export interface SwitchResult {
-  state: State;
-  /** False when the account could not be brought onto the page. */
-  ok: boolean;
-  /** Why it failed: the account must sign in again, or Autodarts was unreachable. */
-  reason?: "signin" | "unreachable";
-}
+/**
+ * How a switch ended, for the popup to show: brought onto the page, or not, and then
+ * why: the account must sign in again, or Autodarts was unreachable.
+ */
+export type SwitchResult =
+  | { state: State; ok: true; reason?: undefined }
+  | { state: State; ok: false; reason: "signin" | "unreachable" };
 
 /**
  * Brings an account onto the page. The account playing now, if any, keeps its

@@ -23,6 +23,7 @@
  * version of the extension in a page, so a tab that gets it twice answers once.
  */
 import { PLAY_ORIGIN } from "./autodarts.ts";
+import type { PageRequest } from "./messages.ts";
 import type { PagePort } from "./switch.ts";
 
 /** Where a tab that the extension opens goes. */
@@ -47,13 +48,6 @@ export interface Tab {
 
 /** A tab that the browser can address. */
 export type OpenTab = Tab & { id: number };
-
-/** A request to the content script in an Autodarts tab. */
-export type PageRequest =
-  | { type: "page"; action: "read" }
-  | { type: "page"; action: "write"; token: string }
-  | { type: "page"; action: "clear" }
-  | { type: "page"; action: "toggleSwitcher" };
 
 /** The browser's tabs, as far as the extension uses them. */
 export interface TabsPort {

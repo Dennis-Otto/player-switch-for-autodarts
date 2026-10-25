@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 
 import type { Identity } from "../src/autodarts.ts";
+import type { PageRequest } from "../src/messages.ts";
 import { createQueue } from "../src/queue.ts";
 import { EMPTY, find, park, setActive } from "../src/state.ts";
 import { type Deps, signOutForNewAccount, switchTo } from "../src/switch.ts";
@@ -11,7 +12,6 @@ import {
   injectAll,
   NoPageError,
   type OpenTab,
-  type PageRequest,
   PLAY_URL,
   POLL_MS,
   preparePage,
@@ -136,7 +136,7 @@ class FakeBrowser implements TabsPort {
         this.token = null;
         this.load(tab);
         return { ok: true };
-      case "toggleSwitcher":
+      default:
         return { ok: true };
     }
   }
