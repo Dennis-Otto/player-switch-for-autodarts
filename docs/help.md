@@ -12,7 +12,7 @@ A tile says this, and the icon in the toolbar shows how many accounts have to si
 
 > Player Switch for Autodarts – sign in again: Ada and Bob
 
-**What it means:** Autodarts no longer accepts the saved session of this account, in a renewal or at a tap, and no remembered password could sign it in. A session also ends for good when the player signs out on the Autodarts page: to change players, tap a tile instead.
+**What it means:** Autodarts no longer accepts the saved session of this account, in a renewal or at a tap, and no remembered password could sign it in. A session also ends for good when the player signs out on the Autodarts page: to change players, tap a tile instead. And when the data of the extension was cleared, every parked account has to sign in again at once: the key that seals the saved sessions went with it, so they no longer open, and the remembered passwords are forgotten too.
 
 **What to do**, in one of two ways:
 

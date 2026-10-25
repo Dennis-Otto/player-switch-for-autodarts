@@ -16,6 +16,13 @@ Autodarts page, and not the script that the extension runs in that page.
 - **A username and password, only for accounts where you turn on "Remember
   password."** It is stored so the extension can sign that account in again if its
   token stops working. It is off by default, and you can remove it at any time.
+- **A key that encrypts the tokens and passwords,** in the extension's own database
+  in the browser (IndexedDB). The tokens and passwords are stored only encrypted,
+  never in plain text, and the browser never hands out the key, not even to the
+  extension. If the key is lost, for example because the data of the extension was
+  cleared, the accounts sign in again once and the remembered passwords are
+  forgotten. The [security design](security.md#sealed-tokens-and-passwords) has
+  the details.
 - **The settings of the button on the Autodarts page:** whether it shows, and in
   which corner.
 - **The time of the last renewal**, and whether Autodarts turned every account

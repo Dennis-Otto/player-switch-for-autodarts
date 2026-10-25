@@ -4,8 +4,9 @@
  * the accounts stay in order, a stored password changes only when a person asks,
  * an account is waited for only while nobody plays, the popup never sees a session
  * or a password, a failing renewal is marked until a session works again, and what
- * the extension stores it reads back the same, in any version it knows, and never
- * mistakes a value of another version for accounts.
+ * the extension stores it reads back the same, in any version it knows, with no
+ * session and no password in plain text, and never mistakes a value of another
+ * version for accounts.
  */
 import assert from "node:assert/strict";
 import { test } from "node:test";
@@ -24,8 +25,10 @@ import {
   forget,
   forgetCredentials,
   isAdding,
+  PLAIN_VERSION,
   park,
   parked,
+  parseSealed,
   parseState,
   readStored,
   rememberCredentials,
@@ -38,6 +41,8 @@ import {
   toStored,
   toView,
 } from "../src/state.ts";
+import { ACCOUNTS_KEY, createStore, type StorageArea } from "../src/storage.ts";
+import { createVault, type KeyStore } from "../src/vault.ts";
 import "./properties.ts";
 
 /** Any text, beyond ASCII: names come from people, tokens from the network. */
@@ -286,21 +291,92 @@ test("what the extension stores, it reads back the same", () => {
     fc.property(changes, (steps) => {
       for (const state of history(steps)) {
         assert.deepEqual(parseState(JSON.parse(JSON.stringify(state))), state);
-        const stored = JSON.parse(JSON.stringify(toStored(state)));
-        assert.equal(stored.version, STATE_VERSION);
-        assert.deepEqual(readStored(stored), {
-          kind: "accounts",
-          state,
-          outdated: false,
-        });
-        // What the releases before the version stored is the same, and comes up to date.
-        assert.deepEqual(readStored(JSON.parse(JSON.stringify(state))), {
-          kind: "accounts",
-          state,
-          outdated: true,
-        });
+        // What the versions before the sealed secrets stored is the same state.
+        for (const version of [undefined, PLAIN_VERSION]) {
+          assert.deepEqual(
+            readStored(JSON.parse(JSON.stringify({ ...state, version }))),
+            { kind: "plain", state },
+          );
+        }
       }
     }),
+  );
+});
+
+/** A storage of the browser that keeps JSON, as chrome.storage does. */
+function memoryArea(): StorageArea & { value(): unknown } {
+  const data = new Map<string, unknown>();
+  return {
+    value: () => data.get(ACCOUNTS_KEY),
+    get: (keys) =>
+      Promise.resolve(
+        Object.fromEntries(
+          keys
+            .filter((key) => data.has(key))
+            .map((key) => [key, data.get(key)]),
+        ),
+      ),
+    set: (items) => {
+      for (const [key, value] of Object.entries(items)) {
+        data.set(key, JSON.parse(JSON.stringify(value)));
+      }
+      return Promise.resolve();
+    },
+    remove: (keys) => {
+      for (const key of keys) {
+        data.delete(key);
+      }
+      return Promise.resolve();
+    },
+  };
+}
+
+function memoryKeys(): KeyStore {
+  let key: CryptoKey | undefined;
+  return {
+    load: () => Promise.resolve(key),
+    add: (made) => {
+      key ??= made;
+      return Promise.resolve(key);
+    },
+  };
+}
+
+test("what the store saves, it loads back the same, with every session and password sealed", async () => {
+  const vault = createVault(memoryKeys());
+  await fc.assert(
+    fc.asyncProperty(changes, async (steps) => {
+      const state = history(steps).at(-1) as State;
+      const area = memoryArea();
+      const store = createStore(area, vault);
+      await store.save(state);
+      const stored = area.value() as {
+        version: unknown;
+        profiles: Record<string, unknown>[];
+      };
+      assert.equal(stored.version, STATE_VERSION);
+      for (const profile of stored.profiles) {
+        for (const secret of [profile.token, profile.credentials]) {
+          assert.ok(
+            secret === null || parseSealed(secret) !== null,
+            JSON.stringify(secret),
+          );
+        }
+      }
+      assert.deepEqual(await store.load(), state);
+      // The secrets, and only they, are left out of what readStored shows of them.
+      const read = readStored(stored);
+      assert.equal(read.kind, "sealed");
+      assert.deepEqual(read.kind === "sealed" ? read.state : null, {
+        ...state,
+        profiles: state.profiles.map((profile) => ({
+          ...profile,
+          token: null,
+          credentials: null,
+        })),
+      });
+    }),
+    { numRuns: 50 },
   );
 });
 
@@ -355,9 +431,9 @@ test("a stored value of a version the extension doesn't know is never taken for 
   );
   fc.assert(
     fc.property(changes, other, (steps, version) => {
-      fc.pre(version !== STATE_VERSION);
+      fc.pre(version !== STATE_VERSION && version !== PLAIN_VERSION);
       const state = history(steps).at(-1) as State;
-      assert.deepEqual(readStored({ ...toStored(state), version }), {
+      assert.deepEqual(readStored({ ...toStored(state, new Map()), version }), {
         kind: "unknown",
       });
     }),

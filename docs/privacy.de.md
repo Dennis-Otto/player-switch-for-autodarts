@@ -19,6 +19,14 @@ Autodarts-Seite und nicht das Skript, das die Erweiterung in dieser Seite ausfü
   einschaltest.** Sie werden gespeichert, damit die Erweiterung dieses Konto wieder
   anmelden kann, falls sein Token nicht mehr geht. Das ist von Haus aus aus, und du
   kannst es jederzeit wieder entfernen.
+- **Ein Schlüssel, der die Tokens und Passwörter verschlüsselt,** in der eigenen
+  Datenbank der Erweiterung im Browser (IndexedDB). Die Tokens und Passwörter werden
+  nur verschlüsselt gespeichert, nie im Klartext, und der Browser gibt den Schlüssel
+  nie heraus, auch nicht an die Erweiterung. Geht der Schlüssel verloren, etwa weil
+  die Daten der Erweiterung gelöscht wurden, melden sich die Konten einmal neu an,
+  und die gemerkten Passwörter sind vergessen. Das
+  [Sicherheitsdesign](security.de.md#versiegelte-tokens-und-passwörter) erklärt die
+  Einzelheiten.
 - **Die Einstellungen des Knopfs auf der Autodarts-Seite:** ob er zu sehen ist, und
   in welcher Ecke.
 - **Die Zeit der letzten Erneuerung**, und ob Autodarts dabei alle Konten abgewiesen

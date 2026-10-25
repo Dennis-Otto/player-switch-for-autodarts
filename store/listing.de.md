@@ -54,6 +54,9 @@ Nicht mit Autodarts verbunden.
   die beim Update schon offen sind, oder in einen, der nicht mehr antwortet, damit
   ein Display im Kiosk-Modus ohne Neuladen weiter funktioniert. Es führt nur das eigene Skript der Erweiterung aus, nur auf
   play.autodarts.com.
+• unlimitedStorage — damit Chrome den Schlüssel, der deine gespeicherten Sitzungen
+  und Passwörter versiegelt, nie löscht, wenn der Speicherplatz knapp wird. Ohne ihn
+  müsste sich jedes geparkte Konto neu anmelden.
 • Web-zugängliche Ressource switcher.html, nur für play.autodarts.com — die
   Spieler, die der Knopf auf der Autodarts-Seite über der Seite zeigt. Sie ist eine
   Seite der Erweiterung in einem Rahmen, darum können die Skripte der

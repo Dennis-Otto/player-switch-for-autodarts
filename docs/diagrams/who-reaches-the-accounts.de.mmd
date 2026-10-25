@@ -5,15 +5,17 @@ config:
 ---
 flowchart TB
     accTitle: Wer an die gespeicherten Konten kommt
-    accDescr: Die gespeicherten Konten mit ihren Tokens und gemerkten Passwörtern liegen in chrome.storage.local, das nur die eigenen Kontexte der Erweiterung lesen können, der Service Worker und ihre Seiten: das Popup, die Optionsseite und der Wechsler in seinem Rahmen. content.js läuft in der Autodarts-Seite und kann den Speicher nicht lesen. Es darf den Service Worker nur fragen, was sein Knopf zeigt, nimmt Anfragen nur von dieser Erweiterung an und schreibt in die Sitzung der Seite nur einen Token. Der Service Worker nimmt eine Anfrage, die Konten zu sehen oder zu ändern, nur von einer Seite dieser Erweiterung an. Seine Content Security Policy lässt ihn nur mit api.autodarts.com verbinden, und der Browser sperrt jeden anderen Host.
+    accDescr: Die gespeicherten Konten liegen in chrome.storage.local, das nur die eigenen Kontexte der Erweiterung lesen können, der Service Worker und ihre Seiten: das Popup, die Optionsseite und der Wechsler in seinem Rahmen. Ihre Tokens und gemerkten Passwörter sind dort mit AES-GCM versiegelt; der Schlüssel lässt sich nicht exportieren und liegt in der IndexedDB der Erweiterung, die nur der Service Worker benutzt. content.js läuft in der Autodarts-Seite und kann den Speicher nicht lesen. Es darf den Service Worker nur fragen, was sein Knopf zeigt, nimmt Anfragen nur von dieser Erweiterung an und schreibt in die Sitzung der Seite nur einen Token. Der Service Worker nimmt eine Anfrage, die Konten zu sehen oder zu ändern, nur von einer Seite dieser Erweiterung an. Seine Content Security Policy lässt ihn nur mit api.autodarts.com verbinden, und der Browser sperrt jeden anderen Host.
 
     subgraph extension ["Die eigenen Kontexte der Erweiterung"]
         direction TB
         ui["Das Popup, die Optionsseite<br>und der Wechsler in seinem Rahmen"]
         worker["Der Service Worker<br>wechselt, erneuert, meldet an"]
-        storage[("chrome.storage.local<br>Tokens und gemerkte<br>Passwörter")]
+        storage[("chrome.storage.local<br>Tokens und gemerkte<br>Passwörter, versiegelt")]
+        key[("IndexedDB<br>der Schlüssel, der sich<br>nicht exportieren lässt")]
         ui -- "eine Anfrage von einer<br>Seite der Erweiterung" --> worker
         worker <--> storage
+        worker -- "versiegelt und öffnet<br>mit dem Schlüssel" --> key
     end
     subgraph page ["Die Autodarts-Seite, play.autodarts.com"]
         direction TB
@@ -33,6 +35,6 @@ flowchart TB
     classDef person fill:#f59e0b2e,stroke:#f59e0b,stroke-width:2px
     classDef failed fill:#dc26262e,stroke:#dc2626,stroke-width:2px
     class ui,content,session person
-    class worker,storage bot
+    class worker,storage,key bot
     class api done
     class other failed
