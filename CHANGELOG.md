@@ -6,6 +6,8 @@ the next release, or lists the pull requests when there is none.
 
 ## Unreleased
 
+## [1.0.0](https://github.com/Dennis-Otto/player-switch-for-autodarts/compare/v0.2.0...v1.0.0) (2026-10-25)
+
 **The first stable version, 1.0.0.** Player Switch now does what it was built for:
 everyone at a shared Autodarts display plays under their own account and switches
 with one tap, in the toolbar popup or on the Autodarts page itself, also in
@@ -17,32 +19,137 @@ now on, a release that takes away something you use, such as a setting, a langua
 or a keyboard shortcut, is a new major version, and an update within 1.x keeps every
 saved account and setting as it is.
 
-## [1.0.0](https://github.com/Dennis-Otto/player-switch-for-autodarts/compare/v0.2.0...v1.0.0) (2026-10-25)
-
-
 ### Features
 
-* add a venue mode with a manager PIN, player PINs and a return to the house account ([#72](https://github.com/Dennis-Otto/player-switch-for-autodarts/issues/72)) ([864c1de](https://github.com/Dennis-Otto/player-switch-for-autodarts/commit/864c1de4dfd05c6c7289880e555efe9126a6023e))
-* guide the first set-up and save each newly signed-in account by itself ([#42](https://github.com/Dennis-Otto/player-switch-for-autodarts/issues/42)) ([e28ab05](https://github.com/Dennis-Otto/player-switch-for-autodarts/commit/e28ab054cd87121a20621fe7ea5df75df1d4dc22))
-* **security:** encrypt the stored sessions and passwords with a key that never leaves the browser ([#68](https://github.com/Dennis-Otto/player-switch-for-autodarts/issues/68)) ([57027dc](https://github.com/Dennis-Otto/player-switch-for-autodarts/commit/57027dcafba266b427f682115b94a197ecf1b945))
-* speak Dutch, French and Spanish ([#69](https://github.com/Dennis-Otto/player-switch-for-autodarts/issues/69)) ([30aab93](https://github.com/Dennis-Otto/player-switch-for-autodarts/commit/30aab939d2a233df95e2bf1850c0b68005637298))
-* switch players from the Autodarts page itself, also in fullscreen and kiosk mode ([#40](https://github.com/Dennis-Otto/player-switch-for-autodarts/issues/40)) ([b1d58ee](https://github.com/Dennis-Otto/player-switch-for-autodarts/commit/b1d58eec527f0944b891f43dd026b58c780d53c9))
+- The saved sessions and remembered passwords are now stored encrypted. The key stays
+  in the browser, which never hands it out, not even to the extension, so a tool, a
+  backup or a copy that reads the extension's storage finds no session and no
+  password in it. The update encrypts the accounts that are already saved, and every
+  player stays signed in.
+- If the key is ever lost, for example because the data of the extension was
+  cleared, the parked accounts ask to sign in again once, and remembered passwords
+  are forgotten. Nothing else breaks.
+- The update asks for the permission `unlimitedStorage`, which shows no warning, so
+  that Chrome never deletes the key when the disk runs low.
+- Versions up to 0.2.0 don't know the encrypted format, so don't go back to them: they
+  would drop the saved sessions. From this release on, an older version leaves newer
+  accounts untouched and asks for an update.
+- Switch players from the Autodarts page itself, also in fullscreen and kiosk mode,
+  where the toolbar is out of reach: a round button in a corner of the page, with the
+  picture of the player, shows the players over the page in large tiles for a touch
+  screen. Alt+Shift+O opens them from the keyboard, Alt+Shift+P opens the popup, and
+  in the players the keys 1 to 9 pick a player and Esc closes them.
+- On the page of a running match, a switch now asks first, before anything changes:
+  "A match is running. Switching ends it on this display."
+- A new options page, behind "Settings" in the popup, turns the button off or moves
+  it to another corner. Removing an account now asks in a dialog that works on a
+  touch screen.
+- After an update of the extension, the button keeps working in Autodarts tabs that
+  were already open, without a reload. A switch from the button on the page always
+  happens in that tab, also with Autodarts open in two windows.
+- The extension speaks Dutch, French and Spanish too: with Chrome set to one of them,
+  the popup, the players on the Autodarts page, the welcome page, the settings and the
+  tooltip of the icon show its texts, and names and times its format. The Chrome Web
+  Store gets a listing in each of them. Help leads to the English help there, as the
+  website stays in English and German.
+- A welcome page opens once after the install, in English or German: it shows how
+  to pin the icon, with a picture, and how to add the players, and opens Autodarts
+  with one click.
+- Adding a player no longer needs a second visit to the popup: after "Add account",
+  and after the install, the next sign-in on Autodarts is saved by itself, and the
+  icon shows a check mark for a moment. Only the first sign-in in the next ten
+  minutes is saved this way; "Cancel" in the popup or the switcher stops the waiting earlier.
+- A "+" on the icon says that someone is signed in on Autodarts who isn't saved yet.
+- The popup links to the help and to "Report a problem", which opens the bug form
+  with the versions of the extension and the browser filled in, and nothing else.
+- A venue mode for a display in a club or a pub, off until you turn it on under
+  Settings → For a club or pub:
+  - A manager PIN guards Manage accounts and the settings, so nobody at the display
+    removes an account or remembers a password without it.
+  - Each player can protect their account with a PIN of 4 to 8 digits. A tap on their
+    tile asks for it on a number pad that works on a touch screen, in the popup and on
+    the Autodarts page, and their tile shows a lock. Five wrong PINs in a row make
+    every PIN wait a minute.
+  - After a break of 5 to 60 minutes without a tap, a click or a key on the Autodarts
+    page, the display returns to a house account of your choice, or signs out, so the
+    next games don't count for the player who left. A match is never interrupted: the
+    break starts once it has ended, and the player before keeps their session parked.
+- The extension keeps no PIN, only a salted hash of it. A PIN is a lock for the people
+  at the display, not a protection against someone who can use the computer; the
+  guide for a shared display shows what to do about a forgotten manager PIN.
 
+### Changes
+
+- "Help" in the popup and on the welcome page now opens a help page that explains
+  every message of the extension word for word, in English and German, with what to
+  do about it.
+- The website has a guide for setting up a shared board display: fullscreen, autostart,
+  an on-screen keyboard and the power settings, and German pages for privacy and security.
 
 ### Bug fixes
 
-* keep renewing parked accounts after a browser restart and show which accounts need attention ([#37](https://github.com/Dennis-Otto/player-switch-for-autodarts/issues/37)) ([a921e88](https://github.com/Dennis-Otto/player-switch-for-autodarts/commit/a921e88c7d1169164b450a8165eff0a11012c2ef))
-* **popup:** make the popup work with a keyboard, a screen reader and big fingers ([#58](https://github.com/Dennis-Otto/player-switch-for-autodarts/issues/58)) ([f354c46](https://github.com/Dennis-Otto/player-switch-for-autodarts/commit/f354c465d05bc80e21c79133c4808ec6aa92d469))
-* reach the Autodarts tab after an install or update without a reload ([#62](https://github.com/Dennis-Otto/player-switch-for-autodarts/issues/62)) ([23c0512](https://github.com/Dennis-Otto/player-switch-for-autodarts/commit/23c0512027e3c7cdb87d21b9f58fe2706abd7da0))
-* **security:** keep stored passwords away from the page and enforce least privilege ([#57](https://github.com/Dennis-Otto/player-switch-for-autodarts/issues/57)) ([1c7b394](https://github.com/Dennis-Otto/player-switch-for-autodarts/commit/1c7b39471f494b2bc99e926c891a68485263dd10))
-* serialize account changes so a double tap cannot lose a session ([#31](https://github.com/Dennis-Otto/player-switch-for-autodarts/issues/31)) ([e6d6755](https://github.com/Dennis-Otto/player-switch-for-autodarts/commit/e6d6755d95711e729dee9f2df7411e0cb8ed6acd))
-* switch on the Autodarts tab in front, reload every other Autodarts tab and open Autodarts when none is open ([#39](https://github.com/Dennis-Otto/player-switch-for-autodarts/issues/39)) ([40013f1](https://github.com/Dennis-Otto/player-switch-for-autodarts/commit/40013f141b1887370e409c2164e13c432768c773))
-* **worker:** never save over accounts of a newer version and show since when a renewal fails ([#51](https://github.com/Dennis-Otto/player-switch-for-autodarts/issues/51)) ([8b51fe3](https://github.com/Dennis-Otto/player-switch-for-autodarts/commit/8b51fe3cf05264c4970a8171c76c652e2554e6a7))
-
-
-### Documentation
-
-* release the extension as 1.0.0, its first stable version ([#79](https://github.com/Dennis-Otto/player-switch-for-autodarts/issues/79)) ([3ad2017](https://github.com/Dennis-Otto/player-switch-for-autodarts/commit/3ad2017a5dc2fdc604edc157fb3cf80429b9e6da))
+- Parked accounts keep being renewed when the browser or the computer was off:
+  each start of the browser sets the renewal again if Chrome dropped it, and
+  renews straight away when a renewal was due while the computer was off.
+- The toolbar icon shows how many accounts have to sign in again, and its tooltip
+  names them, so nobody finds out only when they want to play. "Manage accounts"
+  shows for each parked account when it was last renewed, such as "Renewed 3 hours
+  ago".
+- When Autodarts turns every saved account away at once, the popup says that
+  Autodarts may have changed how it signs in and links to the known problems and
+  updates, instead of only asking everyone to sign in again.
+- The saved accounts, with their sessions and remembered passwords, are now out of
+  reach of the script that the extension runs in the Autodarts page: only the
+  extension's own popup, options page, switcher and background service can read
+  them, so even a page that went rogue can't get at them through that script.
+- The extension now lets the browser block every connection except to Autodarts'
+  sign-in service, takes requests to see or switch accounts only from its own
+  pages, and writes nothing but a session into the Autodarts page.
+- The extension no longer asks for access to `play.autodarts.io`, which only
+  forwards to `play.autodarts.com`. It now needs Chrome 140 or newer, so an older
+  browser no longer installs a version that can't run, and `chrome://extensions`
+  links its website.
+- After a silent update of the extension, a tap on a player switches straight away
+  in an Autodarts tab that was open before, also on a display that keeps Autodarts
+  open for days, instead of saying "Open Autodarts" or reloading the page first. A
+  tab that the update missed gets the new script of the extension at the next tap
+  in the toolbar popup, "Open Autodarts" or keyboard shortcut, and a running match goes on.
+- The popup and the players on the Autodarts page work with a keyboard and a screen
+  reader: after a switch, a removal or a saved password the focus stays where you
+  were instead of jumping to the top, the tile of the player who plays is marked as
+  the current one, "Manage accounts" says whether it is on, the actions below a tile
+  name its account, and an error is read out at once.
+- The keys 1 to 9 pick a player in the popup too, as they do on the page; their
+  numbers show on the tiles once you use the keyboard.
+- Every button and link of the popup is at least 44 by 44 pixels, easy to hit with a
+  finger on a touch display, no text is smaller than 12 pixels, and the blue and amber
+  texts are a little darker, so they are easy to read on the light background.
+- In German, the buttons under "Konten verwalten" no longer break onto two lines.
+- After a switch, the popup no longer keeps saying "Switching to …".
+- A contrast theme of Windows keeps the player who plays and the chips apart, and with
+  reduced motion in the system, nothing in the popup moves.
+- Tapping a player twice no longer signs the previous player out, and a switch
+  while the extension renews the parked sessions in the background no longer loses
+  a session or marks a player as needing a new sign-in. The popup takes no other
+  tap while a switch is on its way, and tells screen readers that it is busy.
+- A switch now happens on the Autodarts tab you're looking at, also with Autodarts
+  open in a second window, and every other Autodarts tab reloads with the new
+  player, one after another, so no tab plays on as the one before or signs a parked
+  player or the new one out.
+- With no Autodarts tab open, a tap on a player opens Autodarts and switches there,
+  and "Add account" opens it signed out. When Autodarts doesn't answer, the popup
+  offers "Open Autodarts" instead of a dead end. After an update of the extension,
+  a tap reloads an Autodarts tab that no longer answers by itself.
+- The extension no longer asks to "Read your browsing history" when it is
+  installed: it reads the address of a tab only for the Autodarts sites.
+- Going back to an older version of the extension no longer wipes the saved
+  accounts: the accounts now carry the version of their format, a version that
+  doesn't know it leaves them untouched and keeps a copy, and the popup asks you
+  to update instead.
+- "Manage accounts" shows since when renewing a parked account fails while
+  Autodarts can't be reached, such as "Renewal failing since Oct 22, 2026,
+  9:15 PM", until a renewal works again, and the extension logs such failures in
+  its service worker console instead of hiding them.
 
 ## [0.2.0](https://github.com/Dennis-Otto/player-switch-for-autodarts/compare/v0.1.1...v0.2.0) (2026-10-15)
 
