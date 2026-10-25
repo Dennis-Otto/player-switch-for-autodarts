@@ -19,13 +19,9 @@ required_checks = ["e2e"]
 PUBLISH_TO = "none"
 
 # The Chrome Web Store, to which publish-store.yml delivers every release, from main
-# alone. The workflow signs in with the OIDC token of GitHub once the repository
-# variables CWS_WORKLOAD_IDENTITY_PROVIDER and CWS_SERVICE_ACCOUNT are set (decision
-# 0010), and until then with the OAuth client and the refresh token of the developer
-# account, the secrets of this environment: once the sign-in without them works,
-# delete them and the line of the secrets here, and keep the table, which keeps the
-# environment to main. The IDs of the item and of the publisher are the repository
-# variables CWS_EXTENSION_ID and CWS_PUBLISHER_ID. All four variables are set by hand,
-# as docs/releases.md describes.
+# alone. The workflow signs in with the OIDC token of GitHub through the repository
+# variables CWS_WORKLOAD_IDENTITY_PROVIDER and CWS_SERVICE_ACCOUNT (decision 0010), so
+# this environment holds no secret; the table keeps the environment to main. The IDs of
+# the item and of the publisher are the repository variables CWS_EXTENSION_ID and
+# CWS_PUBLISHER_ID. All four variables are set by hand, as docs/releases.md describes.
 [environments.chrome-web-store]
-secrets = ["CWS_CLIENT_ID", "CWS_CLIENT_SECRET", "CWS_REFRESH_TOKEN"]
