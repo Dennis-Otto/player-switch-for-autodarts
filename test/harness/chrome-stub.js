@@ -7,7 +7,8 @@
 //
 //   popup.html?lang=de&accounts=2
 //
-// lang      the language of the texts, from extension/_locales: en (the default) or de
+// lang      the language of the texts, from extension/_locales: en (the default), de,
+//           nl, fr or es
 // accounts  how many of the demo accounts are saved, 1 to 4 (3); the first one plays
 //
 // The accounts are made up and their pictures generated: no real people. The answers
@@ -22,7 +23,7 @@
 (() => {
   const setup = new URLSearchParams(location.search);
   // The languages of extension/_locales; any other one shows English, as in Chrome.
-  const LANGUAGES = ["en", "de"];
+  const LANGUAGES = ["en", "de", "nl", "fr", "es"];
   const asked = setup.get("lang");
   const language = LANGUAGES.includes(asked) ? asked : "en";
   const count = Math.min(

@@ -1,5 +1,5 @@
 {
-  "about": "Everything that extension/manifest.json may ask the browser for, each with its reason. scripts/check-manifest.mjs fails when the manifest asks for more or for less: Chrome disables an installed extension after an update that asks for a new permission or host, until someone accepts the new warning in chrome://extensions, and a board display in kiosk mode then stops switching without a word. Add an entry here only with its justification in store/listing.en.md and store/listing.de.md, and a note in the changelog that the update asks for it.",
+  "about": "Everything that extension/manifest.json may ask the browser for, each with its reason. scripts/check-manifest.mjs fails when the manifest asks for more or for less: Chrome disables an installed extension after an update that asks for a new permission or host, until someone accepts the new warning in chrome://extensions, and a board display in kiosk mode then stops switching without a word. Add an entry here only with its justification in the store listing of every language, store/listing.<code>.md, and a note in the changelog that the update asks for it.",
   "permissions": {
     "storage": "Keeps the saved accounts, their sessions and the settings of the button on this computer.",
     "alarms": "Renews the parked sessions in the background, so they still work days later.",

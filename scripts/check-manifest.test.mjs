@@ -1,7 +1,7 @@
 // The self-test of scripts/check-manifest.mjs, with fixture manifests that each break
 // one rule. scripts/check-project.sh runs it with `node --test` before the check itself.
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
+import { readdirSync, readFileSync } from "node:fs";
 import { test } from "node:test";
 
 import {
@@ -70,16 +70,25 @@ Switch players with one tap.
 
 /** The problems of a manifest, with the other inputs as the fixtures have them unless given. */
 function check(changes = {}) {
+  const locales = changes.locales ?? {
+    en: {
+      extName: { message: "Player Switch" },
+      extDescription: { message: "Switch players." },
+    },
+  };
   return checkManifest({
     manifest: changes.manifest ?? manifest(),
     allowed: changes.allowed ?? ALLOWED,
-    locales: changes.locales ?? {
-      en: {
-        extName: { message: "Player Switch" },
-        extDescription: { message: "Switch players." },
-      },
-    },
-    listings: changes.listings ?? { "store/listing.en.md": LISTING },
+    locales,
+    // A listing for each language, unless a test gives its own.
+    listings:
+      changes.listings ??
+      Object.fromEntries(
+        Object.keys(locales).map((code) => [
+          `store/listing.${code}.md`,
+          LISTING,
+        ]),
+      ),
     imageSize:
       changes.imageSize ??
       ((path) => ({
@@ -99,20 +108,27 @@ test("a manifest that keeps every rule passes", () => {
   assert.deepEqual(check(), []);
 });
 
-test("the manifest of the extension passes against the allowlist, its languages and both listings", () => {
+test("the manifest of the extension passes against the allowlist, its languages and their listings", () => {
   // The same check that the script runs, here so a failing self-test shows it at once.
-  const read = (path) => readFileSync(new URL(`../${path}`, import.meta.url));
+  const url = (path) => new URL(`../${path}`, import.meta.url);
+  const read = (path) => readFileSync(url(path));
+  const codes = readdirSync(url("extension/_locales/"));
+  assert.deepEqual(codes.sort(), ["de", "en", "es", "fr", "nl"]);
   const problems = checkManifest({
     manifest: JSON.parse(read("extension/manifest.json")),
     allowed: JSON.parse(read("store/permissions.json")),
-    locales: {
-      en: JSON.parse(read("extension/_locales/en/messages.json")),
-      de: JSON.parse(read("extension/_locales/de/messages.json")),
-    },
-    listings: {
-      "store/listing.en.md": read("store/listing.en.md").toString(),
-      "store/listing.de.md": read("store/listing.de.md").toString(),
-    },
+    locales: Object.fromEntries(
+      codes.map((code) => [
+        code,
+        JSON.parse(read(`extension/_locales/${code}/messages.json`)),
+      ]),
+    ),
+    listings: Object.fromEntries(
+      codes.map((code) => [
+        `store/listing.${code}.md`,
+        read(`store/listing.${code}.md`).toString(),
+      ]),
+    ),
     imageSize: (path) => pngSize(read(`extension/${path}`)),
   });
   assert.deepEqual(problems, []);
@@ -372,6 +388,76 @@ test("a listing needs a short description that fits the store and a section that
   // The section of the justifications may be the last one of the listing.
   const last = LISTING.replace("\n## Category\n", "");
   assert.deepEqual(check({ listings: { "store/listing.en.md": last } }), []);
+});
+
+test("each language of the extension has a store listing, and each listing a language", () => {
+  const locales = {
+    en: {
+      extName: { message: "Player Switch" },
+      extDescription: { message: "Switch." },
+    },
+    nl: {
+      extName: { message: "Player Switch" },
+      extDescription: { message: "Wissel." },
+    },
+  };
+  findsOne(
+    check({ locales, listings: { "store/listing.en.md": LISTING } }),
+    /The extension speaks nl, but store\/listing\.nl\.md is missing/,
+  );
+  findsOne(
+    check({
+      listings: {
+        "store/listing.en.md": LISTING,
+        "store/listing.fr.md": LISTING,
+      },
+    }),
+    /store\/listing\.fr\.md is the listing of a language that the extension doesn't speak/,
+  );
+});
+
+test("a listing in Dutch, French or Spanish is read by the headings of its language", () => {
+  const headings = {
+    nl: ["Korte beschrijving", "Rechtvaardiging van de machtigingen"],
+    fr: ["Description courte", "Justification des autorisations"],
+    es: ["Descripción breve", "Justificación de los permisos"],
+  };
+  for (const [code, [short, justified]] of Object.entries(headings)) {
+    const listing = LISTING.replace("Short description", short).replace(
+      "Permission justifications",
+      justified,
+    );
+    const file = `store/listing.${code}.md`;
+    const locales = {
+      en: {
+        extName: { message: "Player Switch" },
+        extDescription: { message: "Switch." },
+      },
+      [code]: {
+        extName: { message: "Player Switch" },
+        extDescription: { message: "Switch." },
+      },
+    };
+    assert.deepEqual(
+      check({
+        locales,
+        listings: { "store/listing.en.md": LISTING, [file]: listing },
+      }),
+      [],
+    );
+    findsOne(
+      check({
+        locales,
+        listings: {
+          "store/listing.en.md": LISTING,
+          [file]: listing.replace("• alarms — the renewal.\n", ""),
+        },
+      }),
+      new RegExp(
+        `listing\\.${code}\\.md doesn't justify the permission alarms`,
+      ),
+    );
+  }
 });
 
 test("pngSize reads the size from the header of a PNG and nothing else", () => {

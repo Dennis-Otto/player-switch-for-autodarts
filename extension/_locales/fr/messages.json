@@ -1,0 +1,283 @@
+{
+  "locale": {
+    "message": "fr",
+    "description": "The language code of this translation, used to format names and times. Do not translate; use the code of the language of this file."
+  },
+  "extName": {
+    "message": "Player Switch for Autodarts"
+  },
+  "extDescription": {
+    "message": "Passez d'un compte Autodarts à l'autre d'une simple pression sur un écran partagé, sans vous reconnecter."
+  },
+  "title": {
+    "message": "Qui joue ?"
+  },
+  "manage": {
+    "message": "Gérer les comptes"
+  },
+  "playing": {
+    "message": "Joue"
+  },
+  "needsSignIn": {
+    "message": "Se reconnecter"
+  },
+  "badgeTitle": {
+    "message": "Player Switch for Autodarts – reconnexion nécessaire : $NAMES$",
+    "placeholders": {
+      "names": {
+        "content": "$1"
+      }
+    }
+  },
+  "badgeUnsaved": {
+    "message": "Player Switch for Autodarts – un compte connecté sur Autodarts n'est pas encore enregistré"
+  },
+  "badgeSaved": {
+    "message": "Player Switch for Autodarts – le compte de $NAME$ est enregistré",
+    "placeholders": {
+      "name": {
+        "content": "$1"
+      }
+    }
+  },
+  "renewed": {
+    "message": "Renouvelé $WHEN$",
+    "placeholders": {
+      "when": {
+        "content": "$1"
+      }
+    }
+  },
+  "renewalFailing": {
+    "message": "Échec du renouvellement depuis le $WHEN$ ; l'extension continue d'essayer.",
+    "placeholders": {
+      "when": {
+        "content": "$1"
+      }
+    }
+  },
+  "updateHintText": {
+    "message": "Autodarts a peut-être changé sa façon de connecter les comptes. Vérifiez s'il existe une mise à jour de Player Switch."
+  },
+  "updateHintLink": {
+    "message": "Problèmes connus et mises à jour"
+  },
+  "addAccount": {
+    "message": "Ajouter un compte"
+  },
+  "addingText": {
+    "message": "Connectez-vous sur Autodarts avec le nouveau joueur. Le compte est enregistré automatiquement."
+  },
+  "savedAccount": {
+    "message": "Le compte de $NAME$ est enregistré. Une pression sur une vignette change de joueur.",
+    "placeholders": {
+      "name": {
+        "content": "$1"
+      }
+    }
+  },
+  "unsavedText": {
+    "message": "Quelqu'un est connecté sur Autodarts sans être encore enregistré ici."
+  },
+  "saveAccount": {
+    "message": "Enregistrer le compte"
+  },
+  "rememberPassword": {
+    "message": "Mémoriser le mot de passe"
+  },
+  "forgetPassword": {
+    "message": "Effacer le mot de passe"
+  },
+  "remove": {
+    "message": "Supprimer le compte"
+  },
+  "removeConfirm": {
+    "message": "Supprimer $NAME$ de cet écran ? Reconnectez-vous pour ajouter à nouveau le compte.",
+    "placeholders": {
+      "name": {
+        "content": "$1"
+      }
+    }
+  },
+  "passwordHint": {
+    "message": "Utilisé seulement quand la connexion enregistrée ne fonctionne plus. Il reste sur cet ordinateur et n'est envoyé qu'à Autodarts."
+  },
+  "usernameLabel": {
+    "message": "Nom d'utilisateur ou e-mail"
+  },
+  "passwordLabel": {
+    "message": "Mot de passe"
+  },
+  "save": {
+    "message": "Enregistrer"
+  },
+  "cancel": {
+    "message": "Annuler"
+  },
+  "switching": {
+    "message": "Passage à $NAME$…",
+    "placeholders": {
+      "name": {
+        "content": "$1"
+      }
+    }
+  },
+  "switchSignIn": {
+    "message": "$NAME$ doit se reconnecter : utilisez Ajouter un compte pour vous connecter une fois sur Autodarts, ou choisissez Mémoriser le mot de passe.",
+    "placeholders": {
+      "name": {
+        "content": "$1"
+      }
+    }
+  },
+  "unreachable": {
+    "message": "Autodarts est injoignable pour le moment. Réessayez dans un instant."
+  },
+  "noPage": {
+    "message": "Autodarts n'a répondu dans aucun onglet. Ouvrez Autodarts, puis réessayez."
+  },
+  "unknownFormat": {
+    "message": "Vos comptes enregistrés viennent d'une version plus récente de Player Switch. Mettez l'extension à jour pour les utiliser ; cette version n'y touche pas."
+  },
+  "openPage": {
+    "message": "Ouvrir Autodarts"
+  },
+  "empty": {
+    "message": "Aucun compte pour l'instant. Choisissez Ajouter un compte et connectez-vous sur Autodarts : chaque compte est enregistré automatiquement."
+  },
+  "error": {
+    "message": "Une erreur s'est produite. Veuillez réessayer."
+  },
+  "accounts": {
+    "message": "Comptes"
+  },
+  "settings": {
+    "message": "Paramètres"
+  },
+  "close": {
+    "message": "Fermer"
+  },
+  "keysHint": {
+    "message": "Les touches 1 à 9 choisissent un joueur, Échap ferme."
+  },
+  "switchButton": {
+    "message": "Changer de joueur"
+  },
+  "reloadAfterUpdate": {
+    "message": "Player Switch a été mis à jour. Recharger la page pour l'utiliser ? Un match en cours se termine alors sur cet écran."
+  },
+  "switchButtonPlaying": {
+    "message": "$NAME$ joue. Changer de joueur",
+    "placeholders": {
+      "name": {
+        "content": "$1"
+      }
+    }
+  },
+  "matchTitle": {
+    "message": "Un match est en cours"
+  },
+  "matchText": {
+    "message": "Changer de joueur y met fin sur cet écran."
+  },
+  "matchConfirm": {
+    "message": "Changer quand même"
+  },
+  "matchCancel": {
+    "message": "Continuer à jouer"
+  },
+  "commandPopup": {
+    "message": "Ouvrir la fenêtre pop-up"
+  },
+  "commandToggle": {
+    "message": "Afficher ou masquer les joueurs sur la page Autodarts"
+  },
+  "optionsButton": {
+    "message": "Le bouton sur la page Autodarts"
+  },
+  "optionShowButton": {
+    "message": "Afficher le bouton sur la page Autodarts"
+  },
+  "optionShowButtonHint": {
+    "message": "Une pression dessus affiche les joueurs par-dessus la page, aussi en plein écran et en mode kiosque, où la barre d'outils est hors de portée. Le raccourci clavier les ouvre aussi."
+  },
+  "optionCorner": {
+    "message": "Coin du bouton"
+  },
+  "cornerBottomRight": {
+    "message": "En bas à droite"
+  },
+  "cornerBottomLeft": {
+    "message": "En bas à gauche"
+  },
+  "cornerTopRight": {
+    "message": "En haut à droite"
+  },
+  "cornerTopLeft": {
+    "message": "En haut à gauche"
+  },
+  "optionShortcuts": {
+    "message": "Raccourcis clavier"
+  },
+  "shortcutNotSet": {
+    "message": "Non défini"
+  },
+  "changeShortcuts": {
+    "message": "Modifier les raccourcis"
+  },
+  "saved": {
+    "message": "Enregistré."
+  },
+  "help": {
+    "message": "Aide"
+  },
+  "helpUrl": {
+    "message": "https://dennis-otto.github.io/player-switch-for-autodarts/help.html",
+    "description": "The address of the help page of the website, docs/help.md, which explains every message of the extension. Do not translate; use the address of its page in the language of this file, or the English one, and quote each message in that page."
+  },
+  "report": {
+    "message": "Signaler un problème"
+  },
+  "welcomeDocTitle": {
+    "message": "Bienvenue – Player Switch for Autodarts"
+  },
+  "welcomeTitle": {
+    "message": "Bienvenue dans Player Switch"
+  },
+  "welcomeLead": {
+    "message": "Configurez l'écran partagé en trois étapes. Ensuite, une pression sur une vignette change de joueur."
+  },
+  "welcomePinTitle": {
+    "message": "Épinglez l'icône"
+  },
+  "welcomePinText": {
+    "message": "Chrome range les nouvelles extensions derrière la pièce de puzzle à côté de la barre d'adresse. Cliquez dessus, puis sur l'épingle à côté de Player Switch for Autodarts, et l'icône reste dans la barre d'outils."
+  },
+  "pinPictureTitle": {
+    "message": "Comment épingler l'icône"
+  },
+  "pinPictureText": {
+    "message": "La barre d'outils de Chrome : la pièce de puzzle à côté de la barre d'adresse ouvre la liste des extensions, et l'épingle à côté de Player Switch for Autodarts garde son icône dans la barre d'outils."
+  },
+  "pinPictureMenu": {
+    "message": "Extensions"
+  },
+  "welcomeFirstTitle": {
+    "message": "Enregistrez le premier joueur"
+  },
+  "welcomeFirstText": {
+    "message": "Ouvrez Autodarts et connectez-vous. Dans les dix minutes qui suivent, le compte est enregistré automatiquement et l'icône affiche une coche. Une personne déjà connectée est enregistrée de la même façon."
+  },
+  "welcomeNextTitle": {
+    "message": "Ajoutez les joueurs suivants"
+  },
+  "welcomeNextText": {
+    "message": "Cliquez sur l'icône, choisissez Ajouter un compte et connectez-vous avec le joueur suivant : ce compte est lui aussi enregistré automatiquement."
+  },
+  "welcomePlusText": {
+    "message": "Un + sur l'icône signifie qu'une personne connectée n'est pas encore enregistrée : Enregistrer le compte, dans la fenêtre pop-up, l'enregistre."
+  },
+  "welcomePrivacy": {
+    "message": "Tout reste sur cet ordinateur et n'est envoyé qu'à Autodarts."
+  }
+}
