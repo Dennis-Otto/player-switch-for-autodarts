@@ -106,6 +106,8 @@ async function open({
   scheme = "light",
   forcedColors = "none",
   accounts = 3,
+  pins = false,
+  manager = false,
 } = {}) {
   const context = await browser.newContext({
     viewport: { width: page === "popup" ? 340 : 1024, height: 720 },
@@ -121,9 +123,12 @@ async function open({
   const errors = [];
   tab.on("pageerror", (error) => errors.push(error));
   await tab.goto(
-    `${ORIGIN}/extension/${page}.html?lang=${lang}&accounts=${accounts}`,
+    `${ORIGIN}/extension/${page}.html?lang=${lang}&accounts=${accounts}${pins ? "&pins=1" : ""}${manager ? "&manager=1" : ""}`,
   );
-  await tab.waitForSelector("#profiles .tile");
+  // The options page draws its accounts also while a manager PIN keeps them hidden.
+  await (page === "options"
+    ? tab.waitForSelector("#player-pins li", { state: "attached" })
+    : tab.waitForSelector("#profiles .tile"));
   await settle(tab);
   tab.errors = errors;
   return tab;
@@ -299,6 +304,199 @@ describe("the popup in axe-core", { skip: browser === null }, () => {
     assert.equal(await page.getAttribute("#profiles", "aria-label"), "Konten");
     assert.equal(await page.getAttribute("html", "lang"), "de");
     assert.equal(await page.textContent("#manage"), "Konten verwalten");
+    await page.context().close();
+  });
+});
+
+describe("the question for a PIN of the venue mode", {
+  skip: browser === null,
+}, () => {
+  /** Taps the tile of Jonas, whose account asks for a PIN, as the worker refuses it first. */
+  async function askForPin(
+    page,
+    reply = { ok: false, reason: "pin", pin: "player" },
+  ) {
+    await page.evaluate((refusal) => window.harness.refuse(refusal), reply);
+    await page.click(tile("jonasberg"));
+    await settle(page);
+    assert.equal(await page.locator("dialog.pin[open]").count(), 1);
+  }
+
+  test("in the popup and the switcher, in both languages and color schemes", async () => {
+    for (const page of ["popup", "switcher"]) {
+      for (const lang of ["en", "de"]) {
+        for (const scheme of ["light", "dark"]) {
+          const tab = await open({ page, lang, scheme, pins: true });
+          const view = `the question for a PIN in the ${page}, ${lang}, ${scheme}`;
+          assert.equal(
+            await tab.locator(`${tile("jonasberg")} .chip.pin`).count(),
+            1,
+            "the tile of an account with a PIN shows a lock",
+          );
+          await askForPin(tab, {
+            ok: false,
+            reason: "pin",
+            pin: "player",
+            wrong: true,
+          });
+          assert.notEqual(await tab.textContent(".pin-problem"), "");
+          await check(tab, view);
+          assert.deepEqual(tab.errors, []);
+          await tab.context().close();
+        }
+      }
+    }
+  });
+
+  test("the number pad types the PIN, and OK switches", async () => {
+    const page = await open({ pins: true });
+    await askForPin(page);
+    // The field has the focus, so a keyboard types at once.
+    assert.equal(await focused(page), ".pin-input");
+    for (const digit of ["4", "7", "1", "9"]) {
+      await page.click(`.pad-key:text-is("${digit}")`);
+    }
+    await page.click(".pad-key.delete");
+    await page.click('.pad-key:text-is("1")');
+    assert.equal(await page.inputValue(".pin-input"), "4711");
+    await page.click(".pad-ok");
+    await settle(page);
+    assert.equal(await page.locator("dialog").count(), 0);
+    assert.equal(
+      await page.getAttribute(tile("jonasberg"), "aria-current"),
+      "true",
+    );
+    await page.context().close();
+  });
+
+  test("too few digits keep the question open and say why", async () => {
+    const page = await open({ pins: true });
+    await askForPin(page);
+    await page.keyboard.type("12");
+    await press(page, "Enter");
+    assert.equal(await page.locator("dialog.pin[open]").count(), 1);
+    assert.equal(
+      await page.textContent(".pin-problem"),
+      "A PIN has 4 to 8 digits.",
+    );
+    assert.equal(await focused(page), ".pin-input");
+    await page.context().close();
+  });
+
+  test("Esc cancels, changes nothing and gives the focus back to the tile", async () => {
+    const page = await open({ pins: true });
+    await page.focus(tile("jonasberg"));
+    await askForPin(page);
+    await press(page, "Escape");
+    assert.equal(await page.locator("dialog").count(), 0);
+    assert.equal(await focused(page), "demo-jonasberg .tile");
+    assert.equal(
+      await page.getAttribute(tile("miakeller"), "aria-current"),
+      "true",
+    );
+    await page.context().close();
+  });
+
+  test("Manage accounts asks for the manager PIN before it opens", async () => {
+    const page = await open({ manager: true });
+    await page.evaluate(() =>
+      window.harness.refuse({ ok: false, reason: "pin", pin: "manager" }),
+    );
+    await page.click("#manage");
+    await settle(page);
+    assert.equal(await page.locator("dialog.pin[open]").count(), 1);
+    assert.equal(await page.textContent("dialog.pin h2"), "Manager PIN");
+    await page.keyboard.type("2468");
+    await press(page, "Enter");
+    assert.equal(await page.locator("dialog").count(), 0);
+    assert.equal(await page.getAttribute("#manage", "aria-pressed"), "true");
+    await page.context().close();
+  });
+});
+
+describe("the options page with the venue mode", {
+  skip: browser === null,
+}, () => {
+  test("every part, in both languages and color schemes", async () => {
+    for (const lang of ["en", "de"]) {
+      for (const scheme of ["light", "dark"]) {
+        const page = await open({ page: "options", lang, scheme, pins: true });
+        // Chrome shows the page, whose own background is transparent, in a box of
+        // the colors of its scheme; the stand-in paints that box.
+        await page.addStyleTag({ content: "html { background: Canvas; }" });
+        assert.equal(await page.isVisible("#venue"), true);
+        assert.equal(await page.isVisible("#locked"), false);
+        // The checkbox and the radio buttons are smaller than 44 pixels, but their
+        // labels are the targets: only axe-core checks this page.
+        assert.deepEqual(
+          await violations(page),
+          [],
+          `axe-core finds problems in the options page, ${lang}, ${scheme}`,
+        );
+        assert.deepEqual(page.errors, []);
+        await page.context().close();
+      }
+    }
+  });
+
+  test("a manager PIN locks the page until it is entered", async () => {
+    const page = await open({ page: "options", manager: true });
+    assert.equal(await page.isVisible("#locked"), true);
+    assert.equal(await page.isVisible("#settings"), false);
+    assert.deepEqual(await violations(page), [], "axe-core, the locked page");
+    await page.click("#unlock");
+    await settle(page);
+    assert.equal(await page.isVisible("#settings"), true);
+    assert.equal(await focused(page), "#show-button");
+    await page.context().close();
+  });
+
+  test("a new PIN is asked for twice, and the account then says so", async () => {
+    const page = await open({ page: "options" });
+    await page.click('[data-focus="set:demo-lenavogt"]');
+    await page.keyboard.type("1357");
+    await press(page, "Enter");
+    await page.keyboard.type("1357");
+    await press(page, "Enter");
+    assert.equal(await page.locator("dialog").count(), 0);
+    assert.match(await page.textContent("#player-pins"), /Lena Vogt.*PIN set/);
+    // The focus stays on the control of the account, which now changes the PIN.
+    assert.equal(await focused(page), ".link");
+    assert.equal(
+      await page.getAttribute('[data-focus="set:demo-lenavogt"]', "aria-label"),
+      "Change PIN: Lena Vogt",
+    );
+    assert.equal(await page.textContent("#saved"), "Saved.");
+    await page.context().close();
+  });
+
+  test("two PINs that differ ask again", async () => {
+    const page = await open({ page: "options" });
+    await page.click('[data-focus="set:demo-lenavogt"]');
+    await page.keyboard.type("1357");
+    await press(page, "Enter");
+    await page.keyboard.type("1358");
+    await press(page, "Enter");
+    assert.equal(await page.locator("dialog.pin[open]").count(), 1);
+    assert.equal(
+      await page.textContent(".pin-problem"),
+      "The two PINs differ. Choose the PIN again.",
+    );
+    await page.context().close();
+  });
+
+  test("the return after a break offers the house accounts once it is on", async () => {
+    const page = await open({ page: "options" });
+    assert.equal(await page.isDisabled("#idle-house"), true);
+    await page.selectOption("#idle-minutes", "10");
+    await settle(page);
+    assert.equal(await page.isDisabled("#idle-house"), false);
+    assert.deepEqual(
+      await page.$$eval("#idle-house option", (options) =>
+        options.map((option) => option.textContent),
+      ),
+      ["Nobody: sign out", "Mia Keller", "Jonas Berg", "Lena Vogt"],
+    );
     await page.context().close();
   });
 });

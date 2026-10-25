@@ -31,6 +31,11 @@ So funktioniert es:
   1 bis 9 wählen einen Spieler.
 • Auf der Seite eines laufenden Matches fragt ein Wechsel vorher, damit ein Match
   nie aus Versehen endet.
+• Für Verein und Kneipe, optional und von Haus aus aus: Eine Manager-PIN schützt
+  „Konten verwalten“ und die Einstellungen, jeder Spieler kann sein Konto mit einer
+  eigenen PIN schützen, und nach einer Pause kehrt das Display von selbst zu einem
+  Hauskonto zurück, nie während eines Matches. Die Erweiterung speichert keine PIN,
+  nur einen gesalzenen Hash davon.
 • Optional: Die Erweiterung merkt sich ein Passwort und meldet ein Konto von selbst
   neu an, falls die Sitzung einmal nicht mehr geht. Konten, die sich mit Google oder
   Apple anmelden, können das nicht nutzen, weil sie kein Autodarts-Passwort haben,

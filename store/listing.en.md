@@ -28,6 +28,10 @@ How it works:
   and kiosk mode, in large tiles for a touch screen. The keys 1 to 9 pick a player.
 • On the page of a running match, a switch asks first, so a match never ends by
   surprise.
+• For a club or pub, optional and off by default: a manager PIN guards "Manage
+  accounts" and the settings, each player can protect their account with a PIN of
+  their own, and after a break the display returns to a house account by itself,
+  never during a match. The extension keeps no PIN, only a salted hash of it.
 • Optional: let the extension remember a password, and it signs an account back in
   by itself if its session ever stops working. Accounts that sign in with Google or
   Apple can't use this, because they have no Autodarts password to remember.

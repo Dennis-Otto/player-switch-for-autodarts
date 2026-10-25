@@ -82,7 +82,34 @@ Die Erweiterung erneuert jede geparkte Sitzung alle 12 Stunden, solange der Brow
 - **Ein Display, das tagelang aus ist,** etwa in einem Verein, der einmal pro Woche spielt: Schalte es zwischendurch ab und zu ein, oder lass die Konten mit Autodarts-Passwort es sich merken, damit sie sich von selbst wieder anmelden. Jedes andere Konto, das sich neu anmelden muss, zeigt **Neu anmelden**, und die [Hilfe](help.md#sign-in-again) sagt, was dann zu tun ist.
 - **Der Bildschirm darf ausgehen**, wann er will: Die Erneuerung braucht nur den Computer und den Browser. Stelle die Energieoptionen von Windows so ein, dass der Computer am Netz nicht in den Ruhezustand geht, und lass nur den Bildschirm ausgehen. Ein Raspberry Pi geht nicht in den Ruhezustand; **Screen Blanking** unter **Raspberry Pi Configuration → Display** schaltet nur den Bildschirm aus.
 
-## 7. Vor dem ersten Abend {#checklist}
+## 7. Im Verein oder in der Kneipe: der Modus für Verein und Kneipe {#venue-mode}
+
+Zu Hause darf jeder am Display unter jedem gespeicherten Konto spielen, genau dafür ist es da. In einem Verein oder einer Kneipe kennt nicht jeder am Board jeden. Der Modus für Verein und Kneipe, unter **Einstellungen** → **Für Verein und Kneipe**, bringt drei Sperren für die Leute am Display. Jede ist aus, bis du sie einschaltest.
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="images/diagrams/venue-mode.de.dark.svg">
+  <img src="images/diagrams/venue-mode.de.svg" alt="Der Modus für Verein und Kneipe an einem Display: Ein Tipp auf die Kachel eines Kontos mit PIN fragt nach dieser PIN, bevor sich etwas ändert; eine falsche ändert nichts, und fünf in Folge sperren jede PIN für eine Minute. Einmal pro Minute schaut der Service Worker, ob die Pause vorbei ist. Ein laufendes Match zählt als Eingabe, so wird ein Match nie unterbrochen. Nach der Pause wechselt das Display zum Hauskonto, oder es meldet sich ab, wenn keins festgelegt ist oder es sich neu anmelden muss; so oder so behält der Spieler davor seine Sitzung geparkt.">
+</picture>
+
+- **Eine Manager-PIN** schützt **Konten verwalten**, wo Konten entfernt und Passwörter gemerkt oder vergessen werden, und die Einstellungen selbst. Das Popup und die Spieler auf der Autodarts-Seite fragen einmal nach ihr, wenn **Konten verwalten** aufgeht, und vergessen sie, wenn es wieder zugeht.
+- **Eine PIN für jeden Spieler, der eine möchte,** 4 bis 8 Ziffern, unter **PINs der Spieler**. Ein Tipp auf die Kachel dieses Spielers fragt nach ihr, auf einem Ziffernblock, der auf einem Touchscreen geht, bevor sich etwas ändert; seine Kachel zeigt ein Schloss. Niemand sonst spielt unter seinem Konto und verdirbt ihm die Statistik.
+- **Zurück nach einer Pause:** Nach 5 bis 60 Minuten ohne Tippen, Klicken oder Taste auf der Autodarts-Seite wechselt das Display zu einem Hauskonto deiner Wahl oder meldet sich ab, damit die nächsten Spiele nicht für den Spieler zählen, der gegangen ist. Ein Match wird nie unterbrochen: Die Pause beginnt erst, wenn es zu Ende ist. Der Spieler davor behält seine Sitzung geparkt, ein Tipp holt ihn zurück.
+
+Fünf falsche PINs in Folge sperren jede PIN des Displays für eine Minute, damit niemand sie alle von Hand durchprobiert. Die Erweiterung speichert keine PIN, nur einen gesalzenen Hash davon.
+
+Eine PIN ist eine Sperre für die Leute am Display, kein Schutz vor jemandem, der den Computer benutzen kann: Wer `chrome://extensions` öffnen kann, kann die Erweiterung entfernen, und ein Programm, das das Profil des Browsers liest, kann jede 4-stellige PIN gegen ihren Hash probieren. Das [Sicherheitsdesign](security.md#venue-mode) sagt mehr dazu.
+
+### Eine vergessene Manager-PIN {#forgotten-manager-pin}
+
+Die Manager-PIN steht nirgends. Wer den Computer benutzen kann, schaltet den Modus für Verein und Kneipe aus, und die Konten bleiben:
+
+1. Öffne `chrome://extensions` und schalte oben rechts den **Entwicklermodus** ein.
+2. Wähle unter **Player Switch for Autodarts** neben *Ansichten prüfen* den **Service Worker**.
+3. Tippe in der **Konsole** des Fensters, das aufgeht, `chrome.storage.local.remove("venue")` ein und drücke <kbd>Enter</kbd>.
+
+Dann ist jede PIN weg, und das Display kehrt nach einer Pause nicht mehr zurück: Lege sie unter **Einstellungen** neu fest.
+
+## 8. Vor dem ersten Abend {#checklist}
 
 - [ ] Ein Tipp auf jede Kachel wechselt zu diesem Spieler, und **Konten verwalten** zeigt kein **Neu anmelden**.
 - [ ] Der Knopf auf der Autodarts-Seite sitzt in einer Ecke, in der er nichts verdeckt, was du brauchst.
@@ -90,5 +117,6 @@ Die Erweiterung erneuert jede geparkte Sitzung alle 12 Stunden, solange der Brow
 - [ ] Nach einem Neustart des Computers kommt Chrome von selbst wieder, im Kiosk-Modus auf Autodarts.
 - [ ] Der Computer geht nicht in den Ruhezustand, oder er wacht oft genug für die Erneuerung auf.
 - [ ] Alle kennen die Regel: Spieler wechseln mit einer Kachel, nie mit einer Abmeldung auf Autodarts, die eine Sitzung für immer beendet.
+- [ ] Im Verein oder in der Kneipe: Die Manager-PIN ist gesetzt und den Leuten bekannt, die das Display betreuen, und jeder Spieler, der eine PIN möchte, hat eine.
 
 Läuft etwas nicht wie gedacht? Die [Hilfe](help.md) erklärt jede Meldung der Erweiterung.

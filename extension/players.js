@@ -1,9 +1,12 @@
 // The players and their accounts, as the popup and the switcher in the Autodarts page
 // both show them: one module, so the two can't drift apart. It holds no account logic:
 // it asks the service worker for a view and sends it the person's taps. All the
-// thinking happens in the worker and in lib/.
+// thinking happens in the worker and in lib/. In the venue mode, the worker asks for
+// a PIN before a switch or a change in "Manage accounts"; this module then asks the
+// person, with a number pad for a touch screen, and sends the request again.
 import { failingSince, renewedAgo } from "./lib/health.js";
 import { initialOf, tileForKey } from "./lib/page.js";
+import { isPin } from "./lib/venue.js";
 
 export const t = (key, substitution) =>
   chrome.i18n.getMessage(key, substitution);
@@ -73,6 +76,143 @@ export function confirmDialog({ title, text, confirm, cancel }) {
     });
     dialog.showModal();
   });
+}
+
+// The keys of the number pad, in the rows of a phone; "delete" takes the last digit back.
+const PAD_KEYS = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "delete", "0"];
+
+/**
+ * Asks for a PIN in a dialog of the page, with a number pad for a touch screen; a
+ * keyboard types into the field as well, Enter confirms and Esc cancels. `error` says,
+ * read out at once, why the dialog asks again, such as after a wrong PIN. Answers the
+ * PIN, 4 to 8 digits, or null when the person cancels.
+ */
+export function pinDialog({ title, text, error = "" }) {
+  const dialog = document.createElement("dialog");
+  dialog.className = "confirm pin";
+  const heading = document.createElement("h2");
+  heading.id = "pin-title";
+  heading.textContent = title;
+  const body = document.createElement("p");
+  body.id = "pin-text";
+  body.textContent = text;
+  dialog.setAttribute("aria-labelledby", heading.id);
+  dialog.setAttribute("aria-describedby", body.id);
+
+  const opener = document.activeElement;
+  const form = document.createElement("form");
+  form.method = "dialog";
+  const label = document.createElement("label");
+  label.className = "pin-field";
+  const caption = document.createElement("span");
+  caption.textContent = t("pinLabel");
+  const input = document.createElement("input");
+  input.type = "password";
+  input.className = "pin-input";
+  input.inputMode = "numeric";
+  input.autocomplete = "off";
+  input.maxLength = 8;
+  input.autofocus = true;
+  label.append(caption, input);
+  const problem = document.createElement("p");
+  problem.className = "pin-problem";
+  problem.setAttribute("role", "alert");
+  problem.textContent = error;
+
+  const pad = document.createElement("div");
+  pad.className = "keypad";
+  pad.setAttribute("role", "group");
+  pad.setAttribute("aria-label", t("pinPad"));
+  for (const key of PAD_KEYS) {
+    const button = document.createElement("button");
+    button.type = "button";
+    if (key === "delete") {
+      button.className = "pad-key delete";
+      button.textContent = "\u232B";
+      button.setAttribute("aria-label", t("pinDelete"));
+    } else {
+      button.className = "pad-key";
+      button.textContent = key;
+    }
+    button.addEventListener("click", () => {
+      problem.textContent = "";
+      input.value =
+        key === "delete"
+          ? input.value.slice(0, -1)
+          : `${input.value}${key}`.slice(0, input.maxLength);
+    });
+    pad.append(button);
+  }
+  // The first button that sends the form, so that Enter in the field confirms.
+  const yes = document.createElement("button");
+  yes.value = "ok";
+  yes.className = "primary pad-ok";
+  yes.textContent = t("pinOk");
+  pad.append(yes);
+  const actions = document.createElement("div");
+  actions.className = "form-actions";
+  const no = document.createElement("button");
+  no.value = "cancel";
+  no.className = "link";
+  no.formNoValidate = true;
+  no.textContent = t("cancel");
+  actions.append(no);
+  form.append(label, problem, pad, actions);
+  dialog.append(heading, body, form);
+  document.body.append(dialog);
+
+  input.addEventListener("input", () => {
+    problem.textContent = "";
+  });
+  form.addEventListener("submit", (event) => {
+    if (event.submitter === yes && !isPin(input.value)) {
+      event.preventDefault();
+      problem.textContent = t("pinInvalid");
+      input.focus();
+    }
+  });
+
+  return new Promise((resolve) => {
+    dialog.addEventListener("close", () => {
+      const pin = dialog.returnValue === "ok" ? input.value : null;
+      dialog.remove();
+      if (opener?.isConnected) {
+        opener.focus();
+      }
+      resolve(pin);
+    });
+    dialog.showModal();
+  });
+}
+
+/** A small mark on the tile of an account that asks for a PIN: a lock and the word. */
+function pinMark() {
+  const mark = document.createElement("span");
+  mark.className = "chip pin";
+  const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+  svg.setAttribute("viewBox", "0 0 16 16");
+  svg.setAttribute("aria-hidden", "true");
+  const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+  path.setAttribute(
+    "d",
+    "M5 7V5a3 3 0 0 1 6 0v2h.5A1.5 1.5 0 0 1 13 8.5v5a1.5 1.5 0 0 1-1.5 1.5h-7A1.5 1.5 0 0 1 3 13.5v-5A1.5 1.5 0 0 1 4.5 7H5Zm1.5 0h3V5a1.5 1.5 0 0 0-3 0v2Z",
+  );
+  svg.append(path);
+  const word = document.createElement("span");
+  word.textContent = t("pinLabel");
+  mark.append(svg, word);
+  return mark;
+}
+
+/** What to say when a request failed: `signInHint` when the account has to sign in again. */
+function problemOf(reply, signInHint) {
+  if (reply.reason === "unreachable") {
+    return t("unreachable");
+  }
+  if (reply.reason === "locked") {
+    return t("pinLocked");
+  }
+  return signInHint ?? t("error");
 }
 
 /** Asks whether a switch may end the match that runs in the page. */
@@ -161,6 +301,12 @@ export function mountPlayers({ numbered = false, onRender = () => {} } = {}) {
   let managing = false;
   // True while a request is with the service worker: the page then takes no other tap.
   let busy = false;
+  // The accounts that show, for the name in the question for a PIN.
+  let shown = [];
+  // Whether a manager PIN guards "Manage accounts", and the one that the person entered
+  // to open it, which goes along with each change and is forgotten as it closes.
+  let guarded = false;
+  let managerPin = null;
 
   /** Shows a message, an error in the region that is read out at once; "" clears both. */
   function showStatus(text, isError = false) {
@@ -188,11 +334,11 @@ export function mountPlayers({ numbered = false, onRender = () => {} } = {}) {
    */
   async function send(action, extra = {}, signInHint = null) {
     if (busy) {
-      return;
+      return undefined;
     }
     setBusy(true);
     try {
-      await request(action, extra, signInHint);
+      return await request(action, extra, signInHint);
     } finally {
       setBusy(false);
     }
@@ -207,21 +353,58 @@ export function mountPlayers({ numbered = false, onRender = () => {} } = {}) {
     }
   }
 
-  /** Asks the service worker and shows what it answers. */
+  /** Asks for the PIN that the worker waits for: of the account, or the manager PIN. */
+  function askPin(reply, id) {
+    const manager = reply.pin === "manager";
+    const name = shown.find((profile) => profile.id === id)?.name ?? "";
+    return pinDialog({
+      title: manager ? t("managerPinTitle") : t("pinTitle", name),
+      text: manager ? t("managerPinText") : t("pinText"),
+      error: reply.wrong === true ? t("pinWrong") : "",
+    });
+  }
+
+  /** Asks the service worker and shows what it answers, which it also returns. */
   async function request(action, extra, signInHint) {
-    let reply = await ask({ action, ...extra });
-    // A match runs in the page: the worker spent no token yet and waits for a yes.
-    if (reply?.ok === false && reply.reason === "match") {
-      if (!(await confirmMatch())) {
-        showStatus("");
-        render(reply.view);
-        return;
+    let message =
+      managerPin === null
+        ? { action, ...extra }
+        : { action, ...extra, managerPin };
+    let reply = await ask(message);
+    // The worker spent no token yet: it waits for a PIN, or for a yes to end the match
+    // that runs in the page. A cancel leaves everything as it was.
+    while (
+      reply?.ok === false &&
+      (reply.reason === "pin" || reply.reason === "match")
+    ) {
+      if (reply.reason === "match") {
+        if (!(await confirmMatch())) {
+          showStatus("");
+          render(reply.view);
+          return reply;
+        }
+        message = { ...message, confirmed: true };
+      } else {
+        const pin = await askPin(reply, message.id);
+        if (pin === null) {
+          showStatus("");
+          render(reply.view);
+          return reply;
+        }
+        message =
+          reply.pin === "manager"
+            ? { ...message, managerPin: pin }
+            : { ...message, pin };
       }
-      reply = await ask({ action, ...extra, confirmed: true });
+      reply = await ask(message);
     }
     if (reply === undefined) {
       showStatus(t("error"), true);
-      return;
+      return reply;
+    }
+    // The manager PIN that worked opens "Manage accounts" until it closes.
+    if (reply.ok === true && typeof message.managerPin === "string") {
+      managerPin = message.managerPin;
     }
     if (reply.error === "noPage") {
       showStatus(t("noPage"), true);
@@ -230,12 +413,7 @@ export function mountPlayers({ numbered = false, onRender = () => {} } = {}) {
     } else if (reply.error !== undefined) {
       showStatus(t("error"), true);
     } else if (reply.ok === false) {
-      showStatus(
-        reply.reason === "unreachable"
-          ? t("unreachable")
-          : (signInHint ?? t("error")),
-        true,
-      );
+      showStatus(problemOf(reply, signInHint), true);
     } else if (typeof reply.saved === "string") {
       // A new account signed in before the page could tell; it was saved just now.
       showStatus(t("savedAccount", reply.saved));
@@ -253,10 +431,13 @@ export function mountPlayers({ numbered = false, onRender = () => {} } = {}) {
     if (reply.view !== undefined) {
       render(reply.view);
     }
+    return reply;
   }
 
   function render(view) {
     const before = focusBefore();
+    shown = view.profiles;
+    guarded = view.venue?.manager === true;
     profiles.replaceChildren();
     view.profiles.forEach((profile, index) => {
       profiles.append(tile(profile, index));
@@ -354,7 +535,11 @@ export function mountPlayers({ numbered = false, onRender = () => {} } = {}) {
       button.setAttribute("aria-keyshortcuts", String(index + 1));
     }
 
-    const chip = node.querySelector(".chip");
+    if (profile.pin === true) {
+      node.querySelector(".chip").before(pinMark());
+    }
+
+    const chip = node.querySelector(".chip:not(.pin)");
     if (profile.active) {
       chip.textContent = t("playing");
       chip.classList.add("playing");
@@ -449,9 +634,22 @@ export function mountPlayers({ numbered = false, onRender = () => {} } = {}) {
   }
 
   // "Manage accounts" is a toggle with a name that stays: pressed, it shows the actions
-  // of every account, and pressed again, the tiles.
-  manageButton.addEventListener("click", () => {
+  // of every account, and pressed again, the tiles. While a manager PIN guards it, it
+  // opens only with that PIN, which it forgets again as it closes.
+  manageButton.addEventListener("click", async () => {
+    if (busy) {
+      return;
+    }
+    if (!managing && guarded && managerPin === null) {
+      const reply = await send("unlock");
+      if (reply?.ok !== true) {
+        return;
+      }
+    }
     managing = !managing;
+    if (!managing) {
+      managerPin = null;
+    }
     document.body.classList.toggle("managing", managing);
     manageButton.setAttribute("aria-pressed", String(managing));
     for (const menu of profiles.querySelectorAll(".menu")) {

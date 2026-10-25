@@ -254,5 +254,151 @@
   },
   "welcomePrivacy": {
     "message": "Everything stays on this computer and goes only to Autodarts."
+  },
+  "pinLabel": {
+    "message": "PIN",
+    "description": "The label of the field for a PIN, and the mark on the tile of an account that asks for one."
+  },
+  "pinPad": {
+    "message": "Number pad",
+    "description": "The name, for screen readers, of the number pad in the question for a PIN."
+  },
+  "pinDelete": {
+    "message": "Delete the last digit",
+    "description": "The name, for screen readers, of the key of the number pad that takes the last digit back."
+  },
+  "pinOk": {
+    "message": "OK",
+    "description": "The button that confirms a PIN."
+  },
+  "pinTitle": {
+    "message": "PIN of $NAME$",
+    "description": "The title of the question for the PIN of an account, before a switch to it. $NAME$ is the name of the player.",
+    "placeholders": { "name": { "content": "$1" } }
+  },
+  "pinText": {
+    "message": "This account asks for its PIN before anyone plays under it."
+  },
+  "pinWrong": {
+    "message": "Wrong PIN. Try again."
+  },
+  "pinInvalid": {
+    "message": "A PIN has 4 to 8 digits."
+  },
+  "pinLocked": {
+    "message": "Too many wrong PINs. Try again in a minute."
+  },
+  "managerPinTitle": {
+    "message": "Manager PIN",
+    "description": "The title of the question for the manager PIN, and the heading of its part of the options page."
+  },
+  "managerPinText": {
+    "message": "Enter the manager PIN to manage the accounts and the settings."
+  },
+  "optionsLockedTitle": {
+    "message": "Settings locked"
+  },
+  "optionsLocked": {
+    "message": "A manager PIN guards these settings. Enter it to change them."
+  },
+  "unlock": {
+    "message": "Unlock"
+  },
+  "optionsVenue": {
+    "message": "For a club or pub",
+    "description": "The heading of the venue mode on the options page."
+  },
+  "optionsVenueHint": {
+    "message": "Everything here is off until you turn it on. A PIN keeps the people at the display from playing under someone else's account; it doesn't protect against someone who can use this computer."
+  },
+  "managerPinOff": {
+    "message": "No manager PIN is set: anyone at the display can manage the accounts and change these settings."
+  },
+  "managerPinOn": {
+    "message": "The manager PIN guards Manage accounts and these settings."
+  },
+  "setManagerPin": {
+    "message": "Set manager PIN"
+  },
+  "changeManagerPin": {
+    "message": "Change manager PIN"
+  },
+  "removeManagerPin": {
+    "message": "Remove manager PIN"
+  },
+  "removeManagerPinConfirm": {
+    "message": "Anyone at the display can then manage the accounts and change these settings.",
+    "description": "The question before the manager PIN is removed."
+  },
+  "newManagerPinTitle": {
+    "message": "New manager PIN"
+  },
+  "playerPins": {
+    "message": "PINs of the players"
+  },
+  "playerPinsHint": {
+    "message": "An account with a PIN asks for it before anyone switches to it, in the popup and on the Autodarts page."
+  },
+  "playerPinsEmpty": {
+    "message": "No account is saved yet."
+  },
+  "pinSet": {
+    "message": "PIN set",
+    "description": "Shown beside an account on the options page that has a PIN."
+  },
+  "noPin": {
+    "message": "no PIN",
+    "description": "Shown beside an account on the options page that has no PIN."
+  },
+  "setPin": {
+    "message": "Set PIN"
+  },
+  "changePin": {
+    "message": "Change PIN"
+  },
+  "removePin": {
+    "message": "Remove PIN"
+  },
+  "newPinFor": {
+    "message": "New PIN for $NAME$",
+    "description": "The title of the question for a new PIN of an account. $NAME$ is the name of the player.",
+    "placeholders": { "name": { "content": "$1" } }
+  },
+  "newPinText": {
+    "message": "Choose 4 to 8 digits that you can remember."
+  },
+  "repeatPinTitle": {
+    "message": "Repeat the PIN"
+  },
+  "repeatPinText": {
+    "message": "Enter the same digits once more."
+  },
+  "pinMismatch": {
+    "message": "The two PINs differ. Choose the PIN again."
+  },
+  "idleHeading": {
+    "message": "Return after a break"
+  },
+  "idleAfter": {
+    "message": "After a break of"
+  },
+  "idleNever": {
+    "message": "Never",
+    "description": "The choice that turns the return after a break off."
+  },
+  "idleMinutes": {
+    "message": "$COUNT$ minutes",
+    "description": "A length of a break. $COUNT$ is a number of minutes, from 5 to 60.",
+    "placeholders": { "count": { "content": "$1" } }
+  },
+  "idleTo": {
+    "message": "Return to"
+  },
+  "idleSignOut": {
+    "message": "Nobody: sign out",
+    "description": "The choice that signs the Autodarts page out after a break, instead of a switch to a house account."
+  },
+  "idleHint": {
+    "message": "A break is the time without a tap, click or key on the Autodarts page. A match is never interrupted: the break starts once it has ended. The player before keeps their session parked, so a tap brings them back."
   }
 }

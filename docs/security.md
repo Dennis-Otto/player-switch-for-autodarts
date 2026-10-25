@@ -24,6 +24,12 @@ and never leaves it except to Autodarts itself:
   sent only to `api.autodarts.com/auth/v1/login`. Leave it off, and no password is
   ever stored.
 - **The settings of the button in the page:** whether it shows, and in which corner.
+- **The settings of the venue mode, once a person turns it on:** a salted PBKDF2
+  hash of the manager PIN and of each player's PIN, never a PIN itself, the length
+  of the break and the house account (see [the venue mode](#venue-mode)). In
+  `chrome.storage.session`, which the browser empties as it closes: the count of
+  wrong PINs in a row, and the time of the last input on the Autodarts page, which
+  says only that there was one.
 - **When the renewal last ran,** and whether Autodarts turned every parked account
   away in it, so that the extension catches up on a renewal it missed while the
   computer was off and can suggest an update of itself. This holds no token and no
@@ -115,6 +121,40 @@ stored session is `extension/content.js`.
   <img src="images/diagrams/who-reaches-the-accounts.svg" alt="Who reaches the saved accounts: The saved accounts sit in chrome.storage.local, which only the extension's own contexts can read, the service worker and its pages: the popup, the options page and the switcher in its frame. Their tokens and remembered passwords are sealed there with AES-GCM; the key can't be exported and sits in the IndexedDB of the extension, which only the service worker uses. content.js runs inside the Autodarts page and can't read the storage. It may ask the service worker only what its button shows, takes requests only from this extension and writes into the page's session only a token. The service worker takes a request to see or change the accounts only from a page of this extension. Its content security policy lets it connect to api.autodarts.com alone, and the browser blocks any other host.">
 </picture>
 
+## The venue mode {#venue-mode}
+
+The venue mode, which is off until a person turns it on under **Settings**, locks a
+club or pub display against the people in front of it: a guest who plays under a
+regular's account and spoils their statistics, someone who removes accounts or
+remembers a password, and the account of a player who left, which would count the
+next games. It is a lock for the people at the display, not a protection against
+someone who can use the computer.
+
+- **No PIN is kept.** Each PIN, 4 to 8 digits, is kept as a hash of PBKDF2 with
+  SHA-256, 600,000 rounds as OWASP recommends, and a random salt of 16 bytes of its
+  own, made with WebCrypto. A check compares the hashes in a time that doesn't tell
+  how many bytes agree.
+- **The service worker checks every PIN,** for every switch to an account with a PIN
+  and every change under **Manage accounts** or on the options page, so neither the
+  popup nor the switcher on the Autodarts page can go around it. The content script
+  can neither read the hashes nor send these requests.
+- **Five wrong PINs in a row lock every PIN for a minute.** The count is kept in
+  `chrome.storage.session`, so it outlives a sleep of the service worker; a restart
+  of the browser clears it.
+- **The manager PIN lives as long as the view that asked for it:** the popup and the
+  switcher forget it as **Manage accounts** closes, the options page as it closes.
+- **The return after a break** needs to know when someone last used the Autodarts
+  page. The content script tells the service worker only that an input happened,
+  never where or what, at most every 15 seconds, and only while the return is on.
+  A match that runs in any Autodarts tab counts as input, so the return never ends
+  one, and the player before keeps their session parked.
+- **What it doesn't stop:** whoever can use the computer can remove the extension in
+  `chrome://extensions`, turn the venue mode off in the console of its service
+  worker (the [guide](shared-display.md#forgotten-manager-pin) shows how, for a
+  forgotten manager PIN), or copy the profile of the browser and try all 10,000
+  PINs of 4 digits against a hash in a short time. Longer PINs take longer, not
+  forever.
+
 ## Threats and countermeasures
 
 | Threat | Countermeasure |
@@ -137,6 +177,11 @@ stored session is `extension/content.js`.
 | The scripts of the Autodarts page read the saved accounts out of the switcher | The switcher is a page of the extension in a frame of another origin, inside a closed shadow root; the content script gets only the player on the button from the service worker |
 | A switch during a match ends it by surprise | On a match page, the service worker refuses a switch or a sign-out until the person confirms, before it spends a token |
 | A change adds a permission or a host, and after the update Chrome disables the extension on a kiosk display until someone accepts the new warning | `scripts/check-manifest.mjs` fails `scripts/check.sh` unless `store/permissions.json` allows the permission with its reason and both store listings justify it. It also refuses `externally_connectable`, optional permissions, a content script in the world of the page and a content security policy that runs scripts from elsewhere |
+| Someone at a club or pub display plays under another player's account | In the venue mode, an account can ask for a PIN, which the service worker checks before it spends a token of that account |
+| Someone at the display removes accounts or remembers a password | In the venue mode, the service worker takes no change under **Manage accounts** and no change of the venue mode without the manager PIN |
+| Someone at the display guesses a PIN by hand | Five wrong PINs in a row lock every PIN for a minute, counted in the service worker, not in the popup |
+| A PIN is read out of the storage | The storage holds a salted PBKDF2 hash of 600,000 rounds, never the PIN, and only the service worker and the pages of the extension can read it |
+| A player leaves, and the next games count for their account | The venue mode returns the display to a house account, or signs it out, after a break without input, parking the session of the player; a match that runs counts as input and is never interrupted |
 | An older browser installs the extension and then fails as it runs | The manifest asks for Chrome 140 or newer (`minimum_chrome_version`), the first version in which `chrome.storage.local.setAccessLevel` keeps the accounts from the content script; `scripts/check-manifest.mjs` fails on a lower one |
 
 ## Residual risks
@@ -149,6 +194,10 @@ stored session is `extension/content.js`.
   and code that runs inside the extension itself could ask the key to open a token.
   The key stops the tools, backups and copies of the profile that read only the
   storage of the extension, and a content script or a page of another origin.
+- A PIN of the venue mode is a lock for the people at the display. Someone who can
+  use the computer can remove the extension or turn the venue mode off, and a copy
+  of the profile of the browser lets a program try every PIN of 4 digits against its
+  hash in a short time.
 - The Autodarts page can tell that the extension is installed, from the button and
   from `switcher.html`, which it may load. A page that wanted to could also lay the
   switcher under a decoy and trick a tap on it; that would take a script of Autodarts

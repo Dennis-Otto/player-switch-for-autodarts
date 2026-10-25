@@ -144,6 +144,68 @@ Under **Settings**, a shortcut says:
 
 **What to do:** **Change shortcuts** opens `chrome://extensions/shortcuts`; give it keys that no other extension uses. The button on the Autodarts page works without a shortcut.
 
+### The PIN of a player {#player-pin}
+
+> PIN of Bob
+>
+> This account asks for its PIN before anyone plays under it.
+
+**What it means:** the [venue mode](shared-display.md#venue-mode) is on at this display, and the account got a PIN on the options page. The extension asks for it before a switch to that account, in the popup and on the Autodarts page alike.
+
+**What to do:** type the PIN on the number pad, or with the keyboard, and choose **OK**. **Cancel** changes nothing. A forgotten PIN can't be read anywhere: the manager removes it, or sets a new one, under **Settings** → **For a club or pub** → **PINs of the players**.
+
+### Wrong PIN {#wrong-pin}
+
+> Wrong PIN. Try again.
+
+**What it means:** the PIN doesn't match. Nothing changed on the display.
+
+**What to do:** type the PIN again. After five wrong PINs in a row, every PIN of the display waits for a minute.
+
+### A PIN has 4 to 8 digits {#pin-digits}
+
+> A PIN has 4 to 8 digits.
+
+**What it means:** what was typed is shorter than 4 digits, longer than 8, or holds something other than digits.
+
+**What to do:** type 4 to 8 digits, and choose **OK**.
+
+### Too many wrong PINs {#pin-locked}
+
+> Too many wrong PINs. Try again in a minute.
+
+**What it means:** five wrong PINs in a row lock every PIN of this display, of the players and the manager, for a minute, so that nobody can try them all by hand.
+
+**What to do:** wait a minute, then type the right PIN.
+
+### The manager PIN {#manager-pin}
+
+> Manager PIN
+>
+> Enter the manager PIN to manage the accounts and the settings.
+
+**What it means:** a manager PIN guards **Manage accounts**: removing an account, remembering or forgetting a password. The extension asks for it once as **Manage accounts** opens, and forgets it as it closes.
+
+**What to do:** the manager types it. Forgotten? The PIN can't be read anywhere, but someone who can use the computer can turn the venue mode off, as the [shared display guide](shared-display.md#forgotten-manager-pin) shows; the accounts stay.
+
+### Settings locked {#settings-locked}
+
+Under **Settings**:
+
+> A manager PIN guards these settings. Enter it to change them.
+
+**What it means:** a manager PIN is set, so the options page shows nothing else until it gets the PIN.
+
+**What to do:** choose **Unlock** and type the manager PIN.
+
+### The two PINs differ {#pin-mismatch}
+
+> The two PINs differ. Choose the PIN again.
+
+**What it means:** a new PIN is asked for twice, so that a slip of a finger locks nobody out, and the two didn't match. Nothing was saved.
+
+**What to do:** type the new PIN, and the same digits once more.
+
 ## Questions
 
 ### Does a switch sign the other player out?
@@ -174,7 +236,11 @@ The extension saves a sign-in by itself only in the ten minutes after **Add acco
 
 ### Who can play under my account?
 
-Anyone at that display can switch to any account saved on it: it is made for a display that the people of a household, a club or a venue share and trust. Leave a club, or play elsewhere from now on? Remove your account from the display, under **Manage accounts**. The [security design](security.md) lists what is kept and which risks remain.
+Anyone at that display can switch to any account saved on it: it is made for a display that the people of a household, a club or a venue share and trust. In a club or a pub, the [venue mode](shared-display.md#venue-mode) gives your account a PIN that the display asks for before anyone plays under it. Leave a club, or play elsewhere from now on? Remove your account from the display, under **Manage accounts**. The [security design](security.md) lists what is kept and which risks remain.
+
+### The display switched to another player by itself {#returned-after-break}
+
+The [venue mode](shared-display.md#venue-mode) can return the display to a house account, or sign it out, after a break without a tap, a click or a key on the Autodarts page, so that the next games don't count for the player who left. It never interrupts a match: the break starts once the match has ended. The player before keeps their session parked, and a tap brings them back. **Settings** → **For a club or pub** → **Return after a break** sets how long the break is, or turns it off.
 
 ### Several displays
 

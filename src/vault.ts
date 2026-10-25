@@ -118,7 +118,8 @@ export function createVault(
   };
 }
 
-function toBase64(bytes: Uint8Array): string {
+/** The text of some bytes in base64; `venue.ts` shares it. */
+export function toBase64(bytes: Uint8Array): string {
   let binary = "";
   for (const byte of bytes) {
     binary += String.fromCharCode(byte);
@@ -126,8 +127,8 @@ function toBase64(bytes: Uint8Array): string {
   return btoa(binary);
 }
 
-/** The bytes of a text in base64, or null when it is none. */
-function fromBase64(text: string): Uint8Array<ArrayBuffer> | null {
+/** The bytes of a text in base64, or null when it is none; `venue.ts` shares it. */
+export function fromBase64(text: string): Uint8Array<ArrayBuffer> | null {
   let binary: string;
   try {
     binary = atob(text);

@@ -144,6 +144,68 @@ Unter **Einstellungen** steht bei einem Tastenkürzel:
 
 **Was du tust:** **Tastenkürzel ändern** öffnet `chrome://extensions/shortcuts`; gib ihm Tasten, die keine andere Erweiterung nutzt. Der Knopf auf der Autodarts-Seite geht auch ohne Tastenkürzel.
 
+### Die PIN eines Spielers {#player-pin}
+
+> PIN von Bob
+>
+> Dieses Konto fragt nach seiner PIN, bevor jemand damit spielt.
+
+**Was es bedeutet:** Am Display ist der [Modus für Verein und Kneipe](shared-display.md#venue-mode) an, und das Konto hat auf der Seite der Einstellungen eine PIN bekommen. Die Erweiterung fragt vor einem Wechsel zu diesem Konto nach ihr, im Popup wie auf der Autodarts-Seite.
+
+**Was du tust:** Tippe die PIN auf dem Ziffernblock oder mit der Tastatur ein und wähle **OK**. **Abbrechen** ändert nichts. Eine vergessene PIN steht nirgends: Der Manager entfernt sie oder legt eine neue fest, unter **Einstellungen** → **Für Verein und Kneipe** → **PINs der Spieler**.
+
+### Falsche PIN {#wrong-pin}
+
+> Falsche PIN. Bitte nochmal versuchen.
+
+**Was es bedeutet:** Die PIN stimmt nicht. Am Display hat sich nichts geändert.
+
+**Was du tust:** Tippe die PIN noch einmal ein. Nach fünf falschen PINs in Folge wartet jede PIN des Displays eine Minute.
+
+### Eine PIN hat 4 bis 8 Ziffern {#pin-digits}
+
+> Eine PIN hat 4 bis 8 Ziffern.
+
+**Was es bedeutet:** Die Eingabe ist kürzer als 4 Ziffern, länger als 8 oder enthält etwas anderes als Ziffern.
+
+**Was du tust:** Tippe 4 bis 8 Ziffern ein und wähle **OK**.
+
+### Zu viele falsche PINs {#pin-locked}
+
+> Zu viele falsche PINs. Bitte in einer Minute nochmal versuchen.
+
+**Was es bedeutet:** Fünf falsche PINs in Folge sperren jede PIN dieses Displays, die der Spieler und die des Managers, für eine Minute, damit niemand sie alle von Hand durchprobieren kann.
+
+**Was du tust:** Warte eine Minute und tippe dann die richtige PIN ein.
+
+### Die Manager-PIN {#manager-pin}
+
+> Manager-PIN
+>
+> Gib die Manager-PIN ein, um die Konten und die Einstellungen zu verwalten.
+
+**Was es bedeutet:** Eine Manager-PIN schützt **Konten verwalten**: ein Konto entfernen, ein Passwort merken oder vergessen. Die Erweiterung fragt einmal nach ihr, wenn **Konten verwalten** aufgeht, und vergisst sie, wenn es wieder zugeht.
+
+**Was du tust:** Der Manager tippt sie ein. Vergessen? Die PIN steht nirgends, aber wer den Computer benutzen kann, kann den Modus für Verein und Kneipe ausschalten, wie die [Anleitung für ein gemeinsames Display](shared-display.md#forgotten-manager-pin) zeigt; die Konten bleiben.
+
+### Einstellungen gesperrt {#settings-locked}
+
+Unter **Einstellungen**:
+
+> Eine Manager-PIN schützt diese Einstellungen. Gib sie ein, um sie zu ändern.
+
+**Was es bedeutet:** Eine Manager-PIN ist gesetzt, deshalb zeigt die Seite der Einstellungen nichts anderes, bis sie die PIN bekommt.
+
+**Was du tust:** Wähle **Entsperren** und tippe die Manager-PIN ein.
+
+### Die beiden PINs sind verschieden {#pin-mismatch}
+
+> Die beiden PINs sind verschieden. Wähle die PIN noch einmal.
+
+**Was es bedeutet:** Eine neue PIN wird zweimal abgefragt, damit ein Tippfehler niemanden aussperrt, und die beiden Eingaben stimmten nicht überein. Nichts wurde gespeichert.
+
+**Was du tust:** Tippe die neue PIN ein und dieselben Ziffern noch einmal.
+
 ## Fragen
 
 ### Meldet ein Wechsel den anderen Spieler ab?
@@ -174,7 +236,11 @@ Die Erweiterung speichert eine Anmeldung nur in den zehn Minuten nach **Konto hi
 
 ### Wer kann unter meinem Konto spielen?
 
-Jede Person an diesem Display kann zu jedem dort gespeicherten Konto wechseln: Die Erweiterung ist für ein Display gemacht, das sich die Menschen eines Haushalts, eines Vereins oder eines Lokals teilen und dem sie vertrauen. Du verlässt einen Verein oder spielst ab jetzt woanders? Entferne dein Konto vom Display, unter **Konten verwalten**. Das [Sicherheitsdesign](security.md) zählt auf, was gespeichert wird und welche Risiken bleiben.
+Jede Person an diesem Display kann zu jedem dort gespeicherten Konto wechseln: Die Erweiterung ist für ein Display gemacht, das sich die Menschen eines Haushalts, eines Vereins oder eines Lokals teilen und dem sie vertrauen. In einem Verein oder einer Kneipe gibt der [Modus für Verein und Kneipe](shared-display.md#venue-mode) deinem Konto eine PIN, nach der das Display fragt, bevor jemand damit spielt. Du verlässt einen Verein oder spielst ab jetzt woanders? Entferne dein Konto vom Display, unter **Konten verwalten**. Das [Sicherheitsdesign](security.md) zählt auf, was gespeichert wird und welche Risiken bleiben.
+
+### Das Display hat von selbst zu einem anderen Spieler gewechselt {#returned-after-break}
+
+Der [Modus für Verein und Kneipe](shared-display.md#venue-mode) kann das Display nach einer Pause ohne Tippen, Klicken oder Taste auf der Autodarts-Seite zu einem Hauskonto zurückbringen oder abmelden, damit die nächsten Spiele nicht für den Spieler zählen, der gegangen ist. Ein Match unterbricht er nie: Die Pause beginnt erst, wenn es zu Ende ist. Der Spieler davor behält seine Sitzung geparkt, ein Tipp holt ihn zurück. **Einstellungen** → **Für Verein und Kneipe** → **Zurück nach einer Pause** legt fest, wie lang die Pause ist, oder schaltet es aus.
 
 ### Mehrere Displays
 

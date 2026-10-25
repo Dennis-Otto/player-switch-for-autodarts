@@ -26,6 +26,12 @@ verlässt ihn nie, außer an Autodarts selbst:
   Lass es aus, und kein Passwort wird je gespeichert.
 - **Die Einstellungen des Knopfs in der Seite:** ob er zu sehen ist, und in welcher
   Ecke.
+- **Die Einstellungen des Modus für Verein und Kneipe, sobald jemand ihn einschaltet:**
+  ein gesalzener PBKDF2-Hash der Manager-PIN und der PIN jedes Spielers, nie eine PIN
+  selbst, die Länge der Pause und das Hauskonto (siehe [den Modus für Verein und
+  Kneipe](#venue-mode)). In `chrome.storage.session`, das der Browser beim Schließen
+  leert: die Zahl der falschen PINs in Folge und die Zeit der letzten Eingabe auf der
+  Autodarts-Seite, die nur sagt, dass es eine gab.
 - **Wann die Erneuerung zuletzt lief,** und ob Autodarts dabei jedes geparkte Konto
   abgewiesen hat, damit die Erweiterung eine Erneuerung nachholt, die sie verpasst hat,
   während der Computer aus war, und ein Update von sich selbst vorschlagen kann. Das
@@ -122,6 +128,42 @@ die gespeicherte Sitzung der Seite berührt, ist `extension/content.js`.
   <img src="images/diagrams/who-reaches-the-accounts.de.svg" alt="Wer an die gespeicherten Konten kommt: Die gespeicherten Konten liegen in chrome.storage.local, das nur die eigenen Kontexte der Erweiterung lesen können, der Service Worker und ihre Seiten: das Popup, die Optionsseite und der Wechsler in seinem Rahmen. Ihre Tokens und gemerkten Passwörter sind dort mit AES-GCM versiegelt; der Schlüssel lässt sich nicht exportieren und liegt in der IndexedDB der Erweiterung, die nur der Service Worker benutzt. content.js läuft in der Autodarts-Seite und kann den Speicher nicht lesen. Es darf den Service Worker nur fragen, was sein Knopf zeigt, nimmt Anfragen nur von dieser Erweiterung an und schreibt in die Sitzung der Seite nur einen Token. Der Service Worker nimmt eine Anfrage, die Konten zu sehen oder zu ändern, nur von einer Seite dieser Erweiterung an. Seine Content Security Policy lässt ihn nur mit api.autodarts.com verbinden, und der Browser sperrt jeden anderen Host.">
 </picture>
 
+## Der Modus für Verein und Kneipe {#venue-mode}
+
+Der Modus für Verein und Kneipe, der aus ist, bis jemand ihn unter **Einstellungen**
+einschaltet, sperrt ein Display im Verein oder in der Kneipe gegen die Leute davor:
+einen Gast, der unter dem Konto eines Stammspielers spielt und ihm die Statistik
+verdirbt, jemanden, der Konten entfernt oder ein Passwort merkt, und das Konto eines
+Spielers, der gegangen ist und für den sonst die nächsten Spiele zählen. Er ist eine
+Sperre für die Leute am Display, kein Schutz vor jemandem, der den Computer benutzen
+kann.
+
+- **Keine PIN wird gespeichert.** Jede PIN, 4 bis 8 Ziffern, wird als Hash von PBKDF2
+  mit SHA-256 gespeichert, mit 600.000 Runden, wie OWASP sie empfiehlt, und einem
+  eigenen zufälligen Salz von 16 Bytes, gemacht mit WebCrypto. Eine Prüfung vergleicht
+  die Hashes in einer Zeit, die nicht verrät, wie viele Bytes übereinstimmen.
+- **Der Service Worker prüft jede PIN,** bei jedem Wechsel zu einem Konto mit PIN und
+  bei jeder Änderung unter **Konten verwalten** oder auf der Seite der Einstellungen,
+  so kommen weder das Popup noch der Umschalter auf der Autodarts-Seite daran vorbei.
+  Das Content-Skript kann die Hashes weder lesen noch diese Anfragen senden.
+- **Fünf falsche PINs in Folge sperren jede PIN für eine Minute.** Die Zahl steht in
+  `chrome.storage.session`, so übersteht sie einen Schlaf des Service Workers; ein
+  Neustart des Browsers löscht sie.
+- **Die Manager-PIN lebt so lange wie die Ansicht, die nach ihr gefragt hat:** Das
+  Popup und der Umschalter vergessen sie, wenn **Konten verwalten** zugeht, die Seite
+  der Einstellungen, wenn sie zugeht.
+- **Die Rückkehr nach einer Pause** muss wissen, wann jemand die Autodarts-Seite
+  zuletzt benutzt hat. Das Content-Skript sagt dem Service Worker nur, dass es eine
+  Eingabe gab, nie wo oder welche, höchstens alle 15 Sekunden und nur, solange die
+  Rückkehr an ist. Ein Match, das in einem Autodarts-Tab läuft, zählt als Eingabe, so
+  beendet die Rückkehr nie eins, und der Spieler davor behält seine Sitzung geparkt.
+- **Was er nicht verhindert:** Wer den Computer benutzen kann, kann die Erweiterung
+  unter `chrome://extensions` entfernen, den Modus in der Konsole ihres Service
+  Workers ausschalten (die [Anleitung](shared-display.md#forgotten-manager-pin) zeigt
+  wie, für eine vergessene Manager-PIN) oder das Profil des Browsers kopieren und alle
+  10.000 PINs mit 4 Ziffern in kurzer Zeit gegen einen Hash probieren. Längere PINs
+  dauern länger, nicht ewig.
+
 ## Bedrohungen und Gegenmaßnahmen
 
 | Bedrohung | Gegenmaßnahme |
@@ -145,9 +187,18 @@ die gespeicherte Sitzung der Seite berührt, ist `extension/content.js`.
 | Ein Wechsel während eines Matches beendet es unerwartet | Auf einer Match-Seite lehnt der Service Worker einen Wechsel oder eine Abmeldung ab, bis die Person bestätigt, bevor er einen Token verbraucht |
 | Eine Änderung fügt eine Berechtigung oder einen Host hinzu, und nach dem Update schaltet Chrome die Erweiterung auf einem Kiosk-Display ab, bis jemand die neue Warnung annimmt | `scripts/check-manifest.mjs` lässt `scripts/check.sh` scheitern, solange `store/permissions.json` die Berechtigung nicht mit ihrem Grund erlaubt und nicht beide Store-Einträge sie begründen. Es lehnt auch `externally_connectable` ab, optionale Berechtigungen, ein Content-Skript in der Welt der Seite und eine Content Security Policy, die Skripte von anderswo ausführt |
 | Ein älterer Browser installiert die Erweiterung und scheitert dann im Betrieb | Das Manifest verlangt Chrome 140 oder neuer (`minimum_chrome_version`), die erste Version, in der `chrome.storage.local.setAccessLevel` die Konten vor dem Content-Script verbirgt; `scripts/check-manifest.mjs` scheitert an einer niedrigeren |
+| Jemand an einem Display im Verein oder in der Kneipe spielt unter dem Konto eines anderen | Im Modus für Verein und Kneipe kann ein Konto nach einer PIN fragen, die der Service Worker prüft, bevor er einen Token dieses Kontos verbraucht |
+| Jemand am Display entfernt Konten oder merkt ein Passwort | Im Modus für Verein und Kneipe nimmt der Service Worker keine Änderung unter **Konten verwalten** und keine Änderung des Modus ohne die Manager-PIN an |
+| Jemand am Display rät eine PIN von Hand | Fünf falsche PINs in Folge sperren jede PIN für eine Minute, gezählt im Service Worker, nicht im Popup |
+| Eine PIN wird aus dem Speicher gelesen | Der Speicher hält einen gesalzenen PBKDF2-Hash mit 600.000 Runden, nie die PIN, und nur der Service Worker und die Seiten der Erweiterung können ihn lesen |
+| Ein Spieler geht, und die nächsten Spiele zählen für sein Konto | Der Modus für Verein und Kneipe bringt das Display nach einer Pause ohne Eingabe zu einem Hauskonto zurück oder meldet es ab und parkt die Sitzung des Spielers; ein laufendes Match zählt als Eingabe und wird nie unterbrochen |
 
 ## Verbleibende Risiken
 
+- Eine PIN des Modus für Verein und Kneipe ist eine Sperre für die Leute am Display.
+  Wer den Computer benutzen kann, kann die Erweiterung entfernen oder den Modus
+  ausschalten, und mit einer Kopie des Profils des Browsers kann ein Programm jede
+  PIN mit 4 Ziffern in kurzer Zeit gegen ihren Hash probieren.
 - Ein gespeicherter Token oder ein Passwort ist nur so gut geschützt wie der Computer
   und das Browserprofil, in dem er liegt; diese Erweiterung ist für einen vertrauten,
   gemeinsamen Rechner gedacht, nicht für einen öffentlichen. Das Versiegeln ist eine

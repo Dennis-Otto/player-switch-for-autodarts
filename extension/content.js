@@ -14,6 +14,10 @@
 // A content script can't import a module: what the button shows (the settings of the
 // options page, the player) comes from the service worker, which takes it from lib/.
 //
+// While the venue mode returns the display after a break, the service worker asks it to
+// say when someone touches, clicks, scrolls or types on the page: only that it
+// happened, never where or what, and at most every 15 seconds.
+//
 // After an update of the extension, the service worker runs this script again in the
 // Autodarts tabs that are open, and the script of the version before loses its link to
 // the extension. The new script then takes the page over without a reload, and the
@@ -146,7 +150,11 @@
   let view = {
     settings: { showButton: false, corner: "bottom-right" },
     player: null,
+    reportActivity: false,
   };
+  // When the page last told the worker of an input, and how often it does at most.
+  const ACTIVITY_EVERY_MS = 15_000;
+  let reportedAt = 0;
   // The elements of the page that the open switcher made inert, and where the focus was.
   let inerted = [];
   let opener = null;
@@ -307,8 +315,30 @@
     }
   }
 
+  /** Tells the worker that someone used the page, when the venue mode asks for it. */
+  function reportActivity() {
+    const now = Date.now();
+    if (
+      view.reportActivity !== true ||
+      now - reportedAt < ACTIVITY_EVERY_MS ||
+      !alive()
+    ) {
+      return;
+    }
+    reportedAt = now;
+    chrome.runtime.sendMessage({ type: "activity" }).catch(() => {
+      // The worker did not answer; the next input tells it again.
+      reportedAt = 0;
+    });
+  }
+
+  const INPUTS = ["pointerdown", "keydown", "wheel", "touchstart"];
+
   /** Takes the button and the switcher of this script, which was cut off, off the page. */
   function retire() {
+    for (const type of INPUTS) {
+      window.removeEventListener(type, reportActivity, true);
+    }
     document.removeEventListener("fullscreenchange", place);
     if (ui !== null) {
       ui.host.remove();
@@ -339,6 +369,13 @@
   function start() {
     ensureUi();
     document.addEventListener("fullscreenchange", place);
+    // Seen before the page itself sees them, and never held up: the page stays as fast.
+    for (const type of INPUTS) {
+      window.addEventListener(type, reportActivity, {
+        capture: true,
+        passive: true,
+      });
+    }
     chrome.runtime
       .sendMessage({ type: "button" })
       .then((reply) => {
