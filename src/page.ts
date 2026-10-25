@@ -163,3 +163,26 @@ export function tileForKey(key: string, count: number): number | null {
   const index = Number(key) - 1;
   return index < count ? index : null;
 }
+
+/** What the options page needs of the browser to open the keyboard shortcuts. */
+export interface ShortcutsApi {
+  /** Firefox (137 and later) has it; Chrome and Edge don't. */
+  readonly commands?: { readonly openShortcutSettings?: () => Promise<void> };
+  readonly tabs: {
+    readonly create: (properties: { url: string }) => Promise<unknown>;
+  };
+}
+
+/**
+ * Opens the page where a player changes the keyboard shortcuts: in Firefox through
+ * `commands.openShortcutSettings`, because Firefox refuses `chrome:` addresses in a new
+ * tab; in Chrome and Edge `chrome://extensions/shortcuts`, which Edge shows as
+ * `edge://extensions/shortcuts`.
+ */
+export function openShortcuts(api: ShortcutsApi): Promise<unknown> {
+  const open = api.commands?.openShortcutSettings;
+  if (typeof open === "function") {
+    return open.call(api.commands);
+  }
+  return api.tabs.create({ url: "chrome://extensions/shortcuts" });
+}

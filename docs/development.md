@@ -126,13 +126,15 @@ The interfaces that the extension uses, and the first Firefox that has each, fro
 | ES modules in the background (`"type": "module"`) | 112 |
 | `storage.session` | 115 |
 | `background.scripts` beside `background.service_worker` | 121 |
+| `commands.openShortcutSettings` | 137 |
 | `data_collection_permissions`, shown at the install | 140 |
 | `storage.local.setAccessLevel` | none |
 
-Three things work differently, and the code allows for each:
+Four things work differently, and the code allows for each:
 
 - **The address of the pages.** Firefox serves the pages of an add-on from `moz-extension://<uuid>/`, with a random host for each installation, not from `chrome-extension://<id>/`. `fromExtensionPage` in `src/trust.ts` compares the address of a sender with `chrome.runtime.getURL("")`, the address of the extension's own pages, in every browser.
 - **The storage is open to the content script.** Firefox has no `storage.local.setAccessLevel`, so it can't keep the storage from `content.js`. The sessions and passwords in it are sealed all the same, but the rest is in reach of a page whose process is taken over; the service worker writes "keeping the saved accounts from the Autodarts page failed" to its console at each start, and [the security design](security.md#firefox) says what that means.
+- **The page of the shortcuts.** Firefox opens no `chrome:` address in a tab, so **Change shortcuts** on the options page calls `commands.openShortcutSettings` where the browser has it, and opens `chrome://extensions/shortcuts` in Chrome and Edge otherwise (`openShortcuts` in `src/page.ts`).
 - **The name of the browser.** Firefox has no `navigator.userAgentData`, so the bug form takes "Firefox 144" from its user agent (`browserName` in `src/onboarding.ts`).
 
 The [end-to-end tests](#end-to-end-tests) run in Chromium alone, because Playwright loads no extension into Firefox. So check a release in Firefox by hand, with test accounts of Autodarts, never the real one of a player:

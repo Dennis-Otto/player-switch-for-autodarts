@@ -7,7 +7,12 @@
 // checks each one (lib/venue.js): this page sends it each change, and only sees which
 // PINs are set. While a manager PIN is set, the page opens only with it, and every
 // change of the venue mode carries it.
-import { CORNERS, parseSettings, SETTINGS_KEY } from "./lib/page.js";
+import {
+  CORNERS,
+  openShortcuts,
+  parseSettings,
+  SETTINGS_KEY,
+} from "./lib/page.js";
 import { IDLE_MINUTES } from "./lib/venue.js";
 import { confirmDialog, pinDialog, t, translate } from "./players.js";
 
@@ -308,7 +313,7 @@ idleMinutes.addEventListener("change", saveIdle);
 idleHouse.addEventListener("change", saveIdle);
 
 document.querySelector("#shortcuts").addEventListener("click", () => {
-  void chrome.tabs.create({ url: "chrome://extensions/shortcuts" });
+  void openShortcuts(chrome);
 });
 
 /** Shows the settings, once the manager PIN opened them or when none is set. */
