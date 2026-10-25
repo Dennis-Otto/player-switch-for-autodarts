@@ -58,6 +58,9 @@ Non affilié à Autodarts.
   plus, afin qu'un écran en mode kiosque continue de fonctionner sans
   rechargement. Il n'exécute que le script de l'extension elle-même, uniquement
   sur play.autodarts.com.
+• unlimitedStorage — pour que Chrome n'efface jamais la clé qui scelle vos
+  sessions et mots de passe enregistrés quand le disque se remplit. Sans elle,
+  chaque compte mis de côté devrait se reconnecter.
 • Ressource accessible sur le Web switcher.html, pour play.autodarts.com
   uniquement — les joueurs que le bouton de la page Autodarts affiche par-dessus
   la page. C'est une page de l'extension dans un cadre, et les scripts de la page

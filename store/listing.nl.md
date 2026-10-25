@@ -55,6 +55,9 @@ Niet verbonden aan Autodarts.
   brengen die bij een update al open zijn, of in een tabblad dat niet meer
   reageert, zodat een scherm in kioskmodus zonder herladen blijft werken. Het voert
   alleen het eigen script van de extensie uit, alleen op play.autodarts.com.
+• unlimitedStorage — zodat Chrome de sleutel die je opgeslagen sessies en
+  wachtwoorden verzegelt nooit wist als de schijf vol raakt. Zonder deze sleutel
+  zou elk geparkeerd account opnieuw moeten inloggen.
 • Webtoegankelijke bron switcher.html, alleen voor play.autodarts.com — de spelers
   die de knop op de Autodarts-pagina over de pagina toont. Het is een pagina van de
   extensie in een frame, zodat de scripts van de Autodarts-pagina de opgeslagen
