@@ -39,7 +39,10 @@ for (const language of ["en", "de"] as const) {
       await expect(popup.tile(ALICE).locator(".toggle-remember")).toHaveText(
         display.t("rememberPassword"),
       );
-      await expect(popup.page.locator("#manage")).toHaveText(display.t("done"));
+      await expect(popup.page.locator("#manage")).toHaveAttribute(
+        "aria-pressed",
+        "true",
+      );
     });
   });
 }

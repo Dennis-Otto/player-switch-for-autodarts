@@ -140,15 +140,16 @@ export class Popup {
     }
   }
 
-  /** Expects the status line of the popup to say this, as an error or not. */
+  /**
+   * Expects the popup to say this: an error in its alert, which a screen reader
+   * reads out at once, anything else in its status line; the other one stays empty.
+   */
   async expectStatus(text: string, error = false): Promise<void> {
-    const status = this.page.locator("#status");
-    await expect(status).toHaveText(text);
-    if (error) {
-      await expect(status).toHaveClass(/is-error/);
-    } else {
-      await expect(status).not.toHaveClass(/is-error/);
-    }
+    const [shown, empty] = error
+      ? (["alert", "status"] as const)
+      : (["status", "alert"] as const);
+    await expect(this.page.getByRole(shown)).toHaveText(text);
+    await expect(this.page.getByRole(empty)).toHaveText("");
   }
 
   /** Opens the popup anew, as a second click on the toolbar button does. */
