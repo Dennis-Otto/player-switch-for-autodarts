@@ -50,7 +50,12 @@ process.stdin.on("end", () => {
   }
   console.log(`${build.version} ${download.url}`);
 });'
-build="$(curl -fsSL --retry 3 "$versions" | node -e "$read_build" "$channel" "$platform")"
+# The list goes to a file first: Node reads it as data, so no download is piped into an
+# interpreter (OpenSSF Scorecard, Pinned-Dependencies).
+list="$(mktemp)"
+trap 'rm -f "$list"' EXIT
+curl -fsSL --retry 3 -o "$list" "$versions"
+build="$(node -e "$read_build" "$channel" "$platform" <"$list")"
 version="${build%% *}"
 url="${build#* }"
 
