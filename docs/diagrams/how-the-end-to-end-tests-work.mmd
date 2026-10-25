@@ -15,7 +15,7 @@ flowchart TB
         direction TB
         test["The test taps like a player<br>test/e2e/*.spec.ts"]
         pages["The real popup, the switcher in the page<br>and the Autodarts tabs with content.js"]
-        worker["The service worker, background.js<br>with lib/ built from src/"]
+        worker["The service worker, worker.ts,<br>built into lib/background.js"]
         test --> pages
         pages <--> worker
     end

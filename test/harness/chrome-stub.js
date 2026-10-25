@@ -1,5 +1,5 @@
 // A stand-in for the chrome API of the extension, so that the real popup.html and
-// switcher.html run outside of Chrome, with players.js and the code of lib/ as they
+// switcher.html run outside of Chrome, with the code of lib/ as they
 // ship: for the pictures of scripts/screenshots.sh, and for any test that wants the
 // popup in a plain browser. A driver loads it before the scripts of every page, as
 // Playwright's add_init_script() does, and opens the page with its setup in the
@@ -14,8 +14,8 @@
 // manager   1 sets a manager PIN, which "Manage accounts" then asks for (none)
 //
 // The accounts are made up and their pictures generated: no real people. The answers
-// are those of the service worker, background.js, for the requests that players.js
-// sends, and for those of the venue mode that options.js sends. `window.harness` lets a driver catch the moment between a tap and the answer:
+// are those of the service worker, worker.ts, for the requests that pages/players.ts
+// sends, and for those of the venue mode that pages/options.ts sends. `window.harness` lets a driver catch the moment between a tap and the answer:
 // harness.hold() keeps the next request waiting until harness.release(),
 // harness.drawn() resolves once the page has drawn what changed, and harness.idle()
 // once no request waits either. harness.refuse(reply) answers the next request with
@@ -94,7 +94,7 @@
   // True after "Add account", until the next sign-in or "Cancel".
   let adding = false;
 
-  /** The view of background.js: the active account renews in the page, not here. */
+  /** The view of worker.ts: the active account renews in the page, not here. */
   function view() {
     const now = Date.now();
     return {
@@ -115,7 +115,7 @@
     };
   }
 
-  /** What the service worker does for each request of players.js. */
+  /** What the service worker does for each request of pages/players.ts. */
   function answer({ action, id, username }) {
     const account = accounts.find((candidate) => candidate.id === id);
     switch (action) {
@@ -191,7 +191,7 @@
   // The venue mode as the options page sees it: which PINs are set, never a hash.
   const venue = { manager: guarded, idleMinutes: null, house: null };
 
-  /** What the service worker answers to a request of the venue mode from options.js. */
+  /** What the service worker answers to a request of the venue mode from pages/options.ts. */
   function answerVenue({ action, id, pin, minutes, house }) {
     const account = accounts.find((candidate) => candidate.id === id);
     if (action === "managerPin") {

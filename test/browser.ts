@@ -177,7 +177,9 @@ export class FakeBrowser implements ChromeApi {
       return Promise.resolve(
         this.tabs_.filter((tab) =>
           info.url.some((pattern) =>
-            (tab.url ?? "").startsWith(pattern.replace("*", "")),
+            (tab.url ?? "").startsWith(
+              pattern.endsWith("*") ? pattern.slice(0, -1) : pattern,
+            ),
           ),
         ),
       );
