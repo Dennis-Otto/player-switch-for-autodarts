@@ -13,9 +13,17 @@ on:
 permissions:
   contents: read
 
+# A newer run for the same pull request, or for a newer push to main, cancels the run
+# still going, which would only tell what the newer one tells; the bot for cancelled
+# checks starts the run of the head again when a late run for an older commit
+# cancelled it. A run on a schedule or by hand is in a group of its own.
 concurrency:
-  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.run_id }}
-  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || (github.event_name == 'push' && github.ref) || github.run_id }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' || github.event_name == 'push' }}
+
+# The GitHub CLI of the jobs sends no telemetry to GitHub.
+env:
+  GH_TELEMETRY: "false"
 
 jobs:
   check:
@@ -41,6 +49,14 @@ jobs:
         run: npm ci --ignore-scripts
       - name: Run the checks
         run: bash scripts/check.sh
+      # A Chrome extension: Chrome for Testing loads extension/ as the checks built it,
+      # and its service worker has to start (scripts/load-extension.mjs).
+      - name: Load the extension in Chrome for Testing
+        if: hashFiles('scripts/load-extension.mjs') != ''
+        run: |
+          # On a line of its own, so that a failed download stops the step.
+          chrome="$(bash scripts/chrome-for-testing.sh Stable "$RUNNER_TEMP/chrome-for-testing")"
+          node scripts/load-extension.mjs "$chrome"
       # The LCOV report of the test runner of Node, which npm test writes as
       # lcov.info, for the coverage in the report of the PR coach.
       - name: Keep the coverage report
