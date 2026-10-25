@@ -407,8 +407,12 @@ async function runAction(message, tab) {
       await edit(deps, (state) => forgetCredentials(state, message.id));
       return { ok: true };
     case "removeAccount": {
-      const removal = await withPage(tabs, () =>
-        removeAccount(deps, message.id, () => mayLeave(tab, message)),
+      // A page opened for the removal stays in the background: in front, it would
+      // close the popup before the popup could say how the removal ended.
+      const removal = await withPage(
+        tabs,
+        () => removeAccount(deps, message.id, () => mayLeave(tab, message)),
+        () => false,
       );
       if (removal.kind === "removed") {
         // Its PIN goes as well, and the display no longer returns to it.
@@ -418,8 +422,10 @@ async function runAction(message, tab) {
     }
     case "forgetAll":
       return removed(
-        await withPage(tabs, () =>
-          forgetAll(deps, wipe, () => mayLeave(tab, message)),
+        await withPage(
+          tabs,
+          () => forgetAll(deps, wipe, () => mayLeave(tab, message)),
+          () => false,
         ),
       );
     case "unlock":

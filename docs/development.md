@@ -257,7 +257,7 @@ The extension relies on things that it doesn't control. Autodarts publishes no c
   | The key of the session | `autodarts_refresh_token`, under which Autodarts Play keeps its refresh token in `localStorage`, is in its code. The extension swaps exactly this entry. |
   | The sign-in service and the client | `https://api.autodarts.com/auth/v1` and the client `autodarts-play` are in the code of Autodarts Play. |
   | A dead session and a wrong password | `/refresh` with a made-up token and `/login` with a made-up account answer 400 or 401, which the extension takes for the end of a session and a wrong password. An address that is gone answers 404, which the extension would take for an outage and retry forever. |
-  | The end of a session | `/logout` answers at its address, so **Remove account** ends the session at Autodarts. |
+  | The end of a session | `/logout` with a made-up token answers 2xx (or 400 or 401 with `invalid_grant`), so **Remove account** ends the session at Autodarts. Any other refusal would mean Autodarts wants a different request now, and the popup would no longer say that the session ended. |
   | The old address | `play.autodarts.io` forwards every address to `play.autodarts.com`, so the extension needs no access to it. |
 
   The requests to the sign-in service go through the functions of the extension, `refreshSession`, `signIn` and `revokeSession`, with made-up data only: no account, password or token of anybody, and no secret. The scripts of Autodarts Play are read one after another until the three values are found, which takes about a dozen requests in all, fewer than one visit of the page, which loads more than 150 scripts. Only when a value is missing does the check read all of them, to be sure.

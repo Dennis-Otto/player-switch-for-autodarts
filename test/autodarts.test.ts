@@ -120,6 +120,20 @@ test("revokeSession counts a session that had ended already as over", async () =
   }
 });
 
+test("revokeSession doesn't count another refusal as the end of the session", async () => {
+  for (const status of [400, 401]) {
+    for (const body of [
+      jsonResponse({ error: "invalid_request" }, status),
+      jsonResponse({ error: "unauthorized_client" }, status),
+      jsonResponse(null, status),
+      jsonResponse({}, status),
+      new Response("Bad Request", { status }),
+    ]) {
+      assert.equal(await revokeSession(answer(body), "token"), false);
+    }
+  }
+});
+
 test("revokeSession says so when Autodarts didn't end the session", async () => {
   for (const status of [404, 429, 500, 503]) {
     assert.equal(
