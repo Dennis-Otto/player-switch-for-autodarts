@@ -1,0 +1,26 @@
+---
+config:
+  flowchart:
+    wrappingWidth: 400
+---
+flowchart TB
+    accTitle: The messages between the parts of the extension
+    accDescr: Every message has one type in messages.ts, which the pages, the service worker and the content script share, so a renamed action or a missing field fails the type check. The popup and the switcher send the requests of the players, type popup, the options page those of the venue mode, type venue, and the switcher asks to close, type switcher. The content script in the Autodarts page may only ask what its button shows, type button, and say that someone used the page, type activity. The service worker reads each message with readRequest and answers none of a shape that it doesn't know, and trust.ts lets only a page of the extension see or change the accounts. The worker tells the content script of a tab to read, write or clear the session of the page, to redraw the button, and to open or close the switcher, type page.
+
+    subgraph pages ["Pages of the extension"]
+        direction TB
+        players["popup.html and switcher.html<br>pages/players.ts"]
+        options["options.html<br>pages/options.ts"]
+    end
+    worker["worker.ts, the service worker<br>readRequest reads each message,<br>trust.ts checks the sender"]
+    content["content.ts in each Autodarts tab<br>a classic script, no imports:<br>the types of messages.ts alone"]
+
+    players -- "popup: view, switch, adopt, signout,<br>openPage, stopAdding, remember,<br>forgetPassword, removeAccount, unlock<br>switcher: close" --> worker
+    options -- "venue: status, unlock, managerPin,<br>playerPin, idle" --> worker
+    content -- "button, activity" --> worker
+    worker -- "page: read, write, clear, button,<br>toggleSwitcher, closeSwitcher" --> content
+
+    classDef bot fill:#526cfe2e,stroke:#526cfe,stroke-width:2px
+    classDef person fill:#f59e0b2e,stroke:#f59e0b,stroke-width:2px
+    class players,options,content person
+    class worker bot

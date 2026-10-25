@@ -83,7 +83,7 @@ export const placesOf = (contract: Contract) => {
   return {
     sessionKey: [
       { file: "src/autodarts.ts", text: contract.sessionKey },
-      { file: "extension/content.js", text: contract.sessionKey },
+      { file: "src/content.ts", text: contract.sessionKey },
       { file: "test/e2e/fake/play.js", text: contract.sessionKey },
     ],
     authBase: [

@@ -16,4 +16,5 @@ Copy [the template](0000-template.md) to the next free number and describe the d
 | [0008](0008-lock-a-venue-display-with-pins-that-the-worker-checks.md) | Lock a venue display with PINs that the service worker checks | accepted |
 | [0009](0009-watch-autodarts-and-the-next-chrome-before-the-players-do.md) | Watch Autodarts and the next Chrome before the players do | accepted |
 | [0010](0010-sign-in-to-the-store-without-a-stored-secret.md) | Sign in to the Chrome Web Store with GitHub's OIDC token instead of a stored secret | accepted |
+| [0011](0011-write-every-line-that-ships-in-typescript.md) | Write every line that ships in TypeScript, the service worker and the content script too | accepted |
 | [0012](0012-run-one-package-in-chrome-edge-and-firefox.md) | Run one package in Chrome, Edge and Firefox | accepted |

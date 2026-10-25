@@ -69,6 +69,8 @@ interface Extension {
   languages?: Languages;
   page?: string;
   script?: string;
+  /** The code of src/, by its path there, which the check reads as a second folder. */
+  code?: Record<string, string>;
 }
 
 /** Runs the check against a made-up extension and answers its exit code and its words. */
@@ -76,8 +78,10 @@ function check({
   languages = { en: EN, de: DE },
   page = PAGE,
   script = SCRIPT_JS,
+  code,
 }: Extension = {}) {
   const root = mkdtempSync(join(tmpdir(), "check-locales-"));
+  const source = join(root, "src");
   try {
     for (const [code, messages] of Object.entries(languages)) {
       mkdirSync(join(root, "_locales", code), { recursive: true });
@@ -90,7 +94,12 @@ function check({
     }
     writeFileSync(join(root, "popup.html"), page);
     writeFileSync(join(root, "popup.js"), script);
-    const run = spawnSync(process.execPath, [SCRIPT, root], {
+    for (const [path, text] of Object.entries(code ?? {})) {
+      mkdirSync(join(source, path, ".."), { recursive: true });
+      writeFileSync(join(source, path), text);
+    }
+    const folders = code === undefined ? [root] : [root, source];
+    const run = spawnSync(process.execPath, [SCRIPT, ...folders], {
       encoding: "utf8",
     });
     return { status: run.status, output: `${run.stdout}${run.stderr}` };
@@ -139,6 +148,25 @@ test("every folder of _locales is a language that is checked, not only English a
     missing.output,
     /nl is missing "hint"; Chrome shows the English text in its place/,
   );
+});
+
+test("the messages that the code of src/ asks for count, in every folder of it, and only its TypeScript", () => {
+  const { status, output } = check({
+    script: "",
+    code: {
+      "worker.ts": 'log(t("error"));\n',
+      // Biome breaks a long call: the key then stands on a line of its own.
+      "pages/players.ts": 't(\n  "missing",\n);\n',
+      "notes.md": 't("other")',
+    },
+  });
+  assert.equal(status, 1);
+  assert.match(
+    output,
+    /src\/pages\/players\.ts uses "missing", which no message defines/,
+  );
+  assert.doesNotMatch(output, /"other"/);
+  assert.doesNotMatch(output, /"error" is used nowhere/);
 });
 
 test("a message that nothing uses fails", () => {
