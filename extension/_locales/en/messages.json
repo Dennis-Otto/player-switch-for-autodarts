@@ -79,8 +79,28 @@
     "message": "Remove account"
   },
   "removeConfirm": {
-    "message": "Remove $NAME$ from this display? Sign in again to add the account back.",
+    "message": "Remove $NAME$ from this display? Their session at Autodarts ends as well. Sign in again to add the account back.",
     "placeholders": { "name": { "content": "$1" } }
+  },
+  "removed": {
+    "message": "$NAME$ is removed and signed out at Autodarts.",
+    "placeholders": { "name": { "content": "$1" } }
+  },
+  "removedOffline": {
+    "message": "$NAME$ is removed from this display. Autodarts can't be reached, so the session there ends only when it expires.",
+    "placeholders": { "name": { "content": "$1" } }
+  },
+  "forgetAll": {
+    "message": "Forget all accounts"
+  },
+  "forgetAllConfirm": {
+    "message": "Every account is signed out at Autodarts and removed from this display, with its remembered password. The PINs and the settings start over as after the install."
+  },
+  "forgotAll": {
+    "message": "All accounts are forgotten and signed out at Autodarts."
+  },
+  "forgotAllOffline": {
+    "message": "All accounts are forgotten on this display. Autodarts can't be reached, so their sessions there end only when they expire."
   },
   "passwordHint": {
     "message": "Only used when the saved sign-in stops working. It stays on this computer and goes only to Autodarts."
@@ -157,6 +177,12 @@
   },
   "matchCancel": {
     "message": "Keep playing"
+  },
+  "matchSignOutText": {
+    "message": "Signing the player out ends it on this display."
+  },
+  "matchSignOutConfirm": {
+    "message": "Sign out anyway"
   },
   "commandPopup": {
     "message": "Open the popup"

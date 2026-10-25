@@ -227,7 +227,7 @@ It builds `extension/lib/` from `src/` and runs every test of `test/e2e/`. `npm 
 
 | File | What it checks |
 | --- | --- |
-| `accounts.spec.ts` | The install waits for the first sign-in and saves that account by itself; **Save account** keeps a session of the page; **Add account** parks the player and saves the next sign-in; **Remove account** leaves no token behind. |
+| `accounts.spec.ts` | The install waits for the first sign-in and saves that account by itself; **Save account** keeps a session of the page; **Add account** parks the player and saves the next sign-in; **Remove account** ends the session at Autodarts and leaves no token behind, and asks during a match before it signs the page out; **Forget all accounts** ends every session, leaves nothing in the storage and saves the next account with a new key. |
 | `switching.spec.ts` | A switch from A to B and back sends each token once; every other Autodarts tab reloads with the new player; a double tap, and taps in two popups at once, switch once; a switch on a match page asks first and spends no token on a no; the switcher in the page switches as well. |
 | `recovery.spec.ts` | A remembered password signs an account back in after its session has died; without one, the account has to sign in again and the popup says so; with no Autodarts tab, **Open Autodarts** opens one, and a tap opens one and switches there. |
 | `languages.spec.ts` | The popup in English and German, and in a light and a dark color scheme. |
@@ -257,7 +257,7 @@ The extension relies on things that it doesn't control. Autodarts publishes no c
   | The key of the session | `autodarts_refresh_token`, under which Autodarts Play keeps its refresh token in `localStorage`, is in its code. The extension swaps exactly this entry. |
   | The sign-in service and the client | `https://api.autodarts.com/auth/v1` and the client `autodarts-play` are in the code of Autodarts Play. |
   | A dead session and a wrong password | `/refresh` with a made-up token and `/login` with a made-up account answer 400 or 401, which the extension takes for the end of a session and a wrong password. An address that is gone answers 404, which the extension would take for an outage and retry forever. |
-  | The end of a session | `/logout` answers at its address, so **Remove account** ends the session at Autodarts. |
+  | The end of a session | `/logout` with a made-up token answers 2xx (or 400 or 401 with `invalid_grant`), so **Remove account** ends the session at Autodarts. Any other refusal would mean Autodarts wants a different request now, and the popup would no longer say that the session ended. |
   | The old address | `play.autodarts.io` forwards every address to `play.autodarts.com`, so the extension needs no access to it. |
 
   The requests to the sign-in service go through the functions of the extension, `refreshSession`, `signIn` and `revokeSession`, with made-up data only: no account, password or token of anybody, and no secret. The scripts of Autodarts Play are read one after another until the three values are found, which takes about a dozen requests in all, fewer than one visit of the page, which loads more than 150 scripts. Only when a value is missing does the check read all of them, to be sure.

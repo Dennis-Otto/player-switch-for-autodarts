@@ -75,6 +75,37 @@ bleiben lesbar, weil der Knopf in der Seite sie zeigt.
   die Tokens und Passwörter im Klartext. Ein Update auf diese Version versiegelt sie,
   und ebenso das erste Lesen der Konten danach. Eine Version, die das versiegelte
   Format nicht kennt, speichert nie darüber (siehe die Kopie oben).
+- **„Alle Konten vergessen“ löscht den Schlüssel.** Nachdem es jede Sitzung bei
+  Autodarts beendet hat, löscht der Service Worker die Konten, die Kopie einer
+  neueren Version, den Schlüssel in der IndexedDB und den, den er im Speicher hält,
+  dann alles Übrige in `chrome.storage.local` und `chrome.storage.session`. Eine
+  Kopie des Speichers von vorher enthält versiegelten Text, der sich nirgends mehr
+  öffnet, und das nächste Konto wird mit einem neuen Schlüssel versiegelt.
+
+### Entfernen beendet die Sitzung bei Autodarts {#removing-ends-the-session}
+
+Einen Token auf dem Computer zu löschen reicht nicht: Eine Kopie des Browserprofils,
+etwa eine Sicherung, nimmt den Token und seinen Schlüssel mit, und Autodarts würde
+diesen Token annehmen, bis er abläuft. Darum beendet **Konto entfernen** zuerst die
+Sitzung bei Autodarts, mit der Abmeldung, die die Autodarts-Website schickt (`POST
+/auth/v1/logout` mit dem Refresh-Token, `revokeSession` in `src/autodarts.ts`), und
+löscht dann das Konto. Für das Konto, das gerade spielt, meldet sich zuerst die
+Seite ab, und die Erweiterung beendet die Sitzung, die die Seite hatte; während
+eines Matches fragt sie vorher, wie bei einem Wechsel. **Alle Konten vergessen** tut
+dasselbe für jedes Konto, alle auf einmal, und löscht dann den Speicher und den
+Schlüssel wie oben. Beides läuft in der Warteschlange des Service Workers, sodass
+eine Erneuerung oder ein Doppeltipp nie einen Token schickt, den ein Entfernen
+gerade beendet hat.
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="images/diagrams/removing-an-account.de.dark.svg">
+  <img src="images/diagrams/removing-an-account.de.svg" alt="Wie ein Entfernen die Sitzung beendet: Konto entfernen und Alle Konten vergessen beenden die Sitzungen bei Autodarts, bevor die Erweiterung sie vergisst. Spielt ein gespeichertes Konto auf der Seite, meldet sich zuerst die Seite ab; während eines Matches fragt die Erweiterung, und ein Nein ändert nichts. Dann beendet die Erweiterung jede Sitzung, die sie behält, bei Autodarts, alle auf einmal, mit der Abmeldung, die die Autodarts-Website schickt, und vergisst die Konten; Alle Konten vergessen löscht auch alles Übrige, das sie behält, mit dem Schlüssel. Antwortet Autodarts, sagt das Popup, dass die Konten abgemeldet sind. Ist Autodarts nicht erreichbar, sind sie trotzdem vergessen, und das Popup sagt, dass ihre Sitzungen erst enden, wenn sie ablaufen.">
+</picture>
+
+Ist Autodarts nicht erreichbar, wird das Konto trotzdem gelöscht, das Popup sagt,
+dass seine Sitzung weiterläuft, bis sie abläuft, und die Erweiterung behält keine
+Kopie, um es später noch einmal zu versuchen. Eine Sitzung, die schon beendet war,
+zählt als beendet.
 
 Nur die Erweiterung selbst kann diesen Speicher lesen: ihr Service Worker und ihre
 eigenen Seiten, das Popup, die Optionsseite und der Wechsler. Chrome lässt auch die
@@ -176,6 +207,8 @@ kann.
 | Das Content-Skript, oder eine Seite, die es übernommen hat, schickt eine Anfrage, die die Konten liest oder Spieler wechselt | Der Service Worker nimmt eine solche Anfrage nur von einer Seite dieser Erweiterung an, nach der ID und der Adresse des Absenders; das Content-Skript nimmt nur Anfragen dieser Erweiterung an |
 | Ein Werkzeug, ein Abzug oder eine Kopie von `chrome.storage.local` (nicht des ganzen Profils) findet die Tokens und Passwörter; eine Kopie des ganzen Profils nimmt den Schlüssel mit, siehe das verbleibende Risiko | Jeder Token und jedes Passwort ist mit AES-GCM versiegelt, unter einem Schlüssel, der sich nicht exportieren lässt und in der IndexedDB der Erweiterung liegt, nicht in `chrome.storage.local`; der Speicher enthält nur den versiegelten Text |
 | Wer den Speicher schreiben kann, verschiebt einen versiegelten Token zu einem anderen Konto oder verändert ihn | Jedes Geheimnis ist mit seinem Konto und seinem Feld als zusätzlichen Daten versiegelt, darum lässt sich ein verschobener oder veränderter Wert nicht öffnen, und das Konto muss sich neu anmelden |
+| Ein entferntes Konto funktioniert bei Autodarts weiter, aus einer Sicherung oder einer Kopie des Profils | **Konto entfernen** beendet die Sitzung bei Autodarts, bevor die Erweiterung es löscht, für das Konto, das spielt, auch die auf der Seite; **Alle Konten vergessen** tut das für jedes Konto und löscht dann den Speicher und den Schlüssel. Ist Autodarts nicht erreichbar, sagt das Popup, dass die Sitzung weiterläuft, bis sie abläuft |
+| Ein Display wechselt mit den Konten darauf den Besitzer | **Alle Konten vergessen**, hinter einer Rückfrage und im Modus für Verein und Kneipe hinter der Manager-PIN, beendet jede Sitzung und lässt die Erweiterung wie nach der Installation zurück |
 | Der Schlüssel ist weg, etwa nachdem die Daten der Erweiterung gelöscht wurden (die Berechtigung `unlimitedStorage` hält Chrome davon ab, ihn von selbst zu verdrängen) | Die Konten, die sich nicht öffnen lassen, müssen sich neu anmelden, und ihre Passwörter sind vergessen; nichts schlägt fehl, und nichts wird stattdessen im Klartext gespeichert |
 | Ein veralteter Token wird wieder benutzt und sperrt ein Konto aus | Die Erweiterung behält immer den Token, den der Server zuletzt zurückgab (Rotation), und erneuert geparkte Token im Hintergrund; jede Änderung der Konten läuft einzeln nacheinander in einer Warteschlange des Service Workers, darum schicken weder ein Doppeltipp noch die Erneuerung denselben Token zweimal |
 | Ein Passwort wird gespeichert, obwohl das niemand wollte | Ein Passwort wird nur nach einem ausdrücklichen „Passwort merken“ behalten; das ist von Haus aus aus und lässt sich wieder vergessen |
@@ -198,6 +231,12 @@ kann.
 
 ## Verbleibende Risiken
 
+- Die Erweiterung unter `chrome://extensions` zu entfernen löscht alles, was sie
+  gespeichert hat, aber Chrome führt beim Entfernen keinen Code der Erweiterung aus,
+  also endet keine Sitzung bei Autodarts: Die geparkten Sitzungen laufen weiter, bis
+  sie ablaufen, und der Spieler auf der Seite bleibt angemeldet. **Alle Konten
+  vergessen** beendet sie vorher. Ein Entfernen, während Autodarts nicht erreichbar
+  ist, lässt die Sitzung ebenfalls gültig, bis sie abläuft.
 - Eine PIN des Modus für Verein und Kneipe ist eine Sperre für die Leute am Display.
   Wer den Computer benutzen kann, kann die Erweiterung entfernen oder den Modus
   ausschalten, und mit einer Kopie des Profils des Browsers kann ein Programm jede

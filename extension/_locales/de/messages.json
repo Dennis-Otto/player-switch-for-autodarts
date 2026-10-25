@@ -76,8 +76,28 @@
     "message": "Konto entfernen"
   },
   "removeConfirm": {
-    "message": "$NAME$ von diesem Display entfernen? Zum Wiederherstellen einfach neu anmelden.",
+    "message": "$NAME$ von diesem Display entfernen? Die Sitzung bei Autodarts endet ebenfalls. Zum Wiederherstellen einfach neu anmelden.",
     "placeholders": { "name": { "content": "$1" } }
+  },
+  "removed": {
+    "message": "$NAME$ ist entfernt und bei Autodarts abgemeldet.",
+    "placeholders": { "name": { "content": "$1" } }
+  },
+  "removedOffline": {
+    "message": "$NAME$ ist von diesem Display entfernt. Autodarts ist nicht erreichbar, daher endet die Sitzung dort erst, wenn sie abläuft.",
+    "placeholders": { "name": { "content": "$1" } }
+  },
+  "forgetAll": {
+    "message": "Alle Konten vergessen"
+  },
+  "forgetAllConfirm": {
+    "message": "Jedes Konto wird bei Autodarts abgemeldet und mit seinem gemerkten Passwort von diesem Display entfernt. Die PINs und die Einstellungen beginnen wie nach der Installation von vorn."
+  },
+  "forgotAll": {
+    "message": "Alle Konten sind vergessen und bei Autodarts abgemeldet."
+  },
+  "forgotAllOffline": {
+    "message": "Alle Konten sind auf diesem Display vergessen. Autodarts ist nicht erreichbar, daher enden ihre Sitzungen dort erst, wenn sie ablaufen."
   },
   "passwordHint": {
     "message": "Wird nur genutzt, wenn die gespeicherte Anmeldung nicht mehr geht. Es bleibt auf diesem Computer und geht nur an Autodarts."
@@ -153,6 +173,12 @@
   },
   "matchCancel": {
     "message": "Weiterspielen"
+  },
+  "matchSignOutText": {
+    "message": "Das Abmelden beendet es auf diesem Display."
+  },
+  "matchSignOutConfirm": {
+    "message": "Trotzdem abmelden"
   },
   "commandPopup": {
     "message": "Popup öffnen"

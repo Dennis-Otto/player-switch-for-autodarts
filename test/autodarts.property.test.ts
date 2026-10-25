@@ -148,7 +148,7 @@ test("a service that can't be reached is never taken for a refusal", async () =>
         await outcome(signIn(fetcher, "user", "password")),
         "unreachable",
       );
-      await revokeSession(fetcher, "token");
+      assert.equal(await revokeSession(fetcher, "token"), false);
     }),
   );
 });

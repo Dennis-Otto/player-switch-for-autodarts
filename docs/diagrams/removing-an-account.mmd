@@ -1,0 +1,38 @@
+---
+config:
+  flowchart:
+    wrappingWidth: 400
+---
+flowchart TB
+    accTitle: How a removal ends the session
+    accDescr: Remove account and Forget all accounts end the sessions at Autodarts before the extension forgets them. When a saved account plays on the page, the page signs out first; during a match the extension asks, and a no changes nothing. Then the extension ends every session that it keeps at Autodarts, all at once, with the sign-out that the Autodarts website sends, and forgets the accounts; Forget all accounts also deletes everything else that it keeps, with the key. When Autodarts answers, the popup says that the accounts are signed out. When it can't be reached, they are forgotten all the same, and the popup says that their sessions end only when they expire.
+
+    tap["Remove account,<br>or Forget all accounts"]
+    plays{"Does a saved account<br>play on the page?"}
+    match{"Does a match run there?"}
+    ask["The extension asks first;<br>a no changes nothing"]
+    page["The page signs out"]
+    revoke["Ends every session that it keeps<br>at Autodarts, all at once"]
+    forget["Forgets the accounts; Forget all<br>accounts also everything else,<br>with the key"]
+    answered{"Did Autodarts answer?"}
+    done["Removed and signed out<br>at Autodarts"]
+    later["Removed here; the session<br>ends only when it expires"]
+
+    tap --> plays
+    plays -- "yes" --> match
+    plays -- "no" --> revoke
+    match -- "yes" --> ask
+    ask -- "Sign out anyway" --> page
+    match -- "no" --> page
+    page --> revoke
+    revoke --> forget
+    forget --> answered
+    answered -- "yes" --> done
+    answered -- "no" --> later
+
+    classDef person fill:#f59e0b2e,stroke:#f59e0b,stroke-width:2px
+    classDef bot fill:#526cfe2e,stroke:#526cfe,stroke-width:2px
+    classDef done fill:#16a34a2e,stroke:#16a34a,stroke-width:2px
+    class tap,ask,later person
+    class page,revoke,forget bot
+    class done done

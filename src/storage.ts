@@ -55,6 +55,12 @@ export class UnknownStateError extends Error {
 export interface AccountStore extends Store {
   /** Brings accounts of an earlier format up to date; true when it stored them anew. */
   migrate(): Promise<boolean>;
+  /**
+   * Forgets every account for good, as "Forget all accounts" does: the stored accounts,
+   * the copy of accounts of a newer version, and the key of the vault, so that no copy
+   * of the storage opens again. It runs in the queue, like every change of the accounts.
+   */
+  clear(): Promise<void>;
 }
 
 /** Where a secret of an account is sealed: its field and the id of the account. */
@@ -172,6 +178,11 @@ export function createStore(area: StorageArea, vault: Vault): AccountStore {
     },
     async migrate() {
       return (await bringUpToDate()).outdated;
+    },
+    async clear() {
+      // The accounts first: should the key store fail, no account is left over.
+      await area.remove([ACCOUNTS_KEY, BACKUP_KEY]);
+      await vault.forget();
     },
   };
 }

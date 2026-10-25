@@ -119,4 +119,8 @@ Every PIN is gone then, and the display no longer returns after a break: set the
 - [ ] Everyone knows the rule: change players with a tile, never with a sign-out on Autodarts, which ends a session for good.
 - [ ] In a club or pub: the manager PIN is set and known to the people who run the display, and every player who wants a PIN has one.
 
+## 9. When the display changes hands {#changes-hands}
+
+Before the computer is sold, given away or leaves the club, open **Manage accounts** and choose [**Forget all accounts**](help.md#forget-all), while Autodarts can be reached. It signs every saved account out at Autodarts, the player on the page too, and deletes all that the extension keeps, with the key that seals the sessions, the PINs and the settings. Removing the extension alone signs nobody out at Autodarts. A player who leaves the club for good is removed the same way, one account at a time, with **Remove account**.
+
 Not working as it should? The [help](help.md) explains every message of the extension.

@@ -124,15 +124,18 @@ export function router(
 
 /**
  * Autodarts' sign-in service as far as a race needs it: it rotates the refresh token
- * as the real one does, so each token works once. A token sent again is refused, and,
- * as a service that detects the reuse of a token may do, it ends that account's
- * session too. It answers only after other work has had a turn, as a network does.
+ * as the real one does, so each token works once, and a sign-out ends the session of
+ * its token. A token sent again is refused, and, as a service that detects the reuse
+ * of a token may do, it ends that account's session too. It answers only after other
+ * work has had a turn, as a network does.
  */
 export class FakeAutodarts {
   /** The refresh token that works now, by account. */
   readonly live = new Map<string, string>();
-  /** The refresh tokens it was sent, in order. */
+  /** The refresh tokens it was sent to renew, in order. */
   readonly refreshes: string[] = [];
+  /** The refresh tokens of the sessions it was asked to end, in order. */
+  readonly logouts: string[] = [];
   /** How often a token that was used already came back. */
   reuses = 0;
   private readonly spent = new Map<string, string>();
@@ -158,10 +161,11 @@ export class FakeAutodarts {
     const { refresh_token: token } = JSON.parse(String(init.body)) as {
       refresh_token: string;
     };
-    if (!url.endsWith("/refresh")) {
+    const logout = url.endsWith("/logout");
+    if (!logout && !url.endsWith("/refresh")) {
       throw new Error(`unexpected request to ${url}`);
     }
-    this.refreshes.push(token);
+    (logout ? this.logouts : this.refreshes).push(token);
     for (const resolve of this.waiting.splice(0)) {
       resolve();
     }
@@ -170,7 +174,9 @@ export class FakeAutodarts {
     if (owner !== undefined) {
       this.live.delete(owner);
       this.spent.set(token, owner);
-      return sessionResponse(owner, this.issue(owner));
+      return logout
+        ? new Response(null, { status: 204 })
+        : sessionResponse(owner, this.issue(owner));
     }
     const victim = this.spent.get(token);
     if (victim !== undefined) {

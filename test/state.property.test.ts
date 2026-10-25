@@ -339,6 +339,10 @@ function memoryKeys(): KeyStore {
       key ??= made;
       return Promise.resolve(key);
     },
+    clear: () => {
+      key = undefined;
+      return Promise.resolve();
+    },
   };
 }
 

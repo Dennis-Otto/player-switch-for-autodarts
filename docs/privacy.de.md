@@ -83,9 +83,20 @@ Formular selbst abschickst.
 
 ## Deine Kontrolle
 
-Entfernst du ein Konto in der Erweiterung, löscht sie seinen gespeicherten Token und
-ein gemerktes Passwort. Entfernst du die Erweiterung, löscht der Browser alles, was
-sie gespeichert hat.
+Entfernst du ein Konto in der Erweiterung, beendet sie zuerst seine Sitzung bei
+Autodarts, mit derselben Abmeldung, die die Autodarts-Website schickt, und löscht dann
+seinen gespeicherten Token und ein gemerktes Passwort. Ist Autodarts nicht erreichbar,
+löscht sie das Konto trotzdem, das Popup sagt es, und die Sitzung bei Autodarts endet,
+wenn sie abläuft.
+
+„Alle Konten vergessen“ unter „Konten verwalten“ tut das für jedes Konto, auch für das
+auf der Seite angemeldete, und löscht dann alles, was die Erweiterung gespeichert hat:
+die Konten, den Schlüssel, der sie verschlüsselt, die Einstellungen und die PINs für
+Verein und Kneipe.
+
+Entfernst du die Erweiterung, löscht der Browser ebenfalls alles, was sie gespeichert
+hat, aber das beendet keine Sitzung bei Autodarts. Wähle darum zuerst „Alle Konten
+vergessen“, wenn ein Display den Besitzer wechselt.
 
 ## Kontakt
 
