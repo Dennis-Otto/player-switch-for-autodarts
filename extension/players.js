@@ -188,7 +188,7 @@ export function pinDialog({ title, text, error = "" }) {
 /** A small mark on the tile of an account that asks for a PIN: a lock and the word. */
 function pinMark() {
   const mark = document.createElement("span");
-  mark.className = "chip pin";
+  mark.className = "pin-mark";
   const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
   svg.setAttribute("viewBox", "0 0 16 16");
   svg.setAttribute("aria-hidden", "true");
@@ -539,7 +539,7 @@ export function mountPlayers({ numbered = false, onRender = () => {} } = {}) {
       node.querySelector(".chip").before(pinMark());
     }
 
-    const chip = node.querySelector(".chip:not(.pin)");
+    const chip = node.querySelector(".chip");
     if (profile.active) {
       chip.textContent = t("playing");
       chip.classList.add("playing");

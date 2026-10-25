@@ -329,7 +329,7 @@ describe("the question for a PIN of the venue mode", {
           const tab = await open({ page, lang, scheme, pins: true });
           const view = `the question for a PIN in the ${page}, ${lang}, ${scheme}`;
           assert.equal(
-            await tab.locator(`${tile("jonasberg")} .chip.pin`).count(),
+            await tab.locator(`${tile("jonasberg")} .pin-mark`).count(),
             1,
             "the tile of an account with a PIN shows a lock",
           );
