@@ -393,8 +393,10 @@ test("the sign-in service has to refuse a made-up token and a made-up account wi
 test("the end of a session has to answer at its address", async () => {
   const cases: [Answer | Error, boolean, string][] = [
     [() => json(200, { success: true }), true, "answered 200"],
-    [() => json(401, {}), true, "answered 401"],
-    [() => json(400, {}), true, "answered 400"],
+    [() => json(401, { error: "invalid_grant" }), true, "answered 401"],
+    [() => json(400, { error: "invalid_grant" }), true, "answered 400"],
+    [() => json(400, { error: "invalid_request" }), false, "answered 400"],
+    [() => json(401, {}), false, "answered 401"],
     [
       () => text("404 page not found", 404),
       false,

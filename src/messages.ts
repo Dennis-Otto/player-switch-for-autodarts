@@ -46,7 +46,10 @@ export type PlayersAction =
       readonly password: string;
     }
   | { readonly action: "forgetPassword"; readonly id: string }
+  /** Ends the session of an account at Autodarts and forgets the account. */
   | { readonly action: "removeAccount"; readonly id: string }
+  /** Ends every session at Autodarts and deletes all that the extension keeps. */
+  | { readonly action: "forgetAll" }
   /** Opens "Manage accounts", which needs the manager PIN while one is set. */
   | { readonly action: "unlock" };
 
@@ -155,6 +158,8 @@ export type Outcome =
       readonly page?: boolean;
       /** The name of a new account that was saved just now. */
       readonly saved?: string;
+      /** After a removal: whether Autodarts ended the sessions, or couldn't be reached. */
+      readonly ended?: boolean;
     }
   /** A match runs in the page: the worker spent no token yet and waits for a yes. */
   | { readonly ok: false; readonly reason: "match" }
@@ -244,6 +249,7 @@ const PLAYERS_FIELDS: Readonly<
   remember: { id: isString, username: isString, password: isString },
   forgetPassword: { id: isString },
   removeAccount: { id: isString },
+  forgetAll: {},
   unlock: {},
 };
 

@@ -114,6 +114,12 @@ header .link {
     color: var(--danger);
 }
 
+/* "Forget all accounts", under the accounts in "Manage accounts": on a line of its own. */
+#forget-all {
+    display: flex;
+    margin: 12px auto 0;
+}
+
 #status,
 #problem {
     margin: 0 0 12px;

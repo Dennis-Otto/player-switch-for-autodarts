@@ -12,6 +12,10 @@
  * sessions and passwords with a key that only this worker uses, kept in the IndexedDB of
  * the extension, so chrome.storage.local holds none in plain text.
  *
+ * Removing an account ends its session at Autodarts before the worker forgets it, and
+ * "Forget all accounts" does so for every account and then deletes all that the
+ * extension keeps, the key of the vault as well, so that a display can change hands.
+ *
  * The popup and the switcher in the Autodarts page (switcher.html) send it the same
  * requests (`messages.ts`); the content script asks it what the button in the page
  * shows, and it relays the keyboard shortcut and the close of the switcher to the page.
@@ -59,7 +63,6 @@ import {
 import { createQueue } from "./queue.ts";
 import {
   EMPTY,
-  forget,
   forgetCredentials,
   rememberCredentials,
   toView,
@@ -76,10 +79,13 @@ import {
   adoptNewSignIn,
   type Deps,
   edit,
+  forgetAll,
   leaveDisplay,
   type PagePort,
+  type Removal,
   readView,
   refreshParked,
+  removeAccount,
   signOutForNewAccount,
   startAddingAccount,
   stopAddingAccount,
@@ -178,9 +184,9 @@ export interface ChromeApi {
     readonly onInstalled: BrowserEvent<(details: { reason: string }) => void>;
   };
   readonly storage: {
-    readonly local: StorageArea & RestrictableArea;
+    readonly local: StorageArea & RestrictableArea & ClearableArea;
     /** Outlives a sleep of the worker, not a restart of the browser. */
-    readonly session: Pick<StorageArea, "get" | "set">;
+    readonly session: Pick<StorageArea, "get" | "set"> & ClearableArea;
     readonly onChanged: BrowserEvent<
       (changes: Record<string, StorageChange>, area: string) => void
     >;
@@ -317,6 +323,23 @@ export const PICK_UP_DELAYS_MS: readonly number[] = [0, 1000, 2000, 4000, 8000];
  */
 export const REQUEST_TIMEOUT_MS = 20_000;
 
+/** A storage area that the browser can empty, as "Forget all accounts" does. */
+export interface ClearableArea {
+  clear(): Promise<void>;
+}
+
+/**
+ * The answer to a removal: the sessions end at Autodarts first. While an account plays,
+ * the page signs out for it, which needs a page that answers, so one opens when none
+ * does, and asks first while a match runs. `ended` tells the popup whether Autodarts
+ * ended every session or could not be reached.
+ */
+function removed(removal: Removal): Outcome {
+  return removal.kind === "match"
+    ? { ok: false, reason: "match" }
+    : { ok: true, ended: removal.ended };
+}
+
 /**
  * The requests that change an account in "Manage accounts", and "unlock", with which
  * the popup or the switcher opens it: each needs the manager PIN while one is set.
@@ -326,6 +349,7 @@ const MANAGER_ACTIONS: ReadonlySet<string> = new Set([
   "remember",
   "forgetPassword",
   "removeAccount",
+  "forgetAll",
 ]);
 
 /**
@@ -515,6 +539,29 @@ export function startWorker(api: ChromeApi, platform: Platform): StartedWorker {
     );
   }
 
+  /**
+   * Whether the page may sign out now for a removal: not while a match runs there,
+   * unless the request carries the person's yes, as for a switch.
+   */
+  async function mayLeave(
+    tab: Promise<BrowserTab | undefined>,
+    message: PlayersRequest,
+  ): Promise<boolean> {
+    return !(await mustAskFirst(tab, message));
+  }
+
+  /**
+   * Deletes all that the extension keeps, once "Forget all accounts" has ended the
+   * sessions: the accounts with the key of the vault, the state of the renewal, the
+   * venue mode with its PINs, the settings, and the session storage with the count of
+   * wrong PINs. The extension is then as after its install.
+   */
+  async function wipe(): Promise<void> {
+    await store.clear();
+    await api.storage.local.clear();
+    await api.storage.session.clear();
+  }
+
   async function runAction(
     message: PlayersRequest,
     tab: Promise<BrowserTab | undefined>,
@@ -596,11 +643,28 @@ export function startWorker(api: ChromeApi, platform: Platform): StartedWorker {
       case "forgetPassword":
         await edit(deps, (state) => forgetCredentials(state, message.id));
         return { ok: true };
-      case "removeAccount":
-        await edit(deps, (state) => forget(state, message.id));
-        // Its PIN goes as well, and the display no longer returns to it.
-        await changeVenue((venue) => forgetAccount(venue, message.id));
-        return { ok: true };
+      case "removeAccount": {
+        // A page opened for the removal stays in the background: in front, it would
+        // close the popup before the popup could say how the removal ended.
+        const removal = await withPage(
+          tabs,
+          () => removeAccount(deps, message.id, () => mayLeave(tab, message)),
+          () => false,
+        );
+        if (removal.kind === "removed") {
+          // Its PIN goes as well, and the display no longer returns to it.
+          await changeVenue((venue) => forgetAccount(venue, message.id));
+        }
+        return removed(removal);
+      }
+      case "forgetAll":
+        return removed(
+          await withPage(
+            tabs,
+            () => forgetAll(deps, wipe, () => mayLeave(tab, message)),
+            () => false,
+          ),
+        );
       case "unlock":
         return { ok: true };
     }

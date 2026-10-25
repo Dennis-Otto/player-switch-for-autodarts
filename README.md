@@ -40,6 +40,7 @@ Every guide is on the [documentation website](https://dennis-otto.github.io/play
 - **For a keyboard, a screen reader and a finger.** The keys 1 to 9 pick a player, the focus keeps its place after every action, errors are read out at once, and every control is at least 44 by 44 pixels. A test checks the popup with axe-core for every change.
 - **In five languages.** The popup, the players on the page, the welcome page and the settings speak English, German, Dutch, French and Spanish, in the language that Chrome runs in. The help and the website are in English and German.
 - **Private by design.** Everything stays in the browser on that computer and goes only to Autodarts. No analytics, no server of ours, nothing sent anywhere else.
+- **Removed means signed out.** **Remove account** ends the session of the account at Autodarts before it deletes it, so no copy of it keeps working, and **Forget all accounts** does so for every account and wipes the extension before a display changes hands: [the help](https://dennis-otto.github.io/player-switch-for-autodarts/help.html#forget-all).
 - **No workaround needed.** No signing out and in for every player, no Chrome profile for each of them, no playing as a guest of someone else's account: [why not just …](https://dennis-otto.github.io/player-switch-for-autodarts/#why-not-just) says where each of them falls short.
 
 ## How it works
@@ -65,7 +66,7 @@ Over days and weeks, a saved account moves between these states:
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/images/diagrams/account-states.dark.svg">
-  <img src="docs/images/diagrams/account-states.svg" alt="The life of a saved account: An account that signs in on the page is saved by itself after Add account or the install, or with Save account, and it plays. When another player comes on, or Add account signs the page out, its session is parked, still valid at Autodarts, and a tap brings it back. Every 12 hours the extension renews each parked session, with its token or a remembered password. When Autodarts turns an account away, in a renewal or at a tap, or it signs out on the page, it has to sign in again, and the toolbar badge counts it: remember its password and tap it, or sign in once with Add account. Remove account deletes an account with its token and password, whatever its state.">
+  <img src="docs/images/diagrams/account-states.svg" alt="The life of a saved account: An account that signs in on the page is saved by itself after Add account or the install, or with Save account, and it plays. When another player comes on, or Add account signs the page out, its session is parked, still valid at Autodarts, and a tap brings it back. Every 12 hours the extension renews each parked session, with its token or a remembered password. When Autodarts turns an account away, in a renewal or at a tap, or it signs out on the page, it has to sign in again, and the toolbar badge counts it: remember its password and tap it, or sign in once with Add account. Remove account signs an account out at Autodarts and then deletes it with its token and password, whatever its state.">
 </picture>
 
 [Decision 0002](docs/decisions/0002-swap-the-session-not-the-login.md) records why it works this way, and the [security design](docs/security.md) says what is stored and which risks remain.

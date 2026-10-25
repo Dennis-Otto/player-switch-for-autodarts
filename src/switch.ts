@@ -17,6 +17,11 @@
  * of ten minutes, and the first session that the page signs in with during it is
  * saved by itself, once. After the window, a sign-in on the page is never saved
  * without a tap.
+ *
+ * Removing an account ends its session at Autodarts before the extension forgets it,
+ * so that no copy of its token, such as in a backup of the browser profile, keeps
+ * working; "Forget all accounts" does so for every account and then deletes what else
+ * the extension keeps.
  */
 import {
   type AuthError,
@@ -24,6 +29,7 @@ import {
   type Identity,
   readIdentity,
   refreshSession,
+  revokeSession,
   type Session,
   signIn,
 } from "./autodarts.ts";
@@ -32,9 +38,11 @@ import type { Queue } from "./queue.ts";
 import {
   activate,
   deactivate,
+  EMPTY,
   endSession,
   failRenewal,
   find,
+  forget,
   isAdding,
   type Profile,
   park,
@@ -381,6 +389,103 @@ async function signOut(deps: Deps, waitForNew: boolean): Promise<State> {
       ? startAdding(signedOut, deps.now() + ADD_WINDOW_MS)
       : stopAdding(signedOut),
   );
+}
+
+/**
+ * How a removal ended. "removed": the accounts are forgotten, and `ended` says whether
+ * Autodarts ended every session of them; false when it couldn't be reached, and each
+ * session it didn't end lasts until it expires by itself. "match": the account plays
+ * on the page, which may not sign out now, as while a match runs; nothing changed.
+ */
+export type Removal =
+  | { kind: "removed"; state: State; ended: boolean }
+  | { kind: "match"; state: State };
+
+/**
+ * Removes an account and ends its session at Autodarts first: the parked one, or,
+ * while the account plays, the one in the page, which signs out for it. `mayLeave`
+ * runs only then and says whether the page may sign out now, which reloads it and
+ * ends a match that runs there. Without a page that answers, it fails before anything
+ * changes, so the service worker can open one and try again. The account is forgotten
+ * also when Autodarts can't be reached: `ended` then says so.
+ */
+export function removeAccount(
+  deps: Deps,
+  id: string,
+  mayLeave: () => Promise<boolean> = () => Promise.resolve(true),
+): Promise<Removal> {
+  return deps.queue(async (): Promise<Removal> => {
+    const state = await deps.store.load();
+    const profile = find(state, id);
+    if (profile === undefined) {
+      return { kind: "removed", state, ended: true };
+    }
+    const tokens = profile.token === null ? [] : [profile.token];
+    if (state.activeId === id) {
+      if (!(await mayLeave())) {
+        return { kind: "match", state };
+      }
+      tokens.push(...(await leavePage(deps)));
+    }
+    const ended = await revokeAll(deps, tokens);
+    return {
+      kind: "removed",
+      state: await commit(deps, forget(state, id)),
+      ended,
+    };
+  });
+}
+
+/**
+ * Forgets every account, as before a display changes hands: ends the session of each
+ * one at Autodarts, the one in the page too while an account of the extension plays
+ * there, which signs the page out, and then runs `wipe`, which deletes what else the
+ * extension keeps. A session in the page that no account keeps stays: it was never the
+ * extension's. `mayLeave` and the outcome work as for `removeAccount`.
+ */
+export function forgetAll(
+  deps: Deps,
+  wipe: () => Promise<void>,
+  mayLeave: () => Promise<boolean> = () => Promise.resolve(true),
+): Promise<Removal> {
+  return deps.queue(async (): Promise<Removal> => {
+    const state = await deps.store.load();
+    const tokens = state.profiles.flatMap((profile) =>
+      profile.token === null ? [] : [profile.token],
+    );
+    if (state.activeId !== null) {
+      if (!(await mayLeave())) {
+        return { kind: "match", state };
+      }
+      tokens.push(...(await leavePage(deps)));
+    }
+    const ended = await revokeAll(deps, tokens);
+    // The accounts go first, so that none is left over should the wipe fail.
+    const cleared = await commit(deps, EMPTY);
+    await wipe();
+    return { kind: "removed", state: cleared, ended };
+  });
+}
+
+/** Signs the page out and gives the session it held, for the caller to end at Autodarts. */
+async function leavePage(deps: Deps): Promise<string[]> {
+  const live = await deps.page.readToken();
+  if (live === null) {
+    return [];
+  }
+  await deps.page.clearToken();
+  return [live];
+}
+
+/**
+ * Ends sessions at Autodarts, all at once: each has a token of its own, so none waits
+ * for another. True when every one is over.
+ */
+async function revokeAll(deps: Deps, tokens: string[]): Promise<boolean> {
+  const results = await Promise.all(
+    tokens.map((token) => revokeSession(deps.fetcher, token)),
+  );
+  return results.every(Boolean);
 }
 
 /** How a renewal of the parked sessions ended: the accounts, and how each one went. */

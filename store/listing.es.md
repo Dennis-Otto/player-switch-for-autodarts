@@ -43,6 +43,8 @@ Cómo funciona:
   sesión de una cuenta por sí sola si su sesión deja de funcionar. Las cuentas que
   inician sesión con Google o Apple no pueden usarlo, porque no tienen una
   contraseña de Autodarts que recordar.
+• Al eliminar una cuenta, también se cierra su sesión en Autodarts, y «Olvidar
+  todas las cuentas» vacía la pantalla antes de que cambie de manos.
 
 Todo se queda en tu ordenador. La extensión solo habla con Autodarts, no recoge
 estadísticas y no envía nada a nadie más. La política de privacidad da los

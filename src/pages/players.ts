@@ -20,10 +20,12 @@ import {
   answered,
   keptManagerPin,
   type Manage,
+  matchQuestion,
   mustUnlock,
   pinQuestion,
   questionOf,
   showsEmpty,
+  showsForgetAll,
   statusAfter,
   tileOf,
   toggled,
@@ -35,14 +37,12 @@ import { find, t, translate } from "./dom.ts";
 // browser may run in a language the extension has no texts for.
 const language = t("locale");
 
-/** Asks whether a switch may end the match that runs in the page. */
-function confirmMatch(): Promise<boolean> {
-  return confirmDialog({
-    title: t("matchTitle"),
-    text: t("matchText"),
-    confirm: t("matchConfirm"),
-    cancel: t("matchCancel"),
-  });
+/**
+ * Asks whether a request may end the match that runs in the page: a switch, or a
+ * removal that signs the player out there.
+ */
+function confirmMatch(action: string): Promise<boolean> {
+  return confirmDialog(matchQuestion(action, t));
 }
 
 /** A small mark on the tile of an account that asks for a PIN: a lock and the word. */
@@ -66,7 +66,7 @@ function pinMark(): HTMLSpanElement {
 
 // The controls that send a request to the service worker.
 const REQUEST_CONTROLS =
-  ".tile, .toggle-remember, .remove, .save-remember, #adopt, #add, #open-page, #stop-adding";
+  ".tile, .toggle-remember, .remove, .save-remember, #adopt, #add, #open-page, #stop-adding, #forget-all";
 
 // The controls of a tile, so that the focus comes back to the same one when the tiles
 // are drawn anew after a request.
@@ -153,6 +153,8 @@ export function mountPlayers({
   const openPageButton = document.querySelector<HTMLElement>("#open-page");
   const adding = find("#adding");
   const addButton = find("#add");
+  // "Forget all accounts", which shows in "Manage accounts" while an account is saved.
+  const forgetAllButton = document.querySelector<HTMLElement>("#forget-all");
 
   let manage: Manage = { managing: false, managerPin: null };
   // True while a request is with the service worker: the page then takes no other tap.
@@ -236,7 +238,7 @@ export function mountPlayers({
     ) {
       const view = (reply as PlayersReply).view;
       if (question.kind === "match") {
-        if (!(await confirmMatch())) {
+        if (!(await confirmMatch(message.action))) {
           showStatus("");
           render(view);
           return reply;
@@ -258,7 +260,11 @@ export function mountPlayers({
       ...manage,
       managerPin: keptManagerPin(manage.managerPin, message, reply),
     };
-    const status = statusAfter(reply, signInHint, t);
+    // The accounts that show are still those before a removal.
+    const status = statusAfter(reply, signInHint, t, {
+      action: message.action,
+      name: nameOf(message),
+    });
     showStatus(status.text, status.error);
     if (reply === undefined) {
       return reply;
@@ -289,7 +295,14 @@ export function mountPlayers({
     unsaved.hidden = !view.unsaved;
     adding.hidden = !view.adding;
     updateHint.hidden = !view.updateHint;
-    if (showsEmpty(view, problemBar.textContent ?? "")) {
+    showForgetAll();
+    if (
+      showsEmpty(
+        view,
+        problemBar.textContent ?? "",
+        statusBar.textContent ?? "",
+      )
+    ) {
       showStatus(t("empty"));
     }
     restoreFocus(before);
@@ -473,6 +486,28 @@ export function mountPlayers({
     return node;
   }
 
+  /** Shows "Forget all accounts" in "Manage accounts" while an account is saved. */
+  function showForgetAll(): void {
+    if (forgetAllButton !== null) {
+      forgetAllButton.hidden = !showsForgetAll(manage.managing, shown.length);
+    }
+  }
+
+  /** Opens or closes "Manage accounts"; closed, it has forgotten the manager PIN. */
+  function setManage(next: Manage): void {
+    manage = next;
+    const { managing } = manage;
+    document.body.classList.toggle("managing", managing);
+    manageButton.setAttribute("aria-pressed", String(managing));
+    for (const menu of profiles.querySelectorAll<HTMLElement>(".menu")) {
+      menu.hidden = !managing;
+    }
+    for (const button of profiles.querySelectorAll<HTMLElement>(".tile")) {
+      button.inert = managing;
+    }
+    showForgetAll();
+  }
+
   // "Manage accounts" is a toggle with a name that stays: pressed, it shows the actions
   // of every account, and pressed again, the tiles. While a manager PIN guards it, it
   // opens only with that PIN, which it forgets again as it closes.
@@ -486,15 +521,28 @@ export function mountPlayers({
         return;
       }
     }
-    manage = toggled(manage);
-    const { managing } = manage;
-    document.body.classList.toggle("managing", managing);
-    manageButton.setAttribute("aria-pressed", String(managing));
-    for (const menu of profiles.querySelectorAll<HTMLElement>(".menu")) {
-      menu.hidden = !managing;
+    setManage(toggled(manage));
+  });
+
+  // Forgets every account after a yes, as before the display changes hands. "Manage
+  // accounts" closes once they are gone, and with it the manager PIN, which is gone too.
+  forgetAllButton?.addEventListener("click", async () => {
+    if (busy) {
+      return;
     }
-    for (const button of profiles.querySelectorAll<HTMLElement>(".tile")) {
-      button.inert = managing;
+    const confirmed = await confirmDialog({
+      title: t("forgetAll"),
+      text: t("forgetAllConfirm"),
+      confirm: t("forgetAll"),
+      cancel: t("cancel"),
+    });
+    if (!confirmed) {
+      return;
+    }
+    const reply = await send({ action: "forgetAll" });
+    if (reply !== undefined && "ok" in reply && reply.ok) {
+      setManage({ managing: false, managerPin: null });
+      manageButton.focus();
     }
   });
 

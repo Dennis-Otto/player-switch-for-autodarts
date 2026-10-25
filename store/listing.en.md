@@ -35,6 +35,8 @@ How it works:
 • Optional: let the extension remember a password, and it signs an account back in
   by itself if its session ever stops working. Accounts that sign in with Google or
   Apple can't use this, because they have no Autodarts password to remember.
+• Removing an account signs it out at Autodarts as well, and "Forget all accounts"
+  wipes the display before it changes hands.
 
 Everything stays on your computer. The extension talks only to Autodarts, collects
 no analytics and sends nothing to anyone else. See the privacy policy for details.

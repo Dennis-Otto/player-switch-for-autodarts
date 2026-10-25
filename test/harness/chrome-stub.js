@@ -131,7 +131,12 @@
         break;
       case "removeAccount":
         accounts.splice(accounts.indexOf(account), 1);
-        break;
+        // Autodarts ended the session of the account as well.
+        return { ok: true, ended: true, view: view() };
+      case "forgetAll":
+        accounts.splice(0);
+        activeId = null;
+        return { ok: true, ended: true, view: view() };
       case "signout":
         adding = true;
         break;

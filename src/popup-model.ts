@@ -40,15 +40,60 @@ export function problemOf(
   return signInHint ?? t("error");
 }
 
+/** What a request was about, for the status line: its action and the name of its account. */
+export interface About {
+  action: string;
+  name: string;
+}
+
+/**
+ * What a removal says: that Autodarts ended the sessions, or couldn't be reached, in
+ * which case a session lasts until it expires, which the person hears at once.
+ */
+export function removalText(
+  about: About,
+  ended: boolean,
+  t: Translate,
+): string {
+  if (about.action === "forgetAll") {
+    return ended ? t("forgotAll") : t("forgotAllOffline");
+  }
+  return ended ? t("removed", about.name) : t("removedOffline", about.name);
+}
+
+/**
+ * The question before a request ends the match that runs in the page: a switch, or a
+ * removal that signs the player out there.
+ */
+export function matchQuestion(
+  action: string,
+  t: Translate,
+): { title: string; text: string; confirm: string; cancel: string } {
+  const signsOut = action === "removeAccount" || action === "forgetAll";
+  return {
+    title: t("matchTitle"),
+    text: signsOut ? t("matchSignOutText") : t("matchText"),
+    confirm: signsOut ? t("matchSignOutConfirm") : t("matchConfirm"),
+    cancel: t("matchCancel"),
+  };
+}
+
+/** Whether "Forget all accounts" shows: in "Manage accounts", while an account is saved. */
+export function showsForgetAll(managing: boolean, accounts: number): boolean {
+  return managing && accounts > 0;
+}
+
 /**
  * What the status line says once the service worker answered, or didn't (`undefined`):
- * a problem, the account that was saved by itself, or nothing, as the tiles show how it
- * ended, so "Switching to …" goes.
+ * a problem, the account that was saved by itself, how a removal ended, or nothing, as
+ * the tiles show how it ended, so "Switching to …" goes. `about` names the request, and
+ * its account as the tiles showed it before the removal.
  */
 export function statusAfter(
   reply: PlayersReply | undefined,
   signInHint: string | null,
   t: Translate,
+  about: About = { action: "", name: "" },
 ): Status {
   if (reply === undefined) {
     return { text: t("error"), error: true };
@@ -68,6 +113,9 @@ export function statusAfter(
   if (typeof reply.saved === "string") {
     // A new account signed in before the page could tell; it was saved just now.
     return { text: t("savedAccount", reply.saved), error: false };
+  }
+  if (typeof reply.ended === "boolean") {
+    return { text: removalText(about, reply.ended, t), error: !reply.ended };
   }
   return { text: "", error: false };
 }
@@ -187,12 +235,20 @@ export function tileOf(
   };
 }
 
-/** Whether the popup says that there is no account yet: with nothing else to show or say. */
-export function showsEmpty(view: PlayersView, problem: string): boolean {
+/**
+ * Whether the popup says that there is no account yet: with nothing else to show or
+ * say, such as a message that every account is forgotten.
+ */
+export function showsEmpty(
+  view: PlayersView,
+  problem: string,
+  status = "",
+): boolean {
   return (
     view.profiles.length === 0 &&
     !view.unsaved &&
     !view.adding &&
+    status === "" &&
     problem === ""
   );
 }

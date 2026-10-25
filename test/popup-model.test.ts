@@ -5,11 +5,14 @@ import type { PlayersView, PlayerView } from "../src/messages.ts";
 import {
   answered,
   keptManagerPin,
+  matchQuestion,
   mustUnlock,
   pinQuestion,
   problemOf,
   questionOf,
+  removalText,
   showsEmpty,
+  showsForgetAll,
   statusAfter,
   tileOf,
   toggled,
@@ -227,6 +230,50 @@ test("the popup says that there is no account only with nothing else to show or 
   assert.equal(showsEmpty({ ...VIEW, unsaved: true }, ""), false);
   assert.equal(showsEmpty({ ...VIEW, adding: true }, ""), false);
   assert.equal(showsEmpty({ ...VIEW, profiles: [ada] }, ""), false);
+  assert.equal(showsEmpty(VIEW, "", "forgotAll"), false);
+});
+
+test("a removal says whether Autodarts ended the sessions, and an outage as an error", () => {
+  const view = VIEW;
+  const bob = { action: "removeAccount", name: "Bob" };
+  assert.deepEqual(statusAfter({ ok: true, ended: true, view }, null, t, bob), {
+    text: "removed: Bob",
+    error: false,
+  });
+  assert.deepEqual(
+    statusAfter({ ok: true, ended: false, view }, null, t, bob),
+    { text: "removedOffline: Bob", error: true },
+  );
+  const all = { action: "forgetAll", name: "" };
+  assert.equal(removalText(all, true, t), "forgotAll");
+  assert.equal(removalText(all, false, t), "forgotAllOffline");
+  assert.deepEqual(statusAfter({ ok: true, ended: true, view }, null, t), {
+    text: "removed: ",
+    error: false,
+  });
+});
+
+test("the match question of a removal says that the player signs out", () => {
+  assert.deepEqual(matchQuestion("switch", t), {
+    title: "matchTitle",
+    text: "matchText",
+    confirm: "matchConfirm",
+    cancel: "matchCancel",
+  });
+  for (const action of ["removeAccount", "forgetAll"]) {
+    assert.deepEqual(matchQuestion(action, t), {
+      title: "matchTitle",
+      text: "matchSignOutText",
+      confirm: "matchSignOutConfirm",
+      cancel: "matchCancel",
+    });
+  }
+});
+
+test("Forget all accounts shows in Manage accounts while an account is saved", () => {
+  assert.equal(showsForgetAll(true, 1), true);
+  assert.equal(showsForgetAll(true, 0), false);
+  assert.equal(showsForgetAll(false, 2), false);
 });
 
 test("Manage accounts opens with the manager PIN while one guards it, and forgets it as it closes", () => {

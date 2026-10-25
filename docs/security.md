@@ -70,6 +70,34 @@ shows them.
   passwords in plain text. An update to this version seals them, and so does the
   first reading of the accounts after it. A version that doesn't know the sealed
   format never saves over it (see the copy above).
+- **"Forget all accounts" deletes the key.** After it has ended every session at
+  Autodarts, the service worker deletes the accounts, the copy of a newer version,
+  the key in the IndexedDB and the key it holds in memory, then everything else in
+  `chrome.storage.local` and `chrome.storage.session`. A copy of the storage taken
+  before then holds sealed text that opens nowhere, and the next account is sealed
+  with a new key.
+
+### Removing ends the session at Autodarts {#removing-ends-the-session}
+
+Deleting a token on the computer is not enough: a copy of the browser profile, such
+as a backup, takes the token and its key with it, and Autodarts would take that
+token until it expires. So **Remove account** first ends the session at Autodarts,
+with the sign-out that the Autodarts website sends (`POST /auth/v1/logout` with the
+refresh token, `revokeSession` in `src/autodarts.ts`), and then deletes the account.
+For the account that plays, the page signs out first and the extension ends the
+session that the page held; during a match it asks first, as for a switch. **Forget
+all accounts** does the same for every account, all at once, and then deletes the
+storage and the key as above. Both run in the queue of the service worker, so a
+renewal or a double tap never sends a token that a removal has just ended.
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="images/diagrams/removing-an-account.dark.svg">
+  <img src="images/diagrams/removing-an-account.svg" alt="How a removal ends the session: Remove account and Forget all accounts end the sessions at Autodarts before the extension forgets them. When a saved account plays on the page, the page signs out first; during a match the extension asks, and a no changes nothing. Then the extension ends every session that it keeps at Autodarts, all at once, with the sign-out that the Autodarts website sends, and forgets the accounts; Forget all accounts also deletes everything else that it keeps, with the key. When Autodarts answers, the popup says that the accounts are signed out. When it can't be reached, they are forgotten all the same, and the popup says that their sessions end only when they expire.">
+</picture>
+
+When Autodarts can't be reached, the account is deleted all the same, the popup
+says that its session lasts until it expires, and the extension keeps no copy of
+it to try again later. A session that had ended already counts as ended.
 
 Only the extension itself can read this storage: its service worker and its own
 pages, the popup, the options page and the switcher. Chrome lets the content scripts
@@ -169,6 +197,8 @@ someone who can use the computer.
 | A tool, a dump or a copy of `chrome.storage.local` (not of the whole profile) finds the tokens and passwords; a copy of the whole profile takes the key with it, see the risk that remains | Each token and password is sealed with AES-GCM under a key that can't be exported and sits in the extension's IndexedDB, not in `chrome.storage.local`; the storage holds only the sealed text |
 | Someone who can write the storage moves a sealed token to another account, or changes it | Each secret is sealed with its account and field as additional data, so a moved or changed value doesn't open, and the account has to sign in again |
 | The key is gone, for example after the data of the extension was cleared (the permission `unlimitedStorage` keeps Chrome from evicting it on its own) | The accounts that can't be opened need to sign in again, and their passwords are forgotten; nothing fails, and nothing is saved in plain text instead |
+| A removed account keeps working at Autodarts, from a backup or a copy of the profile | **Remove account** ends the session at Autodarts before the extension deletes it, the one in the page too for the account that plays; **Forget all accounts** does so for every account and then deletes the storage and the key. When Autodarts can't be reached, the popup says that the session lasts until it expires |
+| A display changes hands with the accounts on it | **Forget all accounts**, behind a confirmation and, in the venue mode, the manager PIN, ends every session and leaves the extension as after its install |
 | A stale token is reused and locks an account out | The extension always keeps the token the server last returned (rotation) and renews parked tokens in the background; every change of the accounts runs one at a time in one queue of the service worker, so a double tap or the renewal never sends the same token twice |
 | A password is stored when it wasn't wanted | A password is kept only after an explicit "Remember password"; it is off by default and can be forgotten again |
 | A sign-in on the display is saved without being asked for | A new session is saved by itself only in the ten minutes after "Add account" or the install, only once, and only while no saved account plays; a window that ran out closes for good, and "Cancel" in the popup or the switcher closes it earlier. Every other session waits for "Save account" |
@@ -198,6 +228,11 @@ someone who can use the computer.
   and code that runs inside the extension itself could ask the key to open a token.
   The key stops the tools, backups and copies of the profile that read only the
   storage of the extension, and a content script or a page of another origin.
+- Removing the extension under `chrome://extensions` deletes all that it stored,
+  but Chrome runs no code of an extension as it is removed, so no session ends at
+  Autodarts: the parked sessions last until they expire, and the player on the page
+  stays signed in. **Forget all accounts** first ends them. A removal while Autodarts
+  can't be reached leaves the session valid until it expires as well.
 - A PIN of the venue mode is a lock for the people at the display. Someone who can
   use the computer can remove the extension or turn the venue mode off, and a copy
   of the profile of the browser lets a program try every PIN of 4 digits against its

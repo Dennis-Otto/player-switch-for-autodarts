@@ -96,6 +96,10 @@ class FakeArea {
     return Promise.resolve();
   }
 
+  clear(): Promise<void> {
+    return this.remove([...this.data.keys()]);
+  }
+
   remove(keys: string[]): Promise<void> {
     const changes: Record<string, StorageChange> = {};
     for (const key of keys) {

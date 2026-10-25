@@ -381,7 +381,7 @@ export const checkLogout = async (
   contract: Contract,
 ): Promise<Finding> => {
   let failure: string | undefined;
-  await revokeSession(async (url, init) => {
+  const ended = await revokeSession(async (url, init) => {
     try {
       return await requests.fetch(url, init);
     } catch (error) {
@@ -392,14 +392,13 @@ export const checkLogout = async (
   const status = requests.status;
   return {
     what: "The end of a session",
-    expected: `${contract.authBase}/logout answers 2xx, 400 or 401`,
+    expected: `${contract.authBase}/logout answers 2xx, or 400 or 401 with invalid_grant`,
     found:
       status === undefined
         ? `no answer: ${failure}`
         : `answered ${status}${GONE.includes(status) ? ": the address is gone, so the session of a removed account stays alive until it expires" : ""}`,
-    ok:
-      status !== undefined &&
-      ((status >= 200 && status < 300) || status === 400 || status === 401),
+    // The extension's own reading of the answer, so the two can't drift apart.
+    ok: status !== undefined && ended,
     places: placesOf(contract).logout,
   };
 };

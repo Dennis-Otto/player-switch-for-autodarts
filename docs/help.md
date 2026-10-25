@@ -78,6 +78,14 @@ and the popup and the players on the Autodarts page say:
 
 **What to do:** **Keep playing** changes nothing. **Switch anyway** switches, and the match ends on this display.
 
+Removing the player who plays, or **Forget all accounts**, signs the page out, and asks the same first:
+
+> A match is running
+>
+> Signing the player out ends it on this display.
+
+**Keep playing** changes nothing here as well; **Sign out anyway** goes on, and the match ends on this display.
+
 ### Player Switch was updated {#updated}
 
 > Player Switch was updated. Reload the page to use it? A running match ends on this display.
@@ -128,11 +136,31 @@ and the popup and the players on the Autodarts page say:
 
 ### Remove a player {#remove}
 
-> Remove Bob from this display? Sign in again to add the account back.
+> Remove Bob from this display? Their session at Autodarts ends as well. Sign in again to add the account back.
 
-**What it means:** **Remove account** under **Manage accounts** asks this before it deletes the account from the extension: its saved session and a remembered password. Nothing changes at Autodarts.
+**What it means:** **Remove account** under **Manage accounts** asks this before it deletes the account from the extension, with its saved session and a remembered password. First it signs the account out at Autodarts, so that no copy of the session, such as in a backup of the computer, works any more. When the player plays on the page right now, the page signs out as well; during a match, the extension asks first.
 
-**What to do:** confirm to remove it. A player who plays on the page right now stays signed in there until they sign out on Autodarts or someone switches.
+**What to do:** confirm to remove it. The popup then says "Bob is removed and signed out at Autodarts."
+
+### Autodarts can't be reached for a removal {#removed-offline}
+
+> Bob is removed from this display. Autodarts can't be reached, so the session there ends only when it expires.
+
+or, after **Forget all accounts**:
+
+> All accounts are forgotten on this display. Autodarts can't be reached, so their sessions there end only when they expire.
+
+**What it means:** the extension forgot the account, or every account, with the sessions and the remembered passwords, but Autodarts didn't answer the sign-out, as when the internet or Autodarts is down. The extension keeps no copy of the session, so nobody can play with it from this display; Autodarts would take it until it expires.
+
+**What to do:** nothing has to happen. Before a display changes hands, choose **Forget all accounts** while Autodarts can be reached, so that every session ends at once.
+
+### Forget all accounts {#forget-all}
+
+> Every account is signed out at Autodarts and removed from this display, with its remembered password. The PINs and the settings start over as after the install.
+
+**What it means:** **Forget all accounts**, under the players in **Manage accounts**, asks this before it wipes the extension, as before a display is sold, given away or leaves a club. It signs every saved account out at Autodarts, the player on the page too, and then deletes all that the extension keeps: the accounts, the remembered passwords, the key that seals them, the PINs of the venue mode and the settings. While a manager PIN is set, it asks for that first.
+
+**What to do:** confirm to wipe it. The popup then says "All accounts are forgotten and signed out at Autodarts.", and the extension is as after its install: **Add account** saves the next player. A session on the page that the extension never saved stays; sign it out on Autodarts.
 
 ### Not set {#shortcut-not-set}
 
@@ -252,9 +280,10 @@ It is made for Google Chrome 140 or newer, on Windows, macOS, Linux and ChromeOS
 
 ### Remove everything
 
-- **One account:** **Manage accounts**, the account, **Remove account**. That deletes its saved session and any remembered password.
+- **One account:** **Manage accounts**, the account, **Remove account**. That signs it out at Autodarts and deletes its saved session and any remembered password.
 - **Only a password:** **Forget password** deletes it, and the account stays.
-- **Everything:** remove the extension under `chrome://extensions`, and Chrome deletes everything that it kept. Whoever played last stays signed in on the Autodarts page, until they sign out there.
+- **Everything:** **Manage accounts**, [**Forget all accounts**](#forget-all). That signs every account out at Autodarts and deletes all that the extension kept, the PINs and the settings as well.
+- **The extension itself:** remove it under `chrome://extensions`, and Chrome deletes everything that it kept. That signs nobody out at Autodarts: the parked sessions last until they expire, and whoever played last stays signed in on the Autodarts page until they sign out there. So choose **Forget all accounts** first.
 
 The [privacy policy](privacy.md) lists everything that the extension keeps.
 

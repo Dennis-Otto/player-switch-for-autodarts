@@ -580,6 +580,53 @@ test("a password is remembered and forgotten, and a removed account takes its PI
   );
 });
 
+test("a removal ends the session at Autodarts, asks first during a match, and Forget all wipes everything", async () => {
+  const fake = browser();
+  await twoPlayers(fake);
+  const bobToken = fake.autodarts.live.get("bob");
+  fake.addTab({ url: MATCH });
+  fake.local.data.set(VENUE_KEY, { players: { ada: await quickHash("1234") } });
+  fake.sessionArea.data.set("other", 1);
+  await started(fake);
+
+  const bob = await popup(fake, { action: "removeAccount", id: "bob" });
+  assert.equal(bob.ok, true);
+  assert.equal((bob as { ended?: boolean }).ended, true);
+  assert.deepEqual(fake.autodarts.logouts, [bobToken]);
+
+  // Ada plays on the page, in a match: removing her signs the page out, so it asks.
+  const asked = await popup(fake, { action: "removeAccount", id: "ada" });
+  assert.equal(asked.reason, "match");
+  const all = await popup(fake, { action: "forgetAll" });
+  assert.equal(all.reason, "match");
+  assert.equal((await accounts(fake)).profiles.length, 1);
+  assert.ok(fake.local.data.has(VENUE_KEY));
+
+  const gone = await popup(fake, { action: "forgetAll", confirmed: true });
+  assert.equal(gone.ok, true);
+  assert.equal((gone as { ended?: boolean }).ended, true);
+  assert.deepEqual(gone.view.profiles, []);
+  assert.equal(fake.pageToken, null);
+  assert.equal(fake.local.data.has(VENUE_KEY), false);
+  assert.equal(fake.sessionArea.data.has("other"), false);
+});
+
+test("removing the player on the page, or forgetting all, opens a page in the background when none answers", async () => {
+  for (const message of [
+    { action: "removeAccount", id: "ada" },
+    { action: "forgetAll" },
+  ]) {
+    const fake = browser();
+    await twoPlayers(fake);
+    await started(fake);
+    const reply = await popup(fake, message);
+    assert.equal(reply.ok, true, JSON.stringify(message));
+    assert.deepEqual(fake.opened, [PLAY_URL]);
+    assert.deepEqual(fake.focused, []);
+    assert.equal(fake.pageToken, null);
+  }
+});
+
 test("an account with a PIN switches only with its PIN, and too many wrong ones lock the PINs for a while", async () => {
   const fake = browser();
   await twoPlayers(fake);

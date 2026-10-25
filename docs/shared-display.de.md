@@ -119,4 +119,8 @@ Dann ist jede PIN weg, und das Display kehrt nach einer Pause nicht mehr zurück
 - [ ] Alle kennen die Regel: Spieler wechseln mit einer Kachel, nie mit einer Abmeldung auf Autodarts, die eine Sitzung für immer beendet.
 - [ ] Im Verein oder in der Kneipe: Die Manager-PIN ist gesetzt und den Leuten bekannt, die das Display betreuen, und jeder Spieler, der eine PIN möchte, hat eine.
 
+## 9. Wenn das Display den Besitzer wechselt {#changes-hands}
+
+Bevor der Computer verkauft, verschenkt oder aus dem Verein abgegeben wird, öffne **Konten verwalten** und wähle [**Alle Konten vergessen**](help.md#forget-all), solange Autodarts erreichbar ist. Das meldet jedes gespeicherte Konto bei Autodarts ab, auch den Spieler auf der Seite, und löscht alles, was die Erweiterung speichert, mit dem Schlüssel, der die Sitzungen versiegelt, den PINs und den Einstellungen. Die Erweiterung nur zu entfernen meldet niemanden bei Autodarts ab. Ein Spieler, der den Verein für immer verlässt, wird genauso entfernt, ein Konto nach dem anderen, mit **Konto entfernen**.
+
 Läuft etwas nicht wie gedacht? Die [Hilfe](help.md) erklärt jede Meldung der Erweiterung.
