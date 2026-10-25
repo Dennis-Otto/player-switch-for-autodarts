@@ -8,6 +8,9 @@ import {
   CHROME_MIN,
   checkManifest,
   DESCRIPTION_MAX,
+  FIREFOX_ANDROID_MIN,
+  FIREFOX_ID,
+  FIREFOX_MIN,
   NAME_MAX,
   pngSize,
   WHY,
@@ -24,6 +27,19 @@ function manifest() {
     description: "__MSG_extDescription__",
     minimum_chrome_version: "140",
     homepage_url: "https://example.org/",
+    background: {
+      service_worker: "background.js",
+      scripts: ["background.js"],
+      type: "module",
+    },
+    browser_specific_settings: {
+      gecko: {
+        id: FIREFOX_ID,
+        strict_min_version: "140.0",
+        data_collection_permissions: { required: ["authenticationInfo"] },
+      },
+      gecko_android: { strict_min_version: "142.0" },
+    },
     icons: { 16: "icons/icon-16.png", 48: "icons/icon-48.png" },
     content_scripts: [
       { matches: ["https://play.autodarts.com/*"], js: ["content.js"] },
@@ -50,6 +66,7 @@ const ALLOWED = {
     "https://api.example.com/*": "the sign-in",
   },
   web_accessible_resources: { "switcher.html": "the switcher" },
+  data_collection_permissions: { authenticationInfo: "the sign-in" },
 };
 
 const LISTING = `# Listing
@@ -312,6 +329,136 @@ test("the minimum version of Chrome and the homepage must be there", () => {
   const nowhere = manifest();
   nowhere.homepage_url = "http://example.org/";
   findsOne(check({ manifest: nowhere }), /no homepage_url/);
+});
+
+test("Firefox runs the same background.js as Chrome and Edge", () => {
+  const chromeOnly = manifest();
+  delete chromeOnly.background.scripts;
+  findsOne(check({ manifest: chromeOnly }), /runs \[\] as background\.scripts/);
+
+  const another = manifest();
+  another.background.scripts = ["firefox.js"];
+  findsOne(check({ manifest: another }), /runs \["firefox\.js"\] as/);
+
+  const two = manifest();
+  two.background.scripts = ["background.js", "more.js"];
+  findsOne(check({ manifest: two }), /name the one background\.js in both/);
+
+  const firefoxOnly = manifest();
+  delete firefoxOnly.background.service_worker;
+  findsOne(
+    check({ manifest: firefoxOnly }),
+    /nothing as background\.service_worker/,
+  );
+
+  const none = manifest();
+  delete none.background;
+  findsOne(check({ manifest: none }), /runs \[\] as background\.scripts/);
+});
+
+test("Firefox keeps the fixed id of the add-on", () => {
+  const renamed = manifest();
+  renamed.browser_specific_settings.gecko.id = "other@example.org";
+  findsOne(check({ manifest: renamed }), /other@example\.org .*another add-on/);
+
+  const missing = manifest();
+  delete missing.browser_specific_settings;
+  const problems = check({ manifest: missing });
+  // Without the settings, the id, both minimum versions and the data are missing.
+  assert.equal(problems.length, 4, problems.join("\n"));
+  assert.match(problems[0], /no id as browser_specific_settings\.gecko\.id/);
+  assert.match(problems[1], /no strict_min_version in [^ ]+\.gecko;/);
+  assert.match(problems[2], /no strict_min_version in [^ ]+\.gecko_android;/);
+  assert.match(problems[3], /declares no data_collection_permissions/);
+});
+
+test("Firefox is asked for the first versions that show the data at the install", () => {
+  for (const version of [undefined, "", "139.0", "139.9", "latest", "140.a"]) {
+    const old = manifest();
+    old.browser_specific_settings.gecko.strict_min_version = version;
+    findsOne(
+      check({ manifest: old }),
+      new RegExp(`settings.gecko;.*only from ${FIREFOX_MIN}.0`),
+    );
+  }
+  for (const version of ["140", "140.0", "141.0.1", "150.0"]) {
+    const newer = manifest();
+    newer.browser_specific_settings.gecko.strict_min_version = version;
+    assert.deepEqual(check({ manifest: newer }), [], version);
+  }
+
+  const android = manifest();
+  android.browser_specific_settings.gecko_android.strict_min_version = "141.0";
+  findsOne(
+    check({ manifest: android }),
+    new RegExp(`141.0 .*.gecko_android;.*only from ${FIREFOX_ANDROID_MIN}.0`),
+  );
+  const noAndroid = manifest();
+  delete noAndroid.browser_specific_settings.gecko_android;
+  findsOne(
+    check({ manifest: noAndroid }),
+    /no strict_min_version in [^ ]+\.gecko_android;/,
+  );
+});
+
+test("the data that Firefox shows at the install is exactly the data of the allowlist", () => {
+  const more = manifest();
+  more.browser_specific_settings.gecko.data_collection_permissions.required.push(
+    "browsingActivity",
+  );
+  findsOne(
+    check({ manifest: more }),
+    /sends browsingActivity, which data_collection_permissions in store/,
+  );
+
+  const none = manifest();
+  none.browser_specific_settings.gecko.data_collection_permissions.required = [
+    "none",
+  ];
+  const problems = check({ manifest: none });
+  assert.equal(problems.length, 2, problems.join("\n"));
+  assert.match(problems[0], /sends no data, which data_collection_permissions/);
+  assert.match(problems[1], /sends authenticationInfo, which [^ ]+\.required/);
+
+  for (const declared of [undefined, { required: [] }, {}]) {
+    const undeclared = manifest();
+    undeclared.browser_specific_settings.gecko.data_collection_permissions =
+      declared;
+    findsOne(
+      check({ manifest: undeclared }),
+      /declares no data_collection_permissions\.required/,
+    );
+  }
+
+  const optional = manifest();
+  optional.browser_specific_settings.gecko.data_collection_permissions.optional =
+    ["technicalAndInteraction"];
+  findsOne(
+    check({ manifest: optional }),
+    /optional data technicalAndInteraction/,
+  );
+
+  // A project that sends nothing allows none, and says so.
+  const nothing = manifest();
+  nothing.browser_specific_settings.gecko.data_collection_permissions.required =
+    ["none"];
+  assert.deepEqual(
+    check({
+      manifest: nothing,
+      allowed: { ...ALLOWED, data_collection_permissions: { none: "nothing" } },
+    }),
+    [],
+  );
+  const noList = manifest();
+  noList.browser_specific_settings.gecko.data_collection_permissions.required =
+    [];
+  findsOne(
+    check({
+      manifest: noList,
+      allowed: { ...ALLOWED, data_collection_permissions: undefined },
+    }),
+    /declares no data_collection_permissions\.required/,
+  );
 });
 
 test("an icon must be a PNG of the size the manifest declares", () => {

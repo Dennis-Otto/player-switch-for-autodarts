@@ -595,7 +595,11 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   ) {
     return false;
   }
-  const fromPage = fromExtensionPage(sender, chrome.runtime.id);
+  const fromPage = fromExtensionPage(
+    sender,
+    chrome.runtime.id,
+    chrome.runtime.getURL(""),
+  );
   switch (message.type) {
     case "popup":
       if (!fromPage) {

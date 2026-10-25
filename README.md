@@ -75,7 +75,11 @@ Over days and weeks, a saved account moves between these states:
 
 ### Install
 
-**From the Chrome Web Store** — once the listing is live, install it in one click from its store page; updates then arrive on their own. The link goes here when it is. It needs Google Chrome 140 or newer, or a browser built on Chromium 140 or newer, such as Microsoft Edge.
+**From the Chrome Web Store** — once the listing is live, install it in one click from its store page; updates then arrive on their own. The link goes here when it is. It needs Google Chrome 140 or newer, or a browser built on Chromium 140 or newer.
+
+**In Microsoft Edge 140 or newer** — Edge runs the same package. Turn on **Allow extensions from other stores** under `edge://extensions` and install it from the Chrome Web Store, or load it unpacked as below. A listing in Edge Add-ons follows.
+
+**In Firefox 140 or newer, to try it out** — Firefox runs the same package too. Until it is listed on addons.mozilla.org, build it as below, open `about:debugging#/runtime/this-firefox`, choose **Load Temporary Add-on…** and pick `extension/manifest.json`; Firefox removes it again when it closes. Firefox shows that the add-on sends authentication information: the sessions and remembered passwords go to the sign-in service of Autodarts, and nowhere else. Firefox can't keep the extension's storage from its script in the Autodarts page, so set up a display in a club or a pub with Chrome or Edge; the [security design](docs/security.md#firefox) explains why. Firefox for Android is not tested.
 
 **Unpacked, from the source:**
 
@@ -84,7 +88,7 @@ npm ci
 npm run build
 ```
 
-Then in Chrome open `chrome://extensions`, turn on **Developer mode**, choose **Load unpacked** and pick the `extension/` folder of this repository.
+Then in Chrome open `chrome://extensions`, or `edge://extensions` in Edge, turn on **Developer mode**, choose **Load unpacked** and pick the `extension/` folder of this repository. [Firefox and Edge](docs/development.md#firefox-and-edge) says what differs in the other browsers and how to check a release in them.
 
 The extension asks only for access to `play.autodarts.com` and `api.autodarts.com`, its own storage, a timer for the renewal and the right to run its own script in the Autodarts tabs after an update, or in a tab where it stopped answering. It can't read the address or title of your other tabs, or your browsing history. Its content security policy lets it connect to `api.autodarts.com` alone, and the script that it runs in the Autodarts page can't read the saved accounts; the [security design](docs/security.md#trust-boundaries) has the details.
 

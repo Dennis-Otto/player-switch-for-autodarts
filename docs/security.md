@@ -132,7 +132,7 @@ stored session is `extension/content.js`.
    a closed shadow root. Only that page is web-accessible, and only for
    `play.autodarts.com`. The content script in the page learns only the name and
    picture of the player on the button, never a token or a password, and can't read
-   the storage. The service worker takes a request to see or change the accounts only
+   the storage ([in Firefox](#firefox) it can). The service worker takes a request to see or change the accounts only
    from a page of this extension, by the id and the address of the sender, not from
    the content script, which may only ask what its button shows. The content script
    in turn takes requests only from this extension, and writes only a token into the
@@ -148,6 +148,28 @@ stored session is `extension/content.js`.
   <source media="(prefers-color-scheme: dark)" srcset="images/diagrams/who-reaches-the-accounts.dark.svg">
   <img src="images/diagrams/who-reaches-the-accounts.svg" alt="Who reaches the saved accounts: The saved accounts sit in chrome.storage.local, which only the extension's own contexts can read, the service worker and its pages: the popup, the options page and the switcher in its frame. Their tokens and remembered passwords are sealed there with AES-GCM; the key can't be exported and sits in the IndexedDB of the extension, which only the service worker uses. content.js runs inside the Autodarts page and can't read the storage. It may ask the service worker only what its button shows, takes requests only from this extension and writes into the page's session only a token. The service worker takes a request to see or change the accounts only from a page of this extension. Its content security policy lets it connect to api.autodarts.com alone, and the browser blocks any other host.">
 </picture>
+
+### In Firefox {#firefox}
+
+Firefox 140 and newer runs the same package ([decision 0012](decisions/0012-run-one-package-in-chrome-edge-and-firefox.md)),
+with one difference at the third boundary: Firefox has no
+`storage.local.setAccessLevel`, so it can't keep `chrome.storage.local` from the
+content script. `content.js` still reads nothing from it, and the service worker
+still takes no request from it to see or change the accounts. But an Autodarts page
+whose process is taken over, through a flaw of the browser, could read and change the
+storage through the content script:
+
+- the sessions and remembered passwords stay sealed, because the key sits in the
+  IndexedDB of the extension, which the content script can't reach;
+- the names and pictures of the saved accounts, the settings and the salted hashes
+  of the venue PINs are in its reach, and so is a change of them, such as turning
+  the venue mode off.
+
+The service worker writes at each start to its console that it can't limit the
+storage. For a display in a club or a pub, use Chrome or Edge, which keep the storage
+from the page. Before the add-on is listed on addons.mozilla.org, the accounts move
+into the IndexedDB of the extension in Firefox as well. Edge runs the package as
+Chrome does, with the same protection.
 
 ## The venue mode {#venue-mode}
 
@@ -213,9 +235,9 @@ someone who can use the computer.
 | Someone at a club or pub display plays under another player's account | In the venue mode, an account can ask for a PIN, which the service worker checks before it spends a token of that account |
 | Someone at the display removes accounts or remembers a password | In the venue mode, the service worker takes no change under **Manage accounts** and no change of the venue mode without the manager PIN |
 | Someone at the display guesses a PIN by hand | Five wrong PINs in a row lock every PIN for a minute, counted in the service worker, not in the popup |
-| A PIN is read out of the storage | The storage holds a salted PBKDF2 hash of 600,000 rounds, never the PIN, and only the service worker and the pages of the extension can read it |
+| A PIN is read out of the storage | The storage holds a salted PBKDF2 hash of 600,000 rounds, never the PIN, and only the service worker and the pages of the extension can read it, [in Firefox](#firefox) the content script as well |
 | A player leaves, and the next games count for their account | The venue mode returns the display to a house account, or signs it out, after a break without input, parking the session of the player; a match that runs counts as input and is never interrupted |
-| An older browser installs the extension and then fails as it runs | The manifest asks for Chrome 140 or newer (`minimum_chrome_version`), the first version in which `chrome.storage.local.setAccessLevel` keeps the accounts from the content script; `scripts/check-manifest.mjs` fails on a lower one |
+| An older browser installs the extension and then fails as it runs | The manifest asks for Chrome 140 or newer (`minimum_chrome_version`), the first version in which `chrome.storage.local.setAccessLevel` keeps the accounts from the content script, and Firefox 140 or newer (`strict_min_version`), the first that shows at the install the data that the add-on sends; `scripts/check-manifest.mjs` fails on a lower one |
 
 ## Residual risks
 
@@ -240,9 +262,10 @@ someone who can use the computer.
   from `switcher.html`, which it may load. A page that wanted to could also lay the
   switcher under a decoy and trick a tap on it; that would take a script of Autodarts
   itself, which already holds the session of the player in the page.
-- Where a browser can't limit the storage to the extension's own contexts, the
-  service worker writes that to its console in `chrome://extensions`, and
-  `content.js` still reads nothing from the storage itself.
+- Firefox can't limit the storage to the extension's own contexts. The service
+  worker writes that to its console at each start, `content.js` still reads nothing
+  from the storage itself, and the sessions and passwords in it stay sealed;
+  [in Firefox](#firefox) says what else is in reach.
 - Autodarts' sign-in is not a published interface. A change on their side can stop
   the extension working until it is adjusted, and could change how long a parked
   token stays valid.

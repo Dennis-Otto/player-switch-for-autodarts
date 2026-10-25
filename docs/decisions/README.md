@@ -15,3 +15,4 @@ Copy [the template](0000-template.md) to the next free number and describe the d
 | [0007](0007-test-the-real-extension-against-a-fake-autodarts.md) | Test the real extension in Chromium against a fake Autodarts | accepted, extended by 0009 |
 | [0008](0008-lock-a-venue-display-with-pins-that-the-worker-checks.md) | Lock a venue display with PINs that the service worker checks | accepted |
 | [0009](0009-watch-autodarts-and-the-next-chrome-before-the-players-do.md) | Watch Autodarts and the next Chrome before the players do | accepted |
+| [0012](0012-run-one-package-in-chrome-edge-and-firefox.md) | Run one package in Chrome, Edge and Firefox | accepted |

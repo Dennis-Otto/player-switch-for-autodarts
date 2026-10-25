@@ -9,6 +9,10 @@
 //   sandboxed extras, no content script in the world of the page, and a content
 //   security policy that runs only the extension's own scripts and connects only to the
 //   hosts of the manifest;
+// - Firefox runs the same background.js as Chrome and Edge, as background.scripts,
+//   under the fixed id of the add-on, from the first Firefox that shows the data the
+//   add-on sends at its install, and that data is exactly what store/permissions.json
+//   declares (decision 0012);
 // - the manifest names a minimum version of Chrome and a homepage, its icons have the
 //   sizes it declares, and the name and description in every language, and the short
 //   descriptions of the listings, fit the limits of the store, and each language of
@@ -23,6 +27,21 @@ import { existsSync, readdirSync, readFileSync } from "node:fs";
  * chrome.storage.local.setAccessLevel works, which keeps the accounts from the content script.
  */
 export const CHROME_MIN = 140;
+
+/**
+ * The id of the add-on in Firefox, which keeps the storage of the add-on under it and
+ * lists it under it on addons.mozilla.org: another id is another add-on, whose players
+ * all have to sign in again. It never changes.
+ */
+export const FIREFOX_ID = "player-switch-for-autodarts@dennis-otto.github.io";
+
+/**
+ * The oldest Firefox that the extension may name, and the oldest Firefox for Android:
+ * the first ones that show at the install the data that an add-on sends,
+ * browser_specific_settings.gecko.data_collection_permissions (decision 0012).
+ */
+export const FIREFOX_MIN = 140;
+export const FIREFOX_ANDROID_MIN = 142;
 
 /** The limits of the Chrome Web Store for the name and the short description. */
 export const NAME_MAX = 75;
@@ -149,6 +168,90 @@ function checkAccess(problems, manifest, allowed) {
     if (key in manifest) {
       problems.push(
         `extension/manifest.json declares ${key}, which ${reason}; remove it.`,
+      );
+    }
+  }
+}
+
+/** The major version of a version of Firefox, such as 140 for "140.0"; NaN for none. */
+function major(version) {
+  return /^\d+(\.\d+)*$/.test(version ?? "")
+    ? Number(version.split(".")[0])
+    : Number.NaN;
+}
+
+/** What Firefox runs and shows: its background, the id of the add-on, its versions and the data it sends. */
+function checkFirefox(problems, manifest, allowed) {
+  const background = manifest.background ?? {};
+  const scripts = background.scripts ?? [];
+  if (
+    typeof background.service_worker !== "string" ||
+    scripts.length !== 1 ||
+    scripts[0] !== background.service_worker
+  ) {
+    problems.push(
+      `extension/manifest.json runs ${JSON.stringify(scripts)} as background.scripts, which Firefox runs, and ` +
+        `${background.service_worker ?? "nothing"} as background.service_worker, which Chrome and Edge run; name the ` +
+        "one background.js in both, so that every browser runs the same worker.",
+    );
+  }
+  const settings = manifest.browser_specific_settings ?? {};
+  const gecko = settings.gecko ?? {};
+  if (gecko.id !== FIREFOX_ID) {
+    problems.push(
+      `extension/manifest.json names ${gecko.id ?? "no id"} as browser_specific_settings.gecko.id, not ${FIREFOX_ID}. ` +
+        "Firefox keeps the accounts of an add-on under its id, so another id is another add-on whose players all " +
+        "have to sign in again; keep the id.",
+    );
+  }
+  for (const [where, version, min] of [
+    ["gecko", gecko.strict_min_version, FIREFOX_MIN],
+    [
+      "gecko_android",
+      settings.gecko_android?.strict_min_version,
+      FIREFOX_ANDROID_MIN,
+    ],
+  ]) {
+    if (!(major(version) >= min)) {
+      problems.push(
+        `extension/manifest.json names ${version ?? "no"} strict_min_version in browser_specific_settings.${where}; ` +
+          `Firefox shows the data that the add-on sends at its install only from ${min}.0, and an older one installs ` +
+          `it without asking. Name ${min}.0 or newer.`,
+      );
+    }
+  }
+  const declared = gecko.data_collection_permissions ?? {};
+  const required = declared.required ?? [];
+  const allowedData = allowed.data_collection_permissions ?? {};
+  if ((declared.optional ?? []).length > 0) {
+    problems.push(
+      `extension/manifest.json asks Firefox for the optional data ${declared.optional.join(", ")}; the extension ` +
+        "sends nothing that it doesn't need, so it asks for no optional data.",
+    );
+  }
+  if (required.length === 0) {
+    problems.push(
+      "extension/manifest.json declares no data_collection_permissions.required in browser_specific_settings.gecko; " +
+        "Firefox asks every add-on to declare the data that it sends off the computer, or none, and shows it at the " +
+        "install. Declare what data_collection_permissions in store/permissions.json names.",
+    );
+    return;
+  }
+  for (const data of required) {
+    if (!(data in allowedData)) {
+      const what = data === "none" ? "no data" : data;
+      problems.push(
+        `extension/manifest.json declares that the add-on sends ${what}, which data_collection_permissions in ` +
+          "store/permissions.json doesn't name; send nothing more, or add it there with its reason, in " +
+          "docs/privacy.md and in a record of docs/decisions/.",
+      );
+    }
+  }
+  for (const data of Object.keys(allowedData)) {
+    if (!required.includes(data)) {
+      problems.push(
+        `store/permissions.json says that the add-on sends ${data}, which data_collection_permissions.required ` +
+          "in extension/manifest.json doesn't declare; Firefox shows at the install only what the manifest declares.",
       );
     }
   }
@@ -367,6 +470,7 @@ export function checkManifest({
   const problems = [];
   checkAccess(problems, manifest, allowed);
   checkPolicy(problems, manifest);
+  checkFirefox(problems, manifest, allowed);
   checkDetails(problems, manifest, locales, imageSize);
   checkListings(problems, manifest, listings);
   checkLanguages(problems, locales, listings);

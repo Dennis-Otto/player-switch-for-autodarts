@@ -131,6 +131,12 @@ Autodarts Play speichert die Anmeldung als einen einzigen Wert im Browser, einen
 
 [Entscheidung 0002](decisions/0002-swap-the-session-not-the-login.md) hält fest, warum es so gebaut ist, und das [Sicherheitsdesign](security.md), was gespeichert wird und welche Risiken bleiben.
 
+## Welche Browser {#browsers}
+
+- **Google Chrome 140 oder neuer**, und andere Browser auf Basis von Chromium 140 oder neuer, aus dem Chrome Web Store, sobald der Eintrag online ist, oder [entpackt geladen](https://github.com/Dennis-Otto/player-switch-for-autodarts#install).
+- **Microsoft Edge 140 oder neuer** führt dasselbe Paket aus: unter `edge://extensions` **Erweiterungen aus anderen Stores zulassen** einschalten und sie aus dem Chrome Web Store installieren, oder sie entpackt laden. Ein Eintrag bei Edge Add-ons folgt.
+- **Firefox 140 oder neuer**, zum Ausprobieren: Bis das Add-on auf addons.mozilla.org gelistet ist, lädst du es in `about:debugging` als temporäres Add-on, das Firefox beim Schließen wieder entfernt. Firefox zeigt, dass das Add-on Authentifizierungsdaten sendet, die nur an den Anmeldedienst von Autodarts gehen. Firefox kann den Speicher der Erweiterung nicht vor ihrem Skript in der Autodarts-Seite verbergen, darum läuft ein Display in einem Verein oder einer Kneipe mit Chrome oder Edge: [das Sicherheitsdesign](security.md#firefox) sagt, warum. Firefox für Android ist nicht getestet.
+
 ## Gut zu wissen
 
 - Die Art, wie die Erweiterung eine Sitzung behält, ist keine offizielle Autodarts-Schnittstelle. Eine Änderung auf Seiten von Autodarts kann sie stoppen, bis die Erweiterung angepasst ist. Weist Autodarts alle gespeicherten Konten auf einmal ab, sagt das Popup das und verlinkt die bekannten Probleme und Updates: Dann lohnt sich ein Blick nach einem Update der Erweiterung, bevor sich alle neu anmelden.

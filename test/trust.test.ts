@@ -10,6 +10,11 @@ import {
 
 const ID = "abcdefghijklmnopabcdefghijklmnop";
 const OTHER = "ponmlkjihgfedcbaponmlkjihgfedcba";
+/** Where Chrome serves the pages of the extension, as `chrome.runtime.getURL("")` says. */
+const PAGES = `chrome-extension://${ID}/`;
+const GECKO_ID = "player-switch-for-autodarts@dennis-otto.github.io";
+const UUID = "0b5f3a52-58e4-4c1a-9a2e-6d1f0f4c2b11";
+const OTHER_UUID = "9d3c8e10-7a4b-4f21-8c5e-2b7a1e0d4f66";
 
 test("fromExtension takes a message of this extension alone", () => {
   assert.ok(fromExtension({ id: ID, url: "https://play.autodarts.com/" }, ID));
@@ -29,12 +34,56 @@ test("fromExtensionPage takes the popup and the switcher in its frame", () => {
     fromExtensionPage(
       { id: ID, url: `chrome-extension://${ID}/popup.html` },
       ID,
+      PAGES,
     ),
   );
   assert.ok(
     fromExtensionPage(
       { id: ID, url: `chrome-extension://${ID}/switcher.html?x=1#y` },
       ID,
+      PAGES,
+    ),
+  );
+});
+
+test("fromExtensionPage takes the pages of the extension in Firefox, whose address isn't its id", () => {
+  // Firefox serves the pages from moz-extension://, under a random host of this
+  // installation, while the id of the extension is the one of its manifest.
+  const firefox = `moz-extension://${UUID}/`;
+  assert.ok(
+    fromExtensionPage(
+      { id: GECKO_ID, url: `moz-extension://${UUID}/popup.html` },
+      GECKO_ID,
+      firefox,
+    ),
+  );
+  assert.ok(
+    fromExtensionPage(
+      { id: GECKO_ID, url: `moz-extension://${UUID}/switcher.html?x=1` },
+      GECKO_ID,
+      firefox,
+    ),
+  );
+  // The page of another add-on has another host, and the id alone is no page.
+  assert.ok(
+    !fromExtensionPage(
+      { id: GECKO_ID, url: `moz-extension://${OTHER_UUID}/popup.html` },
+      GECKO_ID,
+      firefox,
+    ),
+  );
+  assert.ok(
+    !fromExtensionPage(
+      { id: GECKO_ID, url: `moz-extension://${GECKO_ID}/popup.html` },
+      GECKO_ID,
+      firefox,
+    ),
+  );
+  assert.ok(
+    !fromExtensionPage(
+      { id: GECKO_ID, url: `chrome-extension://${UUID}/popup.html` },
+      GECKO_ID,
+      firefox,
     ),
   );
 });
@@ -42,12 +91,25 @@ test("fromExtensionPage takes the popup and the switcher in its frame", () => {
 test("fromExtensionPage turns away the content script in the Autodarts page", () => {
   // The content script sends with the id of the extension, but from the address of the page.
   assert.ok(
-    !fromExtensionPage({ id: ID, url: "https://play.autodarts.com/" }, ID),
+    !fromExtensionPage(
+      { id: ID, url: "https://play.autodarts.com/" },
+      ID,
+      PAGES,
+    ),
   );
   assert.ok(
     !fromExtensionPage(
       { id: ID, url: `https://play.autodarts.com/chrome-extension://${ID}/` },
       ID,
+      PAGES,
+    ),
+  );
+  // Not even where the address of the pages is wrongly that of a web page.
+  assert.ok(
+    !fromExtensionPage(
+      { id: ID, url: "https://play.autodarts.com/" },
+      ID,
+      "https://play.autodarts.com/",
     ),
   );
 });
@@ -57,6 +119,7 @@ test("fromExtensionPage turns away a page of another extension, or one that name
     !fromExtensionPage(
       { id: OTHER, url: `chrome-extension://${OTHER}/popup.html` },
       ID,
+      PAGES,
     ),
   );
   // A page of another extension can't take the id of this one in its address either.
@@ -64,18 +127,40 @@ test("fromExtensionPage turns away a page of another extension, or one that name
     !fromExtensionPage(
       { id: ID, url: `chrome-extension://${OTHER}/popup.html` },
       ID,
+      PAGES,
     ),
   );
   assert.ok(
     !fromExtensionPage(
       { id: ID, url: `chrome-extension://${ID}.example.org/popup.html` },
       ID,
+      PAGES,
     ),
   );
-  assert.ok(!fromExtensionPage({ id: ID }, ID));
-  assert.ok(!fromExtensionPage({ id: ID, url: "not an address" }, ID));
+  assert.ok(!fromExtensionPage({ id: ID }, ID, PAGES));
+  assert.ok(!fromExtensionPage({ id: ID, url: "not an address" }, ID, PAGES));
   assert.ok(
-    !fromExtensionPage({ url: `chrome-extension://${ID}/popup.html` }, ID),
+    !fromExtensionPage(
+      { url: `chrome-extension://${ID}/popup.html` },
+      ID,
+      PAGES,
+    ),
+  );
+  // Without the address of its own pages, or with one that names no host, no page is
+  // one of the extension.
+  assert.ok(
+    !fromExtensionPage(
+      { id: ID, url: "chrome-extension:///popup.html" },
+      ID,
+      "chrome-extension:///",
+    ),
+  );
+  assert.ok(
+    !fromExtensionPage(
+      { id: ID, url: `chrome-extension://${ID}/popup.html` },
+      ID,
+      "",
+    ),
   );
 });
 

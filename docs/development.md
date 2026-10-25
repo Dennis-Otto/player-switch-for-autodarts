@@ -103,6 +103,48 @@ npm run build
 
 Then in Chrome open `chrome://extensions`, turn on **Developer mode**, choose **Load unpacked** and pick the `extension/` folder. After a change, build again and reload the extension there; a change of `content.js` also needs a reload of the Autodarts tab.
 
+In Edge, the same: `edge://extensions`, **Developer mode**, **Load unpacked**. In Firefox, open `about:debugging#/runtime/this-firefox`, choose **Load Temporary Add-on…** and pick `extension/manifest.json`; **Reload** there loads a change, and Firefox removes the add-on when it closes.
+
+## Firefox and Edge {#firefox-and-edge}
+
+One package runs in Chrome, Edge and Firefox, as [decision 0012](decisions/0012-run-one-package-in-chrome-edge-and-firefox.md) records. Edge is built on Chromium and runs it as Chrome does. Firefox runs `background.js` from `background.scripts`, as an event page, where Chrome and Edge run it as a service worker, and takes the id of the add-on, the oldest Firefox and the data that the add-on sends from `browser_specific_settings.gecko`:
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="images/diagrams/one-package-every-browser.dark.svg">
+  <img src="images/diagrams/one-package-every-browser.svg" alt="One package for Chrome, Edge and Firefox: The release builds one zip from extension/, with one manifest.json. Chrome 140 and newer, and Edge 140 and newer, run background.js as the service worker that background.service_worker names, and ignore the keys of Firefox. Firefox 140 and newer runs the same background.js from background.scripts, under the id of browser_specific_settings.gecko, and shows at the install that the add-on sends authentication data to Autodarts. scripts/check-manifest.mjs checks that both keys name background.js and that the data matches store/permissions.json, and addons-linter, the linter of addons.mozilla.org, finds no error in the package.">
+</picture>
+
+`scripts/check-manifest.mjs` fails when `background.scripts` and `background.service_worker` name another file than the one `background.js`, when the id of the add-on changes, when the manifest names a Firefox older than 140 or a Firefox for Android older than 142, the first ones that show the data at the install, or when `data_collection_permissions` declares other data than `store/permissions.json`. `scripts/check-firefox.mjs` lints `extension/` with [addons-linter](https://github.com/mozilla/addons-linter), the linter of addons.mozilla.org that `web-ext lint` runs, pinned in `package.json`; it fails on every error, and on every warning that its list `ACCEPTED` doesn't explain with a reason.
+
+The interfaces that the extension uses, and the first Firefox that has each, from the compatibility data of MDN that addons-linter carries:
+
+| Interface | Firefox |
+| --- | --- |
+| `storage.local`, `tabs.query` with `url`, `tabs.create`, `tabs.update`, `tabs.reload`, `windows`, `runtime`, `i18n`, `commands`, IndexedDB and WebCrypto | 45 to 52 |
+| `scripting.executeScript` | 102 |
+| `action.setBadgeTextColor` | 109 |
+| ES modules in the background (`"type": "module"`) | 112 |
+| `storage.session` | 115 |
+| `background.scripts` beside `background.service_worker` | 121 |
+| `data_collection_permissions`, shown at the install | 140 |
+| `storage.local.setAccessLevel` | none |
+
+Three things work differently, and the code allows for each:
+
+- **The address of the pages.** Firefox serves the pages of an add-on from `moz-extension://<uuid>/`, with a random host for each installation, not from `chrome-extension://<id>/`. `fromExtensionPage` in `src/trust.ts` compares the address of a sender with `chrome.runtime.getURL("")`, the address of the extension's own pages, in every browser.
+- **The storage is open to the content script.** Firefox has no `storage.local.setAccessLevel`, so it can't keep the storage from `content.js`. The sessions and passwords in it are sealed all the same, but the rest is in reach of a page whose process is taken over; the service worker writes "keeping the saved accounts from the Autodarts page failed" to its console at each start, and [the security design](security.md#firefox) says what that means.
+- **The name of the browser.** Firefox has no `navigator.userAgentData`, so the bug form takes "Firefox 144" from its user agent (`browserName` in `src/onboarding.ts`).
+
+The [end-to-end tests](#end-to-end-tests) run in Chromium alone, because Playwright loads no extension into Firefox. So check a release in Firefox by hand, with test accounts of Autodarts, never the real one of a player:
+
+1. `npm ci --ignore-scripts && npm run build`, then load `extension/manifest.json` as a temporary add-on, as above. Its page in `about:addons` lists the access to the Autodarts sites, which has to be allowed, and the data that the add-on sends.
+2. Open [play.autodarts.com](https://play.autodarts.com) and sign in as the first test account: the icon shows ✓ and the popup lists it.
+3. **Add account**, sign in as the second test account, then tap the first one in the popup, and once more in the players on the page (<kbd>Alt</kbd>+<kbd>Shift</kbd>+<kbd>O</kbd>): the page shows the player that was tapped, without a sign-in.
+4. **Inspect** next to the add-on in `about:debugging` opens the console of the background: it shows the line about the storage and no other error.
+5. **Remove account** for both test accounts.
+
+In Edge, load `extension/` unpacked and follow steps 2, 3 and 5; its console is under **service worker** in `edge://extensions`.
+
 ## Pictures
 
 Every picture of the extension in the README, on this website and in the Chrome Web Store comes from its real pages, rendered by a script, so a change of the popup never leaves an old picture behind:
@@ -156,7 +198,7 @@ bash scripts/check.sh
 
 runs what the CI runs: the text files, the version in every file, the shell scripts, the types, the tests with full coverage, the package, and the checks of this project. The service worker has no unit tests of its own, which is why it holds only wiring and every decision sits in `src/`; the [end-to-end tests](#end-to-end-tests) run it, the content script and the pages in a real browser.
 
-The checks of this project, `scripts/check-project.sh`, compare the manifest with the release, every language with English and English with what the code asks for, and the texts and `aria-label`s that the pages carry themselves with their English messages (`scripts/check-locales.mjs`, tested in `test/check-locales.test.ts`). Last, `test/harness/a11y.mjs` opens the real popup and switcher on the [stage of the pictures](#pictures), in the Chrome or Edge of the computer through `playwright-core`, and checks:
+The checks of this project, `scripts/check-project.sh`, compare the manifest with the release, every language with English and English with what the code asks for, and the texts and `aria-label`s that the pages carry themselves with their English messages (`scripts/check-locales.mjs`, tested in `test/check-locales.test.ts`), and lint the package for Firefox with addons-linter ([Firefox and Edge](#firefox-and-edge)). Last, `test/harness/a11y.mjs` opens the real popup and switcher on the [stage of the pictures](#pictures), in the Chrome or Edge of the computer through `playwright-core`, and checks:
 
 - **axe-core,** with the rules of WCAG 2.2 up to AA and its best practices, in the list, an error, **Manage accounts**, the form of a remembered password, the question before ending a match and the question before a removal, in every language of the extension, light and dark, and the switcher;
 - **the sizes:** every control at least 44 by 44 pixels, no text smaller than 12 pixels and no button text that breaks onto a second line, as long German or French words would;

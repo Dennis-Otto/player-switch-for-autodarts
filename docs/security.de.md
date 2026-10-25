@@ -141,7 +141,7 @@ die gespeicherte Sitzung der Seite berührt, ist `extension/content.js`.
    lesen, und er sitzt in einem geschlossenen Shadow Root. Nur diese Seite ist von außen
    abrufbar, und nur für `play.autodarts.com`. Das Content-Skript in der Seite erfährt
    nur Name und Bild des Spielers auf dem Knopf, nie einen Token oder ein Passwort, und
-   kann den Speicher nicht lesen. Der Service Worker nimmt eine Anfrage, die Konten zu
+   kann den Speicher nicht lesen ([in Firefox](#firefox) schon). Der Service Worker nimmt eine Anfrage, die Konten zu
    sehen oder zu ändern, nur von einer Seite dieser Erweiterung an, nach der ID und der
    Adresse des Absenders, nicht vom Content-Skript, das nur fragen darf, was sein Knopf
    zeigt. Das Content-Skript nimmt seinerseits nur Anfragen dieser Erweiterung an und
@@ -158,6 +158,28 @@ die gespeicherte Sitzung der Seite berührt, ist `extension/content.js`.
   <source media="(prefers-color-scheme: dark)" srcset="images/diagrams/who-reaches-the-accounts.de.dark.svg">
   <img src="images/diagrams/who-reaches-the-accounts.de.svg" alt="Wer an die gespeicherten Konten kommt: Die gespeicherten Konten liegen in chrome.storage.local, das nur die eigenen Kontexte der Erweiterung lesen können, der Service Worker und ihre Seiten: das Popup, die Optionsseite und der Wechsler in seinem Rahmen. Ihre Tokens und gemerkten Passwörter sind dort mit AES-GCM versiegelt; der Schlüssel lässt sich nicht exportieren und liegt in der IndexedDB der Erweiterung, die nur der Service Worker benutzt. content.js läuft in der Autodarts-Seite und kann den Speicher nicht lesen. Es darf den Service Worker nur fragen, was sein Knopf zeigt, nimmt Anfragen nur von dieser Erweiterung an und schreibt in die Sitzung der Seite nur einen Token. Der Service Worker nimmt eine Anfrage, die Konten zu sehen oder zu ändern, nur von einer Seite dieser Erweiterung an. Seine Content Security Policy lässt ihn nur mit api.autodarts.com verbinden, und der Browser sperrt jeden anderen Host.">
 </picture>
+
+### In Firefox {#firefox}
+
+Firefox 140 und neuer führt dasselbe Paket aus ([Entscheidung 0012](decisions/0012-run-one-package-in-chrome-edge-and-firefox.md)),
+mit einem Unterschied an der dritten Grenze: Firefox hat kein
+`storage.local.setAccessLevel`, darum kann es `chrome.storage.local` nicht vor dem
+Content-Skript verbergen. `content.js` liest weiterhin nichts daraus, und der Service
+Worker nimmt von ihm weiterhin keine Anfrage an, die Konten zu sehen oder zu ändern.
+Eine Autodarts-Seite, deren Prozess über eine Lücke des Browsers übernommen ist,
+könnte den Speicher aber über das Content-Skript lesen und ändern:
+
+- die Sitzungen und gemerkten Passwörter bleiben versiegelt, denn der Schlüssel liegt
+  in der IndexedDB der Erweiterung, die das Content-Skript nicht erreicht;
+- die Namen und Bilder der gespeicherten Konten, die Einstellungen und die gesalzenen
+  Hashes der PINs des Modus für Verein und Kneipe sind in ihrer Reichweite, und eine
+  Änderung daran auch, etwa den Modus auszuschalten.
+
+Der Service Worker schreibt bei jedem Start in seine Konsole, dass er den Speicher
+nicht beschränken kann. Für ein Display in einem Verein oder einer Kneipe nimm Chrome
+oder Edge, die den Speicher vor der Seite verbergen. Bevor das Add-on auf
+addons.mozilla.org gelistet wird, ziehen die Konten auch in Firefox in die IndexedDB
+der Erweiterung um. Edge führt das Paket aus wie Chrome, mit demselben Schutz.
 
 ## Der Modus für Verein und Kneipe {#venue-mode}
 
@@ -222,11 +244,11 @@ kann.
 | Die Skripte der Autodarts-Seite lesen die gespeicherten Konten aus dem Wechsler | Der Wechsler ist eine Seite der Erweiterung in einem Rahmen eines anderen Ursprungs, in einem geschlossenen Shadow Root; das Content-Skript bekommt vom Service Worker nur den Spieler auf dem Knopf |
 | Ein Wechsel während eines Matches beendet es unerwartet | Auf einer Match-Seite lehnt der Service Worker einen Wechsel oder eine Abmeldung ab, bis die Person bestätigt, bevor er einen Token verbraucht |
 | Eine Änderung fügt eine Berechtigung oder einen Host hinzu, und nach dem Update schaltet Chrome die Erweiterung auf einem Kiosk-Display ab, bis jemand die neue Warnung annimmt | `scripts/check-manifest.mjs` lässt `scripts/check.sh` scheitern, solange `store/permissions.json` die Berechtigung nicht mit ihrem Grund erlaubt und nicht beide Store-Einträge sie begründen. Es lehnt auch `externally_connectable` ab, optionale Berechtigungen, ein Content-Skript in der Welt der Seite und eine Content Security Policy, die Skripte von anderswo ausführt |
-| Ein älterer Browser installiert die Erweiterung und scheitert dann im Betrieb | Das Manifest verlangt Chrome 140 oder neuer (`minimum_chrome_version`), die erste Version, in der `chrome.storage.local.setAccessLevel` die Konten vor dem Content-Script verbirgt; `scripts/check-manifest.mjs` scheitert an einer niedrigeren |
+| Ein älterer Browser installiert die Erweiterung und scheitert dann im Betrieb | Das Manifest verlangt Chrome 140 oder neuer (`minimum_chrome_version`), die erste Version, in der `chrome.storage.local.setAccessLevel` die Konten vor dem Content-Script verbirgt, und Firefox 140 oder neuer (`strict_min_version`), das erste, das bei der Installation die Daten zeigt, die das Add-on sendet; `scripts/check-manifest.mjs` scheitert an einer niedrigeren |
 | Jemand an einem Display im Verein oder in der Kneipe spielt unter dem Konto eines anderen | Im Modus für Verein und Kneipe kann ein Konto nach einer PIN fragen, die der Service Worker prüft, bevor er einen Token dieses Kontos verbraucht |
 | Jemand am Display entfernt Konten oder merkt ein Passwort | Im Modus für Verein und Kneipe nimmt der Service Worker keine Änderung unter **Konten verwalten** und keine Änderung des Modus ohne die Manager-PIN an |
 | Jemand am Display rät eine PIN von Hand | Fünf falsche PINs in Folge sperren jede PIN für eine Minute, gezählt im Service Worker, nicht im Popup |
-| Eine PIN wird aus dem Speicher gelesen | Der Speicher hält einen gesalzenen PBKDF2-Hash mit 600.000 Runden, nie die PIN, und nur der Service Worker und die Seiten der Erweiterung können ihn lesen |
+| Eine PIN wird aus dem Speicher gelesen | Der Speicher hält einen gesalzenen PBKDF2-Hash mit 600.000 Runden, nie die PIN, und nur der Service Worker und die Seiten der Erweiterung können ihn lesen, [in Firefox](#firefox) auch das Content-Skript |
 | Ein Spieler geht, und die nächsten Spiele zählen für sein Konto | Der Modus für Verein und Kneipe bringt das Display nach einer Pause ohne Eingabe zu einem Hauskonto zurück oder meldet es ab und parkt die Sitzung des Spielers; ein laufendes Match zählt als Eingabe und wird nie unterbrochen |
 
 ## Verbleibende Risiken
@@ -255,10 +277,11 @@ kann.
   den Wechsler auch unter einen Köder legen und einen Tipp darauf erschleichen; dazu
   bräuchte es ein Skript von Autodarts selbst, das die Sitzung des Spielers in der
   Seite ohnehin schon hat.
-- Wo ein Browser den Speicher nicht auf die eigenen Kontexte der Erweiterung
-  beschränken kann, schreibt der Service Worker das in seine Konsole in
-  `chrome://extensions`, und `content.js` liest weiterhin selbst nichts aus dem
-  Speicher.
+- Firefox kann den Speicher nicht auf die eigenen Kontexte der Erweiterung
+  beschränken. Der Service Worker schreibt das bei jedem Start in seine Konsole,
+  `content.js` liest weiterhin selbst nichts aus dem Speicher, und die Sitzungen und
+  Passwörter darin bleiben versiegelt; [in Firefox](#firefox) sagt, was sonst in
+  Reichweite ist.
 - Die Anmeldung von Autodarts ist keine veröffentlichte Schnittstelle. Eine Änderung
   auf ihrer Seite kann die Erweiterung stoppen, bis sie angepasst ist, und könnte
   ändern, wie lange ein geparkter Token gültig bleibt.
