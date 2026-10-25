@@ -36,6 +36,7 @@ Every guide is on the [documentation website](https://dennis-otto.github.io/play
 - **Nobody gets signed out.** The account that steps aside keeps its session parked, so a tap brings it straight back. No password, no sign-in page.
 - **Ready days later.** Autodarts rotates its session tokens; the extension renews every parked account in the background, so a saved account still works next week.
 - **Made for the board display.** A round button on the Autodarts page and a keyboard shortcut open the players right over the page, also in fullscreen and in kiosk mode, where the toolbar of the browser is out of reach.
+- **Ready for a club or pub.** An optional venue mode guards **Manage accounts** and the settings with a manager PIN, lets each player protect their account with a PIN of their own, and returns the display to a house account after a break, never during a match: [the venue mode](https://dennis-otto.github.io/player-switch-for-autodarts/shared-display.html#venue-mode).
 - **For a keyboard, a screen reader and a finger.** The keys 1 to 9 pick a player, the focus keeps its place after every action, errors are read out at once, and every control is at least 44 by 44 pixels. A test checks the popup with axe-core for every change.
 - **In five languages.** The popup, the players on the page, the welcome page and the settings speak English, German, Dutch, French and Spanish, in the language that Chrome runs in. The help and the website are in English and German.
 - **Private by design.** Everything stays in the browser on that computer and goes only to Autodarts. No analytics, no server of ours, nothing sent anywhere else.
@@ -135,7 +136,7 @@ Under **Manage accounts**, choose **Remember password** for an account, and the 
 ## Good to know
 
 - The way the extension keeps a session is not an official Autodarts interface. A change on Autodarts' side can stop it until the extension is adjusted, and how long a parked token stays valid is up to Autodarts. When Autodarts turns every saved account away in one renewal, the popup tells you to look for an update of the extension rather than sign everyone in again.
-- It is built for a display that the people of a household, club or venue share and trust: anyone at that display can switch to any saved account, which is the point.
+- It is built for a display that the people of a household, club or venue share and trust: anyone at that display can switch to any saved account, which is the point. Where not everyone knows everyone, the [venue mode](https://dennis-otto.github.io/player-switch-for-autodarts/shared-display.html#venue-mode) adds PINs and a return to a house account after a break. A PIN is a lock for the people at the display, not a protection against someone who can use the computer; the extension keeps only a salted hash of it.
 - The saved accounts carry the version of their format. Going back to an older version of the extension never wipes accounts that a newer one saved: the older one leaves them untouched, keeps a copy, and the popup asks you to update.
 - Something doesn't work? The [help](https://dennis-otto.github.io/player-switch-for-autodarts/help.html) explains every message of the extension and what to do about it.
 

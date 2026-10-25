@@ -18,6 +18,7 @@ import {
   adoptNewSignIn,
   type Deps,
   edit,
+  leaveDisplay,
   readView,
   refreshParked,
   signOutForNewAccount,
@@ -332,6 +333,26 @@ test("signOutForNewAccount waits ten minutes for the new account", async () => {
   );
   assert.equal(state.addingUntil, 1000 + ADD_WINDOW_MS);
   assert.equal(ADD_WINDOW_MS, 600_000);
+});
+
+test("leaveDisplay parks the account that was playing and waits for no new one", async () => {
+  const store = new FakeStore(setActive(EMPTY, ada));
+  const page = new FakePage("pa");
+  const state = await leaveDisplay(deps(store, page, router()));
+  assert.equal(find(state, "a")?.token, "pa");
+  assert.equal(state.activeId, null);
+  assert.equal(state.addingUntil, null);
+  assert.equal(page.token, null);
+  assert.deepEqual(store.state, state);
+});
+
+test("leaveDisplay ends a wait for a new account that nobody finished", async () => {
+  // Someone signed in on the page while an account was being added, and walked away.
+  const store = new FakeStore(startAdding(EMPTY, 5000));
+  const page = new FakePage("unsaved");
+  const state = await leaveDisplay(deps(store, page, router()));
+  assert.equal(state.addingUntil, null);
+  assert.equal(page.token, null);
 });
 
 test("adoptNewSignIn saves the session that the new account signs in with", async () => {

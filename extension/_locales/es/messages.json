@@ -279,5 +279,149 @@
   },
   "welcomePrivacy": {
     "message": "Todo se queda en este ordenador y solo va a Autodarts."
+  },
+  "pinLabel": {
+    "message": "PIN"
+  },
+  "pinPad": {
+    "message": "Teclado numérico"
+  },
+  "pinDelete": {
+    "message": "Borrar el último dígito"
+  },
+  "pinOk": {
+    "message": "OK"
+  },
+  "pinTitle": {
+    "message": "PIN de $NAME$",
+    "placeholders": {
+      "name": {
+        "content": "$1"
+      }
+    }
+  },
+  "pinText": {
+    "message": "Esta cuenta pide su PIN antes de que alguien juegue con ella."
+  },
+  "pinWrong": {
+    "message": "PIN incorrecto. Inténtalo de nuevo."
+  },
+  "pinInvalid": {
+    "message": "Un PIN tiene de 4 a 8 dígitos."
+  },
+  "pinLocked": {
+    "message": "Demasiados PIN incorrectos. Inténtalo de nuevo en un minuto."
+  },
+  "managerPinTitle": {
+    "message": "PIN de gestión"
+  },
+  "managerPinText": {
+    "message": "Introduce el PIN de gestión para gestionar las cuentas y los ajustes."
+  },
+  "optionsLockedTitle": {
+    "message": "Ajustes bloqueados"
+  },
+  "optionsLocked": {
+    "message": "Un PIN de gestión protege estos ajustes. Introdúcelo para cambiarlos."
+  },
+  "unlock": {
+    "message": "Desbloquear"
+  },
+  "optionsVenue": {
+    "message": "Para un club o un bar"
+  },
+  "optionsVenueHint": {
+    "message": "Todo lo de aquí está desactivado hasta que lo actives. Un PIN impide que las personas en la pantalla jueguen con la cuenta de otra persona; no protege frente a alguien que pueda usar este ordenador."
+  },
+  "managerPinOff": {
+    "message": "No hay ningún PIN de gestión: cualquiera en la pantalla puede gestionar las cuentas y cambiar estos ajustes."
+  },
+  "managerPinOn": {
+    "message": "El PIN de gestión protege Gestionar cuentas y estos ajustes."
+  },
+  "setManagerPin": {
+    "message": "Establecer PIN de gestión"
+  },
+  "changeManagerPin": {
+    "message": "Cambiar PIN de gestión"
+  },
+  "removeManagerPin": {
+    "message": "Quitar PIN de gestión"
+  },
+  "removeManagerPinConfirm": {
+    "message": "Entonces cualquiera en la pantalla podrá gestionar las cuentas y cambiar estos ajustes."
+  },
+  "newManagerPinTitle": {
+    "message": "Nuevo PIN de gestión"
+  },
+  "playerPins": {
+    "message": "PIN de los jugadores"
+  },
+  "playerPinsHint": {
+    "message": "Una cuenta con PIN lo pide antes de que alguien cambie a ella, en la ventana emergente y en la página de Autodarts."
+  },
+  "playerPinsEmpty": {
+    "message": "Todavía no hay ninguna cuenta guardada."
+  },
+  "pinSet": {
+    "message": "PIN establecido"
+  },
+  "noPin": {
+    "message": "sin PIN"
+  },
+  "setPin": {
+    "message": "Establecer PIN"
+  },
+  "changePin": {
+    "message": "Cambiar PIN"
+  },
+  "removePin": {
+    "message": "Quitar PIN"
+  },
+  "newPinFor": {
+    "message": "Nuevo PIN para $NAME$",
+    "placeholders": {
+      "name": {
+        "content": "$1"
+      }
+    }
+  },
+  "newPinText": {
+    "message": "Elige de 4 a 8 dígitos que puedas recordar."
+  },
+  "repeatPinTitle": {
+    "message": "Repite el PIN"
+  },
+  "repeatPinText": {
+    "message": "Introduce los mismos dígitos otra vez."
+  },
+  "pinMismatch": {
+    "message": "Los dos PIN no coinciden. Elige el PIN de nuevo."
+  },
+  "idleHeading": {
+    "message": "Volver tras una pausa"
+  },
+  "idleAfter": {
+    "message": "Tras una pausa de"
+  },
+  "idleNever": {
+    "message": "Nunca"
+  },
+  "idleMinutes": {
+    "message": "$COUNT$ minutos",
+    "placeholders": {
+      "count": {
+        "content": "$1"
+      }
+    }
+  },
+  "idleTo": {
+    "message": "Volver a"
+  },
+  "idleSignOut": {
+    "message": "Nadie: cerrar sesión"
+  },
+  "idleHint": {
+    "message": "Una pausa es el tiempo sin un toque, un clic ni una tecla en la página de Autodarts. Una partida nunca se interrumpe: la pausa empieza cuando ha terminado. El jugador anterior mantiene su sesión aparcada, así que un toque lo trae de vuelta."
   }
 }

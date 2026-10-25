@@ -25,6 +25,12 @@ Autodarts page, and not the script that the extension runs in that page.
   the details.
 - **The settings of the button on the Autodarts page:** whether it shows, and in
   which corner.
+- **Only in the venue mode for a club or pub, once you turn it on:** a salted hash of
+  the manager PIN and of each player's PIN, never a PIN itself, the length of the
+  break and the house account. While the browser runs, and only while the return
+  after a break is on, also the time of the last tap, click or key on the Autodarts
+  page: never where or what it was. The browser forgets that time, and the count of
+  wrong PINs, as it closes.
 - **The time of the last renewal**, and whether Autodarts turned every account
   away in it, so the extension can catch up after the computer was off and tell you
   when it may need an update.
@@ -58,7 +64,9 @@ and with nothing else; GitHub receives it only when you submit the form yourself
 
 ## What it does not do
 
-- It does not collect analytics, usage statistics or telemetry.
+- It does not collect analytics, usage statistics or telemetry. The time of the last
+  input on the Autodarts page, in the venue mode, stays on the computer and only
+  decides when the display returns after a break.
 - It does not read or store anything from sites other than Autodarts.
 - It can't read the address or title of your other tabs, or your browsing history.
   It asks for no `tabs` permission, so the browser gives it the address of a tab only

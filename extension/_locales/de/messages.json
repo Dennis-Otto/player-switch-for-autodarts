@@ -250,5 +250,137 @@
   },
   "welcomePrivacy": {
     "message": "Alles bleibt auf diesem Computer und geht nur an Autodarts."
+  },
+  "pinLabel": {
+    "message": "PIN"
+  },
+  "pinPad": {
+    "message": "Ziffernblock"
+  },
+  "pinDelete": {
+    "message": "Letzte Ziffer löschen"
+  },
+  "pinOk": {
+    "message": "OK"
+  },
+  "pinTitle": {
+    "message": "PIN von $NAME$",
+    "placeholders": { "name": { "content": "$1" } }
+  },
+  "pinText": {
+    "message": "Dieses Konto fragt nach seiner PIN, bevor jemand damit spielt."
+  },
+  "pinWrong": {
+    "message": "Falsche PIN. Bitte nochmal versuchen."
+  },
+  "pinInvalid": {
+    "message": "Eine PIN hat 4 bis 8 Ziffern."
+  },
+  "pinLocked": {
+    "message": "Zu viele falsche PINs. Bitte in einer Minute nochmal versuchen."
+  },
+  "managerPinTitle": {
+    "message": "Manager-PIN"
+  },
+  "managerPinText": {
+    "message": "Gib die Manager-PIN ein, um die Konten und die Einstellungen zu verwalten."
+  },
+  "optionsLockedTitle": {
+    "message": "Einstellungen gesperrt"
+  },
+  "optionsLocked": {
+    "message": "Eine Manager-PIN schützt diese Einstellungen. Gib sie ein, um sie zu ändern."
+  },
+  "unlock": {
+    "message": "Entsperren"
+  },
+  "optionsVenue": {
+    "message": "Für Verein und Kneipe"
+  },
+  "optionsVenueHint": {
+    "message": "Alles hier ist aus, bis du es einschaltest. Eine PIN hält die Leute am Display davon ab, unter dem Konto eines anderen zu spielen; vor jemandem, der diesen Computer benutzen kann, schützt sie nicht."
+  },
+  "managerPinOff": {
+    "message": "Keine Manager-PIN gesetzt: Jeder am Display kann die Konten verwalten und diese Einstellungen ändern."
+  },
+  "managerPinOn": {
+    "message": "Die Manager-PIN schützt „Konten verwalten“ und diese Einstellungen."
+  },
+  "setManagerPin": {
+    "message": "Manager-PIN festlegen"
+  },
+  "changeManagerPin": {
+    "message": "Manager-PIN ändern"
+  },
+  "removeManagerPin": {
+    "message": "Manager-PIN entfernen"
+  },
+  "removeManagerPinConfirm": {
+    "message": "Danach kann jeder am Display die Konten verwalten und diese Einstellungen ändern."
+  },
+  "newManagerPinTitle": {
+    "message": "Neue Manager-PIN"
+  },
+  "playerPins": {
+    "message": "PINs der Spieler"
+  },
+  "playerPinsHint": {
+    "message": "Ein Konto mit PIN fragt nach ihr, bevor jemand zu ihm wechselt, im Popup und auf der Autodarts-Seite."
+  },
+  "playerPinsEmpty": {
+    "message": "Noch kein Konto gespeichert."
+  },
+  "pinSet": {
+    "message": "PIN gesetzt"
+  },
+  "noPin": {
+    "message": "keine PIN"
+  },
+  "setPin": {
+    "message": "PIN festlegen"
+  },
+  "changePin": {
+    "message": "PIN ändern"
+  },
+  "removePin": {
+    "message": "PIN entfernen"
+  },
+  "newPinFor": {
+    "message": "Neue PIN für $NAME$",
+    "placeholders": { "name": { "content": "$1" } }
+  },
+  "newPinText": {
+    "message": "Wähle 4 bis 8 Ziffern, die du dir merken kannst."
+  },
+  "repeatPinTitle": {
+    "message": "PIN wiederholen"
+  },
+  "repeatPinText": {
+    "message": "Gib dieselben Ziffern noch einmal ein."
+  },
+  "pinMismatch": {
+    "message": "Die beiden PINs sind verschieden. Wähle die PIN noch einmal."
+  },
+  "idleHeading": {
+    "message": "Zurück nach einer Pause"
+  },
+  "idleAfter": {
+    "message": "Nach einer Pause von"
+  },
+  "idleNever": {
+    "message": "Nie"
+  },
+  "idleMinutes": {
+    "message": "$COUNT$ Minuten",
+    "placeholders": { "count": { "content": "$1" } }
+  },
+  "idleTo": {
+    "message": "Zurück zu"
+  },
+  "idleSignOut": {
+    "message": "Niemandem: abmelden"
+  },
+  "idleHint": {
+    "message": "Eine Pause ist die Zeit ohne Tippen, Klicken oder Taste auf der Autodarts-Seite. Ein Match wird nie unterbrochen: Die Pause beginnt erst, wenn es zu Ende ist. Der Spieler davor behält seine Sitzung geparkt, ein Tipp holt ihn zurück."
   }
 }

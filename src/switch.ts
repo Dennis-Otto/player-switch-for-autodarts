@@ -350,10 +350,21 @@ async function bringOn(deps: Deps, id: string): Promise<SwitchResult> {
  * playing now keeps its session parked first, so it is not lost.
  */
 export function signOutForNewAccount(deps: Deps): Promise<State> {
-  return deps.queue(() => signOut(deps));
+  return deps.queue(() => signOut(deps, true));
 }
 
-async function signOut(deps: Deps): Promise<State> {
+/**
+ * Signs the page out after a break on the display of a venue, so that the next games
+ * count for nobody: the account that played keeps its session parked, as at a switch,
+ * and no new account is waited for, not even after an "Add account" that nobody
+ * finished, so the next sign-in on the page is no account of the extension until a
+ * person saves it.
+ */
+export function leaveDisplay(deps: Deps): Promise<State> {
+  return deps.queue(() => signOut(deps, false));
+}
+
+async function signOut(deps: Deps, waitForNew: boolean): Promise<State> {
   let state = await deps.store.load();
   const outgoing = await deps.page.readToken();
   if (outgoing !== null && state.activeId !== null) {
@@ -364,9 +375,12 @@ async function signOut(deps: Deps): Promise<State> {
     );
   }
   await deps.page.clearToken();
+  const signedOut = deactivate(state);
   return commit(
     deps,
-    startAdding(deactivate(state), deps.now() + ADD_WINDOW_MS),
+    waitForNew
+      ? startAdding(signedOut, deps.now() + ADD_WINDOW_MS)
+      : stopAdding(signedOut),
   );
 }
 

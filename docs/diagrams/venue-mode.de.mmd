@@ -1,0 +1,51 @@
+---
+config:
+  flowchart:
+    wrappingWidth: 400
+---
+flowchart TB
+    accTitle: Der Modus für Verein und Kneipe an einem Display
+    accDescr: Ein Tipp auf die Kachel eines Kontos mit PIN fragt nach dieser PIN, bevor sich etwas ändert; eine falsche ändert nichts, und fünf in Folge sperren jede PIN für eine Minute. Einmal pro Minute schaut der Service Worker, ob die Pause vorbei ist. Ein laufendes Match zählt als Eingabe, so wird ein Match nie unterbrochen. Nach der Pause wechselt das Display zum Hauskonto, oder es meldet sich ab, wenn keins festgelegt ist oder es sich neu anmelden muss; so oder so behält der Spieler davor seine Sitzung geparkt.
+
+    subgraph pins["Ein Wechsel zu einem Konto mit PIN"]
+        direction TB
+        tap["Ein Tipp auf die Kachel eines Spielers"]
+        haspin{"Hat das Konto<br>eine PIN?"}
+        pin["Nach der PIN fragen,<br>mit einem Ziffernblock"]
+        wrong["Eine falsche PIN ändert nichts;<br>fünf in Folge warten eine Minute"]
+        switch["Wechseln, wie immer"]
+
+        tap --> haspin
+        haspin -- "nein" --> switch
+        haspin -- "ja" --> pin
+        pin -- "richtig" --> switch
+        pin -- "falsch" --> wrong
+    end
+
+    subgraph pause["Die Rückkehr nach einer Pause"]
+        direction TB
+        look["Einmal pro Minute:<br>der Worker schaut aufs Display"]
+        match{"Läuft ein Match?"}
+        counts["Das Match zählt als Eingabe:<br>es wird nie unterbrochen"]
+        over{"Ist die Pause vorbei?<br>N Minuten ohne Tippen, Klicken oder Taste"}
+        house{"Ist ein Hauskonto festgelegt<br>und bereit?"}
+        back["Zum Hauskonto wechseln"]
+        out["Die Seite abmelden"]
+        parked["Der Spieler davor behält<br>seine Sitzung geparkt"]
+
+        look --> match
+        match -- "ja" --> counts
+        match -- "nein" --> over
+        over -- "ja" --> house
+        house -- "ja" --> back --> parked
+        house -- "nein" --> out --> parked
+    end
+
+    pins ~~~ pause
+
+    classDef bot fill:#526cfe2e,stroke:#526cfe,stroke-width:2px
+    classDef person fill:#f59e0b2e,stroke:#f59e0b,stroke-width:2px
+    classDef done fill:#16a34a2e,stroke:#16a34a,stroke-width:2px
+    class look,counts bot
+    class pin person
+    class switch,parked done

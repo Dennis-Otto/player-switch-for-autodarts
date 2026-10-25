@@ -279,5 +279,149 @@
   },
   "welcomePrivacy": {
     "message": "Alles blijft op deze computer en gaat alleen naar Autodarts."
+  },
+  "pinLabel": {
+    "message": "PIN"
+  },
+  "pinPad": {
+    "message": "Numeriek toetsenblok"
+  },
+  "pinDelete": {
+    "message": "Laatste cijfer wissen"
+  },
+  "pinOk": {
+    "message": "OK"
+  },
+  "pinTitle": {
+    "message": "Pincode van $NAME$",
+    "placeholders": {
+      "name": {
+        "content": "$1"
+      }
+    }
+  },
+  "pinText": {
+    "message": "Dit account vraagt om zijn pincode voordat iemand ermee speelt."
+  },
+  "pinWrong": {
+    "message": "Verkeerde pincode. Probeer het opnieuw."
+  },
+  "pinInvalid": {
+    "message": "Een pincode heeft 4 tot 8 cijfers."
+  },
+  "pinLocked": {
+    "message": "Te veel verkeerde pincodes. Probeer het over een minuut opnieuw."
+  },
+  "managerPinTitle": {
+    "message": "Beheerderspincode"
+  },
+  "managerPinText": {
+    "message": "Voer de beheerderspincode in om de accounts en de instellingen te beheren."
+  },
+  "optionsLockedTitle": {
+    "message": "Instellingen vergrendeld"
+  },
+  "optionsLocked": {
+    "message": "Een beheerderspincode beschermt deze instellingen. Voer hem in om ze te wijzigen."
+  },
+  "unlock": {
+    "message": "Ontgrendelen"
+  },
+  "optionsVenue": {
+    "message": "Voor een club of café"
+  },
+  "optionsVenueHint": {
+    "message": "Alles hier staat uit totdat je het aanzet. Een pincode voorkomt dat mensen bij het scherm onder het account van een ander spelen; hij beschermt niet tegen iemand die deze computer kan gebruiken."
+  },
+  "managerPinOff": {
+    "message": "Er is geen beheerderspincode ingesteld: iedereen bij het scherm kan de accounts beheren en deze instellingen wijzigen."
+  },
+  "managerPinOn": {
+    "message": "De beheerderspincode beschermt Accounts beheren en deze instellingen."
+  },
+  "setManagerPin": {
+    "message": "Beheerderspincode instellen"
+  },
+  "changeManagerPin": {
+    "message": "Beheerderspincode wijzigen"
+  },
+  "removeManagerPin": {
+    "message": "Beheerderspincode verwijderen"
+  },
+  "removeManagerPinConfirm": {
+    "message": "Dan kan iedereen bij het scherm de accounts beheren en deze instellingen wijzigen."
+  },
+  "newManagerPinTitle": {
+    "message": "Nieuwe beheerderspincode"
+  },
+  "playerPins": {
+    "message": "Pincodes van de spelers"
+  },
+  "playerPinsHint": {
+    "message": "Een account met een pincode vraagt erom voordat iemand ernaar overschakelt, in de pop-up en op de Autodarts-pagina."
+  },
+  "playerPinsEmpty": {
+    "message": "Er is nog geen account opgeslagen."
+  },
+  "pinSet": {
+    "message": "Pincode ingesteld"
+  },
+  "noPin": {
+    "message": "geen pincode"
+  },
+  "setPin": {
+    "message": "Pincode instellen"
+  },
+  "changePin": {
+    "message": "Pincode wijzigen"
+  },
+  "removePin": {
+    "message": "Pincode verwijderen"
+  },
+  "newPinFor": {
+    "message": "Nieuwe pincode voor $NAME$",
+    "placeholders": {
+      "name": {
+        "content": "$1"
+      }
+    }
+  },
+  "newPinText": {
+    "message": "Kies 4 tot 8 cijfers die je kunt onthouden."
+  },
+  "repeatPinTitle": {
+    "message": "Herhaal de pincode"
+  },
+  "repeatPinText": {
+    "message": "Voer dezelfde cijfers nog een keer in."
+  },
+  "pinMismatch": {
+    "message": "De twee pincodes verschillen. Kies de pincode opnieuw."
+  },
+  "idleHeading": {
+    "message": "Terugkeren na een pauze"
+  },
+  "idleAfter": {
+    "message": "Na een pauze van"
+  },
+  "idleNever": {
+    "message": "Nooit"
+  },
+  "idleMinutes": {
+    "message": "$COUNT$ minuten",
+    "placeholders": {
+      "count": {
+        "content": "$1"
+      }
+    }
+  },
+  "idleTo": {
+    "message": "Terug naar"
+  },
+  "idleSignOut": {
+    "message": "Niemand: afmelden"
+  },
+  "idleHint": {
+    "message": "Een pauze is de tijd zonder tik, klik of toets op de Autodarts-pagina. Een wedstrijd wordt nooit onderbroken: de pauze begint pas als hij voorbij is. De vorige speler houdt zijn sessie geparkeerd, dus één tik brengt hem terug."
   }
 }

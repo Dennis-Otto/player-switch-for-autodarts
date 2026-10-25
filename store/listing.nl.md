@@ -32,6 +32,11 @@ Zo werkt het:
   en met 9 kiezen een speler.
 • Op de pagina van een lopende wedstrijd vraagt een wissel het eerst, zodat een
   wedstrijd nooit onverwacht eindigt.
+• Voor een club of café, optioneel en standaard uit: een beheerderspincode
+  beschermt „Accounts beheren” en de instellingen, elke speler kan zijn account met
+  een eigen pincode beveiligen, en na een pauze keert het scherm vanzelf terug naar
+  een huisaccount, nooit tijdens een wedstrijd. De extensie bewaart geen pincode,
+  alleen een gezouten hash ervan.
 • Optioneel: laat de extensie een wachtwoord onthouden, dan logt ze een account
   vanzelf weer in als de sessie ooit niet meer werkt. Accounts die met Google of
   Apple inloggen, kunnen dat niet gebruiken, omdat ze geen Autodarts-wachtwoord
@@ -48,9 +53,12 @@ Niet verbonden aan Autodarts.
 
 ## Rechtvaardiging van de machtigingen
 
-• storage — om je opgeslagen accounts en hun sessies op je computer te bewaren.
+• storage — om je opgeslagen accounts, hun sessies en de instellingen op je
+  computer te bewaren, in de modus voor club of café ook de gezouten hashes van de
+  pincodes.
 • alarms — om geparkeerde sessies op de achtergrond te vernieuwen, zodat ze klaar
-  blijven.
+  blijven, en in de modus voor club of café één keer per minuut te kijken of het
+  scherm na een pauze moet terugkeren.
 • scripting — om de knop van een nieuwe versie in de Autodarts-tabbladen te
   brengen die bij een update al open zijn, of in een tabblad dat niet meer
   reageert, zodat een scherm in kioskmodus zonder herladen blijft werken. Het voert
