@@ -1,6 +1,6 @@
 # Test the real extension in Chromium against a fake Autodarts
 
-- Status: accepted
+- Status: accepted, extended by [0009](0009-watch-autodarts-and-the-next-chrome-before-the-players-do.md)
 - Date: 2026-10-25
 
 ## Context

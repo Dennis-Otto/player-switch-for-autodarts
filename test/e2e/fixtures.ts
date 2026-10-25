@@ -41,6 +41,9 @@ const EXTENSION = path.resolve(
 );
 const PLAY = `https://${PLAY_HOST}`;
 
+/** Another Chrome for Testing to run the tests in, such as the next version, Beta. */
+const CHROME = process.env.E2E_CHROME_PATH || undefined;
+
 export type Language = "en" | "de";
 
 interface Message {
@@ -336,8 +339,12 @@ export const test = base.extend<Options & Fixtures>({
   ) => {
     const context = await chromium.launchPersistentContext("", {
       // Playwright's own Chromium: Google Chrome no longer loads an unpacked
-      // extension from the command line since version 137.
-      channel: "chromium",
+      // extension from the command line since version 137. E2E_CHROME_PATH runs
+      // the tests in another Chrome for Testing instead, such as the Beta of the
+      // workflow Upstream, which loads it as well.
+      ...(CHROME === undefined
+        ? { channel: "chromium" }
+        : { executablePath: CHROME }),
       headless,
       colorScheme,
       locale: language,

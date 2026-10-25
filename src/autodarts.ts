@@ -12,8 +12,11 @@ export const PLAY_ORIGIN = "https://play.autodarts.com";
 /** The key under which Autodarts Play keeps its refresh token in localStorage. */
 export const SESSION_KEY = "autodarts_refresh_token";
 
-const AUTH_BASE = "https://api.autodarts.com/auth/v1";
-const CLIENT_ID = "autodarts-play";
+/** The sign-in service of Autodarts, which renews, creates and ends a session. */
+export const AUTH_BASE = "https://api.autodarts.com/auth/v1";
+
+/** The client that Autodarts Play signs in as, and the extension with it. */
+export const CLIENT_ID = "autodarts-play";
 
 /** A session: the refresh token in it replaces the one that renewed it (rotation). */
 export interface Session {

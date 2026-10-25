@@ -1,0 +1,43 @@
+---
+config:
+  flowchart:
+    wrappingWidth: 400
+---
+flowchart TB
+    accTitle: How the upstream checks work
+    accDescr: The workflow Upstream runs two checks of what the extension relies on but doesn't control. Every morning, autodarts-contract takes the expected values from src/autodarts.ts and asks the real Autodarts with made-up data only, about a dozen requests: it looks for the key of the session, the sign-in service and the client in the code of play.autodarts.com, script by script until it has found all three, follows the forward of play.autodarts.io, and sends a made-up token, a made-up account and the end of a made-up session to the sign-in service, through the functions of the extension. Every morning as well, chrome-beta downloads Chrome for Testing Beta, the next version of Chrome, and runs the end-to-end tests in it against the fake Autodarts. When either fails, its summary names what changed and where the code relies on it, and the bot-health bot opens an issue with the label bot-failure, which the next run that passes closes.
+
+    workflow["The workflow Upstream<br>also for a pull request that changes it<br>or src/autodarts.ts"]
+
+    subgraph daily ["autodarts-contract, every morning"]
+        direction TB
+        values["The expected values<br>from src/autodarts.ts"]
+        page["play.autodarts.com and its scripts<br>the key of the session, the sign-in service<br>and the client, until all three are found"]
+        forward["play.autodarts.io<br>forwards to play.autodarts.com"]
+        auth["api.autodarts.com/auth/v1<br>a made-up token and account are refused<br>with 400 or 401, a session ends"]
+        values --> page
+        page --> forward
+        forward --> auth
+    end
+
+    subgraph beta ["chrome-beta, every morning"]
+        direction TB
+        download["scripts/chrome-for-testing.sh<br>Chrome for Testing Beta,<br>about four weeks ahead of the players"]
+        tests["The end-to-end tests of test/e2e/<br>in Beta, against the fake Autodarts"]
+        download --> tests
+    end
+
+    workflow --> values
+    workflow --> download
+
+    report["The summary of the check<br>what changed and every place<br>of the code that relies on it"]
+    auth --> report
+    tests --> report
+
+    issue["bot-health opens an issue<br>with the label bot-failure;<br>the next run that passes closes it"]
+    report -->|on a failure| issue
+
+    classDef bot fill:#526cfe2e,stroke:#526cfe,stroke-width:2px
+    classDef person fill:#f59e0b2e,stroke:#f59e0b,stroke-width:2px
+    class workflow bot
+    class issue person
