@@ -92,12 +92,40 @@
     "message": "Eliminar cuenta"
   },
   "removeConfirm": {
-    "message": "¿Eliminar a $NAME$ de esta pantalla? Vuelve a iniciar sesión para añadir la cuenta de nuevo.",
+    "message": "¿Eliminar a $NAME$ de esta pantalla? Su sesión en Autodarts también termina. Vuelve a iniciar sesión para añadir la cuenta de nuevo.",
     "placeholders": {
       "name": {
         "content": "$1"
       }
     }
+  },
+  "removed": {
+    "message": "$NAME$ se ha eliminado y ha cerrado sesión en Autodarts.",
+    "placeholders": {
+      "name": {
+        "content": "$1"
+      }
+    }
+  },
+  "removedOffline": {
+    "message": "$NAME$ se ha eliminado de esta pantalla. No se puede acceder a Autodarts, así que la sesión allí solo termina cuando caduque.",
+    "placeholders": {
+      "name": {
+        "content": "$1"
+      }
+    }
+  },
+  "forgetAll": {
+    "message": "Olvidar todas las cuentas"
+  },
+  "forgetAllConfirm": {
+    "message": "Cada cuenta cierra sesión en Autodarts y se elimina de esta pantalla, con su contraseña recordada. Los PIN y los ajustes vuelven a empezar como tras la instalación."
+  },
+  "forgotAll": {
+    "message": "Todas las cuentas se han olvidado y han cerrado sesión en Autodarts."
+  },
+  "forgotAllOffline": {
+    "message": "Todas las cuentas se han olvidado en esta pantalla. No se puede acceder a Autodarts, así que sus sesiones allí solo terminan cuando caduquen."
   },
   "passwordHint": {
     "message": "Solo se usa cuando el inicio de sesión guardado deja de funcionar. Se queda en este ordenador y solo va a Autodarts."
@@ -185,6 +213,12 @@
   },
   "matchCancel": {
     "message": "Seguir jugando"
+  },
+  "matchSignOutText": {
+    "message": "Si cierras la sesión del jugador, termina en esta pantalla."
+  },
+  "matchSignOutConfirm": {
+    "message": "Cerrar sesión de todos modos"
   },
   "commandPopup": {
     "message": "Abrir la ventana emergente"

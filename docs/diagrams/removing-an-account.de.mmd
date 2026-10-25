@@ -1,0 +1,38 @@
+---
+config:
+  flowchart:
+    wrappingWidth: 400
+---
+flowchart TB
+    accTitle: Wie ein Entfernen die Sitzung beendet
+    accDescr: Konto entfernen und Alle Konten vergessen beenden die Sitzungen bei Autodarts, bevor die Erweiterung sie vergisst. Spielt ein gespeichertes Konto auf der Seite, meldet sich zuerst die Seite ab; während eines Matches fragt die Erweiterung, und ein Nein ändert nichts. Dann beendet die Erweiterung jede Sitzung, die sie behält, bei Autodarts, alle auf einmal, mit der Abmeldung, die die Autodarts-Website schickt, und vergisst die Konten; Alle Konten vergessen löscht auch alles Übrige, das sie behält, mit dem Schlüssel. Antwortet Autodarts, sagt das Popup, dass die Konten abgemeldet sind. Ist Autodarts nicht erreichbar, sind sie trotzdem vergessen, und das Popup sagt, dass ihre Sitzungen erst enden, wenn sie ablaufen.
+
+    tap["Konto entfernen,<br>oder Alle Konten vergessen"]
+    plays{"Spielt ein gespeichertes<br>Konto auf der Seite?"}
+    match{"Läuft dort ein Match?"}
+    ask["Die Erweiterung fragt vorher;<br>ein Nein ändert nichts"]
+    page["Die Seite meldet sich ab"]
+    revoke["Beendet jede Sitzung, die sie<br>behält, bei Autodarts, alle auf einmal"]
+    forget["Vergisst die Konten; Alle Konten<br>vergessen auch alles Übrige,<br>mit dem Schlüssel"]
+    answered{"Hat Autodarts geantwortet?"}
+    done["Entfernt und bei Autodarts<br>abgemeldet"]
+    later["Hier entfernt; die Sitzung<br>endet erst, wenn sie abläuft"]
+
+    tap --> plays
+    plays -- "ja" --> match
+    plays -- "nein" --> revoke
+    match -- "ja" --> ask
+    ask -- "Trotzdem abmelden" --> page
+    match -- "nein" --> page
+    page --> revoke
+    revoke --> forget
+    forget --> answered
+    answered -- "ja" --> done
+    answered -- "nein" --> later
+
+    classDef person fill:#f59e0b2e,stroke:#f59e0b,stroke-width:2px
+    classDef bot fill:#526cfe2e,stroke:#526cfe,stroke-width:2px
+    classDef done fill:#16a34a2e,stroke:#16a34a,stroke-width:2px
+    class tap,ask,later person
+    class page,revoke,forget bot
+    class done done

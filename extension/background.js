@@ -9,6 +9,10 @@
 // sessions and passwords with a key that only this worker uses, kept in the
 // IndexedDB of the extension, so chrome.storage.local holds none in plain text.
 //
+// Removing an account ends its session at Autodarts before the worker forgets it, and
+// "Forget all accounts" does so for every account and then deletes all that the
+// extension keeps, the key of the vault as well, so that a display can change hands.
+//
 // The popup and the switcher in the Autodarts page (switcher.html) send it the same
 // requests; content.js asks it what the button in the page shows, and it relays the
 // keyboard shortcut and the close of the switcher to the page. lib/trust.js decides who
@@ -39,7 +43,6 @@ import {
 import { createQueue } from "./lib/queue.js";
 import {
   EMPTY,
-  forget,
   forgetCredentials,
   rememberCredentials,
   toView,
@@ -54,9 +57,11 @@ import {
   adoptCurrentSession,
   adoptNewSignIn,
   edit,
+  forgetAll,
   leaveDisplay,
   readView,
   refreshParked,
+  removeAccount,
   signOutForNewAccount,
   startAddingAccount,
   stopAddingAccount,
@@ -270,6 +275,7 @@ const MANAGER_ACTIONS = new Set([
   "remember",
   "forgetPassword",
   "removeAccount",
+  "forgetAll",
 ]);
 
 // What every change of the accounts shares; each one adds the page of its tab.
@@ -292,6 +298,38 @@ async function mustAskFirst(tab, message) {
   return [await tab, ...all].some((candidate) =>
     mustConfirm(candidate?.url, message.confirmed),
   );
+}
+
+/**
+ * Whether the page may sign out now for a removal: not while a match runs there, unless
+ * the request carries the person's yes, as for a switch.
+ */
+async function mayLeave(tab, message) {
+  return !(await mustAskFirst(tab, message));
+}
+
+/**
+ * Deletes all that the extension keeps, once "Forget all accounts" has ended the
+ * sessions: the accounts with the key of the vault, the state of the renewal, the
+ * venue mode with its PINs, the settings, and the session storage with the count of
+ * wrong PINs. The extension is then as after its install.
+ */
+async function wipe() {
+  await store.clear();
+  await chrome.storage.local.clear();
+  await chrome.storage.session.clear();
+}
+
+/**
+ * The answer to a removal: the sessions end at Autodarts first. While an account plays,
+ * the page signs out for it, which needs a page that answers, so one opens when none
+ * does, and asks first while a match runs. `ended` tells the popup whether Autodarts
+ * ended every session or could not be reached.
+ */
+function removed(removal) {
+  return removal.kind === "match"
+    ? { ok: false, reason: "match" }
+    : { ok: true, ended: removal.ended };
 }
 
 // Each answer says in `page` whether an Autodarts tab answered, when the action asked
@@ -368,11 +406,22 @@ async function runAction(message, tab) {
     case "forgetPassword":
       await edit(deps, (state) => forgetCredentials(state, message.id));
       return { ok: true };
-    case "removeAccount":
-      await edit(deps, (state) => forget(state, message.id));
-      // Its PIN goes as well, and the display no longer returns to it.
-      await changeVenue((venue) => forgetAccount(venue, message.id));
-      return { ok: true };
+    case "removeAccount": {
+      const removal = await withPage(tabs, () =>
+        removeAccount(deps, message.id, () => mayLeave(tab, message)),
+      );
+      if (removal.kind === "removed") {
+        // Its PIN goes as well, and the display no longer returns to it.
+        await changeVenue((venue) => forgetAccount(venue, message.id));
+      }
+      return removed(removal);
+    }
+    case "forgetAll":
+      return removed(
+        await withPage(tabs, () =>
+          forgetAll(deps, wipe, () => mayLeave(tab, message)),
+        ),
+      );
     case "unlock":
       return { ok: true };
     default:

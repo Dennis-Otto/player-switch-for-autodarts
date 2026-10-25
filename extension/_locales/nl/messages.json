@@ -92,12 +92,40 @@
     "message": "Account verwijderen"
   },
   "removeConfirm": {
-    "message": "$NAME$ van dit scherm verwijderen? Log opnieuw in om het account weer toe te voegen.",
+    "message": "$NAME$ van dit scherm verwijderen? De sessie bij Autodarts eindigt ook. Log opnieuw in om het account weer toe te voegen.",
     "placeholders": {
       "name": {
         "content": "$1"
       }
     }
+  },
+  "removed": {
+    "message": "$NAME$ is verwijderd en afgemeld bij Autodarts.",
+    "placeholders": {
+      "name": {
+        "content": "$1"
+      }
+    }
+  },
+  "removedOffline": {
+    "message": "$NAME$ is van dit scherm verwijderd. Autodarts is niet bereikbaar, dus de sessie daar eindigt pas wanneer die verloopt.",
+    "placeholders": {
+      "name": {
+        "content": "$1"
+      }
+    }
+  },
+  "forgetAll": {
+    "message": "Alle accounts vergeten"
+  },
+  "forgetAllConfirm": {
+    "message": "Elk account wordt afgemeld bij Autodarts en met het onthouden wachtwoord van dit scherm verwijderd. De pincodes en de instellingen beginnen opnieuw zoals na de installatie."
+  },
+  "forgotAll": {
+    "message": "Alle accounts zijn vergeten en afgemeld bij Autodarts."
+  },
+  "forgotAllOffline": {
+    "message": "Alle accounts zijn op dit scherm vergeten. Autodarts is niet bereikbaar, dus hun sessies daar eindigen pas wanneer ze verlopen."
   },
   "passwordHint": {
     "message": "Wordt alleen gebruikt als de opgeslagen login niet meer werkt. Het blijft op deze computer en gaat alleen naar Autodarts."
@@ -185,6 +213,12 @@
   },
   "matchCancel": {
     "message": "Verder spelen"
+  },
+  "matchSignOutText": {
+    "message": "Het afmelden van de speler beëindigt de wedstrijd op dit scherm."
+  },
+  "matchSignOutConfirm": {
+    "message": "Toch afmelden"
   },
   "commandPopup": {
     "message": "De pop-up openen"

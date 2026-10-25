@@ -107,20 +107,29 @@ export function signIn(
   return postSession(fetcher, "/login", { username, password });
 }
 
-/** Ends a session at Autodarts; a session that can't be ended expires by itself. */
+/**
+ * Ends a session at Autodarts, with the request that Autodarts Play sends when a
+ * player signs out: the refresh token alone, without the client, which the sign-out
+ * doesn't ask for. True when the session is over: Autodarts ended it, or it had
+ * ended already (400 and 401, as for a renewal). False when Autodarts couldn't be
+ * reached or didn't end it; the session then lasts until it expires by itself, and
+ * the extension forgets it all the same.
+ */
 export async function revokeSession(
   fetcher: Fetch,
   refreshToken: string,
-): Promise<void> {
+): Promise<boolean> {
+  let response: Response;
   try {
-    await fetcher(`${AUTH_BASE}/logout`, {
+    response = await fetcher(`${AUTH_BASE}/logout`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ refresh_token: refreshToken }),
     });
   } catch {
-    // Nothing more to do: the extension forgets the session either way.
+    return false;
   }
+  return response.ok || response.status === 400 || response.status === 401;
 }
 
 /**

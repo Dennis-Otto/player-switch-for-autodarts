@@ -42,6 +42,8 @@ Comment ça marche :
   compte d'elle-même si sa session cesse un jour de fonctionner. Les comptes qui se
   connectent avec Google ou Apple ne peuvent pas l'utiliser, car ils n'ont pas de
   mot de passe Autodarts à mémoriser.
+• Supprimer un compte le déconnecte aussi d'Autodarts, et « Oublier tous les
+  comptes » vide l'écran avant qu'il change de mains.
 
 Tout reste sur votre ordinateur. L'extension ne parle qu'à Autodarts, ne collecte
 aucune statistique et n'envoie rien à personne d'autre. La politique de

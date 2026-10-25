@@ -5,14 +5,14 @@ config:
 ---
 flowchart TB
     accTitle: The life of a saved account
-    accDescr: An account that signs in on the page is saved by itself after Add account or the install, or with Save account, and it plays. When another player comes on, or Add account signs the page out, its session is parked, still valid at Autodarts, and a tap brings it back. Every 12 hours the extension renews each parked session, with its token or a remembered password. When Autodarts turns an account away, in a renewal or at a tap, or it signs out on the page, it has to sign in again, and the toolbar badge counts it: remember its password and tap it, or sign in once with Add account. Remove account deletes an account with its token and password, whatever its state.
+    accDescr: An account that signs in on the page is saved by itself after Add account or the install, or with Save account, and it plays. When another player comes on, or Add account signs the page out, its session is parked, still valid at Autodarts, and a tap brings it back. Every 12 hours the extension renews each parked session, with its token or a remembered password. When Autodarts turns an account away, in a renewal or at a tap, or it signs out on the page, it has to sign in again, and the toolbar badge counts it: remember its password and tap it, or sign in once with Add account. Remove account signs an account out at Autodarts and then deletes it with its token and password, whatever its state.
 
     save["Saved<br>by itself after Add account<br>or the install, or with<br>Save account"]
     playing["Playing<br>its session is in the page"]
     parked["Parked<br>its session waits in<br>the extension, still valid<br>at Autodarts"]
     renewal["Renewed<br>with its token, or with<br>a remembered password"]
     signin["Has to sign in again<br>turned away, or signed out<br>on the page; the toolbar<br>badge counts it"]
-    removed["Remove account, any time<br>deletes its token<br>and password"]
+    removed["Remove account, any time<br>signs it out at Autodarts,<br>then deletes its token<br>and password"]
 
     save --> playing
     playing -- "another player<br>or Add account" --> parked

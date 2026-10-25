@@ -63,7 +63,8 @@ test("Add account signs the page out, parks the player and saves the next sign-i
   await popup.expectAccounts([ALICE, BOB], BOB);
 });
 
-test("Remove account forgets the account and its session", async ({
+test("Remove account ends the session at Autodarts and forgets the account", async ({
+  autodarts,
   display,
 }) => {
   const page = await display.openAutodarts();
@@ -76,8 +77,106 @@ test("Remove account forgets the account and its session", async ({
   await dialog.getByRole("button", { name: display.t("remove") }).click();
   await popup.ready();
 
+  await popup.expectStatus(display.t("removed", BOB.name));
   await popup.expectAccounts([ALICE, CAROL], CAROL);
+  // Bob's parked session is over at Autodarts, not only gone from the display.
+  expect(autodarts.count("logout", BOB)).toBe(1);
+  expect(autodarts.sessionsOf(BOB)).toBe(0);
+  expect(autodarts.sessionsOf(ALICE)).toBe(1);
   const stored = JSON.stringify(await display.stored());
   expect(stored).not.toContain(BOB.id);
   expect(stored).not.toContain("refresh-bob-");
+  // Carol plays on.
+  await expectPlayer(page, CAROL);
+});
+
+test("Remove account of the player on the page asks during a match, then signs the page out", async ({
+  autodarts,
+  display,
+}) => {
+  const page = await display.openAutodarts();
+  const popup = await display.saveAccounts(page, [ALICE, BOB]);
+  await page.goto("https://play.autodarts.com/matches/0f6d4c2e");
+  await expectPlayer(page, BOB);
+
+  await popup.manage();
+  await popup.tile(BOB).locator(".remove").click();
+  const dialog = popup.page.locator("dialog.confirm[open]");
+  await dialog.getByRole("button", { name: display.t("remove") }).click();
+  // The page would sign out, and with it the match would end: the person says first.
+  await expect(dialog).toContainText(display.t("matchSignOutText"));
+  await dialog.getByRole("button", { name: display.t("matchCancel") }).click();
+  await popup.ready();
+  await popup.expectAccounts([ALICE, BOB], BOB);
+  expect(autodarts.count("logout", BOB)).toBe(0);
+
+  await popup.tile(BOB).locator(".remove").click();
+  await dialog.getByRole("button", { name: display.t("remove") }).click();
+  await dialog
+    .getByRole("button", { name: display.t("matchSignOutConfirm") })
+    .click();
+  await popup.ready();
+  await popup.expectStatus(display.t("removed", BOB.name));
+  await popup.expectAccounts([ALICE], null);
+  await expectPlayer(page, null);
+  expect(autodarts.sessionsOf(BOB)).toBe(0);
+  expect(autodarts.sessionsOf(ALICE)).toBe(1);
+});
+
+test("Forget all accounts ends every session, leaves nothing behind and starts over", async ({
+  autodarts,
+  display,
+}) => {
+  const page = await display.openAutodarts();
+  const popup = await display.saveAccounts(page, [ALICE, BOB, CAROL]);
+  const forgetAll = popup.page.locator("#forget-all");
+  await expect(forgetAll).toBeHidden();
+
+  await popup.manage();
+  await forgetAll.click();
+  const dialog = popup.page.locator("dialog.confirm[open]");
+  await expect(dialog).toContainText(display.t("forgetAllConfirm"));
+  await dialog.getByRole("button", { name: display.t("forgetAll") }).click();
+  await popup.ready();
+
+  await popup.expectStatus(display.t("forgotAll"));
+  await popup.expectAccounts([], null);
+  await expect(forgetAll).toBeHidden();
+  await expect(popup.page.locator("#manage")).toHaveAttribute(
+    "aria-pressed",
+    "false",
+  );
+  await expectPlayer(page, null);
+  for (const account of [ALICE, BOB, CAROL]) {
+    expect(autodarts.sessionsOf(account)).toBe(0);
+  }
+  expect(await display.stored()).toEqual({});
+
+  // The extension works as after its install: a new sign-in is saved with a new key.
+  await popup.page.locator("#add").click();
+  await popup.ready();
+  await display.signIn(page, ALICE);
+  await popup.reopen();
+  await popup.expectAccounts([ALICE], ALICE);
+  // Its session is sealed with a new key that is stored, not with the deleted one that
+  // the worker still had in memory, so it opens after a restart of the browser as well.
+  const keys = await display.worker.evaluate(
+    () =>
+      new Promise<number>((resolve, reject) => {
+        const request = indexedDB.open("vault");
+        request.onerror = () => reject(request.error);
+        request.onsuccess = () => {
+          const database = request.result;
+          const count = database
+            .transaction("keys")
+            .objectStore("keys")
+            .count();
+          count.onsuccess = () => {
+            database.close();
+            resolve(count.result);
+          };
+        };
+      }),
+  );
+  expect(keys).toBe(1);
 });

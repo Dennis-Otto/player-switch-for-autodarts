@@ -32,6 +32,11 @@ class MemoryKeys implements KeyStore {
     this.key ??= key;
     return Promise.resolve(this.key);
   }
+
+  clear(): Promise<void> {
+    this.key = undefined;
+    return Promise.resolve();
+  }
 }
 
 /** A fresh, empty IndexedDB, as the extension has it after its install. */
@@ -114,6 +119,7 @@ test("the vault takes the key that the store already holds when another one was 
   const late = createVault({
     load: () => Promise.resolve(undefined),
     add: (key) => keys.add(key),
+    clear: () => keys.clear(),
   });
   assert.equal(await late.open(sealed, PLACE), PARKED);
 });
@@ -177,6 +183,40 @@ test("a value in the key table that is no key counts as none, and the next key r
     PARKED,
   );
   assert.ok((await keys.load()) instanceof CryptoKey);
+});
+
+test("forget deletes the key, so nothing sealed before opens again, and the next sealing makes a new one", async () => {
+  const database = freshDatabase();
+  const keys = keyStoreIn(database);
+  const vault = createVault(keys);
+  const sealed = await vault.seal(PARKED, PLACE);
+  const before = await keys.load();
+
+  await vault.forget();
+
+  assert.equal(await keys.load(), undefined);
+  // Neither this worker, which kept the key in memory, nor one that starts anew opens it.
+  assert.equal(await vault.open(sealed, PLACE), null);
+  assert.equal(
+    await createVault(keyStoreIn(database)).open(sealed, PLACE),
+    null,
+  );
+  const after = await keys.load();
+  assert.ok(after instanceof CryptoKey);
+  assert.notEqual(after, before);
+  // What is sealed from now on opens after a restart, with the new key.
+  const fresh = await vault.seal(PARKED, PLACE);
+  assert.equal(
+    await createVault(keyStoreIn(database)).open(fresh, PLACE),
+    PARKED,
+  );
+});
+
+test("forget of a vault that never made a key leaves none behind", async () => {
+  const keys = new MemoryKeys();
+  await createVault(keys).forget();
+  assert.equal(keys.key, undefined);
+  assert.equal(keys.adds, 0);
 });
 
 test("the vault opens nothing after the IndexedDB of the extension was cleared", async () => {

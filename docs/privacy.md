@@ -76,8 +76,18 @@ and with nothing else; GitHub receives it only when you submit the form yourself
 
 ## Your control
 
-Removing an account in the extension deletes its stored token and any remembered
-password. Removing the extension deletes everything it stored.
+Removing an account in the extension first ends its session at Autodarts, the same
+sign-out that the Autodarts website sends, and then deletes its stored token and any
+remembered password. When Autodarts can't be reached, the account is deleted all the
+same, the popup says so, and the session at Autodarts ends when it expires.
+
+"Forget all accounts", under "Manage accounts", does this for every account, the one
+signed in on the page too, and then deletes everything the extension stored: the
+accounts, the key that encrypts them, the settings and the PINs of the venue mode.
+
+Removing the extension deletes everything it stored as well, but it can't end a
+session at Autodarts, so choose "Forget all accounts" first when a display changes
+hands.
 
 ## Contact
 

@@ -227,7 +227,7 @@ It builds `extension/lib/` from `src/` and runs every test of `test/e2e/`. `npm 
 
 | File | What it checks |
 | --- | --- |
-| `accounts.spec.ts` | The install waits for the first sign-in and saves that account by itself; **Save account** keeps a session of the page; **Add account** parks the player and saves the next sign-in; **Remove account** leaves no token behind. |
+| `accounts.spec.ts` | The install waits for the first sign-in and saves that account by itself; **Save account** keeps a session of the page; **Add account** parks the player and saves the next sign-in; **Remove account** ends the session at Autodarts and leaves no token behind, and asks during a match before it signs the page out; **Forget all accounts** ends every session, leaves nothing in the storage and saves the next account with a new key. |
 | `switching.spec.ts` | A switch from A to B and back sends each token once; every other Autodarts tab reloads with the new player; a double tap, and taps in two popups at once, switch once; a switch on a match page asks first and spends no token on a no; the switcher in the page switches as well. |
 | `recovery.spec.ts` | A remembered password signs an account back in after its session has died; without one, the account has to sign in again and the popup says so; with no Autodarts tab, **Open Autodarts** opens one, and a tap opens one and switches there. |
 | `languages.spec.ts` | The popup in English and German, and in a light and a dark color scheme. |
