@@ -1,7 +1,7 @@
 name: Upstream
 
 # Early warnings for what the extension relies on but doesn't control, before a
-# player notices (decision 0008):
+# player notices (decision 0009):
 #
 # - autodarts-contract, every morning: Autodarts still keeps its session under the
 #   key that the extension swaps, signs in at the same service as the same client,

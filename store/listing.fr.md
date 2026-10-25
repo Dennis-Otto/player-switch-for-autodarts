@@ -33,6 +33,11 @@ Comment ça marche :
   touches 1 à 9 choisissent un joueur.
 • Sur la page d'un match en cours, un changement demande d'abord, pour qu'un match
   ne se termine jamais par surprise.
+• Pour un club ou un bar, en option et désactivé par défaut : un PIN du gérant
+  protège « Gérer les comptes » et les paramètres, chaque joueur peut protéger son
+  compte par son propre PIN, et après une pause l'écran revient de lui-même à un
+  compte de la maison, jamais pendant un match. L'extension ne garde aucun PIN,
+  seulement une empreinte salée.
 • En option : laissez l'extension mémoriser un mot de passe, et elle reconnecte un
   compte d'elle-même si sa session cesse un jour de fonctionner. Les comptes qui se
   connectent avec Google ou Apple ne peuvent pas l'utiliser, car ils n'ont pas de
@@ -49,10 +54,12 @@ Non affilié à Autodarts.
 
 ## Justification des autorisations
 
-• storage — pour garder vos comptes enregistrés et leurs sessions sur votre
-  ordinateur.
+• storage — pour garder vos comptes enregistrés, leurs sessions et les paramètres
+  sur votre ordinateur, dans le mode pour club ou bar aussi les empreintes salées
+  des PIN.
 • alarms — pour renouveler les sessions mises de côté en arrière-plan, afin
-  qu'elles restent prêtes.
+  qu'elles restent prêtes, et dans le mode pour club ou bar pour vérifier une fois
+  par minute si l'écran doit revenir après une pause.
 • scripting — pour apporter le bouton d'une nouvelle version dans les onglets
   Autodarts déjà ouverts lors de la mise à jour, ou dans un onglet qui ne répond
   plus, afin qu'un écran en mode kiosque continue de fonctionner sans

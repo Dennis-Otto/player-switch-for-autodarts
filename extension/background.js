@@ -13,6 +13,12 @@
 // requests; content.js asks it what the button in the page shows, and it relays the
 // keyboard shortcut and the close of the switcher to the page. lib/trust.js decides who
 // may send which request, and keeps the storage out of the reach of content.js.
+//
+// The venue mode, which the options page turns on, comes from lib/venue.js: the worker
+// checks the PIN of every switch to an account that has one and of every change in
+// "Manage accounts" while a manager PIN is set, so neither the popup nor the switcher
+// can go around it, and it returns the display to the house account after a break that
+// content.js measures, never during a match.
 import {
   badge,
   nextRunAt,
@@ -48,6 +54,7 @@ import {
   adoptCurrentSession,
   adoptNewSignIn,
   edit,
+  leaveDisplay,
   readView,
   refreshParked,
   signOutForNewAccount,
@@ -72,12 +79,33 @@ import {
   keepFromContentScripts,
 } from "./lib/trust.js";
 import { createVault, keyStoreIn } from "./lib/vault.js";
+import {
+  ACTIVITY_KEY,
+  checkPin,
+  forgetAccount,
+  hashPin,
+  idleTick,
+  isPin,
+  LOCKOUT_KEY,
+  parseActivity,
+  parseLockout,
+  parseVenue,
+  pinOf,
+  returnsAfterBreak,
+  setIdle,
+  setManagerPin,
+  setPlayerPin,
+  VENUE_KEY,
+  withPins,
+} from "./lib/venue.js";
 
 const TAB_MATCHES = PLAY_ORIGINS.map((origin) => `${origin}/*`);
 const STORAGE_KEY = ACCOUNTS_KEY;
 // How the renewal went, beside the accounts: see lib/health.js.
 const HEALTH_KEY = "health";
 const REFRESH_ALARM = "refresh-parked";
+// The look, once a minute while the venue mode returns the display, whether a break is over.
+const IDLE_ALARM = "venue-idle";
 // The colors of the badge, each with white text at a contrast of at least 4.5:1: a dark
 // red for the accounts that have to sign in again, an indigo for a session on the page
 // that no account keeps yet, and a green for an account that was just saved.
@@ -178,6 +206,72 @@ async function pageFor(tab) {
   return createPage(tabs, (await tab)?.id);
 }
 
+async function loadVenue() {
+  const data = await chrome.storage.local.get(VENUE_KEY);
+  return parseVenue(data[VENUE_KEY]);
+}
+
+// The changes of the venue settings, and the checks of a PIN with their count of wrong
+// ones, each one at a time, so that two at once lose nothing and try no PIN twice as fast.
+const venueQueue = createQueue();
+const pinQueue = createQueue();
+
+/** Changes the venue settings: `change` gets the stored ones and answers the new ones. */
+function changeVenue(change) {
+  return venueQueue(async () => {
+    const venue = await change(await loadVenue());
+    await chrome.storage.local.set({ [VENUE_KEY]: venue });
+    return venue;
+  });
+}
+
+/**
+ * Checks the PIN that a request carries against the hash that guards it, and keeps the
+ * count of wrong PINs in the session storage, which outlives a sleep of the worker but
+ * not a restart of the browser, and which content.js can't reach.
+ */
+function guard(hash, pin) {
+  if (hash === null) {
+    return Promise.resolve({ kind: "ok" });
+  }
+  return pinQueue(async () => {
+    const stored = await chrome.storage.session.get(LOCKOUT_KEY);
+    const { check, lockout } = await checkPin(
+      hash,
+      pin,
+      parseLockout(stored[LOCKOUT_KEY]),
+      Date.now(),
+    );
+    await chrome.storage.session.set({ [LOCKOUT_KEY]: lockout });
+    return check;
+  });
+}
+
+/**
+ * The answer to a request that a PIN guards and that carries none or a wrong one: the
+ * popup and the switcher then ask for the PIN, of the account (`player`) or the manager,
+ * and send the request again. After too many wrong PINs they only say how long to wait.
+ */
+function refusal(check, kind) {
+  return check.kind === "locked"
+    ? { ok: false, reason: "locked", retryIn: check.retryInMs }
+    : { ok: false, reason: "pin", pin: kind, wrong: check.kind === "wrong" };
+}
+
+/** Notes an input at the display, from which the break of the venue mode counts. */
+function noteActivity() {
+  return chrome.storage.session.set({ [ACTIVITY_KEY]: Date.now() });
+}
+
+// The requests that change an account in "Manage accounts", and "unlock", with which
+// the popup or the switcher opens it: each needs the manager PIN while one is set.
+const MANAGER_ACTIONS = new Set([
+  "unlock",
+  "remember",
+  "forgetPassword",
+  "removeAccount",
+]);
+
 // What every change of the accounts shares; each one adds the page of its tab.
 const shared = {
   store,
@@ -204,6 +298,12 @@ async function mustAskFirst(tab, message) {
 // one, so the popup knows when to offer "Open Autodarts".
 async function runAction(message, tab) {
   const deps = { ...shared, page: await pageFor(tab) };
+  if (MANAGER_ACTIONS.has(message.action)) {
+    const check = await guard((await loadVenue()).manager, message.managerPin);
+    if (check.kind !== "ok") {
+      return refusal(check, "manager");
+    }
+  }
   switch (message.action) {
     case "view": {
       // A new account that signed in before the page told the worker is saved now.
@@ -222,6 +322,14 @@ async function runAction(message, tab) {
         : { ok: true, page: true };
     }
     case "switch": {
+      // The PIN of the account first: a wrong one never gets as far as the question.
+      const check = await guard(
+        pinOf(await loadVenue(), message.id),
+        message.pin,
+      );
+      if (check.kind !== "ok") {
+        return refusal(check, "player");
+      }
       if (await mustAskFirst(tab, message)) {
         return { ok: false, reason: "match" };
       }
@@ -262,6 +370,10 @@ async function runAction(message, tab) {
       return { ok: true };
     case "removeAccount":
       await edit(deps, (state) => forget(state, message.id));
+      // Its PIN goes as well, and the display no longer returns to it.
+      await changeVenue((venue) => forgetAccount(venue, message.id));
+      return { ok: true };
+    case "unlock":
       return { ok: true };
     default:
       return { ok: true };
@@ -270,17 +382,25 @@ async function runAction(message, tab) {
 
 /** The view of the popup, and whether it should suggest an update of the extension. */
 async function popupView(tab) {
-  const [view, health] = await Promise.all([
+  const [view, health, venue] = await Promise.all([
     readView({ ...shared, page: await pageFor(tab) }),
     loadHealth(),
+    loadVenue(),
   ]);
-  return { ...view, updateHint: suggestsUpdate(health, view.profiles) };
+  return {
+    ...view,
+    // Which accounts ask for a PIN, and whether "Manage accounts" does: never a hash.
+    profiles: withPins(view.profiles, venue),
+    venue: { manager: venue.manager !== null },
+    updateHint: suggestsUpdate(health, view.profiles),
+  };
 }
 
 /** The view of the popup after a failure: with no account when the accounts can't be read. */
 function viewAfter(tab) {
   return popupView(tab).catch(() => ({
     ...toView(EMPTY, false, 0),
+    venue: { manager: false },
     updateHint: false,
   }));
 }
@@ -302,10 +422,104 @@ async function handlePopup(message, tab) {
   }
 }
 
-/** What the button in the page shows: the settings, and the player without a session. */
+/**
+ * What the button in the page shows: the settings, and the player without a session.
+ * And whether content.js tells the worker of the inputs on the page, which only the
+ * return of the venue mode after a break needs.
+ */
 async function buttonView() {
-  const data = await chrome.storage.local.get([STORAGE_KEY, SETTINGS_KEY]);
-  return toButtonView(accountsIn(data), data[SETTINGS_KEY]);
+  const data = await chrome.storage.local.get([
+    STORAGE_KEY,
+    SETTINGS_KEY,
+    VENUE_KEY,
+  ]);
+  return {
+    ...toButtonView(accountsIn(data), data[SETTINGS_KEY]),
+    reportActivity: returnsAfterBreak(parseVenue(data[VENUE_KEY])),
+  };
+}
+
+/** What the options page shows of the venue mode: never a hash of a PIN. */
+async function venueStatus() {
+  const [venue, view] = await Promise.all([
+    loadVenue(),
+    readView({ ...shared, page: createPage(tabs) }),
+  ]);
+  return {
+    manager: venue.manager !== null,
+    idleMinutes: venue.idleMinutes,
+    house: venue.house,
+    accounts: withPins(view.profiles, venue).map(
+      ({ id, name, username, pin }) => ({ id, name, username, pin }),
+    ),
+  };
+}
+
+/** The hash of a new PIN, or null to take it away; undefined for a value that is no PIN. */
+async function newPin(pin) {
+  if (pin === null) {
+    return null;
+  }
+  return isPin(pin) ? hashPin(pin) : undefined;
+}
+
+/**
+ * The requests of the options page for the venue mode. Each one other than "status"
+ * needs the manager PIN while one is set, also the one that changes it.
+ */
+async function runVenue(message) {
+  if (message.action !== "status") {
+    const check = await guard((await loadVenue()).manager, message.managerPin);
+    if (check.kind !== "ok") {
+      return refusal(check, "manager");
+    }
+  }
+  switch (message.action) {
+    case "managerPin": {
+      const pin = await newPin(message.pin);
+      if (pin === undefined) {
+        return { ok: false, reason: "invalid" };
+      }
+      await changeVenue((venue) => setManagerPin(venue, pin));
+      return { ok: true };
+    }
+    case "playerPin": {
+      const pin = await newPin(message.pin);
+      const { profiles } = await readView({
+        ...shared,
+        page: createPage(tabs),
+      });
+      // Only a saved account gets a PIN.
+      if (
+        pin === undefined ||
+        !profiles.some((profile) => profile.id === message.id)
+      ) {
+        return { ok: false, reason: "invalid" };
+      }
+      await changeVenue((venue) => setPlayerPin(venue, message.id, pin));
+      return { ok: true };
+    }
+    case "idle":
+      // The break counts from now, not from an input before the return was turned on.
+      await noteActivity();
+      await changeVenue((venue) =>
+        setIdle(venue, message.minutes, message.house),
+      );
+      return { ok: true };
+    default:
+      // "status", and "unlock", with which the options page opens.
+      return { ok: true };
+  }
+}
+
+async function handleVenue(message) {
+  try {
+    const result = await runVenue(message);
+    return { ...result, status: await venueStatus() };
+  } catch (error) {
+    logFailure(`the venue request "${message.action}"`)(error);
+    return { error: "error", status: await venueStatus().catch(() => null) };
+  }
 }
 
 /** Tells the content script of an Autodarts tab something; a tab without one has no say. */
@@ -332,8 +546,22 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       if (!fromPage) {
         return false;
       }
+      // A tap in the popup or the switcher is an input at the display, too.
+      noteActivity().catch(logFailure("noting an input"));
       handlePopup(message, tabOf(sender)).then(sendResponse);
       return true; // the answer comes later
+    case "venue":
+      if (!fromPage) {
+        return false;
+      }
+      handleVenue(message).then(sendResponse);
+      return true;
+    case "activity":
+      // content.js saw an input on the Autodarts page, at most every few seconds.
+      if (isPlayPage(sender.tab?.url)) {
+        noteActivity().catch(logFailure("noting an input"));
+      }
+      return false;
     case "button":
       buttonView().then(sendResponse, () => sendResponse(null));
       return true;
@@ -362,10 +590,23 @@ async function redrawButtons() {
   }
 }
 
-// A change of the settings or of the accounts redraws the button in every Autodarts tab.
+// A change of the settings or of the accounts redraws the button in every Autodarts tab;
+// one of the venue settings tells content.js as well whether to report the inputs.
 chrome.storage.onChanged.addListener((changes, area) => {
-  if (area === "local" && (SETTINGS_KEY in changes || STORAGE_KEY in changes)) {
+  if (area !== "local") {
+    return;
+  }
+  if (
+    SETTINGS_KEY in changes ||
+    STORAGE_KEY in changes ||
+    VENUE_KEY in changes
+  ) {
     redrawButtons().catch(logFailure("redrawing the button in the page"));
+  }
+  if (VENUE_KEY in changes) {
+    syncIdleAlarm(parseVenue(changes[VENUE_KEY].newValue)).catch(
+      logFailure("the alarm of the venue mode"),
+    );
   }
 });
 
@@ -474,6 +715,71 @@ async function pickUp(tab) {
 }
 
 /**
+ * Looks once a minute, while the venue mode returns the display, whether its break is
+ * over, as an alarm, which also wakes a sleeping worker; the alarm goes when the
+ * return is turned off.
+ */
+async function syncIdleAlarm(venue) {
+  if (!returnsAfterBreak(venue)) {
+    await chrome.alarms.clear(IDLE_ALARM);
+  } else if ((await chrome.alarms.get(IDLE_ALARM)) === undefined) {
+    await chrome.alarms.create(IDLE_ALARM, { periodInMinutes: 1 });
+  }
+}
+
+// The look that is on its way, so that two alarms close together share one.
+let returning = null;
+
+/**
+ * Returns the display to the house account, or signs it out, once the break of the
+ * venue mode is over: lib/venue.js decides, from the last input on the page and the
+ * accounts, and a match that runs in any Autodarts tab counts as input, so the return
+ * never ends one. A switch or a sign-out parks the session of the player before. With
+ * no Autodarts tab open there is nothing to return; a house account that Autodarts
+ * can't reach now is tried again at the next look, and one that has to sign in again
+ * signs the page out then.
+ */
+function returnAfterBreak() {
+  returning ??= (async () => {
+    try {
+      const [venue, stored] = await Promise.all([
+        loadVenue(),
+        chrome.storage.session.get(ACTIVITY_KEY),
+      ]);
+      if (!returnsAfterBreak(venue)) {
+        return;
+      }
+      const deps = { ...shared, page: createPage(tabs) };
+      const view = await readView(deps);
+      const before = parseActivity(stored[ACTIVITY_KEY]);
+      const { step, lastActivity } = idleTick({
+        venue,
+        profiles: view.profiles,
+        unsaved: view.unsaved,
+        lastActivity: before,
+        now: Date.now(),
+        matchRunning: !(await noMatchRuns()),
+      });
+      if (lastActivity !== before) {
+        await chrome.storage.session.set({ [ACTIVITY_KEY]: lastActivity });
+      }
+      if (step.kind === "switch") {
+        await switchTo(deps, step.id);
+      } else if (step.kind === "signout") {
+        await leaveDisplay(deps);
+      }
+    } catch (error) {
+      if (!(error instanceof NoPageError)) {
+        throw error;
+      }
+    } finally {
+      returning = null;
+    }
+  })();
+  return returning;
+}
+
+/**
  * The first start after the install: waits for the first account, so that the session
  * that Autodarts signs in with next is saved by itself, and shows the welcome page, once.
  */
@@ -531,6 +837,10 @@ function ensureRenewal() {
     ]);
     // The badge must not hold up the renewal, nor a failure of it stop the renewal.
     showBadge().catch(logFailure("the badge"));
+    // The alarm of the venue mode, which a restart of the browser may clear as well.
+    loadVenue()
+      .then(syncIdleAlarm)
+      .catch(logFailure("the alarm of the venue mode"));
     const plan = planStart(alarm !== undefined, health, shared.now());
     if (plan.alarmAt !== null) {
       await scheduleRefresh(plan.alarmAt);
@@ -566,6 +876,8 @@ chrome.tabs.onRemoved.addListener(() => {
 chrome.alarms.onAlarm.addListener((alarm) => {
   if (alarm.name === REFRESH_ALARM) {
     refresh().catch(logFailure("the renewal of the parked sessions"));
+  } else if (alarm.name === IDLE_ALARM) {
+    returnAfterBreak().catch(logFailure("the return after a break"));
   }
 });
 

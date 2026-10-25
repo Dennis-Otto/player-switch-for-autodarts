@@ -221,3 +221,10 @@ dialog.confirm {
 dialog.confirm h2 {
     font-size: 20px;
 }
+
+/* The number pad of a PIN, for fingers at a board. */
+.pad-key,
+.pad-ok {
+    min-height: 64px;
+    font-size: 24px;
+}

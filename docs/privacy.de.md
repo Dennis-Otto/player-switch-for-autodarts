@@ -29,6 +29,12 @@ Autodarts-Seite und nicht das Skript, das die Erweiterung in dieser Seite ausfü
   Einzelheiten.
 - **Die Einstellungen des Knopfs auf der Autodarts-Seite:** ob er zu sehen ist, und
   in welcher Ecke.
+- **Nur im Modus für Verein und Kneipe, sobald du ihn einschaltest:** ein gesalzener
+  Hash der Manager-PIN und der PIN jedes Spielers, nie eine PIN selbst, die Länge der
+  Pause und das Hauskonto. Solange der Browser läuft, und nur solange die Rückkehr
+  nach einer Pause an ist, auch die Zeit des letzten Tippens, Klicks oder Tastendrucks
+  auf der Autodarts-Seite: nie wo oder was es war. Der Browser vergisst diese Zeit,
+  und die Zahl der falschen PINs, wenn er schließt.
 - **Die Zeit der letzten Erneuerung**, und ob Autodarts dabei alle Konten abgewiesen
   hat, damit die Erweiterung nachholen kann, was sie verpasst hat, während der
   Computer aus war, und dir sagen kann, wann sie vielleicht ein Update braucht.
@@ -64,7 +70,9 @@ Formular selbst abschickst.
 
 ## Was sie nicht tut
 
-- Sie erhebt keine Statistiken, Nutzungsdaten oder Telemetrie.
+- Sie erhebt keine Statistiken, Nutzungsdaten oder Telemetrie. Die Zeit der letzten
+  Eingabe auf der Autodarts-Seite, im Modus für Verein und Kneipe, bleibt auf dem
+  Computer und entscheidet nur, wann das Display nach einer Pause zurückkehrt.
 - Sie liest oder speichert nichts von anderen Websites als Autodarts.
 - Sie kann Adresse und Titel deiner anderen Tabs und deinen Browserverlauf nicht
   lesen. Sie fragt nicht nach der Berechtigung `tabs`, darum gibt ihr der Browser die

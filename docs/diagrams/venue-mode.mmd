@@ -1,0 +1,51 @@
+---
+config:
+  flowchart:
+    wrappingWidth: 400
+---
+flowchart TB
+    accTitle: The venue mode at a club or pub display
+    accDescr: A tap on the tile of an account with a PIN asks for that PIN before anything changes; a wrong one changes nothing, and five in a row lock every PIN for a minute. Once a minute, the service worker looks whether the break is over. A match that runs counts as input, so a match is never interrupted. After the break, the display switches to the house account, or signs out when none is set or it has to sign in again; either way the player before keeps their session parked.
+
+    subgraph pins["A switch to an account with a PIN"]
+        direction TB
+        tap["A tap on the tile of a player"]
+        haspin{"Does the account<br>have a PIN?"}
+        pin["Ask for the PIN<br>on a number pad"]
+        wrong["A wrong PIN changes nothing;<br>five in a row wait a minute"]
+        switch["Switch, as always"]
+
+        tap --> haspin
+        haspin -- "no" --> switch
+        haspin -- "yes" --> pin
+        pin -- "right" --> switch
+        pin -- "wrong" --> wrong
+    end
+
+    subgraph pause["The return after a break"]
+        direction TB
+        look["Once a minute:<br>the worker looks at the display"]
+        match{"Does a match run?"}
+        counts["The match counts as input:<br>it is never interrupted"]
+        over{"Is the break over?<br>No tap, click or key for N minutes"}
+        house{"Is a house account set<br>and ready?"}
+        back["Switch to the house account"]
+        out["Sign the page out"]
+        parked["The player before keeps<br>their session parked"]
+
+        look --> match
+        match -- "yes" --> counts
+        match -- "no" --> over
+        over -- "yes" --> house
+        house -- "yes" --> back --> parked
+        house -- "no" --> out --> parked
+    end
+
+    pins ~~~ pause
+
+    classDef bot fill:#526cfe2e,stroke:#526cfe,stroke-width:2px
+    classDef person fill:#f59e0b2e,stroke:#f59e0b,stroke-width:2px
+    classDef done fill:#16a34a2e,stroke:#16a34a,stroke-width:2px
+    class look,counts bot
+    class pin person
+    class switch,parked done

@@ -82,7 +82,34 @@ The extension renews every parked session every 12 hours, while the browser runs
 - **A display that is off for days,** such as at a club that plays once a week: turn it on now and then in between, or let the accounts with an Autodarts password remember it, so that they sign in again by themselves. Any other account that has to sign in again shows **Sign in again**, and the [help](help.md#sign-in-again) says what to do.
 - **The screen may turn off** whenever it likes: the renewal needs only the computer and the browser. Set the power options of Windows so that the computer doesn't sleep while it is plugged in, and let only the screen turn off. A Raspberry Pi doesn't sleep; **Screen Blanking** under **Raspberry Pi Configuration → Display** only turns the screen off.
 
-## 7. Before the first evening {#checklist}
+## 7. In a club or pub: the venue mode {#venue-mode}
+
+At home, everyone at the display may play under any saved account, which is the point. In a club or a pub, not everyone at the board knows everyone else. The venue mode, under **Settings** → **For a club or pub**, adds three locks for the people at the display. Each one is off until you turn it on.
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="images/diagrams/venue-mode.dark.svg">
+  <img src="images/diagrams/venue-mode.svg" alt="The venue mode at a club or pub display: A tap on the tile of an account with a PIN asks for that PIN before anything changes; a wrong one changes nothing, and five in a row lock every PIN for a minute. Once a minute, the service worker looks whether the break is over. A match that runs counts as input, so a match is never interrupted. After the break, the display switches to the house account, or signs out when none is set or it has to sign in again; either way the player before keeps their session parked.">
+</picture>
+
+- **A manager PIN** guards **Manage accounts**, where accounts are removed and passwords remembered or forgotten, and the settings themselves. The popup and the players on the Autodarts page ask for it once as **Manage accounts** opens, and forget it as it closes.
+- **A PIN for each player who wants one,** 4 to 8 digits, under **PINs of the players**. A tap on that player's tile asks for it, on a number pad that works on a touch screen, before anything changes; their tile shows a lock. Nobody else plays under their account and spoils their statistics.
+- **Return after a break:** after 5 to 60 minutes without a tap, a click or a key on the Autodarts page, the display switches to a house account of your choice, or signs out, so that the next games don't count for the player who left. A match is never interrupted: the break starts once it has ended. The player before keeps their session parked, so a tap brings them back.
+
+Five wrong PINs in a row lock every PIN of the display for a minute, so that nobody tries them all by hand. The extension keeps no PIN, only a salted hash of it.
+
+A PIN is a lock for the people at the display, not a protection against someone who can use the computer: whoever can open `chrome://extensions` can remove the extension, and a program that reads the profile of the browser can try every 4-digit PIN against its hash. The [security design](security.md#venue-mode) says more.
+
+### A forgotten manager PIN {#forgotten-manager-pin}
+
+The manager PIN can't be read anywhere. Someone who can use the computer turns the venue mode off, and the accounts stay:
+
+1. Open `chrome://extensions` and turn on **Developer mode** at the top right.
+2. Under **Player Switch for Autodarts**, choose **service worker** next to *Inspect views*.
+3. In the **Console** of the window that opens, type `chrome.storage.local.remove("venue")` and press <kbd>Enter</kbd>.
+
+Every PIN is gone then, and the display no longer returns after a break: set them again under **Settings**.
+
+## 8. Before the first evening {#checklist}
 
 - [ ] A tap on each tile switches to that player, and **Manage accounts** shows no **Sign in again**.
 - [ ] The button on the Autodarts page sits in a corner where it covers nothing that you need.
@@ -90,5 +117,6 @@ The extension renews every parked session every 12 hours, while the browser runs
 - [ ] After a restart of the computer, Chrome comes back by itself, in kiosk mode on Autodarts.
 - [ ] The computer doesn't sleep, or it wakes often enough for the renewal.
 - [ ] Everyone knows the rule: change players with a tile, never with a sign-out on Autodarts, which ends a session for good.
+- [ ] In a club or pub: the manager PIN is set and known to the people who run the display, and every player who wants a PIN has one.
 
 Not working as it should? The [help](help.md) explains every message of the extension.

@@ -10,10 +10,12 @@
 // lang      the language of the texts, from extension/_locales: en (the default), de,
 //           nl, fr or es
 // accounts  how many of the demo accounts are saved, 1 to 4 (3); the first one plays
+// pins      1 gives the second account a PIN, as the venue mode does (none)
+// manager   1 sets a manager PIN, which "Manage accounts" then asks for (none)
 //
 // The accounts are made up and their pictures generated: no real people. The answers
 // are those of the service worker, background.js, for the requests that players.js
-// sends. `window.harness` lets a driver catch the moment between a tap and the answer:
+// sends, and for those of the venue mode that options.js sends. `window.harness` lets a driver catch the moment between a tap and the answer:
 // harness.hold() keeps the next request waiting until harness.release(),
 // harness.drawn() resolves once the page has drawn what changed, and harness.idle()
 // once no request waits either. harness.refuse(reply) answers the next request with
@@ -31,6 +33,9 @@
     Math.max(1, Number(setup.get("accounts") ?? 3) || 3),
   );
   const MINUTE = 60_000;
+  // Whether the second account asks for a PIN, as in the venue mode.
+  const pinned = setup.get("pins") === "1";
+  const guarded = setup.get("manager") === "1";
 
   // Made-up people. The pictures are drawn below; Lena has none, so her tile shows the
   // initial, as for an account without a picture at Autodarts.
@@ -83,6 +88,7 @@
     needsSignIn: false,
     remembersPassword: REMEMBERS[index],
     renewedAgo: RENEWED[index],
+    pin: pinned && index === 1,
   }));
   let activeId = accounts[0].id;
   // True after "Add account", until the next sign-in or "Cancel".
@@ -104,6 +110,7 @@
       })),
       unsaved: false,
       adding,
+      venue: { manager: guarded },
       updateHint: false,
     };
   }
@@ -181,9 +188,40 @@
   let pending = 0;
   let refusal = null;
 
+  // The venue mode as the options page sees it: which PINs are set, never a hash.
+  const venue = { manager: guarded, idleMinutes: null, house: null };
+
+  /** What the service worker answers to a request of the venue mode from options.js. */
+  function answerVenue({ action, id, pin, minutes, house }) {
+    const account = accounts.find((candidate) => candidate.id === id);
+    if (action === "managerPin") {
+      venue.manager = pin !== null;
+    } else if (action === "playerPin") {
+      account.pin = pin !== null;
+    } else if (action === "idle") {
+      venue.idleMinutes = minutes;
+      venue.house = house;
+    }
+    return {
+      ok: true,
+      status: {
+        ...venue,
+        accounts: accounts.map(({ id: key, name, username, pin: set }) => ({
+          id: key,
+          name,
+          username,
+          pin: set,
+        })),
+      },
+    };
+  }
+
   async function sendMessage(message) {
     pending += 1;
     try {
+      if (message.type === "venue") {
+        return answerVenue(message);
+      }
       if (gate !== null && message.action !== "view") {
         await gate.promise;
       }
@@ -251,5 +289,13 @@
       local: { get: async () => ({}), set: async () => {} },
       onChanged: noListeners,
     },
+    // The shortcuts of the manifest, as the options page lists them.
+    commands: {
+      getAll: async () => [
+        { name: "_execute_action", shortcut: "Alt+Shift+P" },
+        { name: "toggle-switcher", shortcut: "Alt+Shift+O" },
+      ],
+    },
+    tabs: { create: async () => {} },
   };
 })();

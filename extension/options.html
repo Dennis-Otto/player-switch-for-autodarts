@@ -8,23 +8,67 @@
   </head>
   <body>
     <main>
-      <section aria-labelledby="button-heading">
-        <h2 id="button-heading" data-i18n="optionsButton">The button in the Autodarts page</h2>
-        <label class="check">
-          <input type="checkbox" id="show-button" aria-describedby="show-button-hint" />
-          <span data-i18n="optionShowButton">Show the button on the Autodarts page</span>
-        </label>
-        <p id="show-button-hint" class="hint" data-i18n="optionShowButtonHint"></p>
-        <fieldset id="corners">
-          <legend data-i18n="optionCorner">Corner of the button</legend>
-        </fieldset>
+      <!-- Chrome shows the name of the extension above the page; the heading names it for a screen reader. -->
+      <h1 class="visually-hidden" data-i18n="settings">Settings</h1>
+
+      <section id="locked" aria-labelledby="locked-heading" hidden>
+        <h2 id="locked-heading" data-i18n="optionsLockedTitle">Settings locked</h2>
+        <p class="hint" data-i18n="optionsLocked">A manager PIN guards these settings. Enter it to change them.</p>
+        <button type="button" id="unlock" class="primary" data-i18n="unlock">Unlock</button>
       </section>
 
-      <section aria-labelledby="shortcuts-heading">
-        <h2 id="shortcuts-heading" data-i18n="optionShortcuts">Keyboard shortcuts</h2>
-        <dl id="commands"></dl>
-        <button type="button" id="shortcuts" class="link" data-i18n="changeShortcuts">Change shortcuts</button>
-      </section>
+      <div id="settings" hidden>
+        <section aria-labelledby="button-heading">
+          <h2 id="button-heading" data-i18n="optionsButton">The button in the Autodarts page</h2>
+          <label class="check">
+            <input type="checkbox" id="show-button" aria-describedby="show-button-hint" />
+            <span data-i18n="optionShowButton">Show the button on the Autodarts page</span>
+          </label>
+          <p id="show-button-hint" class="hint" data-i18n="optionShowButtonHint"></p>
+          <fieldset id="corners">
+            <legend data-i18n="optionCorner">Corner of the button</legend>
+          </fieldset>
+        </section>
+
+        <section id="venue" aria-labelledby="venue-heading">
+          <h2 id="venue-heading" data-i18n="optionsVenue">For a club or pub</h2>
+          <p class="hint" data-i18n="optionsVenueHint"></p>
+
+          <div class="group">
+            <h3 data-i18n="managerPinTitle">Manager PIN</h3>
+            <p id="manager-state" class="hint"></p>
+            <div class="row">
+              <button type="button" id="set-manager" class="primary"></button>
+              <button type="button" id="remove-manager" class="link danger" data-i18n="removeManagerPin" hidden>Remove manager PIN</button>
+            </div>
+          </div>
+
+          <div class="group">
+            <h3 data-i18n="playerPins">PINs of the players</h3>
+            <p class="hint" data-i18n="playerPinsHint"></p>
+            <ul id="player-pins" data-i18n-label="playerPins" aria-label="PINs of the players"></ul>
+          </div>
+
+          <div class="group">
+            <h3 data-i18n="idleHeading">Return after a break</h3>
+            <label class="field">
+              <span data-i18n="idleAfter">After a break of</span>
+              <select id="idle-minutes" aria-describedby="idle-hint"></select>
+            </label>
+            <label class="field">
+              <span data-i18n="idleTo">Return to</span>
+              <select id="idle-house" aria-describedby="idle-hint"></select>
+            </label>
+            <p id="idle-hint" class="hint" data-i18n="idleHint"></p>
+          </div>
+        </section>
+
+        <section aria-labelledby="shortcuts-heading">
+          <h2 id="shortcuts-heading" data-i18n="optionShortcuts">Keyboard shortcuts</h2>
+          <dl id="commands"></dl>
+          <button type="button" id="shortcuts" class="link" data-i18n="changeShortcuts">Change shortcuts</button>
+        </section>
+      </div>
 
       <p id="saved" class="hint" role="status" aria-live="polite"></p>
     </main>

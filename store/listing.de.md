@@ -31,6 +31,11 @@ So funktioniert es:
   1 bis 9 wählen einen Spieler.
 • Auf der Seite eines laufenden Matches fragt ein Wechsel vorher, damit ein Match
   nie aus Versehen endet.
+• Für Verein und Kneipe, optional und von Haus aus aus: Eine Manager-PIN schützt
+  „Konten verwalten“ und die Einstellungen, jeder Spieler kann sein Konto mit einer
+  eigenen PIN schützen, und nach einer Pause kehrt das Display von selbst zu einem
+  Hauskonto zurück, nie während eines Matches. Die Erweiterung speichert keine PIN,
+  nur einen gesalzenen Hash davon.
 • Optional: Die Erweiterung merkt sich ein Passwort und meldet ein Konto von selbst
   neu an, falls die Sitzung einmal nicht mehr geht. Konten, die sich mit Google oder
   Apple anmelden, können das nicht nutzen, weil sie kein Autodarts-Passwort haben,
@@ -47,9 +52,12 @@ Nicht mit Autodarts verbunden.
 
 ## Begründung der Berechtigungen
 
-• storage — um deine gespeicherten Konten und Sitzungen auf dem Computer zu halten.
+• storage — um deine gespeicherten Konten, ihre Sitzungen und die Einstellungen auf
+  dem Computer zu halten, im Modus für Verein und Kneipe auch die gesalzenen Hashes
+  der PINs.
 • alarms — um geparkte Sitzungen im Hintergrund zu erneuern, damit sie bereit
-  bleiben.
+  bleiben, und im Modus für Verein und Kneipe einmal pro Minute zu prüfen, ob das
+  Display nach einer Pause zurückkehren soll.
 • scripting — um den Knopf einer neuen Version in die Autodarts-Tabs zu bringen,
   die beim Update schon offen sind, oder in einen, der nicht mehr antwortet, damit
   ein Display im Kiosk-Modus ohne Neuladen weiter funktioniert. Es führt nur das eigene Skript der Erweiterung aus, nur auf
