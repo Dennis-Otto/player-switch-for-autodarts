@@ -5,7 +5,7 @@ config:
 ---
 flowchart TB
     accTitle: How a release reaches the Chrome Web Store
-    accDescr: After every release, every day at 00:17 UTC and when started by hand with a tag, the workflow signs in to the Chrome Web Store and asks for the state of the item. A refresh token that Google turns away, a rejected release, a warning, a takedown or a review of more than 7 days fail the run, with the reason and the fix in its summary, and the bot-health sweep of the night keeps an issue open. While a review is pending, the run ends with a note, and a later day delivers the release. When the store has the release already, nothing happens. Otherwise a job without any secret builds the zip from the tag and keeps it as an artifact, and a job that reaches only Google uploads it and submits it for review.
+    accDescr: After every release, every day at 00:17 UTC and when started by hand with a tag, the workflow signs in to the Chrome Web Store and asks for the state of the item. A sign-in that Google turns away, a rejected release, a warning, a takedown or a review of more than 7 days fail the run, with the reason and the fix in its summary, and the bot-health sweep of the night keeps an issue open. While a review is pending, the run ends with a note, and a later day delivers the release. When the store has the release already, nothing happens. Otherwise a job without any secret builds the zip from the tag and keeps it as an artifact, and a job that reaches only Google uploads it and submits it for review.
 
     start["After a release, every day at 00:17 UTC,<br>or by hand with a tag"]
     ask["Sign in and ask the store<br>for the state of the item"]
@@ -19,7 +19,7 @@ flowchart TB
     review["Google reviews the release<br>and publishes it"]
 
     start --> ask --> decide
-    ask -- "the token expired" --> fail
+    ask -- "Google turns the sign-in away" --> fail
     decide -- "rejected, warned, taken down,<br>or in review for more than 7 days" --> fail
     decide -- "a review is pending" --> wait
     decide -- "published already" --> has
