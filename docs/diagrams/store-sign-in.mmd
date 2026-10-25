@@ -1,0 +1,31 @@
+---
+config:
+  flowchart:
+    wrappingWidth: 400
+---
+flowchart TB
+    accTitle: How the workflow signs in to the Chrome Web Store
+    accDescr: Each of the two jobs that talk to the store signs in by itself. With the variables CWS_WORKLOAD_IDENTITY_PROVIDER and CWS_SERVICE_ACCOUNT set, the job asks GitHub for its OIDC token, which names the repository, the branch and the workflow. Google's Security Token Service trades it for a federated token only when the condition of the provider admits this repository, the branch main and publish-store.yml, and IAM trades that for an access token of the service account for 20 minutes. Without the variables, Google issues the access token for the OAuth client and the refresh token, the secrets of the environment chrome-web-store. Either way the token stays in a file of the job, and the Chrome Web Store takes it when the Developer Dashboard names its account. A sign-in that Google turns away fails the run, with the reason and the fix.
+
+    job["The job status or store"]
+    set{"Are CWS_WORKLOAD_IDENTITY_PROVIDER<br>and CWS_SERVICE_ACCOUNT set?"}
+    oidc["GitHub issues the OIDC token of the job:<br>repository, branch, workflow"]
+    sts["Google's Security Token Service<br>checks the condition of the provider:<br>this repository, main, publish-store.yml"]
+    iam["IAM issues an access token<br>of the service account, for 20 minutes"]
+    secret["Google issues an access token for the<br>OAuth client and the refresh token,<br>the secrets of chrome-web-store"]
+    store["The Chrome Web Store takes the token<br>of the account that the dashboard names"]
+    fail["The run fails, with the reason<br>and the fix in its summary"]
+
+    job --> set
+    set -- "yes, without any secret" --> oidc --> sts --> iam --> store
+    set -- "no" --> secret --> store
+    sts -- "another repository,<br>branch or workflow" --> fail
+    iam -- "the pool may not act<br>as the service account" --> fail
+    secret -- "the token expired" --> fail
+
+    classDef bot fill:#526cfe2e,stroke:#526cfe,stroke-width:2px
+    classDef done fill:#16a34a2e,stroke:#16a34a,stroke-width:2px
+    classDef person fill:#f59e0b2e,stroke:#f59e0b,stroke-width:2px
+    class job,oidc,sts,iam,secret bot
+    class store done
+    class fail person
