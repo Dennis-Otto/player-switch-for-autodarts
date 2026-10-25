@@ -6,6 +6,34 @@ the next release, or lists the pull requests when there is none.
 
 ## Unreleased
 
+## [1.1.0](https://github.com/Dennis-Otto/player-switch-for-autodarts/compare/v1.0.0...v1.1.0) (2026-10-25)
+
+### Features
+
+- Player Switch now runs in Microsoft Edge 140 or newer, from the Chrome Web Store or
+  loaded unpacked, and, as a preview not yet tested by hand in Firefox, in Firefox 140
+  or newer, for now as a temporary add-on until it is listed on addons.mozilla.org. The
+  website and the README say how to install it in each browser. Firefox lists on the
+  add-on's page in `about:addons`, and will ask at the install once the add-on is listed
+  on addons.mozilla.org, that it sends authentication information, which goes to the
+  sign-in service of Autodarts alone. Firefox can't keep
+  the storage of the extension from its script in the Autodarts page, so a display in a
+  club or a pub is best set up with Chrome or Edge.
+- **Change shortcuts** on the options page opens the shortcuts of the browser in
+  Firefox too, where it did nothing before.
+- "Report a problem" now names Firefox and its version in the bug form, where it said
+  "unknown" before.
+- Removing an account now signs it out at Autodarts as well, before the extension
+  deletes it, so that no copy of its session, such as in a backup of the computer,
+  keeps working. Removing the player who plays on the page signs the page out, and
+  during a match the extension asks first. When Autodarts can't be reached, the
+  account is removed all the same, and the popup says that its session ends only
+  when it expires.
+- "Forget all accounts", under "Manage accounts", prepares a display that changes
+  hands: after a confirmation, and in the venue mode the manager PIN, it signs every
+  account out at Autodarts and deletes everything the extension keeps, with the key
+  that seals the sessions, the PINs and the settings.
+
 ## [1.0.0](https://github.com/Dennis-Otto/player-switch-for-autodarts/compare/v0.2.0...v1.0.0) (2026-10-25)
 
 **The first stable version, 1.0.0.** Player Switch now does what it was built for:
