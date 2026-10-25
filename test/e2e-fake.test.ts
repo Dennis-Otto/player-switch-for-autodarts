@@ -187,3 +187,14 @@ test("the certificate is one that a TLS server can serve, for exactly the hosts 
     certificate.spki,
   );
 });
+
+test("the certificate's serial number stays valid DER when the random bytes start with zeros", () => {
+  // A serial of all zero bytes once gave the illegal padding that OpenSSL refuses.
+  const certificate = makeCertificate(["play.autodarts.com"], (size) =>
+    Buffer.alloc(size),
+  );
+  assert.doesNotThrow(() => new X509Certificate(certificate.cert));
+  assert.doesNotThrow(() =>
+    createSecureContext({ cert: certificate.cert, key: certificate.key }),
+  );
+});

@@ -13,8 +13,8 @@
  * - A wrong password is refused with 401, a token that it doesn't know with 400.
  *
  * It knows no browser and no network: `answer` takes the path and the body of a
- * request and gives the status and the body of the answer, which the fixture sends
- * back to the browser through Playwright's routing.
+ * request and gives the status and the body of the answer, which the fake HTTPS server
+ * of server.ts sends back to the browser.
  */
 
 /** An account of the fake Autodarts, made up for the tests. */

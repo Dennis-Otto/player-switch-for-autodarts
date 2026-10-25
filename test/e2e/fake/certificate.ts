@@ -74,8 +74,14 @@ function pem(label: string, body: Buffer): string {
   return `-----BEGIN ${label}-----\n${lines.join("\n")}\n-----END ${label}-----\n`;
 }
 
-/** Makes a certificate for these host names, valid from a day ago for a week. */
-export function makeCertificate(hosts: readonly string[]): Certificate {
+/**
+ * Makes a certificate for these host names, valid from a day ago for a week.
+ * `random` gives the bytes of the serial number; the tests pass their own.
+ */
+export function makeCertificate(
+  hosts: readonly string[],
+  random: (size: number) => Buffer = randomBytes,
+): Certificate {
   const { publicKey, privateKey } = generateKeyPairSync("ec", {
     namedCurve: "prime256v1",
   });
@@ -84,9 +90,11 @@ export function makeCertificate(hosts: readonly string[]): Certificate {
   const name = commonName("Fake Autodarts for the end-to-end tests");
   const day = 24 * 60 * 60 * 1000;
   const now = Date.now();
-  // A positive serial number: its first bit is clear.
-  const serial = randomBytes(16);
-  serial[0] = (serial[0] ?? 0) & 0x7f;
+  // A positive serial number in the shortest DER form: the first byte has its
+  // top bit clear (positive) and is never zero (a leading zero byte before a
+  // byte below 0x80 is illegal padding, which OpenSSL refuses).
+  const serial = random(16);
+  serial[0] = 0x40 | ((serial[0] ?? 0) & 0x3f);
   const alternativeNames = sequence(
     ...hosts.map((host) => der(0x82, Buffer.from(host, "ascii"))),
   );
