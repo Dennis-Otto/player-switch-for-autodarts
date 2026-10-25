@@ -7,7 +7,7 @@
 #
 # Google Chrome itself, Beta too, no longer loads an unpacked extension from the
 # command line; Chrome for Testing, the same browser for automated tests, still does.
-# The workflow Upstream runs the tests in Beta every week, four weeks before the
+# The workflow Upstream runs the tests in Beta every morning, four weeks before the
 # version reaches the players. The second argument is the folder to keep the
 # downloads in; a version that is there already is used again. It needs curl, Node
 # and unzip, which Git Bash, macOS and the runners of GitHub have.

@@ -27,7 +27,7 @@ extension from the command line since version 137.
 2. **End-to-end tests against the real Autodarts with a test account**: they would
    see every change, but need a secret, sign a real account in every day and spend
    its tokens, and break when Autodarts limits sign-ins.
-3. **A daily check of the contract with made-up data, and a weekly run of the
+3. **A daily check of the contract with made-up data, and a daily run of the
    end-to-end tests in Chrome for Testing Beta**: the check looks for the three
    values in the code of Autodarts Play, sends a made-up token, a made-up account and
    the end of a made-up session through the functions of the extension, and follows

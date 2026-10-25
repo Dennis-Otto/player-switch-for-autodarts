@@ -10,7 +10,7 @@ name: Upstream
 #   of Autodarts. scripts/upstream-contract.ts takes the values from src/autodarts.ts,
 #   sends only made-up data, about a dozen requests in all, and its summary names
 #   what changed and every place of the code that relies on it.
-# - chrome-beta, every Monday: the end-to-end tests of test/e2e/ in Chrome for
+# - chrome-beta, every morning as well: the end-to-end tests of test/e2e/ in Chrome for
 #   Testing Beta, the next version of Chrome, about four weeks before it reaches the
 #   players. Branded Chrome, Beta too, no longer loads an unpacked extension.
 #
@@ -22,10 +22,10 @@ name: Upstream
 
 on:
   schedule:
-    # The contract with Autodarts, every morning.
+    # Both jobs, every morning. One schedule only: bot-health keeps one issue per
+    # workflow and closes it after the next run that passes, so a run without one of
+    # the jobs would close the issue of the other one.
     - cron: "17 5 * * *"
-    # The end-to-end tests in Chrome Beta, every Monday.
-    - cron: "43 3 * * 1"
   pull_request:
     paths:
       - .github/workflows/upstream.yml
@@ -48,7 +48,6 @@ defaults:
 jobs:
   contract:
     name: autodarts-contract
-    if: github.event_name != 'schedule' || github.event.schedule == '17 5 * * *'
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     permissions:
@@ -99,7 +98,6 @@ jobs:
 
   chrome-beta:
     name: chrome-beta
-    if: github.event_name != 'schedule' || github.event.schedule == '43 3 * * 1'
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     permissions:
@@ -159,3 +157,13 @@ jobs:
         env:
           CHECK: chrome-beta
         run: python3 .github/blueprint.py coach explain "$CHECK"
+      # Without sudo and Docker, Harden-Runner removes Docker with apt-get while the
+      # job runs; an early failure would otherwise hang until the timeout.
+      - name: Wait until Harden-Runner has removed Docker
+        if: always()
+        run: |
+          for _ in {1..120}; do
+            pgrep -x 'apt-get|dpkg' >/dev/null || exit 0
+            sleep 1
+          done
+          echo "::warning::Harden-Runner still removes Docker after two minutes; the job may hang until its timeout."
