@@ -166,8 +166,12 @@ export function tileForKey(key: string, count: number): number | null {
 
 /** What the options page needs of the browser to open the keyboard shortcuts. */
 export interface ShortcutsApi {
-  /** Firefox (137 and later) has it; Chrome and Edge don't. */
-  readonly commands?: { readonly openShortcutSettings?: () => Promise<void> };
+  /**
+   * `commands.openShortcutSettings`: Firefox (137 and later) has it; Chrome and Edge
+   * don't, so their typed `chrome.commands` names no such member and the type here is
+   * only `object`, which `openShortcuts` looks into.
+   */
+  readonly commands?: object;
   readonly tabs: {
     readonly create: (properties: { url: string }) => Promise<unknown>;
   };
@@ -180,9 +184,12 @@ export interface ShortcutsApi {
  * `edge://extensions/shortcuts`.
  */
 export function openShortcuts(api: ShortcutsApi): Promise<unknown> {
-  const open = api.commands?.openShortcutSettings;
+  const commands = api.commands as
+    | { readonly openShortcutSettings?: unknown }
+    | undefined;
+  const open = commands?.openShortcutSettings;
   if (typeof open === "function") {
-    return open.call(api.commands);
+    return Promise.resolve(open.call(commands));
   }
   return api.tabs.create({ url: "chrome://extensions/shortcuts" });
 }
