@@ -20,9 +20,9 @@ and never leaves it except to Autodarts itself:
   `api.autodarts.com`.
 - **A password, only if you ask it to.** "Remember password" stores an account's
   username and password so the extension can sign that account in again when its
-  token stops working. It is stored as plain text in `chrome.storage.local`, like
-  the token, and is sent only to `api.autodarts.com/auth/v1/login`. Leave it off,
-  and no password is ever stored.
+  token stops working. It is stored sealed, like the token (see below), and is
+  sent only to `api.autodarts.com/auth/v1/login`. Leave it off, and no password is
+  ever stored.
 - **The settings of the button in the page:** whether it shows, and in which corner.
 - **When the renewal last ran,** and whether Autodarts turned every parked account
   away in it, so that the extension catches up on a renewal it missed while the
@@ -30,9 +30,40 @@ and never leaves it except to Autodarts itself:
   name.
 - **Only after going back to an older version: a copy of the saved accounts** that
   a newer version stored in a format this one can't read, under `accounts.backup`,
-  with their tokens and remembered passwords. This version never saves over such
-  accounts; the copy is a second safeguard. It is deleted as soon as a version that
-  reads the accounts runs again, and with the extension.
+  with their tokens and remembered passwords, sealed as that version sealed them.
+  This version never saves over such accounts; the copy is a second safeguard. It
+  is deleted as soon as a version that reads the accounts runs again, and with the
+  extension.
+- **The key that seals the tokens and passwords,** in the IndexedDB of the
+  extension (see below).
+
+### Sealed tokens and passwords
+
+`chrome.storage.local` holds no token and no password in plain text. The service
+worker seals each one with AES-GCM under a key of 256 bits (`src/vault.ts`), and
+stores only the random nonce and the encrypted text, `{ iv, data }`. The names,
+the pictures and which account plays stay readable, because the button in the page
+shows them.
+
+- **The key never leaves the browser.** The service worker makes it once, with
+  WebCrypto, as a key that can't be exported, and keeps it in the IndexedDB of the
+  extension's own origin. The browser uses the key for the extension, but no script
+  ever sees its bytes, not even the extension's own. Neither a content script nor a
+  page of another origin can open that database. The permission `unlimitedStorage`
+  keeps Chrome from evicting it when the disk runs low, as it may do with the web
+  storage of an extension without it.
+- **Each secret is bound to its place.** The id of the account and the field, such
+  as `token/<id>`, are the additional data of AES-GCM. A sealed token copied to
+  another account, or changed by a single bit, no longer opens.
+- **Losing the key costs a sign-in, nothing more.** Without the key, for example
+  after the data of the extension was cleared, a sealed token or password no longer
+  opens. The accounts then need to sign in again and their passwords are forgotten,
+  and nothing fails. A key store that can't be read for a moment fails the request
+  instead, so that a passing fault never costs a session.
+- **An update seals what was plain.** The versions before stored the tokens and
+  passwords in plain text. An update to this version seals them, and so does the
+  first reading of the accounts after it. A version that doesn't know the sealed
+  format never saves over it (see the copy above).
 
 Only the extension itself can read this storage: its service worker and its own
 pages, the popup, the options page and the switcher. Chrome lets the content scripts
@@ -72,8 +103,8 @@ stored session is `extension/content.js`.
    the content script, which may only ask what its button shows. The content script
    in turn takes requests only from this extension, and writes only a token into the
    session of the page.
-4. **The manifest.** The extension asks for the permissions `storage`, `alarms` and
-   `scripting` and for access to `play.autodarts.com` and `api.autodarts.com`, and for
+4. **The manifest.** The extension asks for the permissions `storage`, `alarms`,
+   `scripting` and `unlimitedStorage` and for access to `play.autodarts.com` and `api.autodarts.com`, and for
    nothing else. [`store/permissions.json`](https://github.com/Dennis-Otto/player-switch-for-autodarts/blob/main/store/permissions.json)
    lists each with its reason, and `scripts/check-manifest.mjs` fails a change that
    asks for more. `play.autodarts.io` forwards every address to `play.autodarts.com`,
@@ -81,7 +112,7 @@ stored session is `extension/content.js`.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="images/diagrams/who-reaches-the-accounts.dark.svg">
-  <img src="images/diagrams/who-reaches-the-accounts.svg" alt="Who reaches the saved accounts: The saved accounts, with their tokens and remembered passwords, sit in chrome.storage.local, which only the extension's own contexts can read, the service worker and its pages: the popup, the options page and the switcher in its frame. content.js runs inside the Autodarts page and can't read the storage. It may ask the service worker only what its button shows, takes requests only from this extension and writes into the page's session only a token. The service worker takes a request to see or change the accounts only from a page of this extension. Its content security policy lets it connect to api.autodarts.com alone, and the browser blocks any other host.">
+  <img src="images/diagrams/who-reaches-the-accounts.svg" alt="Who reaches the saved accounts: The saved accounts sit in chrome.storage.local, which only the extension's own contexts can read, the service worker and its pages: the popup, the options page and the switcher in its frame. Their tokens and remembered passwords are sealed there with AES-GCM; the key can't be exported and sits in the IndexedDB of the extension, which only the service worker uses. content.js runs inside the Autodarts page and can't read the storage. It may ask the service worker only what its button shows, takes requests only from this extension and writes into the page's session only a token. The service worker takes a request to see or change the accounts only from a page of this extension. Its content security policy lets it connect to api.autodarts.com alone, and the browser blocks any other host.">
 </picture>
 
 ## Threats and countermeasures
@@ -91,6 +122,9 @@ stored session is `extension/content.js`.
 | A token is sent to the wrong place | Requests go only to `api.autodarts.com`; the host list in the manifest is limited to Autodarts, and the content security policy lets the browser block a request to any other host |
 | A page whose process is taken over reads the saved tokens and passwords through the content script | At each of its starts, the service worker limits `chrome.storage.local` to the extension's own contexts, so the content script can't read it; it gets only the player on the button |
 | The content script, or a page that took it over, sends a request that reads the accounts or switches players | The service worker takes such a request only from a page of this extension, by the id and the address of the sender; the content script takes requests only from this extension |
+| A tool, a dump or a copy of `chrome.storage.local` (not of the whole profile) finds the tokens and passwords; a copy of the whole profile takes the key with it, see the risk that remains | Each token and password is sealed with AES-GCM under a key that can't be exported and sits in the extension's IndexedDB, not in `chrome.storage.local`; the storage holds only the sealed text |
+| Someone who can write the storage moves a sealed token to another account, or changes it | Each secret is sealed with its account and field as additional data, so a moved or changed value doesn't open, and the account has to sign in again |
+| The key is gone, for example after the data of the extension was cleared (the permission `unlimitedStorage` keeps Chrome from evicting it on its own) | The accounts that can't be opened need to sign in again, and their passwords are forgotten; nothing fails, and nothing is saved in plain text instead |
 | A stale token is reused and locks an account out | The extension always keeps the token the server last returned (rotation) and renews parked tokens in the background; every change of the accounts runs one at a time in one queue of the service worker, so a double tap or the renewal never sends the same token twice |
 | A password is stored when it wasn't wanted | A password is kept only after an explicit "Remember password"; it is off by default and can be forgotten again |
 | A sign-in on the display is saved without being asked for | A new session is saved by itself only in the ten minutes after "Add account" or the install, only once, and only while no saved account plays; a window that ran out closes for good, and "Cancel" in the popup or the switcher closes it earlier. Every other session waits for "Save account" |
@@ -109,7 +143,12 @@ stored session is `extension/content.js`.
 
 - A stored token or password is only as protected as the computer and browser
   profile it lives in; this extension is for a trusted, shared machine, not a
-  public one.
+  public one. Sealing it is defense in depth, not a password manager: someone who
+  can read the profile of the browser on the disk, with the same account of the
+  operating system, can read the key in the IndexedDB of the extension as well,
+  and code that runs inside the extension itself could ask the key to open a token.
+  The key stops the tools, backups and copies of the profile that read only the
+  storage of the extension, and a content script or a page of another origin.
 - The Autodarts page can tell that the extension is installed, from the button and
   from `switcher.html`, which it may load. A page that wanted to could also lay the
   switcher under a decoy and trick a tap on it; that would take a script of Autodarts

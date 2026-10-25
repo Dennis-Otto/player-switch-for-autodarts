@@ -21,10 +21,9 @@ verlässt ihn nie, außer an Autodarts selbst:
   ihn nur an `api.autodarts.com`.
 - **Ein Passwort, nur wenn du sie darum bittest.** „Passwort merken“ speichert
   Benutzername und Passwort eines Kontos, damit die Erweiterung das Konto wieder
-  anmelden kann, wenn sein Token nicht mehr geht. Es liegt als Klartext in
-  `chrome.storage.local`, wie der Token, und geht nur an
-  `api.autodarts.com/auth/v1/login`. Lass es aus, und kein Passwort wird je
-  gespeichert.
+  anmelden kann, wenn sein Token nicht mehr geht. Es wird versiegelt gespeichert,
+  wie der Token (siehe unten), und geht nur an `api.autodarts.com/auth/v1/login`.
+  Lass es aus, und kein Passwort wird je gespeichert.
 - **Die Einstellungen des Knopfs in der Seite:** ob er zu sehen ist, und in welcher
   Ecke.
 - **Wann die Erneuerung zuletzt lief,** und ob Autodarts dabei jedes geparkte Konto
@@ -33,10 +32,43 @@ verlässt ihn nie, außer an Autodarts selbst:
   enthält keinen Token und keinen Namen.
 - **Nur nach dem Wechsel zurück auf eine ältere Version: eine Kopie der gespeicherten
   Konten**, die eine neuere Version in einem Format gespeichert hat, das diese nicht
-  lesen kann, unter `accounts.backup`, mit ihren Tokens und gemerkten Passwörtern.
-  Diese Version speichert nie über solche Konten; die Kopie ist eine zweite
-  Absicherung. Sie wird gelöscht, sobald wieder eine Version läuft, die die Konten
-  liest, und mit der Erweiterung.
+  lesen kann, unter `accounts.backup`, mit ihren Tokens und gemerkten Passwörtern,
+  versiegelt, wie jene Version sie versiegelt hat. Diese Version speichert nie über
+  solche Konten; die Kopie ist eine zweite Absicherung. Sie wird gelöscht, sobald
+  wieder eine Version läuft, die die Konten liest, und mit der Erweiterung.
+- **Der Schlüssel, der die Tokens und Passwörter versiegelt,** in der IndexedDB der
+  Erweiterung (siehe unten).
+
+### Versiegelte Tokens und Passwörter
+
+`chrome.storage.local` enthält keinen Token und kein Passwort im Klartext. Der
+Service Worker versiegelt jeden und jedes mit AES-GCM unter einem Schlüssel von
+256 Bit (`src/vault.ts`) und speichert nur die zufällige Nonce und den
+verschlüsselten Text, `{ iv, data }`. Die Namen, die Bilder und welches Konto spielt
+bleiben lesbar, weil der Knopf in der Seite sie zeigt.
+
+- **Der Schlüssel verlässt den Browser nie.** Der Service Worker erzeugt ihn einmal,
+  mit WebCrypto, als Schlüssel, der sich nicht exportieren lässt, und behält ihn in
+  der IndexedDB des eigenen Ursprungs der Erweiterung. Der Browser benutzt den
+  Schlüssel für die Erweiterung, aber kein Skript sieht je seine Bytes, auch das der
+  Erweiterung nicht. Weder ein Content Script noch eine Seite eines anderen Ursprungs
+  kann diese Datenbank öffnen. Die Berechtigung `unlimitedStorage` hält Chrome davon
+  ab, sie bei knappem Speicherplatz zu verdrängen, wie es das ohne sie mit dem
+  Web-Speicher einer Erweiterung tun darf.
+- **Jedes Geheimnis ist an seinen Platz gebunden.** Die ID des Kontos und das Feld,
+  etwa `token/<id>`, sind die zusätzlichen Daten von AES-GCM. Ein versiegelter Token,
+  der zu einem anderen Konto kopiert oder um ein einziges Bit verändert wurde, lässt
+  sich nicht mehr öffnen.
+- **Geht der Schlüssel verloren, kostet das eine Anmeldung, mehr nicht.** Ohne den
+  Schlüssel, etwa nachdem die Daten der Erweiterung gelöscht wurden, lässt sich ein
+  versiegelter Token oder ein Passwort nicht mehr öffnen. Die Konten müssen sich dann
+  neu anmelden, ihre Passwörter sind vergessen, und nichts schlägt fehl. Lässt sich
+  der Schlüsselspeicher für einen Moment nicht lesen, schlägt dagegen die Anfrage
+  fehl, damit ein vorübergehender Fehler nie eine Sitzung kostet.
+- **Ein Update versiegelt, was im Klartext lag.** Die Versionen davor speicherten
+  die Tokens und Passwörter im Klartext. Ein Update auf diese Version versiegelt sie,
+  und ebenso das erste Lesen der Konten danach. Eine Version, die das versiegelte
+  Format nicht kennt, speichert nie darüber (siehe die Kopie oben).
 
 Nur die Erweiterung selbst kann diesen Speicher lesen: ihr Service Worker und ihre
 eigenen Seiten, das Popup, die Optionsseite und der Wechsler. Chrome lässt auch die
@@ -78,7 +110,7 @@ die gespeicherte Sitzung der Seite berührt, ist `extension/content.js`.
    zeigt. Das Content-Skript nimmt seinerseits nur Anfragen dieser Erweiterung an und
    schreibt in die Sitzung der Seite nur einen Token.
 4. **Das Manifest.** Die Erweiterung fragt nach den Berechtigungen `storage`,
-   `alarms` und `scripting` und nach Zugriff auf `play.autodarts.com` und
+   `alarms`, `scripting` und `unlimitedStorage` und nach Zugriff auf `play.autodarts.com` und
    `api.autodarts.com`, und nach nichts sonst. [`store/permissions.json`](https://github.com/Dennis-Otto/player-switch-for-autodarts/blob/main/store/permissions.json)
    nennt jede mit ihrem Grund, und `scripts/check-manifest.mjs` lässt eine Änderung
    scheitern, die nach mehr fragt. `play.autodarts.io` leitet jede Adresse an
@@ -87,7 +119,7 @@ die gespeicherte Sitzung der Seite berührt, ist `extension/content.js`.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="images/diagrams/who-reaches-the-accounts.de.dark.svg">
-  <img src="images/diagrams/who-reaches-the-accounts.de.svg" alt="Wer an die gespeicherten Konten kommt: Die gespeicherten Konten mit ihren Tokens und gemerkten Passwörtern liegen in chrome.storage.local, das nur die eigenen Kontexte der Erweiterung lesen können, der Service Worker und ihre Seiten: das Popup, die Optionsseite und der Wechsler in seinem Rahmen. content.js läuft in der Autodarts-Seite und kann den Speicher nicht lesen. Es darf den Service Worker nur fragen, was sein Knopf zeigt, nimmt Anfragen nur von dieser Erweiterung an und schreibt in die Sitzung der Seite nur einen Token. Der Service Worker nimmt eine Anfrage, die Konten zu sehen oder zu ändern, nur von einer Seite dieser Erweiterung an. Seine Content Security Policy lässt ihn nur mit api.autodarts.com verbinden, und der Browser sperrt jeden anderen Host.">
+  <img src="images/diagrams/who-reaches-the-accounts.de.svg" alt="Wer an die gespeicherten Konten kommt: Die gespeicherten Konten liegen in chrome.storage.local, das nur die eigenen Kontexte der Erweiterung lesen können, der Service Worker und ihre Seiten: das Popup, die Optionsseite und der Wechsler in seinem Rahmen. Ihre Tokens und gemerkten Passwörter sind dort mit AES-GCM versiegelt; der Schlüssel lässt sich nicht exportieren und liegt in der IndexedDB der Erweiterung, die nur der Service Worker benutzt. content.js läuft in der Autodarts-Seite und kann den Speicher nicht lesen. Es darf den Service Worker nur fragen, was sein Knopf zeigt, nimmt Anfragen nur von dieser Erweiterung an und schreibt in die Sitzung der Seite nur einen Token. Der Service Worker nimmt eine Anfrage, die Konten zu sehen oder zu ändern, nur von einer Seite dieser Erweiterung an. Seine Content Security Policy lässt ihn nur mit api.autodarts.com verbinden, und der Browser sperrt jeden anderen Host.">
 </picture>
 
 ## Bedrohungen und Gegenmaßnahmen
@@ -97,6 +129,9 @@ die gespeicherte Sitzung der Seite berührt, ist `extension/content.js`.
 | Ein Token geht an die falsche Stelle | Anfragen gehen nur an `api.autodarts.com`; die Liste der Hosts im Manifest ist auf Autodarts beschränkt, und die Content Security Policy lässt den Browser eine Anfrage an jeden anderen Host sperren |
 | Eine Seite, deren Prozess jemand übernommen hat, liest die gespeicherten Tokens und Passwörter über das Content-Skript | Bei jedem seiner Starts beschränkt der Service Worker `chrome.storage.local` auf die eigenen Kontexte der Erweiterung, darum kann das Content-Skript ihn nicht lesen; es bekommt nur den Spieler auf dem Knopf |
 | Das Content-Skript, oder eine Seite, die es übernommen hat, schickt eine Anfrage, die die Konten liest oder Spieler wechselt | Der Service Worker nimmt eine solche Anfrage nur von einer Seite dieser Erweiterung an, nach der ID und der Adresse des Absenders; das Content-Skript nimmt nur Anfragen dieser Erweiterung an |
+| Ein Werkzeug, ein Abzug oder eine Kopie von `chrome.storage.local` (nicht des ganzen Profils) findet die Tokens und Passwörter; eine Kopie des ganzen Profils nimmt den Schlüssel mit, siehe das verbleibende Risiko | Jeder Token und jedes Passwort ist mit AES-GCM versiegelt, unter einem Schlüssel, der sich nicht exportieren lässt und in der IndexedDB der Erweiterung liegt, nicht in `chrome.storage.local`; der Speicher enthält nur den versiegelten Text |
+| Wer den Speicher schreiben kann, verschiebt einen versiegelten Token zu einem anderen Konto oder verändert ihn | Jedes Geheimnis ist mit seinem Konto und seinem Feld als zusätzlichen Daten versiegelt, darum lässt sich ein verschobener oder veränderter Wert nicht öffnen, und das Konto muss sich neu anmelden |
+| Der Schlüssel ist weg, etwa nachdem die Daten der Erweiterung gelöscht wurden (die Berechtigung `unlimitedStorage` hält Chrome davon ab, ihn von selbst zu verdrängen) | Die Konten, die sich nicht öffnen lassen, müssen sich neu anmelden, und ihre Passwörter sind vergessen; nichts schlägt fehl, und nichts wird stattdessen im Klartext gespeichert |
 | Ein veralteter Token wird wieder benutzt und sperrt ein Konto aus | Die Erweiterung behält immer den Token, den der Server zuletzt zurückgab (Rotation), und erneuert geparkte Token im Hintergrund; jede Änderung der Konten läuft einzeln nacheinander in einer Warteschlange des Service Workers, darum schicken weder ein Doppeltipp noch die Erneuerung denselben Token zweimal |
 | Ein Passwort wird gespeichert, obwohl das niemand wollte | Ein Passwort wird nur nach einem ausdrücklichen „Passwort merken“ behalten; das ist von Haus aus aus und lässt sich wieder vergessen |
 | Eine Anmeldung am Display wird gespeichert, ohne dass jemand darum gebeten hat | Eine neue Sitzung wird nur in den zehn Minuten nach „Konto hinzufügen“ oder der Installation von selbst gespeichert, nur einmal und nur, solange kein gespeichertes Konto spielt; ein abgelaufenes Zeitfenster schließt sich für immer, und „Abbrechen“ im Popup oder im Wechsler schließt es früher. Jede andere Sitzung wartet auf „Konto speichern“ |
@@ -115,7 +150,13 @@ die gespeicherte Sitzung der Seite berührt, ist `extension/content.js`.
 
 - Ein gespeicherter Token oder ein Passwort ist nur so gut geschützt wie der Computer
   und das Browserprofil, in dem er liegt; diese Erweiterung ist für einen vertrauten,
-  gemeinsamen Rechner gedacht, nicht für einen öffentlichen.
+  gemeinsamen Rechner gedacht, nicht für einen öffentlichen. Das Versiegeln ist eine
+  zusätzliche Schutzschicht, kein Passwortmanager: Wer das Browserprofil auf der
+  Festplatte lesen kann, mit demselben Konto des Betriebssystems, kann auch den
+  Schlüssel in der IndexedDB der Erweiterung lesen, und Code, der in der Erweiterung
+  selbst läuft, könnte den Schlüssel einen Token öffnen lassen. Der Schlüssel hält
+  die Werkzeuge, Sicherungen und Kopien des Profils auf, die nur den Speicher der
+  Erweiterung lesen, und ein Content Script oder eine Seite eines anderen Ursprungs.
 - Die Autodarts-Seite kann erkennen, dass die Erweiterung installiert ist, am Knopf
   und an `switcher.html`, das sie laden darf. Eine Seite, die es darauf anlegt, könnte
   den Wechsler auch unter einen Köder legen und einen Tipp darauf erschleichen; dazu

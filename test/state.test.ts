@@ -12,8 +12,11 @@ import {
   forget,
   forgetCredentials,
   isAdding,
+  PLAIN_VERSION,
   park,
   parked,
+  parseCredentials,
+  parseSealed,
   parseState,
   readStored,
   rememberCredentials,
@@ -64,10 +67,8 @@ const RELEASE_0_2_0 = {
 };
 
 test("readStored takes the accounts of a release before the version without losing any", () => {
-  const stored = readStored(JSON.parse(JSON.stringify(RELEASE_0_2_0)));
-  assert.deepEqual(stored, {
-    kind: "accounts",
-    outdated: true,
+  const plain = {
+    kind: "plain",
     state: {
       profiles: RELEASE_0_2_0.profiles.map((profile) => ({
         ...profile,
@@ -76,35 +77,118 @@ test("readStored takes the accounts of a release before the version without losi
       activeId: "a",
       addingUntil: null,
     },
+  };
+  assert.deepEqual(
+    readStored(JSON.parse(JSON.stringify(RELEASE_0_2_0))),
+    plain,
+  );
+  // The versions after it stored the same plain text with the version 1.
+  assert.equal(PLAIN_VERSION, 1);
+  assert.deepEqual(
+    readStored({ ...RELEASE_0_2_0, version: PLAIN_VERSION }),
+    plain,
+  );
+});
+
+const SEALED_TOKEN = { iv: "aXYtYg==", data: "dG9rZW4tYg==" };
+const SEALED_LOGIN = { iv: "aXYtbA==", data: "bG9naW4tYg==" };
+
+test("toStored puts the sealed secrets in place of the plain ones, which readStored gives back apart", () => {
+  const state = parseState(RELEASE_0_2_0);
+  const secrets = new Map([
+    ["a", { token: null, credentials: null }],
+    ["b", { token: SEALED_TOKEN, credentials: SEALED_LOGIN }],
+  ]);
+  const stored = toStored(state, secrets);
+  assert.equal(stored.version, STATE_VERSION);
+  assert.equal(STATE_VERSION, 2);
+  assert.deepEqual(stored.profiles[1], {
+    ...state.profiles[1],
+    token: SEALED_TOKEN,
+    credentials: SEALED_LOGIN,
+  });
+  assert.ok(!JSON.stringify(stored).includes("rt-b"));
+  assert.ok(!JSON.stringify(stored).includes('"pw"'));
+  assert.deepEqual(readStored(JSON.parse(JSON.stringify(stored))), {
+    kind: "sealed",
+    state: {
+      ...state,
+      profiles: state.profiles.map((profile) => ({
+        ...profile,
+        token: null,
+        credentials: null,
+      })),
+    },
+    secrets,
+  });
+  // An account without its secrets is stored with none.
+  assert.deepEqual(toStored(state, new Map()).profiles[1], {
+    ...state.profiles[1],
+    token: null,
+    credentials: null,
   });
 });
 
-test("toStored writes the version, which readStored then reads as up to date", () => {
-  const state = parseState(RELEASE_0_2_0);
-  const stored = toStored(state);
-  assert.equal(stored.version, STATE_VERSION);
-  assert.equal(STATE_VERSION, 1);
-  assert.deepEqual(readStored(JSON.parse(JSON.stringify(stored))), {
-    kind: "accounts",
-    state,
-    outdated: false,
+test("readStored of the sealed format takes no secret in plain text, and each account once", () => {
+  const stored = readStored({
+    version: STATE_VERSION,
+    profiles: [
+      {
+        ...RELEASE_0_2_0.profiles[1],
+        token: "rt-b",
+        credentials: SEALED_LOGIN,
+      },
+      { ...RELEASE_0_2_0.profiles[1], token: SEALED_TOKEN },
+    ],
   });
+  assert.equal(stored.kind, "sealed");
+  assert.deepEqual(stored.kind === "sealed" ? [...stored.secrets] : [], [
+    ["b", { token: null, credentials: SEALED_LOGIN }],
+  ]);
+});
+
+test("parseSealed takes a nonce and a text, and nothing else", () => {
+  assert.deepEqual(parseSealed(SEALED_TOKEN), SEALED_TOKEN);
+  assert.deepEqual(parseSealed({ ...SEALED_TOKEN, extra: 1 }), SEALED_TOKEN);
+  for (const value of [
+    null,
+    "rt-b",
+    42,
+    {},
+    { iv: "", data: "x" },
+    { iv: "x", data: "" },
+    { iv: 1, data: "x" },
+    { iv: "x", data: 1 },
+  ]) {
+    assert.equal(parseSealed(value), null, JSON.stringify(value));
+  }
+});
+
+test("parseCredentials takes a username and a password, and nothing else", () => {
+  assert.deepEqual(parseCredentials({ username: "u", password: "p" }), {
+    username: "u",
+    password: "p",
+  });
+  assert.equal(parseCredentials({ username: "u" }), null);
+  assert.equal(parseCredentials("u:p"), null);
 });
 
 test("readStored starts with no account when nothing is stored yet", () => {
   assert.deepEqual(readStored(undefined), {
-    kind: "accounts",
+    kind: "sealed",
     state: EMPTY,
-    outdated: false,
+    secrets: new Map(),
   });
 });
 
 test("readStored keeps a value of a newer or unknown version, or of no state at all, from being read", () => {
   for (const stored of [
-    { ...RELEASE_0_2_0, version: 2 },
+    { ...RELEASE_0_2_0, version: STATE_VERSION + 1 },
+    { ...RELEASE_0_2_0, version: 0 },
     { ...RELEASE_0_2_0, version: "1" },
     { ...RELEASE_0_2_0, version: null },
     { version: 1, profiles: "no" },
+    { version: STATE_VERSION, profiles: "no" },
     { profiles: "no" },
     { accounts: [] },
     null,

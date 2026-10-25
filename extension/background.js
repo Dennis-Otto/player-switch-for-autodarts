@@ -5,7 +5,9 @@
 // below, so a double tap or the background renewal can't spend a token twice. When
 // to renew, and what the toolbar icon says, lib/health.js decides; when the welcome
 // page opens, lib/onboarding.js. lib/storage.js keeps the accounts, and never saves
-// over accounts in a format that this version doesn't know.
+// over accounts in a format that this version doesn't know; lib/vault.js seals their
+// sessions and passwords with a key that only this worker uses, kept in the
+// IndexedDB of the extension, so chrome.storage.local holds none in plain text.
 //
 // The popup and the switcher in the Autodarts page (switcher.html) send it the same
 // requests; content.js asks it what the button in the page shows, and it relays the
@@ -69,6 +71,7 @@ import {
   fromExtensionPage,
   keepFromContentScripts,
 } from "./lib/trust.js";
+import { createVault, keyStoreIn } from "./lib/vault.js";
 
 const TAB_MATCHES = PLAY_ORIGINS.map((origin) => `${origin}/*`);
 const STORAGE_KEY = ACCOUNTS_KEY;
@@ -93,7 +96,12 @@ const REQUEST_TIMEOUT_MS = 20_000;
 
 const t = (key, substitution) => chrome.i18n.getMessage(key, substitution);
 
-const store = createStore(chrome.storage.local);
+// The key of the vault never leaves the browser: it can't be exported, and neither
+// content.js nor a page of another origin reaches the IndexedDB of the extension.
+const store = createStore(
+  chrome.storage.local,
+  createVault(keyStoreIn(indexedDB)),
+);
 
 /**
  * Writes a failure of the service worker to its console, which `chrome://extensions`
@@ -563,7 +571,8 @@ chrome.alarms.onAlarm.addListener((alarm) => {
 
 // The browser starts, or the extension is installed or updated: these wake the
 // service worker, whose start then runs the check below. Only the install opens the
-// welcome page; an update stores the accounts in the format of the new version.
+// welcome page; an update stores the accounts in the format of the new version,
+// which seals the sessions and passwords that an earlier one kept in plain text.
 chrome.runtime.onStartup.addListener(ensureRenewal);
 chrome.runtime.onInstalled.addListener((details) => {
   if (details.reason === "update") {

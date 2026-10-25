@@ -5,15 +5,17 @@ config:
 ---
 flowchart TB
     accTitle: Who reaches the saved accounts
-    accDescr: The saved accounts, with their tokens and remembered passwords, sit in chrome.storage.local, which only the extension's own contexts can read, the service worker and its pages: the popup, the options page and the switcher in its frame. content.js runs inside the Autodarts page and can't read the storage. It may ask the service worker only what its button shows, takes requests only from this extension and writes into the page's session only a token. The service worker takes a request to see or change the accounts only from a page of this extension. Its content security policy lets it connect to api.autodarts.com alone, and the browser blocks any other host.
+    accDescr: The saved accounts sit in chrome.storage.local, which only the extension's own contexts can read, the service worker and its pages: the popup, the options page and the switcher in its frame. Their tokens and remembered passwords are sealed there with AES-GCM; the key can't be exported and sits in the IndexedDB of the extension, which only the service worker uses. content.js runs inside the Autodarts page and can't read the storage. It may ask the service worker only what its button shows, takes requests only from this extension and writes into the page's session only a token. The service worker takes a request to see or change the accounts only from a page of this extension. Its content security policy lets it connect to api.autodarts.com alone, and the browser blocks any other host.
 
     subgraph extension ["The extension's own contexts"]
         direction TB
         ui["The popup, the options page<br>and the switcher in its frame"]
         worker["The service worker<br>switches, renews, signs in"]
-        storage[("chrome.storage.local<br>tokens and remembered<br>passwords")]
+        storage[("chrome.storage.local<br>tokens and remembered<br>passwords, sealed")]
+        key[("IndexedDB<br>the key, which can't<br>be exported")]
         ui -- "a request from a page<br>of the extension" --> worker
         worker <--> storage
+        worker -- "seals and opens<br>with the key" --> key
     end
     subgraph page ["The Autodarts page, play.autodarts.com"]
         direction TB
@@ -33,6 +35,6 @@ flowchart TB
     classDef person fill:#f59e0b2e,stroke:#f59e0b,stroke-width:2px
     classDef failed fill:#dc26262e,stroke:#dc2626,stroke-width:2px
     class ui,content,session person
-    class worker,storage bot
+    class worker,storage,key bot
     class api done
     class other failed
