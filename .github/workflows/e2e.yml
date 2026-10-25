@@ -105,11 +105,12 @@ jobs:
       contents: read
     steps:
       # GitHub for the checkout, and for Node.js should the runner image lack its
-      # version; npm for the packages, and Playwright's download server for its
-      # Chromium when the cache has none of this version. The tests themselves reach
-      # no host: the browser resolves only the fake Autodarts on the runner. The hosts
-      # of the Actions service itself, which keeps the cache and the artifact, are
-      # allowed anyway.
+      # version; npm for the packages; and, when the cache has no Chromium of this
+      # version, Playwright's download server, which sends the download of Chrome for
+      # Testing on to Google's storage. The tests themselves reach no host: the
+      # browser resolves only the fake Autodarts on the runner. The hosts of the
+      # Actions service itself, which keeps the cache and the artifact, are allowed
+      # anyway.
       - name: Block every host that the job doesn't need
         uses: step-security/harden-runner@ccd8616d44fd3846e67624a50d5aad6d37bf2d25 # v2.22.1
         with:
@@ -122,6 +123,7 @@ jobs:
             registry.npmjs.org:443
             cdn.playwright.dev:443
             playwright.download.prss.microsoft.com:443
+            storage.googleapis.com:443
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
