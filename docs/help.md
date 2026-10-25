@@ -82,9 +82,9 @@ and the popup and the players on the Autodarts page say:
 
 > Player Switch was updated. Reload the page to use it? A running match ends on this display.
 
-**What it means:** the extension was updated, and this tab still has the button of the version before, because the new version couldn't take it over. As a rule, the new version takes over the open Autodarts tabs by itself; this question comes only where that didn't work. Only a reload brings the new version, and on a match page that ends the match, so the page asks first; on a page without a match, a tap on the button reloads it straight away.
+**What it means:** the extension was updated, and this tab still has the button of the version before, because the new version couldn't take it over. As a rule, the new version takes over the open Autodarts tabs by itself; this question comes only where that didn't work. The old button can only reload the page, and on a match page that ends the match, so it asks first; on a page without a match, a tap on it reloads the page straight away. The toolbar popup of Player Switch and the keyboard shortcut **Alt+Shift+O** bring the new version into the tab without a reload.
 
-**What to do:** **OK** reloads the page with the new version. **Cancel** keeps the page as it is, to finish the match first; tap the button again afterwards.
+**What to do:** **OK** reloads the page with the new version. **Cancel** keeps the page as it is; to keep a running match, press **Alt+Shift+O** or open the toolbar popup, and the extension takes the tab over without a reload.
 
 ### Autodarts may have changed how it signs in {#sign-in-changed}
 

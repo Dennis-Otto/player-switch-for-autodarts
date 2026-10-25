@@ -13,6 +13,14 @@
  * The extension finds the tabs through its access to the Autodarts sites, which lets
  * the browser filter tabs by their address; it needs no `tabs` permission, which
  * would let it read the address of every tab, the browsing history.
+ *
+ * Chrome runs the content script of the manifest only in pages that load after the
+ * extension was installed or updated, and an update cuts the script of the version
+ * before off from the extension. So a tab whose content script doesn't answer gets
+ * `content.js` of this version, and the request once more, before the extension
+ * gives up on it: a display that keeps Autodarts open for days still switches after
+ * a silent update of the extension, without a reload. `content.js` runs once per
+ * version of the extension in a page, so a tab that gets it twice answers once.
  */
 import { PLAY_ORIGIN } from "./autodarts.ts";
 import type { PagePort } from "./switch.ts";
@@ -44,7 +52,8 @@ export type OpenTab = Tab & { id: number };
 export type PageRequest =
   | { type: "page"; action: "read" }
   | { type: "page"; action: "write"; token: string }
-  | { type: "page"; action: "clear" };
+  | { type: "page"; action: "clear" }
+  | { type: "page"; action: "toggleSwitcher" };
 
 /** The browser's tabs, as far as the extension uses them. */
 export interface TabsPort {
@@ -54,6 +63,11 @@ export interface TabsPort {
   focusedWindow(): Promise<number | undefined>;
   /** Sends a request to the content script of a tab; fails when none answers. */
   send(tabId: number, request: PageRequest): Promise<unknown>;
+  /**
+   * Runs `content.js` of this version in a tab; fails when the browser can't run a
+   * script there, as in a tab that it discarded or that shows an error.
+   */
+  inject(tabId: number): Promise<void>;
   /** Loads a tab again. */
   reload(tabId: number): Promise<void>;
   /** Opens a new tab in the window used last, in front or behind the others. */
@@ -104,6 +118,44 @@ async function ranked(tabs: TabsPort): Promise<OpenTab[]> {
   return rankTabs(all, focused);
 }
 
+/**
+ * Sends a request to the content script of one tab. When none answers there, as in a
+ * tab that was open before the extension was installed or updated, it runs
+ * `content.js` of this version in the tab and sends the request once more. Fails
+ * when the tab doesn't answer even then.
+ *
+ * Sending the request again is safe: a request that found no content script reached
+ * no page, and `content.js` answers a request before it reloads the page.
+ */
+export async function reach(
+  tabs: TabsPort,
+  tabId: number,
+  request: PageRequest,
+): Promise<unknown> {
+  try {
+    return await tabs.send(tabId, request);
+  } catch {
+    // No content script of this version answers in the tab: run one there.
+  }
+  await tabs.inject(tabId);
+  return tabs.send(tabId, request);
+}
+
+/**
+ * Runs `content.js` of this version in every open Autodarts tab, as after an install
+ * or an update: the button comes back without a reload, and a running match goes on.
+ * A tab that the browser discarded, or that still loads, gets the script when it
+ * loads.
+ */
+export async function injectAll(tabs: TabsPort): Promise<void> {
+  const open = (await tabs.query()).filter(
+    (tab): tab is OpenTab => typeof tab.id === "number",
+  );
+  await Promise.all(
+    open.map((tab) => tabs.inject(tab.id).catch(() => undefined)),
+  );
+}
+
 /** The answer of a tab to a request, the tab that answered, and the other Autodarts tabs. */
 interface Delivery {
   reply: unknown;
@@ -113,9 +165,9 @@ interface Delivery {
 
 /**
  * Sends a request to the tab in front, or to the `preferred` one while it is open.
- * When its content script doesn't answer, as in
- * a tab that still loads or that was open before the extension was installed or
- * updated, the next tab gets it.
+ * A tab whose content script doesn't answer gets the one of this version first, as
+ * `reach` does; only when it doesn't answer even then, as a tab that the browser
+ * discarded, the next tab gets the request.
  */
 async function deliver(
   tabs: TabsPort,
@@ -129,14 +181,14 @@ async function deliver(
   ];
   for (const tab of candidates) {
     try {
-      const reply = await tabs.send(tab.id, request);
+      const reply = await reach(tabs, tab.id, request);
       return {
         reply,
         tab,
         others: candidates.filter((other) => other !== tab),
       };
     } catch {
-      // No content script answers in this tab: try the next one.
+      // Not even a content script of this version answers in this tab: try the next one.
     }
   }
   throw new NoPageError();
@@ -218,9 +270,9 @@ async function look(
 }
 
 /**
- * Shows Autodarts: the Autodarts tab in front comes to the front of its window, and
- * reloads when its content script doesn't answer; with no Autodarts tab, a new one
- * opens.
+ * Shows Autodarts: the Autodarts tab in front comes to the front of its window. When
+ * its content script doesn't answer, it gets the one of this version, and reloads
+ * only when that doesn't answer either; with no Autodarts tab, a new one opens.
  */
 export async function showPage(tabs: TabsPort): Promise<void> {
   const [tab] = await ranked(tabs);
@@ -229,7 +281,10 @@ export async function showPage(tabs: TabsPort): Promise<void> {
     return;
   }
   await tabs.focus(tab);
-  if ((await look(tabs, tab.id)) === undefined) {
+  try {
+    await reach(tabs, tab.id, { type: "page", action: "read" });
+  } catch {
+    // Not even a content script of this version answers: a reload loads the page anew.
     await tabs.reload(tab.id);
   }
 }

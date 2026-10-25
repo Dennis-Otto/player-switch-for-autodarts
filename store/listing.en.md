@@ -45,8 +45,8 @@ Not affiliated with Autodarts.
 • storage — to keep your saved accounts and their sessions on your computer.
 • alarms — to renew parked sessions in the background so they stay ready.
 • scripting — to bring the button of a new version into the Autodarts tabs that are
-  already open when the extension updates, so a display in kiosk mode keeps working
-  without a reload. It runs only the extension's own script, only on
+  already open when the extension updates, or into one that stopped answering, so a
+  display in kiosk mode keeps working without a reload. It runs only the extension's own script, only on
   play.autodarts.com.
 • Web-accessible resource switcher.html, for play.autodarts.com only — the players
   that the button on the Autodarts page shows over the page. It is a page of the

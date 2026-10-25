@@ -56,8 +56,10 @@ import {
 } from "./lib/switch.js";
 import {
   createPage,
+  injectAll,
   NoPageError,
   rankTabs,
+  reach,
   settleTab,
   showPage,
   withPage,
@@ -106,11 +108,10 @@ keepFromContentScripts(chrome.storage.local).catch(
   logFailure("keeping the saved accounts from the Autodarts page"),
 );
 
-const withId = (tabs) => tabs.filter((tab) => typeof tab.id === "number");
-
 // The Autodarts tabs. The host access of the manifest lets the query filter tabs by
 // their address, so the extension needs no "tabs" permission, which would let it read
-// the address of every tab.
+// the address of every tab. It also lets "scripting" run content.js, the extension's
+// own file and no other code, in an Autodarts tab whose content script doesn't answer.
 const tabs = {
   query: () => chrome.tabs.query({ url: TAB_MATCHES }),
   focusedWindow: () =>
@@ -120,6 +121,12 @@ const tabs = {
     ),
   send: (tabId, request) =>
     chrome.tabs.sendMessage(tabId, request, { frameId: 0 }),
+  inject: async (tabId) => {
+    await chrome.scripting.executeScript({
+      target: { tabId },
+      files: ["content.js"],
+    });
+  },
   reload: (tabId) => chrome.tabs.reload(tabId),
   open: (url, active) => chrome.tabs.create({ url, active }),
   async focus(tab) {
@@ -361,7 +368,10 @@ chrome.commands.onCommand.addListener((command, tab) => {
     typeof tab?.id === "number" &&
     isPlayPage(tab.url)
   ) {
-    tellPage(tab.id, { action: "toggleSwitcher" });
+    // A tab that was open before an update gets the content script of this version first.
+    reach(tabs, tab.id, { type: "page", action: "toggleSwitcher" }).catch(
+      () => {},
+    );
   }
 });
 
@@ -563,7 +573,12 @@ chrome.runtime.onInstalled.addListener((details) => {
   }
   void ensureRenewal();
   if (details.reason === "install" || details.reason === "update") {
-    injectIntoOpenTabs().catch(
+    // Chrome runs the content script only in pages that load after an install or an
+    // update, and the script of the version before loses its link to the extension. So
+    // the open Autodarts tabs get the new script now, which takes over from the old one
+    // without a reload: a display in kiosk mode keeps its button, a running match goes
+    // on, and a tab that this misses gets the script at the next request (lib/tabs.js).
+    injectAll(tabs).catch(
       logFailure("adding the button to the open Autodarts tabs"),
     );
   }
@@ -571,22 +586,6 @@ chrome.runtime.onInstalled.addListener((details) => {
     welcome().catch(logFailure("the welcome"));
   }
 });
-
-/**
- * Chrome runs the content script only in pages that load after an install or an
- * update, and the script of the version before loses its link to the extension. So
- * the Autodarts tabs that are already open get the new script here, which takes over
- * from the old one without a reload: a display in kiosk mode, where nobody can reload
- * the page, keeps its button, and a running match goes on.
- */
-async function injectIntoOpenTabs() {
-  for (const tab of withId(await chrome.tabs.query({ url: TAB_MATCHES }))) {
-    // A tab that Chrome discarded, or that is still loading, gets the script when it loads.
-    chrome.scripting
-      .executeScript({ target: { tabId: tab.id }, files: ["content.js"] })
-      .catch(() => {});
-  }
-}
 
 // Chrome sets the color of the badge text since version 110; an older one picks its own.
 chrome.action.setBadgeTextColor?.({ color: BADGE_TEXT_COLOR })?.catch(() => {});
