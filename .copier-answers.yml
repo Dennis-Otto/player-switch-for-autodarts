@@ -25,6 +25,6 @@ release_app_id: '4739928'
 renovate_runner: hub
 sample_code: true
 sponsor: Dennis-Otto
-successor: false
+successor: true
 test_workflows: E2E
 topics: autodarts,darts,dartboard,chrome-extension,browser-extension,chrome,google-chrome,manifest-v3,account-switcher,account-switching,multi-account,shared-display,kiosk,touchscreen,session-management,typescript
