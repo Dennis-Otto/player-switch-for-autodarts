@@ -6,6 +6,14 @@ the next release, or lists the pull requests when there is none.
 
 ## Unreleased
 
+## [1.1.0](https://github.com/Dennis-Otto/player-switch-for-autodarts/compare/v1.0.0...v1.1.0) (2026-10-25)
+
+
+### Features
+
+* build and lint the extension for Firefox and Edge ([#85](https://github.com/Dennis-Otto/player-switch-for-autodarts/issues/85)) ([a23dea4](https://github.com/Dennis-Otto/player-switch-for-autodarts/commit/a23dea4f178b249f2737ec0a43369b40736d63d3))
+* end the session at Autodarts when an account is removed, and add Forget all ([#81](https://github.com/Dennis-Otto/player-switch-for-autodarts/issues/81)) ([8407043](https://github.com/Dennis-Otto/player-switch-for-autodarts/commit/84070431a727a93ff15ab2cfe6a5bcbfb85c4e68))
+
 ## [1.0.0](https://github.com/Dennis-Otto/player-switch-for-autodarts/compare/v0.2.0...v1.0.0) (2026-10-25)
 
 **The first stable version, 1.0.0.** Player Switch now does what it was built for:
