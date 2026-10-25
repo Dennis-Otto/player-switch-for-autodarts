@@ -5,7 +5,9 @@
  * The extension stores the accounts with the version of their format. A value of a
  * version it doesn't know holds parked sessions that can't be made again, since
  * Autodarts rotates its tokens, so `readStored` tells it apart and the store never
- * saves over it (see `storage.ts`).
+ * saves over it (see `storage.ts`). Since version 2, the stored accounts hold no
+ * session and no password in plain text: each is sealed by `vault.ts`, and this file
+ * only says where the sealed values go.
  */
 import type { Identity } from "./autodarts.ts";
 
@@ -68,32 +70,66 @@ export interface View {
 export const EMPTY: State = { profiles: [], activeId: null, addingUntil: null };
 
 /**
- * The version of the format in which the extension stores the accounts. The releases
- * up to 0.2.0 stored the same fields without a version; they count as version 1.
+ * The version of the format in which the extension stores the accounts: the sessions
+ * and passwords are sealed (see `vault.ts`), the rest is plain.
  */
-export const STATE_VERSION = 1;
+export const STATE_VERSION = 2;
+/**
+ * The format before the sealed secrets, with every session and password in plain
+ * text. The releases up to 0.2.0 stored it without a version; it counts as version 1.
+ */
+export const PLAIN_VERSION = 1;
 
-/** The accounts as the extension stores them: the state, with the version of its format. */
-export interface StoredState extends State {
+/**
+ * A secret as the vault seals it: the random nonce of AES-GCM and the encrypted text
+ * with its tag, both in base64.
+ */
+export interface Sealed {
+  iv: string;
+  data: string;
+}
+
+/** The secrets of an account as the extension stores them: each sealed, or null where there is none. */
+export interface SealedSecrets {
+  token: Sealed | null;
+  credentials: Sealed | null;
+}
+
+/** An account as the extension stores it: its session and password sealed. */
+export interface StoredProfile
+  extends Omit<Profile, "token" | "credentials">,
+    SealedSecrets {}
+
+/** The accounts as the extension stores them, with the version of their format. */
+export interface StoredState extends Omit<State, "profiles"> {
   version: typeof STATE_VERSION;
+  profiles: StoredProfile[];
 }
 
 /**
- * What a stored value is to this version of the extension: accounts it can read, of
- * which `outdated` says that they are in the format of an earlier version, which the
- * next save brings up to date, or a value it doesn't know, which it must not save over.
+ * What a stored value is to this version of the extension: the accounts of an earlier
+ * version with their secrets in plain text, which the store seals at once; sealed
+ * accounts, whose `state` holds no token and no password, which `secrets` holds sealed
+ * by the id of each account; or a value it doesn't know, which it must not save over.
+ * Nothing stored yet is sealed accounts with no account.
  */
 export type Stored =
-  | { kind: "accounts"; state: State; outdated: boolean }
+  | { kind: "plain"; state: State }
+  | {
+      kind: "sealed";
+      state: State;
+      secrets: ReadonlyMap<string, SealedSecrets>;
+    }
   | { kind: "unknown" };
 
 /**
  * Reads the stored value of the accounts. Nothing stored yet is no account; a value of
- * a newer version, or one that is no state at all, is unknown and kept as it is.
+ * a newer version, or one that is no state at all, is unknown and kept as it is. In a
+ * value of the sealed format, a secret in plain text counts as none.
  */
 export function readStored(stored: unknown): Stored {
   if (stored === undefined) {
-    return { kind: "accounts", state: EMPTY, outdated: false };
+    return { kind: "sealed", state: EMPTY, secrets: new Map() };
   }
   if (
     typeof stored !== "object" ||
@@ -103,38 +139,92 @@ export function readStored(stored: unknown): Stored {
     return { kind: "unknown" };
   }
   const { version } = stored as Record<string, unknown>;
-  if (version !== undefined && version !== STATE_VERSION) {
+  if (version === undefined || version === PLAIN_VERSION) {
+    return { kind: "plain", state: parseState(stored) };
+  }
+  if (version !== STATE_VERSION) {
     return { kind: "unknown" };
   }
+  const { state, entries } = parseAccounts(stored);
+  const secrets = new Map<string, SealedSecrets>();
+  for (const [id, entry] of entries) {
+    secrets.set(id, {
+      token: parseSealed(entry.token),
+      credentials: parseSealed(entry.credentials),
+    });
+  }
   return {
-    kind: "accounts",
-    state: parseState(stored),
-    outdated: version === undefined,
+    kind: "sealed",
+    state: {
+      ...state,
+      profiles: state.profiles.map((profile) => ({
+        ...profile,
+        token: null,
+        credentials: null,
+      })),
+    },
+    secrets,
   };
 }
 
-/** What the extension stores of the accounts: the state, with the version of its format. */
-export function toStored(state: State): StoredState {
-  return { version: STATE_VERSION, ...state };
+/**
+ * What the extension stores of the accounts: the state with the version of its format,
+ * and in place of each session and password the sealed one of `secrets`, by the id of
+ * the account; an account missing there is stored with neither.
+ */
+export function toStored(
+  state: State,
+  secrets: ReadonlyMap<string, SealedSecrets>,
+): StoredState {
+  return {
+    version: STATE_VERSION,
+    ...state,
+    profiles: state.profiles.map((profile) => ({
+      ...profile,
+      ...(secrets.get(profile.id) ?? { token: null, credentials: null }),
+    })),
+  };
+}
+
+/** A sealed secret as it was stored, or null for anything else, such as plain text. */
+export function parseSealed(value: unknown): Sealed | null {
+  if (typeof value !== "object" || value === null) {
+    return null;
+  }
+  const { iv, data } = value as Record<string, unknown>;
+  return typeof iv === "string" &&
+    iv !== "" &&
+    typeof data === "string" &&
+    data !== ""
+    ? { iv, data }
+    : null;
 }
 
 /** Reads a stored state, and starts empty from anything it doesn't recognise. */
 export function parseState(stored: unknown): State {
+  return parseAccounts(stored).state;
+}
+
+/** A stored state, and the stored entry of each account that it kept, by its id. */
+function parseAccounts(stored: unknown): {
+  state: State;
+  entries: Map<string, Record<string, unknown>>;
+} {
+  const entries = new Map<string, Record<string, unknown>>();
   if (typeof stored !== "object" || stored === null) {
-    return EMPTY;
+    return { state: EMPTY, entries };
   }
   const { profiles, activeId, addingUntil } = stored as Record<string, unknown>;
   if (!Array.isArray(profiles)) {
-    return EMPTY;
+    return { state: EMPTY, entries };
   }
   // Each account once: of two stored profiles with the same id, the first one counts.
-  const seen = new Set<string>();
   const parsed = profiles.flatMap((entry: unknown) => {
     const profile = parseProfile(entry);
-    if (profile === null || seen.has(profile.id)) {
+    if (profile === null || entries.has(profile.id)) {
       return [];
     }
-    seen.add(profile.id);
+    entries.set(profile.id, entry as Record<string, unknown>);
     return [profile];
   });
   const active =
@@ -144,9 +234,12 @@ export function parseState(stored: unknown): State {
   const adding =
     !active && typeof addingUntil === "number" && Number.isFinite(addingUntil);
   return {
-    profiles: parsed,
-    activeId: active ? (activeId as string) : null,
-    addingUntil: adding ? (addingUntil as number) : null,
+    state: {
+      profiles: parsed,
+      activeId: active ? (activeId as string) : null,
+      addingUntil: adding ? (addingUntil as number) : null,
+    },
+    entries,
   };
 }
 
@@ -182,7 +275,8 @@ function parseProfile(entry: unknown): Profile | null {
   };
 }
 
-function parseCredentials(value: unknown): Credentials | null {
+/** A username and password as they were stored, or null for anything else. */
+export function parseCredentials(value: unknown): Credentials | null {
   if (typeof value !== "object" || value === null) {
     return null;
   }

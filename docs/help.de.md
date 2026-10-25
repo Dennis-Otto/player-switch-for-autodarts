@@ -12,7 +12,7 @@ Das steht auf einer Kachel, und das Symbol in der Symbolleiste zeigt, wie viele 
 
 > Player Switch for Autodarts – neu anmelden: Ada und Bob
 
-**Was es bedeutet:** Autodarts nimmt die gespeicherte Sitzung dieses Kontos nicht mehr an, bei einer Erneuerung oder bei einem Tipp, und kein gemerktes Passwort konnte es anmelden. Eine Sitzung endet auch für immer, wenn sich der Spieler auf der Autodarts-Seite abmeldet: Zum Wechseln der Spieler tippst du stattdessen auf eine Kachel.
+**Was es bedeutet:** Autodarts nimmt die gespeicherte Sitzung dieses Kontos nicht mehr an, bei einer Erneuerung oder bei einem Tipp, und kein gemerktes Passwort konnte es anmelden. Eine Sitzung endet auch für immer, wenn sich der Spieler auf der Autodarts-Seite abmeldet: Zum Wechseln der Spieler tippst du stattdessen auf eine Kachel. Und wurden die Daten der Erweiterung gelöscht, muss sich jedes geparkte Konto auf einmal neu anmelden: Der Schlüssel, der die gespeicherten Sitzungen versiegelt, ging mit, darum lassen sie sich nicht mehr öffnen, und die gemerkten Passwörter sind ebenfalls vergessen.
 
 **Was du tust**, auf einem von zwei Wegen:
 

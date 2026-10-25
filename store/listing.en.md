@@ -48,6 +48,9 @@ Not affiliated with Autodarts.
   already open when the extension updates, or into one that stopped answering, so a
   display in kiosk mode keeps working without a reload. It runs only the extension's own script, only on
   play.autodarts.com.
+• unlimitedStorage — so that Chrome never deletes the key that seals your saved
+  sessions and passwords when the disk runs low. Without it, every parked account
+  would have to sign in again.
 • Web-accessible resource switcher.html, for play.autodarts.com only — the players
   that the button on the Autodarts page shows over the page. It is a page of the
   extension in a frame, so the scripts of the Autodarts page can't read the saved

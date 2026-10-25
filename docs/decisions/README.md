@@ -11,3 +11,4 @@ Copy [the template](0000-template.md) to the next free number and describe the d
 | [0003](0003-deliver-each-release-to-the-chrome-web-store.md) | Deliver each release to the Chrome Web Store from the release workflow | accepted, extended by 0005 |
 | [0004](0004-save-a-new-sign-in-only-in-a-window.md) | Save a new sign-in by itself only in a window after "Add account" | accepted |
 | [0005](0005-look-after-the-store-every-day-from-a-closed-network.md) | Look after the store every day, from jobs with a closed network | accepted |
+| [0006](0006-seal-the-secrets-with-a-key-that-never-leaves-the-browser.md) | Seal the saved sessions and passwords with a key that never leaves the browser | accepted |
