@@ -134,3 +134,54 @@ commands = ["npm run e2e"]
 docs = "docs/development.md#end-to-end-tests"
 autofix = """A test in a browser that fails needs a person who knows what the extension
 should do there; no command can make it pass."""
+
+[check."autodarts-contract"]
+title = "What the extension relies on at Autodarts"
+problem = """Autodarts no longer works the way the extension relies on: the summary of the
+check has a table of every part, and for each that changed what it expected, what it
+found and every place of the code that relies on it. The parts are the key under
+which Autodarts Play keeps its session in `localStorage`, the address of its sign-in
+service and the client that it signs in as, all three in the code of
+play.autodarts.com; the answer 400 or 401 to a dead session and to a wrong password;
+the end of a session; and the forward of play.autodarts.io to play.autodarts.com.
+`scripts/upstream-contract.ts` takes the expected values from `src/autodarts.ts`. A
+part that got no answer at all may be an outage of Autodarts, which the next run
+shows."""
+why = """None of this is a public contract of Autodarts. When the key or the address
+changes, every switch fails on every display, and a sign-in service that answers 404
+counts for the extension as an outage, so it keeps retrying and never falls back to a
+remembered password. The first to notice would be a player, and a fix needs days in
+the review of the Chrome Web Store."""
+fix = """Open Autodarts Play in a browser and look at what changed: its developer tools
+show the key in `localStorage` and the requests of a sign-in. Change the places that
+the summary names, in `src/autodarts.ts`, `extension/content.js` and the manifest,
+and the fake Autodarts of the end-to-end tests in `test/e2e/fake/` with them, so that
+the tests follow the new behavior. Then run the check against the real Autodarts and
+the tests:"""
+commands = ["node scripts/upstream-contract.ts", "npm test", "npm run e2e"]
+docs = "docs/development.md#what-autodarts-and-the-next-chrome-change"
+autofix = """What Autodarts changed, and how the extension follows it, needs a person
+who looks at the new Autodarts Play; no command can know it."""
+
+[check."chrome-beta"]
+title = "The end-to-end tests in Chrome Beta"
+problem = """The end-to-end tests of `test/e2e/` failed in Chrome for Testing Beta, the
+next version of Chrome, which reaches the players in about four weeks: the summary of
+the check names the version and the test that failed, and the artifact
+`chrome-beta-<attempt>` has its trace. The same tests pass in Playwright's Chromium of
+the workflow E2E, unless that one failed too."""
+why = """A version of Chrome that breaks the extension reaches every display by itself.
+These four weeks are the time to fix the extension, or to report the bug to Chrome,
+before a player notices; a fix needs days in the review of the Chrome Web Store as
+well."""
+fix = """Run the tests in the same Beta on your machine and fix what the trace shows. A
+change of Chrome that is a bug of Chrome goes to https://issues.chromium.org with the
+smallest test that shows it:"""
+commands = [
+  "npm ci",
+  "E2E_CHROME_PATH=\"$(bash scripts/chrome-for-testing.sh Beta)\" npm run e2e",
+  "npx playwright show-trace test/e2e/results/<test>/trace.zip",
+]
+docs = "docs/development.md#what-autodarts-and-the-next-chrome-change"
+autofix = """A test that fails in the next Chrome needs a person who knows what the
+extension should do there; no command can make it pass."""

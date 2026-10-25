@@ -12,4 +12,5 @@ Copy [the template](0000-template.md) to the next free number and describe the d
 | [0004](0004-save-a-new-sign-in-only-in-a-window.md) | Save a new sign-in by itself only in a window after "Add account" | accepted |
 | [0005](0005-look-after-the-store-every-day-from-a-closed-network.md) | Look after the store every day, from jobs with a closed network | accepted |
 | [0006](0006-seal-the-secrets-with-a-key-that-never-leaves-the-browser.md) | Seal the saved sessions and passwords with a key that never leaves the browser | accepted |
-| [0007](0007-test-the-real-extension-against-a-fake-autodarts.md) | Test the real extension in Chromium against a fake Autodarts | accepted |
+| [0007](0007-test-the-real-extension-against-a-fake-autodarts.md) | Test the real extension in Chromium against a fake Autodarts | accepted, extended by 0008 |
+| [0008](0008-watch-autodarts-and-the-next-chrome-before-the-players-do.md) | Watch Autodarts and the next Chrome before the players do | accepted |

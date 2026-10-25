@@ -218,7 +218,7 @@ The unit tests check `src/` without a browser. The end-to-end tests check what C
 npm run e2e
 ```
 
-It builds `extension/lib/` from `src/` and runs every test of `test/e2e/`. `npm run e2e -- --headed` shows the browser, `npm run e2e -- --debug` steps through a test, and `npm run e2e -- -g "double tap"` runs the tests whose names have these words. The first run needs the Chromium of the Playwright version in `package-lock.json`: `npx playwright install --no-shell chromium`. Google Chrome no longer loads an unpacked extension from the command line, so the tests use Playwright's Chromium. Where it doesn't start, as on some builds of Windows, the Playwright image of the same version, `mcr.microsoft.com/playwright:v<version>-noble`, runs them: `docker run --rm --ipc=host -v "$PWD":/work -w /work mcr.microsoft.com/playwright:v<version>-noble npx playwright test`, after `npm ci` and `npm run build`.
+It builds `extension/lib/` from `src/` and runs every test of `test/e2e/`. `npm run e2e -- --headed` shows the browser, `npm run e2e -- --debug` steps through a test, and `npm run e2e -- -g "double tap"` runs the tests whose names have these words. The first run needs the Chromium of the Playwright version in `package-lock.json`: `npx playwright install --no-shell chromium`. Google Chrome no longer loads an unpacked extension from the command line, so the tests use Playwright's Chromium. `E2E_CHROME_PATH` runs them in another Chrome for Testing instead, such as the next version, Beta, which [the workflow Upstream](#what-autodarts-and-the-next-chrome-change) tests every week. Where it doesn't start, as on some builds of Windows, the Playwright image of the same version, `mcr.microsoft.com/playwright:v<version>-noble`, runs them: `docker run --rm --ipc=host -v "$PWD":/work -w /work mcr.microsoft.com/playwright:v<version>-noble npx playwright test`, after `npm ci` and `npm run build`.
 
 - **A fake Autodarts, and nothing else.** `--host-resolver-rules` sends `play.autodarts.com` and `api.autodarts.com` to the server of `test/e2e/fake/server.ts` on `127.0.0.1` and resolves no other host. No request of the page, of the service worker or of a tab that the extension opens can reach the real Autodarts. The server has a certificate that `fake/certificate.ts` makes for the run, and the browser trusts its key alone (`--ignore-certificate-errors-spki-list`).
 - **The page**, `fake/play.html` with `play.js`, keeps its refresh token in `localStorage` under `autodarts_refresh_token`, renews it half a second after it loads, as Autodarts Play does as it starts, and shows a sign-in form when it has no session.
@@ -240,3 +240,37 @@ It builds `extension/lib/` from `src/` and runs every test of `test/e2e/`. `npm 
 A failed test keeps its trace and its screenshots in `test/e2e/results/`. `npx playwright show-trace test/e2e/results/<test>/trace.zip` shows each step with the page, its console and its requests, and `npx playwright show-report test/e2e/report` the report of the run.
 
 The workflow E2E, `.github/workflows/e2e.yml`, runs the tests for a pull request that changes the extension, `src/`, the tests, the packages or the workflow, after every push to `main` and every night, with the Chromium from the cache of the runner. On a failure it keeps the traces, the screenshots and the report as the artifact `e2e-<attempt>` of the run, and the flaky-test bot runs the failed job once more: a test that passes then is flaky, and the bot reports it in its issue. Playwright itself tries no test twice. A pull request that changes none of these, such as one of the documentation, passes the required check `e2e` in seconds.
+
+## What Autodarts and the next Chrome change
+
+The extension relies on things that it doesn't control. Autodarts publishes no contract for the parts that a switch needs, and a new version of Chrome reaches every display by itself every four weeks. The workflow Upstream, `.github/workflows/upstream.yml`, looks at both before a player notices ([decision 0008](decisions/0008-watch-autodarts-and-the-next-chrome-before-the-players-do.md)):
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="images/diagrams/how-the-upstream-checks-work.dark.svg">
+  <img src="images/diagrams/how-the-upstream-checks-work.svg" alt="How the upstream checks work: The workflow Upstream runs two checks of what the extension relies on but doesn't control. Every morning, autodarts-contract takes the expected values from src/autodarts.ts and asks the real Autodarts with made-up data only, about a dozen requests: it looks for the key of the session, the sign-in service and the client in the code of play.autodarts.com, script by script until it has found all three, follows the forward of play.autodarts.io, and sends a made-up token, a made-up account and the end of a made-up session to the sign-in service, through the functions of the extension. Every Monday, chrome-beta downloads Chrome for Testing Beta, the next version of Chrome, and runs the end-to-end tests in it against the fake Autodarts. When either fails, its summary names what changed and where the code relies on it, and the bot-health bot opens an issue with the label bot-failure, which the next run that passes closes.">
+</picture>
+
+- **autodarts-contract, every morning.** `scripts/upstream-contract.ts` takes what the extension expects from `src/autodarts.ts`, so the check and the code can't drift apart, and checks it against the real Autodarts:
+
+  | Part | What has to hold |
+  | --- | --- |
+  | The key of the session | `autodarts_refresh_token`, under which Autodarts Play keeps its refresh token in `localStorage`, is in its code. The extension swaps exactly this entry. |
+  | The sign-in service and the client | `https://api.autodarts.com/auth/v1` and the client `autodarts-play` are in the code of Autodarts Play. |
+  | A dead session and a wrong password | `/refresh` with a made-up token and `/login` with a made-up account answer 400 or 401, which the extension takes for the end of a session and a wrong password. An address that is gone answers 404, which the extension would take for an outage and retry forever. |
+  | The end of a session | `/logout` answers at its address, so **Remove account** ends the session at Autodarts. |
+  | The old address | `play.autodarts.io` forwards every address to `play.autodarts.com`, so the extension needs no access to it. |
+
+  The requests to the sign-in service go through the functions of the extension, `refreshSession`, `signIn` and `revokeSession`, with made-up data only: no account, password or token of anybody, and no secret. The scripts of Autodarts Play are read one after another until the three values are found, which takes about a dozen requests in all, fewer than one visit of the page, which loads more than 150 scripts. Only when a value is missing does the check read all of them, to be sure.
+
+- **chrome-beta, every Monday.** `scripts/chrome-for-testing.sh` downloads Chrome for Testing Beta from Google's list of the last good builds, and the [end-to-end tests](#end-to-end-tests) run in it, about four weeks before that version of Chrome reaches the players. Branded Chrome, Beta too, no longer loads an unpacked extension from the command line; Chrome for Testing is the same browser, built for tests, and still does.
+
+When a check fails, its summary says what changed: for the contract a table of every part with what it expected and what it found, and for each change every place of the code that relies on it, as `file:line`. The [bot-health bot](https://github.com/Dennis-Otto/repo-blueprint) opens an issue with the label `bot-failure` and closes it when the next run passes; it also runs a failed job once more, so an outage of a few minutes passes. A pull request that changes the workflow, its scripts or `src/autodarts.ts` runs both checks as well, so a new value is checked against the real Autodarts before it merges. Both jobs run with Harden-Runner in block mode, with only the hosts that they need, and without sudo and Docker.
+
+To run them on your computer:
+
+```sh
+node scripts/upstream-contract.ts
+E2E_CHROME_PATH="$(bash scripts/chrome-for-testing.sh Beta)" npm run e2e
+```
+
+When Autodarts changed, open Autodarts Play in a browser and look at what changed: its developer tools show the key in `localStorage` and the requests of a sign-in. Change the places that the summary names, and the fake Autodarts of `test/e2e/fake/` with them, so the end-to-end tests follow the new behavior. A unit test fails when one of these places no longer has its value, such as when the key changes in `src/autodarts.ts` but not in `extension/content.js`. When only Beta fails, fix the extension within the four weeks, or report a bug of Chrome to [issues.chromium.org](https://issues.chromium.org) with the smallest test that shows it.

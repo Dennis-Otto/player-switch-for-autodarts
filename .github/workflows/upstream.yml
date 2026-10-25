@@ -1,0 +1,161 @@
+name: Upstream
+
+# Early warnings for what the extension relies on but doesn't control, before a
+# player notices (decision 0008):
+#
+# - autodarts-contract, every morning: Autodarts still keeps its session under the
+#   key that the extension swaps, signs in at the same service as the same client,
+#   refuses a dead session and a wrong password with 400 or 401, ends a session, and
+#   forwards play.autodarts.io to play.autodarts.com. None of it is a public contract
+#   of Autodarts. scripts/upstream-contract.ts takes the values from src/autodarts.ts,
+#   sends only made-up data, about a dozen requests in all, and its summary names
+#   what changed and every place of the code that relies on it.
+# - chrome-beta, every Monday: the end-to-end tests of test/e2e/ in Chrome for
+#   Testing Beta, the next version of Chrome, about four weeks before it reaches the
+#   players. Branded Chrome, Beta too, no longer loads an unpacked extension.
+#
+# A failure of a scheduled run opens an issue with the label bot-failure, which the
+# next run that passes closes (bot-health.yml). A pull request that changes this
+# workflow, its scripts or what the extension expects of Autodarts runs both, so the
+# change is checked against the real Autodarts and the next Chrome before it merges.
+# Neither is a required check.
+
+on:
+  schedule:
+    # The contract with Autodarts, every morning.
+    - cron: "17 5 * * *"
+    # The end-to-end tests in Chrome Beta, every Monday.
+    - cron: "43 3 * * 1"
+  pull_request:
+    paths:
+      - .github/workflows/upstream.yml
+      - scripts/upstream-contract.ts
+      - scripts/chrome-for-testing.sh
+      - src/autodarts.ts
+  workflow_dispatch:
+
+permissions: {}
+
+concurrency:
+  group: upstream-${{ github.event.pull_request.number || github.run_id }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+# With pipefail: a command that fails inside a pipeline fails its step too.
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  contract:
+    name: autodarts-contract
+    if: github.event_name != 'schedule' || github.event.schedule == '17 5 * * *'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    steps:
+      # GitHub for the checkout and for Node.js should the runner image lack its
+      # version, and the three hosts of Autodarts that the extension talks to or
+      # relies on. The check needs no package, no sudo and no Docker, and no secret.
+      - name: Block every host that the job doesn't need
+        uses: step-security/harden-runner@ccd8616d44fd3846e67624a50d5aad6d37bf2d25 # v2.22.1
+        with:
+          egress-policy: block
+          disable-sudo-and-containers: true
+          allowed-endpoints: >
+            api.github.com:443
+            github.com:443
+            objects.githubusercontent.com:443
+            release-assets.githubusercontent.com:443
+            play.autodarts.com:443
+            play.autodarts.io:443
+            api.autodarts.com:443
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .nvmrc
+      - name: Check what the extension relies on at Autodarts
+        run: node scripts/upstream-contract.ts
+      # The PR coach: what failed, why it matters and how to fix it, in the summary
+      # of the check and as its annotation, from .github/checks.project.toml.
+      - name: Explain the failure
+        if: failure()
+        env:
+          CHECK: autodarts-contract
+        run: python3 .github/blueprint.py coach explain "$CHECK"
+      # Without sudo and Docker, Harden-Runner removes Docker with apt-get while the
+      # job runs. A job that ends first hangs in "Cleaning up orphan processes" until
+      # its timeout, so it waits for apt-get, also after a failure.
+      - name: Wait until Harden-Runner has removed Docker
+        if: always()
+        run: |
+          for _ in {1..120}; do
+            pgrep -x 'apt-get|dpkg' >/dev/null || exit 0
+            sleep 1
+          done
+          echo "::warning::Harden-Runner still removes Docker after two minutes; the job may hang until its timeout."
+
+  chrome-beta:
+    name: chrome-beta
+    if: github.event_name != 'schedule' || github.event.schedule == '43 3 * * 1'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    steps:
+      # GitHub for the checkout, and for Node.js should the runner image lack its
+      # version; npm for the packages; Google's list of the builds of Chrome for
+      # Testing and its storage for the download. The tests themselves reach no
+      # host: the browser resolves only the fake Autodarts on the runner. The hosts
+      # of the Actions service itself, which keeps the cache and the artifact, are
+      # allowed anyway.
+      - name: Block every host that the job doesn't need
+        uses: step-security/harden-runner@ccd8616d44fd3846e67624a50d5aad6d37bf2d25 # v2.22.1
+        with:
+          egress-policy: block
+          disable-sudo-and-containers: true
+          allowed-endpoints: >
+            api.github.com:443
+            github.com:443
+            objects.githubusercontent.com:443
+            release-assets.githubusercontent.com:443
+            registry.npmjs.org:443
+            googlechromelabs.github.io:443
+            storage.googleapis.com:443
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - name: Install the locked packages
+        run: npm ci --ignore-scripts
+      - name: Download Chrome for Testing Beta
+        run: |
+          chrome="$(bash scripts/chrome-for-testing.sh Beta "$RUNNER_TEMP/chrome-for-testing")"
+          echo "E2E_CHROME_PATH=$chrome" >> "$GITHUB_ENV"
+          echo "The end-to-end tests run in $("$chrome" --version)." | tee -a "$GITHUB_STEP_SUMMARY"
+      - name: Run the end-to-end tests in Chrome Beta
+        run: npm run e2e
+      # Each failed test keeps its trace, with every step, request and snapshot of
+      # the page, and its screenshots; the HTML report lists them all.
+      - name: Keep the traces and screenshots of a failed run
+        if: failure()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: chrome-beta-${{ github.run_attempt }}
+          path: |
+            test/e2e/results/
+            test/e2e/report/
+          if-no-files-found: ignore
+          retention-days: 14
+      # The PR coach: what failed, why it matters and how to fix it, in the summary
+      # of the check and as its annotation, from .github/checks.project.toml.
+      - name: Explain the failure
+        if: failure()
+        env:
+          CHECK: chrome-beta
+        run: python3 .github/blueprint.py coach explain "$CHECK"
