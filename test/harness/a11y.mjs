@@ -112,7 +112,8 @@ async function open({
     colorScheme: scheme,
     forcedColors,
     reducedMotion: "reduce",
-    locale: lang === "en" ? "en-US" : lang,
+    // A folder such as pt_BR is the tag pt-BR.
+    locale: lang === "en" ? "en-US" : lang.replace("_", "-"),
     timezoneId: "Europe/Berlin",
   });
   await context.route("**/*", serve);
@@ -262,7 +263,7 @@ describe("the popup in axe-core", { skip: browser === null }, () => {
         // In its own language, not in the English that Chrome falls back to.
         assert.equal(
           await page.getAttribute("html", "lang"),
-          lang,
+          lang.replace("_", "-"),
           `the popup shows ${lang} in English: add it to LANGUAGES in test/harness/chrome-stub.js`,
         );
         await check(page, "the list");
@@ -275,6 +276,18 @@ describe("the popup in axe-core", { skip: browser === null }, () => {
         await settle(page);
         assert.notEqual(await page.textContent("#problem"), "");
         await check(page, "an error");
+
+        // The question before a switch ends the match that runs in the page.
+        await page.evaluate(() =>
+          window.harness.refuse({ ok: false, reason: "match" }),
+        );
+        await page.click(tile("jonasberg"));
+        await settle(page);
+        assert.equal(await page.locator("dialog[open]").count(), 1);
+        await check(page, "the question before ending a match");
+        await page.click('dialog[open] button[value="cancel"]');
+        await settle(page);
+        assert.equal(await page.locator("dialog[open]").count(), 0);
 
         await page.click("#manage");
         await settle(page);

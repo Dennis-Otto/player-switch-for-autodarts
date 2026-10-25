@@ -31,7 +31,7 @@ The first listing is done by hand, once:
 
 ## The images of the store
 
-`bash scripts/screenshots.sh` renders every picture of the listing from the real popup and switcher, with made-up accounts, in exactly the size that the store asks for, and the screenshot bot keeps them current with every change of the popup ([how](development.md#pictures)). The store takes them under **Store listing → Graphic assets**, first for the default language, English, and then, with the language of the listing switched to German, the `.de` files for the German one. Dutch, French and Spanish take the `.en` files, until the pictures come in those languages too:
+`bash scripts/screenshots.sh` renders every picture of the listing from the real popup and switcher, with made-up accounts, in exactly the size that the store asks for, and the screenshot bot keeps them current with every change of the popup ([how](development.md#pictures)). The store takes them under **Store listing → Graphic assets**, first for the default language, English, and then, with the language of the listing switched to German, the `.de` files for the German one. Dutch, French and Spanish take the `.en` files, until the pictures come in those languages too ([#70](https://github.com/Dennis-Otto/player-switch-for-autodarts/issues/70)):
 
 | Slot in the dashboard | Size | Files |
 | --- | --- | --- |

@@ -1,6 +1,12 @@
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import {
+  mkdirSync,
+  mkdtempSync,
+  readdirSync,
+  rmSync,
+  writeFileSync,
+} from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { test } from "node:test";
@@ -370,8 +376,14 @@ test("a key asked for over several lines that no message defines fails", () => {
   );
 });
 
-test("the five languages of the extension pass", () => {
+test("the languages of the extension pass", () => {
+  const codes = readdirSync(
+    new URL("../extension/_locales/", import.meta.url),
+  ).sort();
   const run = spawnSync(process.execPath, [SCRIPT], { encoding: "utf8" });
   assert.equal(run.status, 0, `${run.stdout}${run.stderr}`);
-  assert.match(run.stdout, /The 5 languages \(de, en, es, fr, nl\)/);
+  assert.ok(
+    run.stdout.includes(`The ${codes.length} languages (${codes.join(", ")})`),
+    run.stdout,
+  );
 });

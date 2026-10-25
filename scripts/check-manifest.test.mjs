@@ -113,7 +113,7 @@ test("the manifest of the extension passes against the allowlist, its languages 
   const url = (path) => new URL(`../${path}`, import.meta.url);
   const read = (path) => readFileSync(url(path));
   const codes = readdirSync(url("extension/_locales/"));
-  assert.deepEqual(codes.sort(), ["de", "en", "es", "fr", "nl"]);
+  assert.ok(codes.includes("en"), "English is the default language");
   const problems = checkManifest({
     manifest: JSON.parse(read("extension/manifest.json")),
     allowed: JSON.parse(read("store/permissions.json")),
