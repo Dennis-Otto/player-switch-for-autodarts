@@ -3,7 +3,7 @@
   "permissions": {
     "storage": "Keeps the saved accounts, their sessions and the settings of the button on this computer.",
     "alarms": "Renews the parked sessions in the background, so they still work days later.",
-    "scripting": "Runs the extension's own content.js again in the Autodarts tabs that are open when the extension is installed or updated, so a display in kiosk mode keeps its button without a reload."
+    "scripting": "Runs the extension's own content.js again in the Autodarts tabs that are open when the extension is installed or updated, and in an Autodarts tab whose content script doesn't answer, so a display in kiosk mode keeps its button and switches without a reload."
   },
   "host_permissions": {
     "https://play.autodarts.com/*": "The Autodarts page: content.js reads and writes the session there, shows the button of the switcher, and the worker finds the Autodarts tabs by their address with it.",

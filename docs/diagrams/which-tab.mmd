@@ -5,11 +5,14 @@ config:
 ---
 flowchart TB
     accTitle: How a tap finds its Autodarts tab
-    accDescr: A tap on a player goes to the Autodarts tab shown in the window used last, then to a tab shown in another window, then to the tab shown most recently. When no tab answers, the extension reloads the tab in front, or opens Autodarts behind the popup when no tab is open, and waits until the page has renewed the session it started with. Then it switches there, and every other Autodarts tab reloads with the new player.
+    accDescr: A tap on a player goes to the Autodarts tab shown in the window used last, then to a tab shown in another window, then to the tab shown most recently. A tab that doesn't answer, as one that was open before an update of the extension, first gets the content script of this version and the request once more, without a reload. When no tab answers even then, the extension reloads the tab in front, or opens Autodarts behind the popup when no tab is open, and waits until the page has renewed the session it started with. Then it switches there, and every other Autodarts tab reloads with the new player.
 
     tap["A tap on Bob"]
     rank["Order the Autodarts tabs<br>1. shown in the window used last<br>2. shown in another window<br>3. shown most recently"]
-    answers{"Does a tab answer?"}
+    answers{"Does the next tab answer?"}
+    inject["Run content.js of this version in it,<br>as in a tab that was open before an update,<br>and ask once more"]
+    again{"Does it answer now?"}
+    more{"Is there another tab?"}
     prepare["Reload the tab in front,<br>or open Autodarts behind the popup<br>when no tab is open"]
     settle["Wait until the page has renewed<br>the session it started with"]
     switch["Park Ada's session and<br>write Bob's into that tab"]
@@ -17,10 +20,14 @@ flowchart TB
 
     tap --> rank --> answers
     answers -- yes --> switch
-    answers -- no --> prepare --> settle --> switch
+    answers -- no --> inject --> again
+    again -- yes --> switch
+    again -- no --> more
+    more -- yes --> answers
+    more -- no --> prepare --> settle --> switch
     switch --> others
 
     classDef bot fill:#526cfe2e,stroke:#526cfe,stroke-width:2px
     classDef done fill:#16a34a2e,stroke:#16a34a,stroke-width:2px
-    class rank,prepare,settle bot
+    class rank,inject,prepare,settle bot
     class others done

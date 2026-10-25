@@ -82,9 +82,9 @@ und das Popup und die Spieler auf der Autodarts-Seite sagen:
 
 > Player Switch wurde aktualisiert. Die Seite neu laden, um es zu nutzen? Ein laufendes Match endet auf diesem Bildschirm.
 
-**Was es bedeutet:** Die Erweiterung wurde aktualisiert, und dieser Tab hat noch den Knopf der Version davor, weil die neue Version ihn nicht übernehmen konnte. In der Regel übernimmt die neue Version die offenen Autodarts-Tabs von selbst; diese Frage kommt nur dort, wo das nicht geklappt hat. Erst ein Neuladen bringt die neue Version, und auf einer Match-Seite beendet das das Match, deshalb fragt die Seite vorher; auf einer Seite ohne Match lädt ein Tipp auf den Knopf sie sofort neu.
+**Was es bedeutet:** Die Erweiterung wurde aktualisiert, und dieser Tab hat noch den Knopf der Version davor, weil die neue Version ihn nicht übernehmen konnte. In der Regel übernimmt die neue Version die offenen Autodarts-Tabs von selbst; diese Frage kommt nur dort, wo das nicht geklappt hat. Der alte Knopf kann die Seite nur neu laden, und auf einer Match-Seite beendet das das Match, deshalb fragt er vorher; auf einer Seite ohne Match lädt ein Tipp auf ihn die Seite sofort neu. Das Popup von Player Switch in der Symbolleiste und die Tastenkombination **Alt+Shift+O** bringen die neue Version ohne Neuladen in den Tab.
 
-**Was du tust:** **OK** lädt die Seite mit der neuen Version neu. **Abbrechen** lässt die Seite, wie sie ist, um das Match erst zu Ende zu spielen; tippe danach noch einmal auf den Knopf.
+**Was du tust:** **OK** lädt die Seite mit der neuen Version neu. **Abbrechen** lässt die Seite, wie sie ist; um ein laufendes Match zu behalten, drücke **Alt+Shift+O** oder öffne das Popup in der Symbolleiste, dann übernimmt die Erweiterung den Tab ohne Neuladen.
 
 ### Autodarts hat vielleicht geändert, wie die Anmeldung funktioniert {#sign-in-changed}
 

@@ -20,6 +20,11 @@
 // old one steps aside. Everything sits in a function, so a second run declares nothing
 // twice.
 (() => {
+  // The service worker can also run this script itself, in a tab that it picked by its
+  // address just before; a tab that went to another site in between gets nothing here.
+  if (location.origin !== "https://play.autodarts.com") {
+    return;
+  }
   const SESSION_KEY = "autodarts_refresh_token";
   // Marks the elements of the page that the open switcher made inert, so that the script
   // of a later version can make them usable again when it takes over.

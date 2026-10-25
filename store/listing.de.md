@@ -51,8 +51,8 @@ Nicht mit Autodarts verbunden.
 • alarms — um geparkte Sitzungen im Hintergrund zu erneuern, damit sie bereit
   bleiben.
 • scripting — um den Knopf einer neuen Version in die Autodarts-Tabs zu bringen,
-  die beim Update schon offen sind, damit ein Display im Kiosk-Modus ohne Neuladen
-  weiter funktioniert. Es führt nur das eigene Skript der Erweiterung aus, nur auf
+  die beim Update schon offen sind, oder in einen, der nicht mehr antwortet, damit
+  ein Display im Kiosk-Modus ohne Neuladen weiter funktioniert. Es führt nur das eigene Skript der Erweiterung aus, nur auf
   play.autodarts.com.
 • Web-zugängliche Ressource switcher.html, nur für play.autodarts.com — die
   Spieler, die der Knopf auf der Autodarts-Seite über der Seite zeigt. Sie ist eine
