@@ -174,7 +174,7 @@ Unter **Einstellungen** steht bei einem Tastenkürzel:
 
 > Zu viele falsche PINs. Bitte in einer Minute nochmal versuchen.
 
-**Was es bedeutet:** Fünf falsche PINs in Folge sperren jede PIN dieses Displays, die der Spieler und die des Managers, für eine Minute, damit niemand sie alle von Hand durchprobieren kann.
+**Was es bedeutet:** Fünf falsche PINs in Folge sperren jede PIN dieses Displays, die der Spieler und die des Managers, für eine Minute, damit niemand sie alle von Hand durchprobieren kann. Eine richtige PIN dazwischen beendet die Folge nicht, erst eine Minute ohne falsche PIN.
 
 **Was du tust:** Warte eine Minute und tippe dann die richtige PIN ein.
 

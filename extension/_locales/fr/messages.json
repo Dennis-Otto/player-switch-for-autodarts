@@ -279,5 +279,149 @@
   },
   "welcomePrivacy": {
     "message": "Tout reste sur cet ordinateur et n'est envoyé qu'à Autodarts."
+  },
+  "pinLabel": {
+    "message": "PIN"
+  },
+  "pinPad": {
+    "message": "Pavé numérique"
+  },
+  "pinDelete": {
+    "message": "Effacer le dernier chiffre"
+  },
+  "pinOk": {
+    "message": "OK"
+  },
+  "pinTitle": {
+    "message": "PIN de $NAME$",
+    "placeholders": {
+      "name": {
+        "content": "$1"
+      }
+    }
+  },
+  "pinText": {
+    "message": "Ce compte demande son PIN avant que quelqu'un joue avec."
+  },
+  "pinWrong": {
+    "message": "PIN incorrect. Réessayez."
+  },
+  "pinInvalid": {
+    "message": "Un PIN comporte de 4 à 8 chiffres."
+  },
+  "pinLocked": {
+    "message": "Trop de PIN incorrects. Réessayez dans une minute."
+  },
+  "managerPinTitle": {
+    "message": "PIN du gérant"
+  },
+  "managerPinText": {
+    "message": "Saisissez le PIN du gérant pour gérer les comptes et les paramètres."
+  },
+  "optionsLockedTitle": {
+    "message": "Paramètres verrouillés"
+  },
+  "optionsLocked": {
+    "message": "Un PIN du gérant protège ces paramètres. Saisissez-le pour les modifier."
+  },
+  "unlock": {
+    "message": "Déverrouiller"
+  },
+  "optionsVenue": {
+    "message": "Pour un club ou un bar"
+  },
+  "optionsVenueHint": {
+    "message": "Tout ici reste désactivé jusqu'à ce que vous l'activiez. Un PIN empêche les personnes devant l'écran de jouer avec le compte de quelqu'un d'autre ; il ne protège pas contre quelqu'un qui peut utiliser cet ordinateur."
+  },
+  "managerPinOff": {
+    "message": "Aucun PIN du gérant n'est défini : toute personne devant l'écran peut gérer les comptes et modifier ces paramètres."
+  },
+  "managerPinOn": {
+    "message": "Le PIN du gérant protège Gérer les comptes et ces paramètres."
+  },
+  "setManagerPin": {
+    "message": "Définir le PIN du gérant"
+  },
+  "changeManagerPin": {
+    "message": "Modifier le PIN du gérant"
+  },
+  "removeManagerPin": {
+    "message": "Supprimer le PIN du gérant"
+  },
+  "removeManagerPinConfirm": {
+    "message": "Toute personne devant l'écran pourra alors gérer les comptes et modifier ces paramètres."
+  },
+  "newManagerPinTitle": {
+    "message": "Nouveau PIN du gérant"
+  },
+  "playerPins": {
+    "message": "PIN des joueurs"
+  },
+  "playerPinsHint": {
+    "message": "Un compte avec un PIN le demande avant que quelqu'un passe à ce compte, dans la fenêtre contextuelle et sur la page Autodarts."
+  },
+  "playerPinsEmpty": {
+    "message": "Aucun compte n'est encore enregistré."
+  },
+  "pinSet": {
+    "message": "PIN défini"
+  },
+  "noPin": {
+    "message": "pas de PIN"
+  },
+  "setPin": {
+    "message": "Définir le PIN"
+  },
+  "changePin": {
+    "message": "Modifier le PIN"
+  },
+  "removePin": {
+    "message": "Supprimer le PIN"
+  },
+  "newPinFor": {
+    "message": "Nouveau PIN pour $NAME$",
+    "placeholders": {
+      "name": {
+        "content": "$1"
+      }
+    }
+  },
+  "newPinText": {
+    "message": "Choisissez de 4 à 8 chiffres dont vous pouvez vous souvenir."
+  },
+  "repeatPinTitle": {
+    "message": "Répétez le PIN"
+  },
+  "repeatPinText": {
+    "message": "Saisissez les mêmes chiffres une nouvelle fois."
+  },
+  "pinMismatch": {
+    "message": "Les deux PIN sont différents. Choisissez à nouveau le PIN."
+  },
+  "idleHeading": {
+    "message": "Retour après une pause"
+  },
+  "idleAfter": {
+    "message": "Après une pause de"
+  },
+  "idleNever": {
+    "message": "Jamais"
+  },
+  "idleMinutes": {
+    "message": "$COUNT$ minutes",
+    "placeholders": {
+      "count": {
+        "content": "$1"
+      }
+    }
+  },
+  "idleTo": {
+    "message": "Revenir à"
+  },
+  "idleSignOut": {
+    "message": "Personne : se déconnecter"
+  },
+  "idleHint": {
+    "message": "Une pause est le temps sans toucher, clic ni touche sur la page Autodarts. Une partie n'est jamais interrompue : la pause commence une fois qu'elle est terminée. Le joueur précédent garde sa session en attente, un toucher le ramène donc."
   }
 }

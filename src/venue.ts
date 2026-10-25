@@ -260,25 +260,32 @@ export function withPins<Profile extends { id: string }>(
   }));
 }
 
-/** The wrong PINs in a row, and until when the PINs are locked after too many. */
+/**
+ * The wrong PINs in a row, the time of the last one, and until when the PINs are
+ * locked after too many. The row is shared by every PIN of the display and ends only
+ * when a minute passes without a wrong PIN, not with a right one: otherwise a person
+ * with a PIN of their own could clear the count between guesses at another PIN.
+ */
 export interface Lockout {
   failures: number;
+  last: number;
   until: number;
 }
 
-export const NO_LOCKOUT: Lockout = { failures: 0, until: 0 };
+export const NO_LOCKOUT: Lockout = { failures: 0, last: 0, until: 0 };
 
 /** Reads the stored lockout; anything it doesn't know counts as none. */
 export function parseLockout(stored: unknown): Lockout {
   if (stored === null || typeof stored !== "object") {
     return NO_LOCKOUT;
   }
-  const { failures, until } = stored as Record<string, unknown>;
+  const { failures, last, until } = stored as Record<string, unknown>;
   return {
     failures:
       typeof failures === "number" && Number.isInteger(failures) && failures > 0
         ? failures
         : 0,
+    last: typeof last === "number" && Number.isFinite(last) ? last : 0,
     until: typeof until === "number" && Number.isFinite(until) ? until : 0,
   };
 }
@@ -295,8 +302,8 @@ export type PinCheck =
 
 /**
  * Checks the PIN that a request carries against the hash that guards it, and counts the
- * wrong ones: the fifth in a row locks every PIN for a minute, and a right one clears
- * the count. A request that nothing guards passes, and one that carries no PIN asks for
+ * wrong ones: the fifth in a row locks every PIN for a minute. A right PIN passes but
+ * leaves the count alone; the row ends a minute after its last wrong PIN. A request that nothing guards passes, and one that carries no PIN asks for
  * it, either without a check or a count.
  */
 export async function checkPin(
@@ -319,16 +326,20 @@ export async function checkPin(
     return { check: { kind: "ask" }, lockout };
   }
   if (await verifyPin(pin, guard, crypto)) {
-    return { check: { kind: "ok" }, lockout: NO_LOCKOUT };
+    return { check: { kind: "ok" }, lockout };
   }
-  const failures = lockout.failures + 1;
+  const row = now - lockout.last < LOCKOUT_MS ? lockout.failures : 0;
+  const failures = row + 1;
   if (failures >= MAX_FAILURES) {
     return {
       check: { kind: "locked", retryInMs: LOCKOUT_MS },
-      lockout: { failures: 0, until: now + LOCKOUT_MS },
+      lockout: { failures: 0, last: now, until: now + LOCKOUT_MS },
     };
   }
-  return { check: { kind: "wrong" }, lockout: { failures, until: 0 } };
+  return {
+    check: { kind: "wrong" },
+    lockout: { failures, last: now, until: 0 },
+  };
 }
 
 /** What the return after a break needs to know of each account. */

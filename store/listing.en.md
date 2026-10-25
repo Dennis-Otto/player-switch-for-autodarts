@@ -46,8 +46,11 @@ Not affiliated with Autodarts.
 
 ## Permission justifications
 
-• storage — to keep your saved accounts and their sessions on your computer.
-• alarms — to renew parked sessions in the background so they stay ready.
+• storage — to keep your saved accounts, their sessions and the settings on your
+  computer, in the venue mode also the salted hashes of the PINs.
+• alarms — to renew parked sessions in the background so they stay ready, and in
+  the venue mode to look once a minute whether the display should return after a
+  break.
 • scripting — to bring the button of a new version into the Autodarts tabs that are
   already open when the extension updates, or into one that stopped answering, so a
   display in kiosk mode keeps working without a reload. It runs only the extension's own script, only on

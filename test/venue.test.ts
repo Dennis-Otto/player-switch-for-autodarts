@@ -260,12 +260,17 @@ test("parseActivity reads a time and nothing else", () => {
 test("parseLockout counts nothing for a value it doesn't know", () => {
   assert.deepEqual(parseLockout(undefined), NO_LOCKOUT);
   assert.deepEqual(parseLockout("x"), NO_LOCKOUT);
-  assert.deepEqual(parseLockout({ failures: 2, until: 500 }), {
+  assert.deepEqual(parseLockout({ failures: 2, last: 400, until: 500 }), {
     failures: 2,
+    last: 400,
     until: 500,
   });
   assert.deepEqual(
-    parseLockout({ failures: -1, until: Number.POSITIVE_INFINITY }),
+    parseLockout({
+      failures: -1,
+      last: Number.NaN,
+      until: Number.POSITIVE_INFINITY,
+    }),
     NO_LOCKOUT,
   );
   assert.deepEqual(parseLockout({ failures: 1.5, until: "9" }), NO_LOCKOUT);
@@ -278,7 +283,7 @@ test("checkPin lets every request pass that no PIN guards", async () => {
 
 test("checkPin asks for the PIN without counting a failure", async () => {
   const guard = await hash("1234");
-  const lockout: Lockout = { failures: 3, until: 0 };
+  const lockout: Lockout = { failures: 3, last: 0, until: 0 };
   for (const pin of [undefined, null]) {
     assert.deepEqual(await checkPin(guard, pin, lockout, 0), {
       check: { kind: "ask" },
@@ -287,13 +292,40 @@ test("checkPin asks for the PIN without counting a failure", async () => {
   }
 });
 
-test("checkPin takes the right PIN and clears the count", async () => {
+test("checkPin takes the right PIN and leaves the count alone", async () => {
   const guard = await hash("1234");
+  const lockout: Lockout = { failures: 4, last: 0, until: 0 };
+  assert.deepEqual(await checkPin(guard, "1234", lockout, 0), {
+    check: { kind: "ok" },
+    lockout,
+  });
+});
+
+test("a right PIN of another account doesn't end the row of wrong ones", async () => {
+  const pinOfA = await hash("1234");
+  const pinOfB = await hash("5678");
+  let lockout = NO_LOCKOUT;
+  let now = 1_000_000;
+  for (let attempt = 1; attempt < MAX_FAILURES; attempt += 1) {
+    lockout = (await checkPin(pinOfA, "0000", lockout, now)).lockout;
+    now += 1000;
+  }
+  // The guesser types their own right PIN on their own tile in between.
+  const own = await checkPin(pinOfB, "5678", lockout, now);
+  assert.equal(own.check.kind, "ok");
+  now += 1000;
+  const fifth = await checkPin(pinOfA, "0000", own.lockout, now);
+  assert.deepEqual(fifth.check, { kind: "locked", retryInMs: LOCKOUT_MS });
+});
+
+test("the row of wrong PINs ends a minute after the last one", async () => {
+  const guard = await hash("1234");
+  const lockout: Lockout = { failures: 4, last: 1_000_000, until: 0 };
   assert.deepEqual(
-    await checkPin(guard, "1234", { failures: 4, until: 0 }, 0),
+    await checkPin(guard, "0000", lockout, 1_000_000 + LOCKOUT_MS),
     {
-      check: { kind: "ok" },
-      lockout: NO_LOCKOUT,
+      check: { kind: "wrong" },
+      lockout: { failures: 1, last: 1_000_000 + LOCKOUT_MS, until: 0 },
     },
   );
 });
@@ -331,12 +363,16 @@ test("five wrong PINs in a row lock every PIN for a minute", async () => {
     "locked",
   );
 
-  // A minute after the last wrong PIN, the right one passes again.
+  // A minute after the last wrong PIN, the right one passes again, and a new row starts.
   now = lockout.until;
   assert.deepEqual(await checkPin(guard, "1234", lockout, now), {
     check: { kind: "ok" },
-    lockout: NO_LOCKOUT,
+    lockout,
   });
+  assert.equal(
+    (await checkPin(guard, "0000", lockout, now)).check.kind,
+    "wrong",
+  );
 });
 
 const ada: IdleAccount = { id: "a", active: false, needsSignIn: false };

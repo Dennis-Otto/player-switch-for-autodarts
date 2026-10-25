@@ -39,8 +39,9 @@ Option 3, off until a person turns it on under **Settings** → **For a club or 
 
 - `src/venue.ts` holds the logic, without the browser: the PINs, 4 to 8 digits, kept
   as PBKDF2 hashes with SHA-256, 600,000 rounds and a random salt of 16 bytes each,
-  never the PIN; a count of wrong PINs, five of which in a row lock every PIN for a
-  minute; and the return after a break.
+  never the PIN; a count of wrong PINs, shared by every PIN and not cleared by a right
+  one, five of which in a row lock every PIN for a minute; and the return after a
+  break.
 - The return after a break is decided once a minute, by an alarm of the worker, from
   the last input on the Autodarts page. The content script reports only that an input
   happened, at most every 15 seconds, and only while the return is on. A match that

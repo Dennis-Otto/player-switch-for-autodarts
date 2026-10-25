@@ -138,7 +138,10 @@ someone who can use the computer.
   and every change under **Manage accounts** or on the options page, so neither the
   popup nor the switcher on the Autodarts page can go around it. The content script
   can neither read the hashes nor send these requests.
-- **Five wrong PINs in a row lock every PIN for a minute.** The count is kept in
+- **Five wrong PINs in a row lock every PIN for a minute.** All PINs of the display
+  share one count, and a right PIN doesn't clear it: the row ends only when a minute
+  passes without a wrong PIN. So a guest can't reset the count between guesses by
+  typing the right PIN of their own account. The count is kept in
   `chrome.storage.session`, so it outlives a sleep of the service worker; a restart
   of the browser clears it.
 - **The manager PIN lives as long as the view that asked for it:** the popup and the

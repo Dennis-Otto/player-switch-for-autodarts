@@ -34,6 +34,11 @@ Cómo funciona:
   táctil. Las teclas del 1 al 9 eligen un jugador.
 • En la página de una partida en curso, un cambio pregunta primero, para que una
   partida nunca termine por sorpresa.
+• Para un club o un bar, opcional y desactivado de serie: un PIN de gestión
+  protege «Gestionar cuentas» y los ajustes, cada jugador puede proteger su cuenta
+  con un PIN propio y, tras una pausa, la pantalla vuelve sola a una cuenta de la
+  casa, nunca durante una partida. La extensión no guarda ningún PIN, solo un hash
+  con sal.
 • Opcional: deja que la extensión recuerde una contraseña, y vuelve a iniciar la
   sesión de una cuenta por sí sola si su sesión deja de funcionar. Las cuentas que
   inician sesión con Google o Apple no pueden usarlo, porque no tienen una
@@ -50,9 +55,11 @@ Sin relación con Autodarts.
 
 ## Justificación de los permisos
 
-• storage — para guardar tus cuentas y sus sesiones en tu ordenador.
+• storage — para guardar tus cuentas, sus sesiones y los ajustes en tu ordenador,
+  en el modo para clubs y bares también los hashes con sal de los PIN.
 • alarms — para renovar las sesiones aparcadas en segundo plano, de modo que sigan
-  listas.
+  listas, y en el modo para clubs y bares para comprobar una vez por minuto si la
+  pantalla debe volver tras una pausa.
 • scripting — para llevar el botón de una versión nueva a las pestañas de
   Autodarts que ya están abiertas al actualizarse la extensión, o a una que ha
   dejado de responder, de modo que una pantalla en modo quiosco siga funcionando

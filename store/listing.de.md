@@ -52,9 +52,12 @@ Nicht mit Autodarts verbunden.
 
 ## Begründung der Berechtigungen
 
-• storage — um deine gespeicherten Konten und Sitzungen auf dem Computer zu halten.
+• storage — um deine gespeicherten Konten, ihre Sitzungen und die Einstellungen auf
+  dem Computer zu halten, im Modus für Verein und Kneipe auch die gesalzenen Hashes
+  der PINs.
 • alarms — um geparkte Sitzungen im Hintergrund zu erneuern, damit sie bereit
-  bleiben.
+  bleiben, und im Modus für Verein und Kneipe einmal pro Minute zu prüfen, ob das
+  Display nach einer Pause zurückkehren soll.
 • scripting — um den Knopf einer neuen Version in die Autodarts-Tabs zu bringen,
   die beim Update schon offen sind, oder in einen, der nicht mehr antwortet, damit
   ein Display im Kiosk-Modus ohne Neuladen weiter funktioniert. Es führt nur das eigene Skript der Erweiterung aus, nur auf

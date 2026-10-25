@@ -146,9 +146,12 @@ kann.
   bei jeder Änderung unter **Konten verwalten** oder auf der Seite der Einstellungen,
   so kommen weder das Popup noch der Umschalter auf der Autodarts-Seite daran vorbei.
   Das Content-Skript kann die Hashes weder lesen noch diese Anfragen senden.
-- **Fünf falsche PINs in Folge sperren jede PIN für eine Minute.** Die Zahl steht in
-  `chrome.storage.session`, so übersteht sie einen Schlaf des Service Workers; ein
-  Neustart des Browsers löscht sie.
+- **Fünf falsche PINs in Folge sperren jede PIN für eine Minute.** Alle PINs des
+  Displays teilen sich eine Zahl, und eine richtige PIN setzt sie nicht zurück: Die
+  Folge endet erst, wenn eine Minute ohne falsche PIN vergeht. So kann ein Gast die
+  Zahl zwischen zwei Versuchen nicht mit der richtigen PIN seines eigenen Kontos
+  löschen. Die Zahl steht in `chrome.storage.session`, so übersteht sie einen Schlaf
+  des Service Workers; ein Neustart des Browsers löscht sie.
 - **Die Manager-PIN lebt so lange wie die Ansicht, die nach ihr gefragt hat:** Das
   Popup und der Umschalter vergessen sie, wenn **Konten verwalten** zugeht, die Seite
   der Einstellungen, wenn sie zugeht.

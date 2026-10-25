@@ -1,8 +1,8 @@
 {
   "about": "Everything that extension/manifest.json may ask the browser for, each with its reason. scripts/check-manifest.mjs fails when the manifest asks for more or for less: Chrome disables an installed extension after an update that asks for a new permission or host, until someone accepts the new warning in chrome://extensions, and a board display in kiosk mode then stops switching without a word. Add an entry here only with its justification in the store listing of every language, store/listing.<code>.md, and a note in the changelog that the update asks for it.",
   "permissions": {
-    "storage": "Keeps the saved accounts, their sessions and the settings of the button on this computer.",
-    "alarms": "Renews the parked sessions in the background, so they still work days later.",
+    "storage": "Keeps the saved accounts, their sessions, the settings of the button and of the venue mode, and the salted hashes of the venue PINs on this computer.",
+    "alarms": "Renews the parked sessions in the background, so they still work days later, and in the venue mode looks once a minute whether the display should return after a break.",
     "scripting": "Runs the extension's own content.js again in the Autodarts tabs that are open when the extension is installed or updated, and in an Autodarts tab whose content script doesn't answer, so a display in kiosk mode keeps its button and switches without a reload.",
     "unlimitedStorage": "Keeps the key that seals the saved sessions and passwords in the extension's IndexedDB from being evicted when the disk runs low; without it Chrome may delete that storage, and every parked account would have to sign in again. It shows no warning at the install."
   },

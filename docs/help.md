@@ -174,7 +174,7 @@ Under **Settings**, a shortcut says:
 
 > Too many wrong PINs. Try again in a minute.
 
-**What it means:** five wrong PINs in a row lock every PIN of this display, of the players and the manager, for a minute, so that nobody can try them all by hand.
+**What it means:** five wrong PINs in a row lock every PIN of this display, of the players and the manager, for a minute, so that nobody can try them all by hand. A right PIN in between doesn't end the row; a minute without a wrong PIN does.
 
 **What to do:** wait a minute, then type the right PIN.
 
