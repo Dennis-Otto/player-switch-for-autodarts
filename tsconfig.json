@@ -18,7 +18,11 @@
     "erasableSyntaxOnly": true,
     "rewriteRelativeImportExtensions": true,
     "forceConsistentCasingInFileNames": true,
-    "noEmit": true
+    "noEmit": true,
+    // A file that imports and exports nothing is a classic script, as the content
+    // script, src/content.ts, has to be: the compiler then writes it without an
+    // `export {}`, which a content script can't run. Every other file is a module.
+    "moduleDetection": "legacy"
   },
   "include": ["src", "test"]
 }

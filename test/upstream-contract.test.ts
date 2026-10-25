@@ -192,7 +192,7 @@ test("a renamed key of the session fails the check and names every place that re
     assert.ok(change, report);
     for (const file of [
       "src/autodarts.ts",
-      "extension/content.js",
+      "src/content.ts",
       "test/e2e/fake/play.js",
     ]) {
       assert.ok(change.includes(`\`${file}:`), `${file} in ${change}`);
@@ -227,7 +227,7 @@ test("a change of the expected key or sign-in service on this side fails the che
   // A text that the code no longer has leaves the file alone.
   assert.match(
     report,
-    /relies on it in `src\/autodarts\.ts`, `extension\/content\.js`/,
+    /relies on it in `src\/autodarts\.ts`, `src\/content\.ts`/,
   );
 });
 

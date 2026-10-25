@@ -97,10 +97,10 @@ Autodarts of `test/e2e/fake/`, failed: the summary of the check names the test a
 the line that failed. A test fails as well when a refresh token reached the fake
 sign-in service a second time, when a request went to a host that the fake doesn't
 answer, when the service worker logged an error, or when it didn't start at all, as
-after a wrong import path in `background.js` or a permission missing from the
+after a wrong path in the manifest or a page, or a permission missing from the
 manifest."""
 why = """These tests run what Chrome runs and the unit tests don't: the manifest, the
-service worker with its imports of `lib/`, the content script in the Autodarts page,
+service worker and the content script built into `lib/`, the Autodarts page,
 the popup and the switcher. A release with such a failure would break on every
 display, and the review of the Chrome Web Store takes days for each fix. A refresh
 token sent twice ends the session of a player at Autodarts."""
@@ -154,7 +154,7 @@ remembered password. The first to notice would be a player, and a fix needs days
 the review of the Chrome Web Store."""
 fix = """Open Autodarts Play in a browser and look at what changed: its developer tools
 show the key in `localStorage` and the requests of a sign-in. Change the places that
-the summary names, in `src/autodarts.ts`, `extension/content.js` and the manifest,
+the summary names, in `src/autodarts.ts`, `src/content.ts` and the manifest,
 and the fake Autodarts of the end-to-end tests in `test/e2e/fake/` with them, so that
 the tests follow the new behavior. Then run the check against the real Autodarts and
 the tests:"""

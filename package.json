@@ -25,7 +25,7 @@
     "typecheck": "tsc --project tsconfig.json",
     "e2e": "tsc --project tsconfig.build.json && playwright test",
     "test:a11y": "npm run --silent build && node --test test/harness/a11y.mjs",
-    "test": "node --test --experimental-test-coverage --test-coverage-include=\"src/**\" --test-coverage-include=\"scripts/store-status.ts\" --test-coverage-include=\"scripts/upstream-contract.ts\" --test-coverage-lines=100 --test-coverage-branches=100 --test-coverage-functions=100 --test-reporter=spec --test-reporter-destination=stdout --test-reporter=lcov --test-reporter-destination=lcov.info \"test/**/*.test.ts\""
+    "test": "node --test --experimental-test-coverage --test-coverage-include=\"src/**\" --test-coverage-exclude=\"src/pages/**\" --test-coverage-include=\"scripts/store-status.ts\" --test-coverage-include=\"scripts/upstream-contract.ts\" --test-coverage-lines=100 --test-coverage-branches=100 --test-coverage-functions=100 --test-reporter=spec --test-reporter-destination=stdout --test-reporter=lcov --test-reporter-destination=lcov.info \"test/**/*.test.ts\""
   },
   "devDependencies": {
     "@biomejs/biome": "^2.5.15",
@@ -35,6 +35,7 @@
     "axe-core": "^4.14.0",
     "fake-indexeddb": "^6.2.5",
     "fast-check": "^4.10.2",
+    "happy-dom": "^21.0.4",
     "playwright-core": "^1.64.0",
     "typescript": "^7.0.2"
   }

@@ -5,26 +5,26 @@ config:
 ---
 flowchart TB
     accTitle: How the code is laid out
-    accDescr: The popup and the switcher are pages of the extension that players.js draws, the options page keeps the settings of the button and of the venue mode, and the welcome page guides the first set-up. They send their requests to background.js, the service worker, which wires the browser to the logic in src/, built into extension/lib/. There switch.ts makes every change of the accounts, one at a time through queue.ts, with state.ts for the saved accounts, storage.ts to store them with the version of their format, vault.ts to seal their sessions and passwords, and autodarts.ts for the sign-in service of Autodarts; tabs.ts picks the Autodarts tab, health.ts plans the renewal and the badge, page.ts decides for the switcher, onboarding.ts for the first set-up and the bug report, trust.ts who may send which request and who may read the storage, and venue.ts the PINs and the return after a break of the venue mode. The logic reaches chrome.storage.local, the IndexedDB of the key, api.autodarts.com and content.js only through what background.js passes in. content.js runs in each Autodarts tab, shows the button and the frame of the switcher, and is the only code that reads or writes the session of the page.
+    accDescr: Every line that ships is TypeScript in src/, built into extension/lib/; extension/ holds only the manifest, the HTML, the styles, the icons and the texts. The popup and the switcher are pages of the extension that pages/players.ts draws, the options page keeps the settings of the button and of the venue mode, and the welcome page guides the first set-up; what they decide is in popup-model.ts and options-model.ts. They send their requests, typed in messages.ts, to worker.ts, the service worker, which background.ts starts on the real chrome and which wires the browser to the logic. There switch.ts makes every change of the accounts, one at a time through queue.ts, with state.ts for the saved accounts, storage.ts to store them with the version of their format, vault.ts to seal their sessions and passwords, and autodarts.ts for the sign-in service of Autodarts; tabs.ts picks the Autodarts tab, health.ts plans the renewal and the badge, page.ts decides for the switcher, onboarding.ts for the first set-up and the bug report, trust.ts who may send which request and who may read the storage, and venue.ts the PINs and the return after a break of the venue mode. The worker reaches chrome.storage.local, the IndexedDB of the key, api.autodarts.com and the content script only through ChromeApi, the typed port that background.ts fills with the real chrome and a test with a fake one. content.ts runs in each Autodarts tab as a classic script, shows the button and the frame of the switcher, and is the only code that reads or writes the session of the page.
 
-    pages["Pages of the extension<br>popup.html and switcher.html,<br>both drawn by players.js;<br>options.html for the button<br>and the venue mode,<br>welcome.html for the set-up"]
-    worker["background.js<br>the service worker, wires<br>the browser to the logic"]
+    pages["Pages of the extension<br>popup.html and switcher.html,<br>both drawn by pages/players.ts;<br>options.html for the button<br>and the venue mode,<br>welcome.html for the set-up;<br>popup-model.ts and<br>options-model.ts decide"]
+    worker["worker.ts, the service worker,<br>started by background.ts:<br>wires the browser<br>to the logic"]
     subgraph lib ["src/, built into extension/lib/"]
         direction TB
         switch["switch.ts with queue.ts<br>switch, sign out, save,<br>renew: one change<br>at a time"]
         parts["state.ts the accounts<br>storage.ts their storage<br>vault.ts seals the secrets<br>autodarts.ts the sign-in<br>tabs.ts the tab of a switch<br>health.ts the renewal<br>page.ts the switcher<br>onboarding.ts the set-up<br>trust.ts who reaches<br>the accounts<br>venue.ts the venue mode"]
         switch --> parts
     end
-    subgraph ports ["Passed in by background.js"]
+    subgraph ports ["The browser, through ChromeApi"]
         direction TB
         storage[("chrome.storage.local")]
         keys[("IndexedDB<br>the key of the vault")]
         api["api.autodarts.com"]
-        content["content.js in each<br>Autodarts tab: the button,<br>the switcher's frame, the<br>only code that touches<br>the session"]
+        content["content.ts in each<br>Autodarts tab: the button,<br>the switcher's frame, the<br>only code that touches<br>the session"]
         storage ~~~ keys ~~~ api ~~~ content
     end
 
-    pages -- "requests" --> worker --> lib
+    pages -- "requests of messages.ts" --> worker --> lib
     lib --> ports
 
     classDef bot fill:#526cfe2e,stroke:#526cfe,stroke-width:2px
