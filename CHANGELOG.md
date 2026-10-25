@@ -6,6 +6,17 @@ the next release, or lists the pull requests when there is none.
 
 ## Unreleased
 
+**The first stable version, 1.0.0.** Player Switch now does what it was built for:
+everyone at a shared Autodarts display plays under their own account and switches
+with one tap, in the toolbar popup or on the Autodarts page itself, also in
+fullscreen and kiosk mode. The account that steps aside stays signed in, renewed in
+the background and stored encrypted in the browser. The extension speaks English,
+German, Dutch, French and Spanish, works with a keyboard, a screen reader and a
+finger, and guards a display in a club or a pub with PINs in its venue mode. From
+now on, a release that takes away something you use, such as a setting, a language
+or a keyboard shortcut, is a new major version, and an update within 1.x keeps every
+saved account and setting as it is.
+
 ## [0.2.0](https://github.com/Dennis-Otto/player-switch-for-autodarts/compare/v0.1.1...v0.2.0) (2026-10-15)
 
 - Each release now reaches the Chrome Web Store on its own: the release workflow
