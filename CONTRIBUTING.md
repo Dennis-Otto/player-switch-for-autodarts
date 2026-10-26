@@ -140,8 +140,9 @@ The GitHub app, the stores of the projects and other renderers of Markdown show 
 ## Releases
 
 <<<<<<< before updating
-The release bot keeps a pull request titled `chore: release x.y.z` with the next version, up to date with `main` and decided anew with every merge. Its section of the changelog is the text of the fragments in `changelog.d/` and of Unreleased, and it deletes the fragments; without such text, it lists the pull requests. Merging it creates the release with its package, SBOM and signed provenance; how it then reaches the Chrome Web Store is described in [docs/releases.md](docs/releases.md). A release of dependency updates merges and publishes itself.
+The release bot keeps a pull request titled `chore: release x.y.z` with the next version, up to date with `main` and decided anew with every merge. Its section of the changelog is the text of the fragments in `changelog.d/` and of Unreleased, and it deletes the fragments; without such text, it lists the pull requests. Merging it creates the release with its package, SBOM and signed provenance; how it then reaches the Chrome Web Store is described in [docs/releases.md](docs/releases.md). A release of dependency updates merges and publishes itself
 =======
+
 The release bot keeps a pull request titled `chore: release x.y.z` with the next version, up to date with `main` and decided anew with every merge. Its section of the changelog is the text of the fragments in `changelog.d/` and of Unreleased, and it deletes the fragments; without such text, it lists the pull requests. Merging it creates the release with its package, SBOM and signed provenance, and delivers it to npm. A release of dependency updates merges and publishes itself, once a day, or at once when it fixes a vulnerability.
 >>>>>>> after updating
 
