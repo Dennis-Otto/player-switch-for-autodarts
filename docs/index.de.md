@@ -1,7 +1,9 @@
 ---
+
 hide:
-  - navigation
-  - toc
+- navigation
+- toc
+
 ---
 
 # Player Switch for Autodarts
@@ -25,27 +27,27 @@ Das Display im Flur, im Verein oder in der Kneipe teilen sich alle, aber jede Pe
 
 - :material-gesture-tap:{ .lg .middle } **Ein Tipp, nichts tippen**
 
-    ---
+  ---
 
-    Jedes Konto einmal speichern. Ein Tipp auf eine Kachel bringt das Konto aufs Board.
+  Jedes Konto einmal speichern. Ein Tipp auf eine Kachel bringt das Konto aufs Board.
 
 - :material-account-switch:{ .lg .middle } **Niemand wird abgemeldet**
 
-    ---
+  ---
 
-    Das Konto, das Platz macht, bleibt geparkt angemeldet und kommt mit einem Tipp zurück.
+  Das Konto, das Platz macht, bleibt geparkt angemeldet und kommt mit einem Tipp zurück.
 
 - :material-autorenew:{ .lg .middle } **Auch Tage später bereit**
 
-    ---
+  ---
 
-    Autodarts wechselt seine Sitzungs-Token regelmäßig; die Erweiterung erneuert jedes geparkte Konto im Hintergrund.
+  Autodarts wechselt seine Sitzungs-Token regelmäßig; die Erweiterung erneuert jedes geparkte Konto im Hintergrund.
 
 - :material-lock-outline:{ .lg .middle } **Privat von Grund auf**
 
-    ---
+  ---
 
-    Alles bleibt im Browser auf diesem Computer und geht nur an Autodarts. Keine Statistiken, kein eigener Server.
+  Alles bleibt im Browser auf diesem Computer und geht nur an Autodarts. Keine Statistiken, kein eigener Server.
 
 </div>
 

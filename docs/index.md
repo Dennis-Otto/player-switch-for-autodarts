@@ -1,7 +1,9 @@
 ---
+
 hide:
-  - navigation
-  - toc
+- navigation
+- toc
+
 ---
 
 # Player Switch for Autodarts
@@ -25,27 +27,27 @@ The display in the hallway, the club or the pub is shared, but everyone plays un
 
 - :material-gesture-tap:{ .lg .middle } **One tap, no typing**
 
-    ---
+  ---
 
-    Save each account once. A tap on a tile puts that account on the board.
+  Save each account once. A tap on a tile puts that account on the board.
 
 - :material-account-switch:{ .lg .middle } **Nobody gets signed out**
 
-    ---
+  ---
 
-    The account that steps aside keeps its session parked, so a tap brings it straight back.
+  The account that steps aside keeps its session parked, so a tap brings it straight back.
 
 - :material-autorenew:{ .lg .middle } **Ready days later**
 
-    ---
+  ---
 
-    Autodarts rotates its session tokens; the extension renews every parked account in the background.
+  Autodarts rotates its session tokens; the extension renews every parked account in the background.
 
 - :material-lock-outline:{ .lg .middle } **Private by design**
 
-    ---
+  ---
 
-    Everything stays in the browser on that computer and goes only to Autodarts. No analytics, no server of ours.
+  Everything stays in the browser on that computer and goes only to Autodarts. No analytics, no server of ours.
 
 </div>
 

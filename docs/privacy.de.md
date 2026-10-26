@@ -60,7 +60,7 @@ andere Verbindung, spricht mit keinem Dienst für Statistiken oder Tracking, und
 Entwickler bekommt keine Daten von ihr. Ihre Content Security Policy lässt sie nur mit
 `api.autodarts.com` verbinden, darum sperrt der Browser selbst jede andere Verbindung.
 
-Firefox zeigt bei der Installation, dass das Add-on *Authentifizierungsdaten*
+Firefox zeigt bei der Installation, dass das Add-on _Authentifizierungsdaten_
 sendet: Das sind die Sitzungstokens und, bei einem Konto, dessen Passwort du dir
 merken lässt, Benutzername und Passwort, die wie hier beschrieben an den
 Anmeldedienst von Autodarts gehen, und nirgendwohin sonst. Der Chrome Web Store
