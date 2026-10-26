@@ -4,6 +4,6 @@
 # playwright stays at the version of the image: Renovate updates both in one pull
 # request (.github/renovate.json5). requirements.txt pins them with their hashes:
 #   uv pip compile --generate-hashes --python-version=3.12.3 --output-file=requirements.txt requirements.in
-playwright==1.63.0
+playwright==1.64.0
 pillow==13.0.0
 imageio-ffmpeg==0.6.0
