@@ -269,6 +269,10 @@ someone who can use the computer.
   worker writes that to its console at each start, `content.js` still reads nothing
   from the storage itself, and the sessions and passwords in it stay sealed;
   [in Firefox](#firefox) says what else is in reach.
+- A tool that only the checks run can carry an advisory with no fix, such as the
+  deepmerge that addons-linter pins. `osv-scanner.toml` accepts it with its reason
+  and until a date, when a person looks again. The package ships no third-party code,
+  and [a test](development.md#checks) shows that no manifest reaches that tool's merge.
 - Autodarts' sign-in is not a published interface. A change on their side can stop
   the extension working until it is adjusted, and could change how long a parked
   token stays valid.

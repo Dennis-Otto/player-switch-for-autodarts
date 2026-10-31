@@ -9,7 +9,10 @@ fail-on-scopes:
   - unknown
 show-patched-versions: true
 retry-on-snapshot-warnings: true
-allow-ghsas: []
+allow-ghsas:
+  # deepmerge 4.3.1, which addons-linter pins and only the checks install, has no fixed
+  # version: osv-scanner.toml says why, and until when.
+  - GHSA-gcqx-w48m-w2h4
 
 # The licenses a new dependency may have: free licenses that the MIT
 # license of this project can carry.

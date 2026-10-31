@@ -285,6 +285,11 @@ kann.
   `content.js` liest weiterhin selbst nichts aus dem Speicher, und die Sitzungen und
   Passwörter darin bleiben versiegelt; [in Firefox](#firefox) sagt, was sonst in
   Reichweite ist.
+- Ein Werkzeug, das nur die Prüfungen ausführen, kann ein Advisory ohne Behebung
+  haben, etwa das deepmerge, das addons-linter festlegt. `osv-scanner.toml` akzeptiert
+  es mit seinem Grund und bis zu einem Datum, an dem jemand es wieder prüft. Das Paket
+  liefert keinen Code Dritter aus, und [ein Test](development.md#checks) zeigt, dass
+  kein Manifest das Zusammenführen dieses Werkzeugs erreicht.
 - Die Anmeldung von Autodarts ist keine veröffentlichte Schnittstelle. Eine Änderung
   auf ihrer Seite kann die Erweiterung stoppen, bis sie angepasst ist, und könnte
   ändern, wie lange ein geparkter Token gültig bleibt.
