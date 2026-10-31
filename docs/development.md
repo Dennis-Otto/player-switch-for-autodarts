@@ -229,6 +229,8 @@ npm run test:a11y
 
 runs it alone, after a build of `extension/lib/`. `CHROME_PATH` points it at another Chrome. On a computer with neither Chrome nor Edge it skips with a note; in the CI, whose runner has Chrome, it never skips.
 
+The package has no dependency of its own, so an advisory for `package-lock.json` concerns a tool of the checks. A fixed version comes first, also for a package that another one pins: `overrides` in `package.json` moves the minimatch of addons-linter to one with the fix, and `test/advisories.test.ts` shows that the rules of ESLint in addons-linter still run with it. An advisory with no fixed version goes into `osv-scanner.toml`, with its reason and its `ignoreUntil`, and into `allow-ghsas` in `.github/dependency-review.yml`. So does that of deepmerge, which addons-linter pins: the same test fails when a manifest reaches deepmerge, and when an update moves it, so that the acceptance leaves with that update. After the date, OSV-Scanner reports the advisory again and a person looks again.
+
 [Biome](https://biomejs.dev/) lints and formats every JavaScript, TypeScript, CSS, HTML and JSON file of the repository with the settings of `biome.jsonc`: `src/` and `test/`, and also the code that the types don't reach, `scripts/*.mjs`. A warning fails the check as well. Before a commit,
 
 ```sh
