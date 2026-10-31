@@ -12,7 +12,7 @@ A tile says this, and the icon in the toolbar shows how many accounts have to si
 
 > Player Switch for Autodarts – sign in again: Ada and Bob
 
-**What it means:** Autodarts no longer accepts the saved session of this account, in a renewal or at a tap, and no remembered password could sign it in. A session also ends for good when the player signs out on the Autodarts page: to change players, tap a tile instead. And when the data of the extension was cleared, every parked account has to sign in again at once: the key that seals the saved sessions went with it, so they no longer open, and the remembered passwords are forgotten too.
+**What it means:** Autodarts no longer accepts the saved session of this account, in a renewal or at a tap, and no remembered password could sign it in. A session also ends for good when the player signs out on the Autodarts page: to change players, tap a tile instead. If someone then signed in as another player right on the page, the next tap or **Add account** gives that session to the tile of that player, and the player who was signed out shows this message. And when the data of the extension was cleared, every parked account has to sign in again at once: the key that seals the saved sessions went with it, so they no longer open, and the remembered passwords are forgotten too.
 
 **What to do**, in one of two ways:
 
@@ -48,9 +48,9 @@ and the popup and the players on the Autodarts page say:
 
 > Autodarts can't be reached right now. Try again in a moment.
 
-**What it means:** the extension couldn't ask Autodarts for the session of this account: the computer has no connection to the internet, or Autodarts has a problem. Nothing changed: the page stays as it was, and no session is lost.
+**What it means:** the extension couldn't ask Autodarts for the session of this account, or, at a tap or **Add account**, whose session is in the page: the computer has no connection to the internet, or Autodarts has a problem. Nothing changed: the page stays as it was, and no session is lost.
 
-**What to do:** check that [play.autodarts.com](https://play.autodarts.com) loads, then tap the tile again. The renewal in the background tries again by itself after 15 minutes.
+**What to do:** check that [play.autodarts.com](https://play.autodarts.com) loads, then tap again. The renewal in the background tries again by itself after 15 minutes.
 
 ### Autodarts didn't answer in a tab {#no-page}
 

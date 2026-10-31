@@ -1,9 +1,7 @@
 ---
-
 hide:
-- navigation
-- toc
-
+  - navigation
+  - toc
 ---
 
 # Player Switch for Autodarts
@@ -27,27 +25,27 @@ Das Display im Flur, im Verein oder in der Kneipe teilen sich alle, aber jede Pe
 
 - :material-gesture-tap:{ .lg .middle } **Ein Tipp, nichts tippen**
 
-  ---
+    ---
 
-  Jedes Konto einmal speichern. Ein Tipp auf eine Kachel bringt das Konto aufs Board.
+    Jedes Konto einmal speichern. Ein Tipp auf eine Kachel bringt das Konto aufs Board.
 
 - :material-account-switch:{ .lg .middle } **Niemand wird abgemeldet**
 
-  ---
+    ---
 
-  Das Konto, das Platz macht, bleibt geparkt angemeldet und kommt mit einem Tipp zurück.
+    Das Konto, das Platz macht, bleibt geparkt angemeldet und kommt mit einem Tipp zurück.
 
 - :material-autorenew:{ .lg .middle } **Auch Tage später bereit**
 
-  ---
+    ---
 
-  Autodarts wechselt seine Sitzungs-Token regelmäßig; die Erweiterung erneuert jedes geparkte Konto im Hintergrund.
+    Autodarts wechselt seine Sitzungs-Token regelmäßig; die Erweiterung erneuert jedes geparkte Konto im Hintergrund.
 
 - :material-lock-outline:{ .lg .middle } **Privat von Grund auf**
 
-  ---
+    ---
 
-  Alles bleibt im Browser auf diesem Computer und geht nur an Autodarts. Keine Statistiken, kein eigener Server.
+    Alles bleibt im Browser auf diesem Computer und geht nur an Autodarts. Keine Statistiken, kein eigener Server.
 
 </div>
 
@@ -107,10 +105,10 @@ Autodarts Play speichert die Anmeldung als einen einzigen Wert im Browser, einen
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="images/diagrams/switch-flow.de.dark.svg">
-  <img src="images/diagrams/switch-flow.de.svg" alt="Was ein Tipp auf einen Spieler tut: Ada spielt, und ein Tipp auf Bob wechselt. Die Erweiterung erneuert Bobs Sitzung bei Autodarts mit seinem geparkten Token oder, wenn Autodarts den Token ablehnt, mit seinem gemerkten Passwort. Klappt das nicht, bleibt die Seite, wie sie ist, und kein Token geht verloren: Hat Autodarts Bob abgelehnt, muss er sich neu anmelden, war Autodarts nicht erreichbar, versucht es ein späterer Tipp neu. Sonst speichert die Erweiterung Bobs frischen Token, parkt Adas Sitzung aus der Seite, bei Autodarts weiter gültig, schreibt Bobs Sitzung in die Seite und lädt sie neu, und jeder andere Autodarts-Tab lädt als Bob neu.">
+  <img src="images/diagrams/switch-flow.de.svg" alt="Was ein Tipp auf einen Spieler tut: Ada spielt, und ein Tipp auf Bob wechselt. Die Erweiterung erneuert Bobs Sitzung bei Autodarts mit seinem geparkten Token oder, wenn Autodarts den Token ablehnt, mit seinem gemerkten Passwort. Klappt das nicht, bleibt die Seite, wie sie ist, und kein Token geht verloren: Hat Autodarts Bob abgelehnt, muss er sich neu anmelden, war Autodarts nicht erreichbar, versucht es ein späterer Tipp neu. Sonst speichert die Erweiterung Bobs frischen Token und erneuert die Sitzung in der Seite einmal, um zu erfahren, wem sie gehört; ohne Antwort bleibt die Seite auch hier, wie sie ist. Sie parkt diese Sitzung bei dem Konto, dem sie gehört, bei Autodarts weiter gültig, meist bei Ada, schreibt Bobs Sitzung in die Seite und lädt sie neu, und jeder andere Autodarts-Tab lädt als Bob neu.">
 </picture>
 
-- **Beim Wechseln** parkt sie die Sitzung des Kontos, das gerade spielte, schreibt die Sitzung des gewählten Kontos in die Seite und lädt neu.
+- **Beim Wechseln** parkt sie die Sitzung in der Seite bei dem Konto, dem sie gehört, meist dem, das gerade spielte, schreibt die Sitzung des gewählten Kontos in die Seite und lädt neu. Wem eine Sitzung gehört, kann nur Autodarts sagen, darum erneuert die Erweiterung sie einmal, wenn sie die Seite verlässt: Eine Sitzung, mit der sich jemand direkt auf der Seite angemeldet hat, landet nie auf der Kachel eines anderen Spielers.
 - **Das Konto, das Platz macht, wird bei Autodarts nicht abgemeldet.** Seine Sitzung bleibt gültig; der Wechsel nimmt es nur von der Seite.
 - **Geparkte Sitzungen werden frisch gehalten**, weil der Token rotiert: alle 12 Stunden, und gleich nach dem Start des Browsers, wenn der Computer aus war, als eine Erneuerung fällig war. „Konten verwalten“ zeigt bei jedem geparkten Konto, wann es zuletzt erneuert wurde, etwa „Erneuert vor 3 Stunden“, und solange Autodarts nicht erreichbar ist, seit wann das Erneuern nicht klappt; die Erweiterung versucht es alle 15 Minuten weiter.
 - **Du siehst, wer sich kümmern muss.** Muss sich ein Konto neu anmelden, zeigt das Symbol in der Symbolleiste, wie viele es sind, und sein Tooltip nennt sie.

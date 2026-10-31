@@ -55,7 +55,7 @@ contacts no analytics or tracking service, and the developer receives no data fr
 Its content security policy lets it connect to `api.autodarts.com` alone, so the
 browser itself blocks any other connection.
 
-Firefox shows at the install that the add-on sends _authentication information_:
+Firefox shows at the install that the add-on sends *authentication information*:
 that is the session tokens, and the username and password of an account whose
 password you remember, which go to the sign-in service of Autodarts as described
 here, and nowhere else. The Chrome Web Store lists the same under its privacy

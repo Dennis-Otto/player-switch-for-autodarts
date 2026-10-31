@@ -36,11 +36,30 @@ remember an account's password, it signs that account in again automatically whe
 its token stops working. This does not cover Google or Apple accounts. Option 3 was
 rejected as awkward at a touch display, with a separate window per person.
 
+Only Autodarts can say whose a refresh token is, and someone may have signed in as
+another account right in the page. So the extension never takes the token in the page
+for the one of the account that played last: when a switch or a sign-out is about to
+take the token out of the page, it renews the token once and parks the fresh one with
+the account that Autodarts names. This is no renewal behind the page's back, because
+the page gets another token, or none, right after. A session of an account without a
+tile isn't saved ([decision 0004](0004-save-a-new-sign-in-only-in-a-window.md)).
+
 ## Consequences
 
 - The extension depends on an interface Autodarts does not publish; a change there
   can require an adjustment, and the lifetime of a parked token is not guaranteed.
 - A stored token, and an optional stored password, sit in `chrome.storage.local` on
   a trusted shared computer; see [the security design](../security.md).
+- A switch and a sign-out need Autodarts to answer for the session in the page. Without
+  an answer the page stays as it is, also for **Add account** and
+  the return after a break of the venue mode, which worked offline before.
+- A tab that closes in the moment between that renewal and the write leaves a spent token
+  in the page's storage. The fresh token is parked first, but the next start of Autodarts
+  sends the spent one, and Autodarts may end the session for it: the account then signs
+  in again. Saving a session has the same short window.
+- An answer lost after Autodarts rotated the token, such as a connection reset, looks like
+  no answer, so the page keeps a spent token. Its next renewal or the next try sends that
+  token again, and the account then signs in again. Saving a session and renewing a parked
+  token carry the same risk.
 - Only `extension/content.js` touches the page's stored session, which keeps the
   sensitive surface to one small file.

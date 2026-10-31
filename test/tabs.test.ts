@@ -692,6 +692,7 @@ test("with two windows, a switch happens on the tab in front and the other tab r
   assert.equal(browser.token, autodarts.live.get("b"));
   assert.deepEqual(browser.log, [
     "read 2",
+    "read 2",
     "write 2",
     "read 2",
     "read 2",
@@ -715,7 +716,12 @@ test("after an update, a switch with two tabs open reloads only the other tab an
   const result = await switchTo(deps(store, browser, autodarts), "b");
   assert.ok(result.ok);
   await browser.idle();
-  assert.deepEqual(browser.log.slice(0, 3), ["inject 2", "read 2", "write 2"]);
+  assert.deepEqual(browser.log.slice(0, 4), [
+    "inject 2",
+    "read 2",
+    "read 2",
+    "write 2",
+  ]);
   assert.ok(!browser.log.includes("reload 2"));
   assert.ok(browser.log.includes("reload 1"));
   // Both tabs show Bob, nobody's session was sent twice, and Ada's parked token works.

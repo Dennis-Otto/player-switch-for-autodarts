@@ -57,7 +57,7 @@ all take, and `extension/` loads as it is in each browser. The manifest names:
 - `data_collection_permissions` with `required: ["authenticationInfo"]` and no optional
   data. That says what happens, the user agrees to it at the install, and
   `docs/privacy.md` explains that it goes to Autodarts alone; the privacy practices of
-  the Chrome Web Store declare the same, _authentication information_.
+  the Chrome Web Store declare the same, *authentication information*.
   `store/permissions.json` holds the same list with its reason, and
   `scripts/check-manifest.mjs` fails when they differ.
 

@@ -44,7 +44,7 @@ Option 4, while the refresh token stays the way of a repository that hasn't set 
 the federation yet.
 
 - With the variables `CWS_WORKLOAD_IDENTITY_PROVIDER` and `CWS_SERVICE_ACCOUNT` set,
-  the jobs _status_ and _store_ ask GitHub for an OIDC token of the job, trade it at
+  the jobs *status* and *store* ask GitHub for an OIDC token of the job, trade it at
   Google's Security Token Service for a federated token, and trade that at the IAM
   Service Account Credentials API for an access token of the service account with the
   scope `chromewebstore`, which lasts 20 minutes, longer than either job may run.
@@ -59,7 +59,7 @@ the federation yet.
   their provenance or results with it, can't trade one, and neither can a branch or a
   fork. The pool may act as the service account,
   which has no role in the project; the Developer Dashboard admits it to the item.
-- Only the two jobs that talk to the store have `id-token: write`; the job _package_,
+- Only the two jobs that talk to the store have `id-token: write`; the job *package*,
   which runs `npm ci` and the build, can't ask for an OIDC token, and
   `test/publish-store.test.ts` fails when that changes. The sign-in is the same step in
   both jobs, which the test keeps so, and runs against a fake `curl` in the test for

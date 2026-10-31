@@ -38,7 +38,7 @@ Jeder Spieler meldet sich einmal an: Wähle **Konto hinzufügen**, und die näch
 Auf einem Raspberry Pi heißt der Befehl `chromium --kiosk https://play.autodarts.com`; unter Raspberry Pi OS Bookworm und älter heißt Chromium `chromium-browser`. <kbd>Alt</kbd>+<kbd>F4</kbd> beendet den Kiosk-Modus.
 
 - **Schließe vorher jedes Chrome-Fenster.** Ein Chrome, das schon läuft, öffnet ein normales Fenster und übergeht `--kiosk`.
-- **Das Profil des Displays:** Gibt es auf dem Computer mehr als ein Chrome-Profil, ergänze `--profile-directory="Profile 1"` mit dem Namen seines Ordners, den `chrome://version` als letzten Teil des _Profilpfads_ zeigt.
+- **Das Profil des Displays:** Gibt es auf dem Computer mehr als ein Chrome-Profil, ergänze `--profile-directory="Profile 1"` mit dem Namen seines Ordners, den `chrome://version` als letzten Teil des *Profilpfads* zeigt.
 - **Kein Inkognito, kein Gast:** Ergänze nie `--incognito` oder `--guest`. Chrome führt in einem Gastfenster keine Erweiterung aus, und die gespeicherten Konten gehören zum normalen Profil.
 
 ## 4. Mit dem Computer starten {#autostart}
@@ -47,7 +47,7 @@ Auf einem Raspberry Pi heißt der Befehl `chromium --kiosk https://play.autodart
 
 1. Drücke <kbd>Win</kbd>+<kbd>R</kbd>, tippe `shell:startup` und drücke <kbd>Enter</kbd>: Der Ordner der Programme, die starten, wenn sich dieser Windows-Benutzer anmeldet, öffnet sich.
 2. Klicke mit der rechten Maustaste hinein, wähle **Neu → Verknüpfung** und gib als Speicherort den Befehl für den Kiosk-Modus von oben ein.
-3. Gib ihr einen Namen, etwa _Autodarts_, und wähle **Fertig stellen**.
+3. Gib ihr einen Namen, etwa *Autodarts*, und wähle **Fertig stellen**.
 
 Chrome startet dann jedes Mal im Kiosk-Modus, wenn sich dieser Benutzer anmeldet. Ein Display, das nach einem Stromausfall von selbst wiederkommen soll, braucht außerdem einen Windows-Benutzer, der sich ohne Frage nach dem Passwort anmeldet.
 
@@ -93,7 +93,7 @@ Zu Hause darf jeder am Display unter jedem gespeicherten Konto spielen, genau da
 
 - **Eine Manager-PIN** schützt **Konten verwalten**, wo Konten entfernt und Passwörter gemerkt oder vergessen werden, und die Einstellungen selbst. Das Popup und die Spieler auf der Autodarts-Seite fragen einmal nach ihr, wenn **Konten verwalten** aufgeht, und vergessen sie, wenn es wieder zugeht.
 - **Eine PIN für jeden Spieler, der eine möchte,** 4 bis 8 Ziffern, unter **PINs der Spieler**. Ein Tipp auf die Kachel dieses Spielers fragt nach ihr, auf einem Ziffernblock, der auf einem Touchscreen geht, bevor sich etwas ändert; seine Kachel zeigt ein Schloss. Niemand sonst spielt unter seinem Konto und verdirbt ihm die Statistik.
-- **Zurück nach einer Pause:** Nach 5 bis 60 Minuten ohne Tippen, Klicken oder Taste auf der Autodarts-Seite wechselt das Display zu einem Hauskonto deiner Wahl oder meldet sich ab, damit die nächsten Spiele nicht für den Spieler zählen, der gegangen ist. Ein Match wird nie unterbrochen: Die Pause beginnt erst, wenn es zu Ende ist. Der Spieler davor behält seine Sitzung geparkt, ein Tipp holt ihn zurück.
+- **Zurück nach einer Pause:** Nach 5 bis 60 Minuten ohne Tippen, Klicken oder Taste auf der Autodarts-Seite wechselt das Display zu einem Hauskonto deiner Wahl oder meldet sich ab, damit die nächsten Spiele nicht für den Spieler zählen, der gegangen ist. Ein Match wird nie unterbrochen: Die Pause beginnt erst, wenn es zu Ende ist. Der Spieler davor behält seine Sitzung geparkt, ein Tipp holt ihn zurück. Solange Autodarts nicht erreichbar ist, bleibt das Display, wie es ist, und versucht es eine Minute später wieder.
 
 Fünf falsche PINs in Folge sperren jede PIN des Displays für eine Minute, damit niemand sie alle von Hand durchprobiert. Die Erweiterung speichert keine PIN, nur einen gesalzenen Hash davon.
 
@@ -104,7 +104,7 @@ Eine PIN ist eine Sperre für die Leute am Display, kein Schutz vor jemandem, de
 Die Manager-PIN steht nirgends. Wer den Computer benutzen kann, schaltet den Modus für Verein und Kneipe aus, und die Konten bleiben:
 
 1. Öffne `chrome://extensions` und schalte oben rechts den **Entwicklermodus** ein.
-2. Wähle unter **Player Switch for Autodarts** neben _Ansichten prüfen_ den **Service Worker**.
+2. Wähle unter **Player Switch for Autodarts** neben *Ansichten prüfen* den **Service Worker**.
 3. Tippe in der **Konsole** des Fensters, das aufgeht, `chrome.storage.local.remove("venue")` ein und drücke <kbd>Enter</kbd>.
 
 Dann ist jede PIN weg, und das Display kehrt nach einer Pause nicht mehr zurück: Lege sie unter **Einstellungen** neu fest.

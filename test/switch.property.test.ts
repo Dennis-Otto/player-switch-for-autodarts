@@ -351,12 +351,9 @@ function happen(w: World, step: Event): void {
   const { autodarts, page } = w;
   switch (step.kind) {
     case "pageSignsIn": {
-      // Someone signs in on the empty page, as the extension expects it: after "Add
-      // account", or as the account that played last. Another account signed in
-      // right in the page is left out until #30 is fixed: the extension takes its
-      // session for the one of the account that played last.
-      const active = w.store.state.activeId;
-      if (page.token === null && (active === null || active === step.id)) {
+      // Someone signs in on the empty page: after "Add account", as the account that
+      // played last, or as any other, of which the extension learns nothing yet.
+      if (page.token === null) {
         page.token = autodarts.issue(step.id);
       }
       return;
@@ -404,8 +401,7 @@ async function run(w: World, step: Action): Promise<Result> {
         await adoptCurrentSession(deps);
         return undefined;
       case "signOut":
-        await signOutForNewAccount(deps);
-        return undefined;
+        return await signOutForNewAccount(deps);
       case "sync":
         await syncFromPage(deps);
         return undefined;
@@ -575,14 +571,39 @@ function assertKept(
       `unexpected ${result.name}: ${result.message}`,
     );
   }
-  // Only adopting renews the token that is live in the page, and saving a new sign-in
-  // while an account is being added; both write the fresh one straight back.
+  // Adopting renews the token that is live in the page, and so does saving a new sign-in
+  // while an account is being added: both write the fresh one straight back. A switch
+  // and a sign-out renew it as it leaves the page, to learn whose it is, so a token they
+  // spend is gone from there unless the page failed. Nothing else renews it.
   const adopts =
     extension.kind === "adopt" ||
     (extension.kind === "pageLoads" && before.adding);
+  const replaces = extension.kind === "switch" || extension.kind === "signOut";
   if (!adopts && before.page !== null) {
     const renewed = autodarts.renewed.slice(before.renewed);
-    assert.ok(!renewed.includes(before.page), "renewed the page's session");
+    if (replaces && !(result instanceof Error)) {
+      assert.ok(
+        !renewed.includes(before.page) || page.token !== before.page,
+        "left a spent session in the page",
+      );
+    } else if (!replaces) {
+      assert.ok(!renewed.includes(before.page), "renewed the page's session");
+    }
+  }
+  // The session that leaves the page goes to the account it belongs to, whichever
+  // account played last, as long as that account has a tile.
+  if (
+    replaces &&
+    !(result instanceof Error) &&
+    page.token !== before.page &&
+    before.state.activeId !== null &&
+    before.playing !== null &&
+    find(after, before.playing) !== undefined
+  ) {
+    assert.ok(
+      usable(w).has(before.playing),
+      `${before.playing} lost the session of the page`,
+    );
   }
   // An account that could play before still can, unless a person removed it
   // or changed its stored password.
@@ -608,10 +629,18 @@ function assertKept(
   if (extension.kind === "remove" && !(result instanceof Error)) {
     assertRemoved(w, extension.id, before, result as Removal);
   }
-  if (result === undefined && extension.kind === "signOut") {
-    assert.equal(page.token, null);
-    assert.equal(after.activeId, null);
-    assert.notEqual(after.addingUntil, null, "the new account is waited for");
+  if (extension.kind === "signOut" && !(result instanceof Error)) {
+    if ((result as SwitchResult).ok) {
+      assert.equal(page.token, null);
+      assert.equal(after.activeId, null);
+      assert.notEqual(after.addingUntil, null, "the new account is waited for");
+    } else {
+      // Autodarts can't say whose the session is: nothing changes.
+      assert.equal((result as SwitchResult).reason, "unreachable");
+      assert.notEqual(autodarts.outage, "none");
+      assert.deepEqual(after, before.state);
+      assert.equal(page.token, before.page);
+    }
   }
   if (extension.kind === "pageLoads") {
     assertPickedUp(w, before, result as PickUp | Error);
@@ -691,7 +720,7 @@ function assertPickedUp(
   );
 }
 
-test("over any evening, the extension loses no usable session and never renews the page's own", async () => {
+test("over any evening, the extension loses no usable session and renews the page's own only to write it back or let it go", async () => {
   await fc.assert(
     fc.asyncProperty(fc.boolean(), evening, async (saved, steps) => {
       const w = world();

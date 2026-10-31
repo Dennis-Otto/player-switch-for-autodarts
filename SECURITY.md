@@ -14,12 +14,12 @@ Include the affected release, the set-up, reproduction steps and the potential i
 
 ## What happens next
 
-| Step                                                       | Target                                                                                   |
-| ---------------------------------------------------------- | ---------------------------------------------------------------------------------------- |
-| Acknowledgement of the report                              | within 7 days                                                                            |
-| First assessment, including whether the report is accepted | within 14 days                                                                           |
-| Fix released for a confirmed vulnerability                 | as fast as possible, at the latest within 90 days                                        |
-| Public disclosure                                          | when the fixed release is available, in a GitHub security advisory and the release notes |
+| Step | Target |
+| --- | --- |
+| Acknowledgement of the report | within 7 days |
+| First assessment, including whether the report is accepted | within 14 days |
+| Fix released for a confirmed vulnerability | as fast as possible, at the latest within 90 days |
+| Public disclosure | when the fixed release is available, in a GitHub security advisory and the release notes |
 
 If a fix needs longer, for example because the cause lies in an upstream project, you receive an update at least every 14 days. Reporters are credited in the advisory and the release notes unless they prefer to stay anonymous.
 
@@ -95,17 +95,17 @@ An attacker would most likely try to bring malicious code into `main`, through a
 
 How the [OWASP Top 10 CI/CD security risks](https://owasp.org/www-project-top-10-ci-cd-security-risks/) are countered:
 
-| Risk                                        | Countermeasure                                                                                                                                                                                           |
-| ------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Insufficient flow control mechanisms        | pull requests only, every required check, no new alert of CodeQL of high severity and none of zizmor, a linear history, release tags that never move and that only the release app creates               |
-| Inadequate identity and access management   | administrator access only for the maintainers; bots act as GitHub Apps or with the token of their workflow                                                                                               |
-| Dependency chain abuse                      | lock files with hashes, pins by commit hash and digest, updates only a week after their release, a weekly refresh of the lock files that waits for the maintainer, the dependency review and OSV-Scanner |
-| Poisoned pipeline execution                 | no code of a pull request runs with a secret; actionlint and zizmor audit every workflow                                                                                                                 |
-| Insufficient pipeline-based access controls | permissions per job, environments that only `main` can use, actions pinned to commit hashes and only listed actions, as settings of the repository                                                       |
-| Insufficient credential hygiene             | the secret scan with push protection and generic patterns, tokens of the release app that expire after an hour, no secret printed or committed                                                           |
-| Insecure system configuration               | the settings as code, which the settings bot applies after every change and every week, and OpenSSF Scorecard every week                                                                                 |
-| Ungoverned usage of third-party services    | only the services of the workflows in this repository, each in the jobs that need it, with the least permissions                                                                                         |
-| Improper artifact integrity validation      | immutable releases with signed provenance, verified after every release and every week; updates only to a verified release of the blueprint                                                              |
-| Insufficient logging and visibility         | the logs of every run, and Harden-Runner, which records the network traffic of every job and blocks every host that a job with a secret or a token that may write doesn't need                           |
+| Risk | Countermeasure |
+| --- | --- |
+| Insufficient flow control mechanisms | pull requests only, every required check, no new alert of CodeQL of high severity and none of zizmor, a linear history, release tags that never move and that only the release app creates |
+| Inadequate identity and access management | administrator access only for the maintainers; bots act as GitHub Apps or with the token of their workflow |
+| Dependency chain abuse | lock files with hashes, pins by commit hash and digest, updates only a week after their release, a weekly refresh of the lock files that waits for the maintainer, the dependency review and OSV-Scanner |
+| Poisoned pipeline execution | no code of a pull request runs with a secret; actionlint and zizmor audit every workflow |
+| Insufficient pipeline-based access controls | permissions per job, environments that only `main` can use, actions pinned to commit hashes and only listed actions, as settings of the repository |
+| Insufficient credential hygiene | the secret scan with push protection and generic patterns, tokens of the release app that expire after an hour, no secret printed or committed |
+| Insecure system configuration | the settings as code, which the settings bot applies after every change and every week, and OpenSSF Scorecard every week |
+| Ungoverned usage of third-party services | only the services of the workflows in this repository, each in the jobs that need it, with the least permissions |
+| Improper artifact integrity validation | immutable releases with signed provenance, verified after every release and every week; updates only to a verified release of the blueprint |
+| Insufficient logging and visibility | the logs of every run, and Harden-Runner, which records the network traffic of every job and blocks every host that a job with a secret or a token that may write doesn't need |
 
 In the code, CodeQL looks for the weaknesses of the [CWE Top 25](https://cwe.mitre.org/top25/) with its extended security queries, on every pull request and every push to `main`. How the code counters the weaknesses that matter for it is part of [docs/security.md](docs/security.md).

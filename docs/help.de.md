@@ -12,7 +12,7 @@ Das steht auf einer Kachel, und das Symbol in der Symbolleiste zeigt, wie viele 
 
 > Player Switch for Autodarts – neu anmelden: Ada und Bob
 
-**Was es bedeutet:** Autodarts nimmt die gespeicherte Sitzung dieses Kontos nicht mehr an, bei einer Erneuerung oder bei einem Tipp, und kein gemerktes Passwort konnte es anmelden. Eine Sitzung endet auch für immer, wenn sich der Spieler auf der Autodarts-Seite abmeldet: Zum Wechseln der Spieler tippst du stattdessen auf eine Kachel. Und wurden die Daten der Erweiterung gelöscht, muss sich jedes geparkte Konto auf einmal neu anmelden: Der Schlüssel, der die gespeicherten Sitzungen versiegelt, ging mit, darum lassen sie sich nicht mehr öffnen, und die gemerkten Passwörter sind ebenfalls vergessen.
+**Was es bedeutet:** Autodarts nimmt die gespeicherte Sitzung dieses Kontos nicht mehr an, bei einer Erneuerung oder bei einem Tipp, und kein gemerktes Passwort konnte es anmelden. Eine Sitzung endet auch für immer, wenn sich der Spieler auf der Autodarts-Seite abmeldet: Zum Wechseln der Spieler tippst du stattdessen auf eine Kachel. Hat sich danach jemand direkt auf der Seite als anderer Spieler angemeldet, gibt der nächste Tipp oder **Konto hinzufügen** diese Sitzung an die Kachel dieses Spielers, und der abgemeldete Spieler zeigt diese Meldung. Und wurden die Daten der Erweiterung gelöscht, muss sich jedes geparkte Konto auf einmal neu anmelden: Der Schlüssel, der die gespeicherten Sitzungen versiegelt, ging mit, darum lassen sie sich nicht mehr öffnen, und die gemerkten Passwörter sind ebenfalls vergessen.
 
 **Was du tust**, auf einem von zwei Wegen:
 
@@ -48,9 +48,9 @@ und das Popup und die Spieler auf der Autodarts-Seite sagen:
 
 > Autodarts ist gerade nicht erreichbar. Bitte gleich nochmal versuchen.
 
-**Was es bedeutet:** Die Erweiterung konnte Autodarts nicht nach der Sitzung dieses Kontos fragen: Der Computer hat keine Verbindung zum Internet, oder Autodarts hat ein Problem. Nichts hat sich geändert: Die Seite bleibt, wie sie war, und keine Sitzung geht verloren.
+**Was es bedeutet:** Die Erweiterung konnte Autodarts nicht nach der Sitzung dieses Kontos fragen oder, bei einem Tipp oder **Konto hinzufügen**, wem die Sitzung in der Seite gehört: Der Computer hat keine Verbindung zum Internet, oder Autodarts hat ein Problem. Nichts hat sich geändert: Die Seite bleibt, wie sie war, und keine Sitzung geht verloren.
 
-**Was du tust:** Prüfe, ob [play.autodarts.com](https://play.autodarts.com) lädt, und tippe dann noch einmal auf die Kachel. Die Erneuerung im Hintergrund versucht es nach 15 Minuten von selbst wieder.
+**Was du tust:** Prüfe, ob [play.autodarts.com](https://play.autodarts.com) lädt, und tippe dann noch einmal. Die Erneuerung im Hintergrund versucht es nach 15 Minuten von selbst wieder.
 
 ### Autodarts hat in keinem Tab geantwortet {#no-page}
 

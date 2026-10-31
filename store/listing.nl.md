@@ -22,27 +22,27 @@ inloggen.
 Zo werkt het:
 
 • Sla elk account één keer op: na "Account toevoegen" wordt de volgende login op
-Autodarts vanzelf opgeslagen. Een tik op een tegel zet dat account op het bord.
+  Autodarts vanzelf opgeslagen. Een tik op een tegel zet dat account op het bord.
 • Het account dat plaatsmaakt, blijft ingelogd, dus een tik haalt het meteen terug.
 • Geparkeerde accounts worden op de achtergrond klaargehouden, dus ze werken dagen
-later nog.
+  later nog.
 • Gemaakt voor het bordscherm: een ronde knop op de Autodarts-pagina en de
-sneltoets Alt+Shift+O tonen de spelers direct over de pagina, ook op volledig
-scherm en in kioskmodus, in grote tegels voor een touchscreen. De toetsen 1 tot
-en met 9 kiezen een speler.
+  sneltoets Alt+Shift+O tonen de spelers direct over de pagina, ook op volledig
+  scherm en in kioskmodus, in grote tegels voor een touchscreen. De toetsen 1 tot
+  en met 9 kiezen een speler.
 • Op de pagina van een lopende wedstrijd vraagt een wissel het eerst, zodat een
-wedstrijd nooit onverwacht eindigt.
+  wedstrijd nooit onverwacht eindigt.
 • Voor een club of café, optioneel en standaard uit: een beheerderspincode
-beschermt „Accounts beheren” en de instellingen, elke speler kan zijn account met
-een eigen pincode beveiligen, en na een pauze keert het scherm vanzelf terug naar
-een huisaccount, nooit tijdens een wedstrijd. De extensie bewaart geen pincode,
-alleen een gezouten hash ervan.
+  beschermt „Accounts beheren” en de instellingen, elke speler kan zijn account met
+  een eigen pincode beveiligen, en na een pauze keert het scherm vanzelf terug naar
+  een huisaccount, nooit tijdens een wedstrijd. De extensie bewaart geen pincode,
+  alleen een gezouten hash ervan.
 • Optioneel: laat de extensie een wachtwoord onthouden, dan logt ze een account
-vanzelf weer in als de sessie ooit niet meer werkt. Accounts die met Google of
-Apple inloggen, kunnen dat niet gebruiken, omdat ze geen Autodarts-wachtwoord
-hebben om te onthouden.
+  vanzelf weer in als de sessie ooit niet meer werkt. Accounts die met Google of
+  Apple inloggen, kunnen dat niet gebruiken, omdat ze geen Autodarts-wachtwoord
+  hebben om te onthouden.
 • Een verwijderd account wordt ook bij Autodarts afgemeld, en "Alle accounts
-vergeten" maakt het scherm leeg voordat het van eigenaar wisselt.
+  vergeten" maakt het scherm leeg voordat het van eigenaar wisselt.
 
 Alles blijft op je computer. De extensie praat alleen met Autodarts, verzamelt geen
 statistieken en stuurt niets naar iemand anders. Het privacybeleid geeft de
@@ -56,30 +56,30 @@ Niet verbonden aan Autodarts.
 ## Rechtvaardiging van de machtigingen
 
 • storage — om je opgeslagen accounts, hun sessies en de instellingen op je
-computer te bewaren, in de modus voor club of café ook de gezouten hashes van de
-pincodes.
+  computer te bewaren, in de modus voor club of café ook de gezouten hashes van de
+  pincodes.
 • alarms — om geparkeerde sessies op de achtergrond te vernieuwen, zodat ze klaar
-blijven, en in de modus voor club of café één keer per minuut te kijken of het
-scherm na een pauze moet terugkeren.
+  blijven, en in de modus voor club of café één keer per minuut te kijken of het
+  scherm na een pauze moet terugkeren.
 • scripting — om de knop van een nieuwe versie in de Autodarts-tabbladen te
-brengen die bij een update al open zijn, of in een tabblad dat niet meer
-reageert, zodat een scherm in kioskmodus zonder herladen blijft werken. Het voert
-alleen het eigen script van de extensie uit, alleen op play.autodarts.com.
+  brengen die bij een update al open zijn, of in een tabblad dat niet meer
+  reageert, zodat een scherm in kioskmodus zonder herladen blijft werken. Het voert
+  alleen het eigen script van de extensie uit, alleen op play.autodarts.com.
 • unlimitedStorage — zodat Chrome de sleutel die je opgeslagen sessies en
-wachtwoorden verzegelt nooit wist als de schijf vol raakt. Zonder deze sleutel
-zou elk geparkeerd account opnieuw moeten inloggen.
+  wachtwoorden verzegelt nooit wist als de schijf vol raakt. Zonder deze sleutel
+  zou elk geparkeerd account opnieuw moeten inloggen.
 • Webtoegankelijke bron switcher.html, alleen voor play.autodarts.com — de spelers
-die de knop op de Autodarts-pagina over de pagina toont. Het is een pagina van de
-extensie in een frame, zodat de scripts van de Autodarts-pagina de opgeslagen
-accounts er niet uit kunnen lezen.
+  die de knop op de Autodarts-pagina over de pagina toont. Het is een pagina van de
+  extensie in een frame, zodat de scripts van de Autodarts-pagina de opgeslagen
+  accounts er niet uit kunnen lezen.
 • Hosttoegang tot play.autodarts.com — om een sessie in de Autodarts-pagina en
-eruit te halen, daar de knop te tonen en de open Autodarts-tabbladen te vinden,
-zodat een wissel werkt in het tabblad vooraan en de andere opnieuw laden. Het
-adres en de titel van andere tabbladen kan de extensie niet lezen.
+  eruit te halen, daar de knop te tonen en de open Autodarts-tabbladen te vinden,
+  zodat een wissel werkt in het tabblad vooraan en de andere opnieuw laden. Het
+  adres en de titel van andere tabbladen kan de extensie niet lezen.
 • Hosttoegang tot api.autodarts.com — om in te loggen, een sessie te vernieuwen en
-te beëindigen, dezelfde verzoeken als de website van Autodarts. De extensie
-maakt met geen enkele andere server verbinding, en haar content security policy
-dwingt dat af.
+  te beëindigen, dezelfde verzoeken als de website van Autodarts. De extensie
+  maakt met geen enkele andere server verbinding, en haar content security policy
+  dwingt dat af.
 
 ## Startpagina en support
 

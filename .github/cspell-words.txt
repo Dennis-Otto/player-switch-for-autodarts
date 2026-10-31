@@ -4,7 +4,9 @@ antippt
 autodarts
 Browsererweiterung
 Browserprofil
+deepmerge
 Inkognitofenster
+minimatch
 mozilla
 Umschalt
 Willkommensseite

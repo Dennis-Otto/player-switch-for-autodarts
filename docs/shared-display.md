@@ -38,7 +38,7 @@ Each player signs in once: choose **Add account**, and the next sign-in on Autod
 On a Raspberry Pi, the command is `chromium --kiosk https://play.autodarts.com`; on Raspberry Pi OS Bookworm and older, Chromium is `chromium-browser`. <kbd>Alt</kbd>+<kbd>F4</kbd> ends kiosk mode.
 
 - **Close every Chrome window first.** A Chrome that runs already opens a normal window and ignores `--kiosk`.
-- **The profile of the display:** with more than one Chrome profile on the computer, add `--profile-directory="Profile 1"` with the name of its folder, which `chrome://version` shows as the last part of the _Profile path_.
+- **The profile of the display:** with more than one Chrome profile on the computer, add `--profile-directory="Profile 1"` with the name of its folder, which `chrome://version` shows as the last part of the *Profile path*.
 - **No incognito, no guest:** never add `--incognito` or `--guest`. Chrome runs no extension in a guest window, and the saved accounts belong to the normal profile.
 
 ## 4. Start with the computer {#autostart}
@@ -47,7 +47,7 @@ On a Raspberry Pi, the command is `chromium --kiosk https://play.autodarts.com`;
 
 1. Press <kbd>Win</kbd>+<kbd>R</kbd>, type `shell:startup` and press <kbd>Enter</kbd>: the folder of the programs that start when this Windows user signs in opens.
 2. Right-click in it, choose **New → Shortcut**, and enter the command of kiosk mode above as its location.
-3. Name it, such as _Autodarts_, and choose **Finish**.
+3. Name it, such as *Autodarts*, and choose **Finish**.
 
 Chrome then starts in kiosk mode each time this user signs in. A display that should come back by itself after a power cut also needs a Windows user that signs in without a password prompt.
 
@@ -93,7 +93,7 @@ At home, everyone at the display may play under any saved account, which is the 
 
 - **A manager PIN** guards **Manage accounts**, where accounts are removed and passwords remembered or forgotten, and the settings themselves. The popup and the players on the Autodarts page ask for it once as **Manage accounts** opens, and forget it as it closes.
 - **A PIN for each player who wants one,** 4 to 8 digits, under **PINs of the players**. A tap on that player's tile asks for it, on a number pad that works on a touch screen, before anything changes; their tile shows a lock. Nobody else plays under their account and spoils their statistics.
-- **Return after a break:** after 5 to 60 minutes without a tap, a click or a key on the Autodarts page, the display switches to a house account of your choice, or signs out, so that the next games don't count for the player who left. A match is never interrupted: the break starts once it has ended. The player before keeps their session parked, so a tap brings them back.
+- **Return after a break:** after 5 to 60 minutes without a tap, a click or a key on the Autodarts page, the display switches to a house account of your choice, or signs out, so that the next games don't count for the player who left. A match is never interrupted: the break starts once it has ended. The player before keeps their session parked, so a tap brings them back. While Autodarts can't be reached, the display stays as it is and tries again a minute later.
 
 Five wrong PINs in a row lock every PIN of the display for a minute, so that nobody tries them all by hand. The extension keeps no PIN, only a salted hash of it.
 
@@ -104,7 +104,7 @@ A PIN is a lock for the people at the display, not a protection against someone 
 The manager PIN can't be read anywhere. Someone who can use the computer turns the venue mode off, and the accounts stay:
 
 1. Open `chrome://extensions` and turn on **Developer mode** at the top right.
-2. Under **Player Switch for Autodarts**, choose **service worker** next to _Inspect views_.
+2. Under **Player Switch for Autodarts**, choose **service worker** next to *Inspect views*.
 3. In the **Console** of the window that opens, type `chrome.storage.local.remove("venue")` and press <kbd>Enter</kbd>.
 
 Every PIN is gone then, and the display no longer returns after a break: set them again under **Settings**.

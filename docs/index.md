@@ -1,9 +1,7 @@
 ---
-
 hide:
-- navigation
-- toc
-
+  - navigation
+  - toc
 ---
 
 # Player Switch for Autodarts
@@ -27,27 +25,27 @@ The display in the hallway, the club or the pub is shared, but everyone plays un
 
 - :material-gesture-tap:{ .lg .middle } **One tap, no typing**
 
-  ---
+    ---
 
-  Save each account once. A tap on a tile puts that account on the board.
+    Save each account once. A tap on a tile puts that account on the board.
 
 - :material-account-switch:{ .lg .middle } **Nobody gets signed out**
 
-  ---
+    ---
 
-  The account that steps aside keeps its session parked, so a tap brings it straight back.
+    The account that steps aside keeps its session parked, so a tap brings it straight back.
 
 - :material-autorenew:{ .lg .middle } **Ready days later**
 
-  ---
+    ---
 
-  Autodarts rotates its session tokens; the extension renews every parked account in the background.
+    Autodarts rotates its session tokens; the extension renews every parked account in the background.
 
 - :material-lock-outline:{ .lg .middle } **Private by design**
 
-  ---
+    ---
 
-  Everything stays in the browser on that computer and goes only to Autodarts. No analytics, no server of ours.
+    Everything stays in the browser on that computer and goes only to Autodarts. No analytics, no server of ours.
 
 </div>
 
@@ -107,10 +105,10 @@ Autodarts Play keeps the signed-in session as a single value in the browser, a r
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="images/diagrams/switch-flow.dark.svg">
-  <img src="images/diagrams/switch-flow.svg" alt="What a tap on a player does: Ada plays, and a tap on Bob switches. The extension renews Bob's session at Autodarts with his parked token or, when Autodarts refuses the token, with his remembered password. When that fails, the page stays as it is and no token is lost: Bob has to sign in again when Autodarts refused him, and a tap later tries again when Autodarts couldn't be reached. Otherwise the extension saves Bob's fresh token, parks Ada's session from the page, still valid at Autodarts, writes Bob's session into the page and reloads it, and every other Autodarts tab reloads as Bob.">
+  <img src="images/diagrams/switch-flow.svg" alt="What a tap on a player does: Ada plays, and a tap on Bob switches. The extension renews Bob's session at Autodarts with his parked token or, when Autodarts refuses the token, with his remembered password. When that fails, the page stays as it is and no token is lost: Bob has to sign in again when Autodarts refused him, and a tap later tries again when Autodarts couldn't be reached. Otherwise the extension saves Bob's fresh token and renews the session in the page once, to learn whose it is; without an answer, the page stays as it is here too. It parks that session with the account it belongs to, still valid at Autodarts, usually Ada's, writes Bob's session into the page and reloads it, and every other Autodarts tab reloads as Bob.">
 </picture>
 
-- **Switching** parks the session of the account that was playing, writes the chosen account's session into the page and reloads.
+- **Switching** parks the session in the page with the account it belongs to, usually the one that was playing, writes the chosen account's session into the page and reloads. Only Autodarts can say whose a session is, so the extension renews it once as it leaves the page: a session that someone signed in with right on the page never lands on the tile of another player.
 - **The account that steps aside is not signed out at Autodarts.** Its session stays valid; switching away only takes it off the page.
 - **Parked sessions are kept fresh**, because the token rotates: every 12 hours, and straight away after a start of the browser when the computer was off while a renewal was due. "Manage accounts" shows for each parked account when it was last renewed, such as "Renewed 3 hours ago", and while Autodarts can't be reached, since when renewing it fails; the extension keeps trying every 15 minutes.
 - **You see who needs attention.** When an account has to sign in again, the toolbar icon shows how many, and its tooltip names them.

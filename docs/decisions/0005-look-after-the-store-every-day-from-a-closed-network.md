@@ -56,9 +56,9 @@ Option 2, and block the network.
   its release.
 - The daily sign-in keeps the refresh token in use; a token that Google turns away
   fails the run within a day, with the way to renew it.
-- Three jobs, each with the hosts that it needs and no other: _status_ (GitHub and
-  Google), _package_ (GitHub and npm, without a secret) and _store_ (Google only),
-  which takes the zip of _package_ as an artifact and runs no code of the repository
+- Three jobs, each with the hosts that it needs and no other: *status* (GitHub and
+  Google), *package* (GitHub and npm, without a secret) and *store* (Google only),
+  which takes the zip of *package* as an artifact and runs no code of the repository
   and no npm package beside the token. Every job runs without sudo and containers,
   on `ubuntu-24.04` rather than an image that moves to a new release of Ubuntu by
   itself, and `scripts/check-project.sh` fails when a job of the workflow gives up
