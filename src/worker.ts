@@ -620,13 +620,16 @@ export function startWorker(api: ChromeApi, platform: Platform): StartedWorker {
       case "adopt":
         await adoptCurrentSession(deps);
         return { ok: true, page: true };
-      case "signout":
+      case "signout": {
         if (await mustAskFirst(tab, message)) {
           return { ok: false, reason: "match" };
         }
         // The new player signs in on the page, so a page opens when none answers.
-        await withPage(tabs, () => signOutForNewAccount(deps));
-        return { ok: true, page: true };
+        const result = await withPage(tabs, () => signOutForNewAccount(deps));
+        return result.ok
+          ? { ok: true, page: true }
+          : { ok: false, reason: result.reason, page: true };
+      }
       case "openPage":
         await showPage(tabs);
         return { ok: true, page: true };
@@ -1033,8 +1036,9 @@ export function startWorker(api: ChromeApi, platform: Platform): StartedWorker {
    * accounts, and a match that runs in any Autodarts tab counts as input, so the return
    * never ends one. A switch or a sign-out parks the session of the player before. With
    * no Autodarts tab open there is nothing to return; a house account that Autodarts
-   * can't reach now is tried again at the next look, and one that has to sign in again
-   * signs the page out then.
+   * can't reach now is tried again at the next look, as is a sign-out while Autodarts
+   * can't say whose the session in the page is, and one that has to sign in again signs
+   * the page out then.
    */
   function returnAfterBreak(): Promise<void> {
     returning ??= (async () => {

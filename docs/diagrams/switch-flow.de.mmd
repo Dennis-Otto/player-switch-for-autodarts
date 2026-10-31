@@ -5,20 +5,24 @@ config:
 ---
 flowchart TB
     accTitle: Was ein Tipp auf einen Spieler tut
-    accDescr: Ada spielt, und ein Tipp auf Bob wechselt. Die Erweiterung erneuert Bobs Sitzung bei Autodarts mit seinem geparkten Token oder, wenn Autodarts den Token ablehnt, mit seinem gemerkten Passwort. Klappt das nicht, bleibt die Seite, wie sie ist, und kein Token geht verloren: Hat Autodarts Bob abgelehnt, muss er sich neu anmelden, war Autodarts nicht erreichbar, versucht es ein späterer Tipp neu. Sonst speichert die Erweiterung Bobs frischen Token, parkt Adas Sitzung aus der Seite, bei Autodarts weiter gültig, schreibt Bobs Sitzung in die Seite und lädt sie neu, und jeder andere Autodarts-Tab lädt als Bob neu.
+    accDescr: Ada spielt, und ein Tipp auf Bob wechselt. Die Erweiterung erneuert Bobs Sitzung bei Autodarts mit seinem geparkten Token oder, wenn Autodarts den Token ablehnt, mit seinem gemerkten Passwort. Klappt das nicht, bleibt die Seite, wie sie ist, und kein Token geht verloren: Hat Autodarts Bob abgelehnt, muss er sich neu anmelden, war Autodarts nicht erreichbar, versucht es ein späterer Tipp neu. Sonst speichert die Erweiterung Bobs frischen Token und erneuert die Sitzung in der Seite einmal, um zu erfahren, wem sie gehört; ohne Antwort bleibt die Seite auch hier, wie sie ist. Sie parkt diese Sitzung bei dem Konto, dem sie gehört, bei Autodarts weiter gültig, meist bei Ada, schreibt Bobs Sitzung in die Seite und lädt sie neu, und jeder andere Autodarts-Tab lädt als Bob neu.
 
     tap["Ada spielt,<br>ein Tipp auf Bob"]
     renew["Bobs Sitzung bei<br>Autodarts erneuern:<br>mit seinem Token, oder<br>mit seinem gemerkten<br>Passwort, wenn Autodarts<br>den Token ablehnt"]
     stays["Die Seite bleibt, wie sie ist,<br>kein Token geht verloren<br>abgelehnt: Bob meldet<br>sich neu an<br>keine Antwort: später<br>neu tippen"]
     save["Bobs frischen Token<br>speichern"]
-    park["Adas Sitzung aus<br>der Seite parken; sie<br>bleibt bei Autodarts gültig"]
+    who["Die Sitzung in der<br>Seite einmal erneuern:<br>Wem gehört sie?"]
+    park["Bei dem Konto parken,<br>dem sie gehört, meist Ada;<br>sie bleibt bei Autodarts gültig"]
     write["Bobs Sitzung in die<br>Seite schreiben,<br>neu laden"]
     others["Jeder andere<br>Autodarts-Tab lädt<br>als Bob neu"]
 
     tap --> renew
     renew -- "erneuert" --> save
-    save --> park --> write --> others
+    save --> who
+    who -- "Autodarts nennt<br>das Konto" --> park
+    park --> write --> others
     renew -. "nicht erneuert" .-> stays
+    who -. "keine Antwort" .-> stays
     others ~~~ stays
 
     classDef bot fill:#526cfe2e,stroke:#526cfe,stroke-width:2px
@@ -26,6 +30,6 @@ flowchart TB
     classDef person fill:#f59e0b2e,stroke:#f59e0b,stroke-width:2px
     classDef failed fill:#dc26262e,stroke:#dc2626,stroke-width:2px
     class tap person
-    class renew,save,park,write bot
+    class renew,save,who,park,write bot
     class others done
     class stays failed

@@ -539,6 +539,26 @@ test("Save account keeps the session of the page, and Add account signs the page
   assert.equal((await accounts(fake)).addingUntil, null);
 });
 
+test("Add account says when Autodarts can't be reached, and the page stays signed in", async () => {
+  const fake = new FakeBrowser();
+  fake.addTab();
+  fake.pageToken = fake.autodarts.issue("ada");
+  await started(fake);
+  await popup(fake, { action: "adopt" });
+  const inPage = fake.pageToken;
+
+  fake.broken.add("fetch");
+  const out = await popup(fake, { action: "signout" });
+  assert.deepEqual(
+    [out.ok, out.reason, out.page],
+    [false, "unreachable", true],
+  );
+  assert.equal(fake.pageToken, inPage);
+  const state = await accounts(fake);
+  assert.equal(state.activeId, "ada");
+  assert.equal(state.addingUntil, null);
+});
+
 test("Open Autodarts opens a tab, or shows the one there is", async () => {
   const fake = browser();
   // The browser may not know a window that was used last.
@@ -1002,6 +1022,28 @@ test("after a break the display returns to the house account, never during a mat
   await settle();
   assert.equal((await accounts(fake)).activeId, "bob");
   assert.equal(fake.autodarts.reuses, 0);
+});
+
+test("after a break, a sign-out waits while Autodarts can't be reached and works at the next look", async () => {
+  const fake = browser();
+  await twoPlayers(fake);
+  fake.local.data.set(VENUE_KEY, { idleMinutes: 5 });
+  fake.sessionArea.data.set(ACTIVITY_KEY, fake.clock - 10 * MINUTE);
+  fake.addTab();
+  await started(fake);
+  const inPage = fake.pageToken;
+
+  fake.broken.add("fetch");
+  fake.alarms.onAlarm.fire({ name: IDLE_ALARM });
+  await settle();
+  assert.equal(fake.pageToken, inPage);
+  assert.notEqual((await accounts(fake)).activeId, null);
+
+  fake.broken.delete("fetch");
+  fake.alarms.onAlarm.fire({ name: IDLE_ALARM });
+  await until(() => fake.pageToken === null, "the sign-out");
+  await settle();
+  assert.equal((await accounts(fake)).activeId, null);
 });
 
 test("after a break without a house account the display signs out, and with nobody on it nothing happens", async () => {
