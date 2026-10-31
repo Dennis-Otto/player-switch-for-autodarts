@@ -106,7 +106,10 @@ the line that failed. A test fails as well when a refresh token reached the fake
 sign-in service a second time, when a request went to a host that the fake doesn't
 answer, when the service worker logged an error, or when it didn't start at all, as
 after a wrong path in the manifest or a page, or a permission missing from the
-manifest."""
+manifest. A step before the tests, such as the checkout or *Download the browser*, fails
+with `ECONNREFUSED` when Harden-Runner blocks a host of the job, a new one or an address
+that it doesn't know yet; the step *Wait until Harden-Runner lets the hosts through*
+warns of it."""
 why = """These tests run what Chrome runs and the unit tests don't: the manifest, the
 service worker and the content script built into `lib/`, the Autodarts page,
 the popup and the switcher. A release with such a failure would break on every
@@ -115,7 +118,9 @@ token sent twice ends the session of a player at Autodarts."""
 fix = """Run the tests on your machine, open the trace of the test that failed and fix
 what it shows. The trace shows each step with the page, its console and its
 requests; the artifact `e2e-<attempt>` of the run has the traces, the screenshots and
-the HTML report of the CI. Then push:"""
+the HTML report of the CI. A host that a step before the tests newly needs goes into
+`allowed-endpoints` and `HOSTS` of the job, and otherwise the flaky-test bot runs the job
+once more by itself. Then push:"""
 commands = [
   "npm ci",
   "npx playwright install --no-shell chromium",
@@ -131,7 +136,9 @@ title = "The end-to-end tests"
 problem = """The end-to-end tests had to run for this pull request, because it changes
 the extension, `src/`, the tests, the packages or `.github/workflows/e2e.yml`, and
 they didn't pass: the job *browser* of the workflow E2E failed, was cancelled or
-didn't run. Its summary names the test that failed."""
+didn't run. Its summary names the test that failed. A job that ran out of time with
+every step passed hung at its end, in *Cleaning up orphan processes*, which no change of
+the code causes."""
 why = """This is the check that `main` requires for the end-to-end tests. They run the
 extension as Chrome runs it, against a fake Autodarts, so a broken manifest, import,
 message or popup, or a refresh token sent twice, never reaches the Chrome Web Store."""
