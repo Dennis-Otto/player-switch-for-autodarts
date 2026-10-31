@@ -6,7 +6,13 @@
  * The one rule that shapes this file: Autodarts rotates the refresh token, so the
  * token in the page belongs to the page. The extension reads it only to park it
  * when switching away, and writes a token only when a different account takes over.
- * It never renews the token that is live in the page behind the page's back.
+ * It never renews the token that is live in the page behind the page's back: only
+ * when the token is about to leave the page anyway, to learn whose session it is, or
+ * when a person saves the session, and the fresh token then goes straight back.
+ *
+ * Whose session a token holds, only Autodarts can say: someone may have signed in as
+ * another account right in the page, so a session goes to the account that Autodarts
+ * names, never simply to the account that played last.
  *
  * And because a token works only once, every operation here runs in the queue of
  * `deps.queue`, one at a time, and loads the accounts only when its turn has come:
@@ -302,8 +308,8 @@ export function stopAddingAccount(deps: Deps): Promise<State> {
 }
 
 /**
- * How a switch ended, for the popup to show: brought onto the page, or not, and then
- * why: the account must sign in again, or Autodarts was unreachable.
+ * How a switch or a sign-out ended, for the popup to show: done in the page, or not,
+ * and then why: the account must sign in again, or Autodarts was unreachable.
  */
 export type SwitchResult =
   | { state: State; ok: true; reason?: undefined }
@@ -326,7 +332,7 @@ async function bringOn(deps: Deps, id: string): Promise<SwitchResult> {
     return { state, ok: true };
   }
   // Reading the page first: without a page, the switch fails before a token is spent.
-  const outgoing = await deps.page.readToken();
+  await deps.page.readToken();
   const renewal = await renew(deps, target);
   if (renewal.kind === "unreachable") {
     return { state, ok: false, reason: "unreachable" };
@@ -344,19 +350,78 @@ async function bringOn(deps: Deps, id: string): Promise<SwitchResult> {
     deps,
     park(state, identity, renewal.session.refreshToken, deps.now()),
   );
-  if (outgoing !== null && state.activeId !== null) {
-    state = stash(state, state.activeId, outgoing, deps.now());
+  const kept = await keepOutgoing(deps, state);
+  if (kept === null) {
+    return { state, ok: false, reason: "unreachable" };
   }
   await deps.page.writeToken(renewal.session.refreshToken);
-  return { state: await commit(deps, activate(state, identity.id)), ok: true };
+  return { state: await commit(deps, activate(kept, identity.id)), ok: true };
+}
+
+/**
+ * Keeps the session of the page with the account it belongs to, as the page is about
+ * to let go of it. Renewing it is the only way to learn whose it is, and no renewal
+ * behind the page's back: the page gets another token, or none, right after. So this
+ * runs last, once nothing can stop the change any more, and reads the token as late
+ * as it can, since a token that the page renewed in the meantime would count as stolen
+ * when it comes a second time.
+ *
+ * The account that played last needs a new session when this one isn't its own: it
+ * was signed out in the page. A session of an account without a tile leaves with the
+ * page: a sign-in is saved only with a tap, and nobody holds its token any more. While
+ * no account plays, the session in the page is nobody's that the extension knows, and
+ * it stays unspent.
+ *
+ * Answers with the accounts, of which none plays when a session was there to keep, or
+ * with null when Autodarts can't be reached: then nothing changed and the page stays.
+ */
+async function keepOutgoing(deps: Deps, state: State): Promise<State | null> {
+  const { activeId } = state;
+  const token = activeId === null ? null : await deps.page.readToken();
+  if (activeId === null || token === null) {
+    return state;
+  }
+  const renewal = await renewOutgoing(deps, token);
+  if (renewal.kind === "unreachable") {
+    return null;
+  }
+  if (renewal.kind === "rejected") {
+    return commit(deps, endSession(state, activeId));
+  }
+  // The page's token is spent now: keep the fresh one before the page can fail.
+  const identity = readIdentity(renewal.session.accessToken);
+  const left = identity.id === activeId ? state : endSession(state, activeId);
+  return commit(
+    deps,
+    find(left, identity.id) === undefined
+      ? left
+      : park(left, identity, renewal.session.refreshToken, deps.now()),
+  );
+}
+
+/**
+ * Renews the session of the page. A token that Autodarts refuses may be one that the
+ * page renewed while it was on its way, so it counts as refused only when the page
+ * still holds it or holds none.
+ */
+async function renewOutgoing(deps: Deps, token: string): Promise<Renewal> {
+  const result = await attempt(refreshSession(deps.fetcher, token));
+  if (result !== null) {
+    return result;
+  }
+  const current = await deps.page.readToken();
+  return current === null || current === token
+    ? { kind: "rejected" }
+    : renewOutgoing(deps, current);
 }
 
 /**
  * Signs the page out so that a new account can sign in, and waits for it: the session
  * that the page signs in with next, within the window, is saved by itself. The account
- * playing now keeps its session parked first, so it is not lost.
+ * playing now keeps its session parked first, so it is not lost; while Autodarts can't
+ * say whose the session in the page is, the page stays as it is.
  */
-export function signOutForNewAccount(deps: Deps): Promise<State> {
+export function signOutForNewAccount(deps: Deps): Promise<SwitchResult> {
   return deps.queue(() => signOut(deps, true));
 }
 
@@ -365,30 +430,31 @@ export function signOutForNewAccount(deps: Deps): Promise<State> {
  * count for nobody: the account that played keeps its session parked, as at a switch,
  * and no new account is waited for, not even after an "Add account" that nobody
  * finished, so the next sign-in on the page is no account of the extension until a
- * person saves it.
+ * person saves it. While Autodarts can't say whose the session in the page is, the
+ * page stays as it is, and the next look tries again.
  */
-export function leaveDisplay(deps: Deps): Promise<State> {
+export function leaveDisplay(deps: Deps): Promise<SwitchResult> {
   return deps.queue(() => signOut(deps, false));
 }
 
-async function signOut(deps: Deps, waitForNew: boolean): Promise<State> {
-  let state = await deps.store.load();
-  const outgoing = await deps.page.readToken();
-  if (outgoing !== null && state.activeId !== null) {
-    // Keep the session before the page lets go of it.
-    state = await commit(
-      deps,
-      stash(state, state.activeId, outgoing, deps.now()),
-    );
+async function signOut(deps: Deps, waitForNew: boolean): Promise<SwitchResult> {
+  const state = await deps.store.load();
+  // Keep the session before the page lets go of it.
+  const kept = await keepOutgoing(deps, state);
+  if (kept === null) {
+    return { state, ok: false, reason: "unreachable" };
   }
   await deps.page.clearToken();
-  const signedOut = deactivate(state);
-  return commit(
-    deps,
-    waitForNew
-      ? startAdding(signedOut, deps.now() + ADD_WINDOW_MS)
-      : stopAdding(signedOut),
-  );
+  const signedOut = deactivate(kept);
+  return {
+    state: await commit(
+      deps,
+      waitForNew
+        ? startAdding(signedOut, deps.now() + ADD_WINDOW_MS)
+        : stopAdding(signedOut),
+    ),
+    ok: true,
+  };
 }
 
 /**

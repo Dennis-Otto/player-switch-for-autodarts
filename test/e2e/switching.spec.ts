@@ -1,7 +1,8 @@
 // Switching players, from the popup and from the switcher in the page, against the
 // fake Autodarts of fixtures.ts, which fails every test that sends a refresh token
 // a second time.
-import { ALICE, BOB, expect, expectPlayer, test } from "./fixtures.ts";
+import { SESSION_KEY } from "../../src/autodarts.ts";
+import { ALICE, BOB, CAROL, expect, expectPlayer, test } from "./fixtures.ts";
 
 test("a tap switches A to B and back, with the session of each kept fresh", async ({
   autodarts,
@@ -27,6 +28,35 @@ test("a tap switches A to B and back, with the session of each kept fresh", asyn
   // Every player still has one session, the parked one and the one in the page.
   expect(autodarts.sessionsOf(ALICE)).toBe(1);
   expect(autodarts.sessionsOf(BOB)).toBe(1);
+});
+
+test("a session signed in right in the page goes to the tile of its own account at the next tap", async ({
+  display,
+}) => {
+  const page = await display.openAutodarts();
+  const popup = await display.saveAccounts(page, [ALICE, BOB, CAROL]);
+
+  // Carol plays. In the page itself, someone signs out and signs in as Alice, and the
+  // extension hears nothing of it.
+  await page.evaluate(
+    (key) => window.localStorage.removeItem(key),
+    SESSION_KEY,
+  );
+  await page.reload();
+  await display.signIn(page, ALICE);
+
+  await popup.tap(BOB);
+  await expectPlayer(page, BOB);
+  await popup.expectAccounts([ALICE, BOB, CAROL], BOB);
+  // Carol's tile says the truth: her session left with the sign-out in the page.
+  await expect(popup.tile(CAROL).locator(".chip")).toHaveText(
+    display.t("needsSignIn"),
+  );
+
+  // Alice's tile plays Alice, with the session from the page.
+  await popup.tap(ALICE);
+  await expectPlayer(page, ALICE);
+  await popup.expectAccounts([ALICE, BOB, CAROL], ALICE);
 });
 
 test("a switch reloads every other Autodarts tab with the new player", async ({
