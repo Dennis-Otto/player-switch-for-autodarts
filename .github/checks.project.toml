@@ -161,7 +161,8 @@ play.autodarts.com; the answer 400 or 401 to a dead session and to a wrong passw
 the end of a session; and the forward of play.autodarts.io to play.autodarts.com.
 `scripts/upstream-contract.ts` takes the expected values from `src/autodarts.ts`. A
 part that got no answer at all may be an outage of Autodarts, which the next run
-shows."""
+shows. A job that ran out of time with every step passed hung at its end, in *Cleaning
+up orphan processes*, which no change of Autodarts causes."""
 why = """None of this is a public contract of Autodarts. When the key or the address
 changes, every switch fails on every display, and a sign-in service that answers 404
 counts for the extension as an outage, so it keeps retrying and never falls back to a
@@ -184,7 +185,9 @@ problem = """The end-to-end tests of `test/e2e/` failed in Chrome for Testing Be
 next version of Chrome, which reaches the players in about four weeks: the summary of
 the check names the version and the test that failed, and the artifact
 `chrome-beta-<attempt>` has its trace. The same tests pass in Playwright's Chromium of
-the workflow E2E, unless that one failed too."""
+the workflow E2E, unless that one failed too. A job that ran out of time with every step
+passed hung at its end, in *Cleaning up orphan processes*, which no change of Chrome
+causes."""
 why = """A version of Chrome that breaks the extension reaches every display by itself.
 These four weeks are the time to fix the extension, or to report the bug to Chrome,
 before a player notices; a fix needs days in the review of the Chrome Web Store as

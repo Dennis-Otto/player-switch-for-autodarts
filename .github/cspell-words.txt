@@ -6,6 +6,6 @@ Browsererweiterung
 Browserprofil
 Inkognitofenster
 mozilla
-westus
 Umschalt
+westus
 Willkommensseite

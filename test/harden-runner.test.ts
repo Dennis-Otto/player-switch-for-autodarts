@@ -1,12 +1,12 @@
-// Tests how the jobs of .github/workflows/e2e.yml get through Harden-Runner's block
-// mode, whose failures were the flaky runs of this workflow: on the hosted runners of
-// the region westus2, GitHub tries a DNS resolver of its own, so Harden-Runner knows
-// another address of a host than the runner connects to. A step then fails with
-// ECONNREFUSED, and the runner can't reach its own service at the end of the job, which
-// hangs until its time limit (step-security/harden-runner#708). So each job pins a
-// Harden-Runner with the fix, and waits until it may reach its hosts before a step
-// needs them. The wait runs in bash with a fake curl and clock, as the steps of
-// publish-store.test.ts do; on a computer without bash it skips, other than in the CI.
+// Tests how the jobs of the workflows that this project owns get through Harden-Runner's
+// block mode, whose failures were the flaky runs of E2E: on the hosted runners of the
+// region westus2, GitHub tries a DNS resolver of its own, so Harden-Runner knows another
+// address of a host than the runner connects to. A step then fails with ECONNREFUSED,
+// and the runner can't reach its own service at the end of the job, which hangs until
+// its time limit (step-security/harden-runner#708). So each job pins a Harden-Runner
+// with the fix, and waits until it may reach its hosts before a step needs them. The
+// wait runs in bash with a fake curl and clock, as the steps of publish-store.test.ts
+// do; on a computer without bash it skips, other than in the CI.
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
 import {
@@ -22,72 +22,96 @@ import { delimiter, join } from "node:path";
 import { describe, test } from "node:test";
 import { readWorkflow } from "./workflow.ts";
 
-const { text, jobLines, step } = readWorkflow("e2e.yml");
-
-/** Every job of the workflow, so that a new one can't miss what the tests ask for. */
-const JOBS = [
-  ...(text.split("\njobs:\n")[1]?.matchAll(/^ {2}([\w-]+):$/gm) ?? []),
-].map(([, job]) => job ?? "");
-const BLOCK = "Block every host that the job doesn't need";
+/**
+ * The workflows of this project with Harden-Runner, by the name of its step. The blueprint
+ * renders the others, and brings their wait with its release.
+ */
+const WORKFLOWS = {
+  "e2e.yml": "Block every host that the job doesn't need",
+  "upstream.yml": "Block every host that the job doesn't need",
+  "publish-store.yml": "Let the job reach only the hosts that it needs",
+};
 const WAIT = "Wait until Harden-Runner lets the hosts through";
 /** The first version that takes GitHub's trial of a DNS resolver off the runner. */
 const FIXED_VERSION = "2.22.3";
 
-/** The first lines of the steps of a job: a name, or an action without one. */
-const stepsOf = (job: string): string[] =>
-  jobLines(job)
-    .filter((line) => /^ {6}- /.test(line))
-    .map((line) => line.trim());
+/** The script of the wait of each job, read when the test of them runs. */
+const waits: (() => string)[] = [];
 
-/** The lines of a value of a job that YAML folds, as `HOSTS: >`. */
-const folded = (job: string, key: string): string[] => {
-  const lines = jobLines(job);
-  const at = lines.findIndex((line) => line.trim() === `${key}: >`);
-  assert.notEqual(at, -1, `the job "${job}" has the value "${key}"`);
-  const indent = (line: string | undefined): number => line?.search(/\S/) ?? -1;
-  const after = lines.slice(at + 1);
-  const end = after.findIndex((line) => indent(line) <= indent(lines[at]));
-  return after
-    .slice(0, end === -1 ? undefined : end)
-    .map((line) => line.trim());
-};
+for (const [file, block] of Object.entries(WORKFLOWS)) {
+  const { text, jobLines, step } = readWorkflow(file);
 
-describe("each job of the workflow E2E", () => {
-  for (const job of JOBS) {
-    test(`${job} blocks with a Harden-Runner that has the fix of the hang`, () => {
-      const uses = jobLines(job).find((line) =>
-        line.includes("step-security/harden-runner@"),
-      );
-      const version = /@[0-9a-f]{40} # v(\d+\.\d+\.\d+)$/.exec(uses ?? "")?.[1];
-      assert.ok(version, `the job "${job}" pins Harden-Runner: ${uses}`);
-      assert.ok(
-        version.localeCompare(FIXED_VERSION, undefined, { numeric: true }) >= 0,
-        `v${version} of Harden-Runner in the job "${job}" still hangs; v${FIXED_VERSION} has the fix`,
-      );
-      assert.ok(
-        jobLines(job).includes("          egress-policy: block"),
-        `the job "${job}" blocks every host that it doesn't need`,
-      );
+  /** Every job of the workflow, so that a new one can't miss what the tests ask for. */
+  const jobs = [
+    ...(text.split("\njobs:\n")[1]?.matchAll(/^ {2}([\w-]+):$/gm) ?? []),
+  ].map(([, job]) => job ?? "");
+
+  /** The first lines of the steps of a job: a name, or an action without one. */
+  const stepsOf = (job: string): string[] =>
+    jobLines(job)
+      .filter((line) => /^ {6}- /.test(line))
+      .map((line) => line.trim());
+
+  /** The lines of a value of a job that YAML folds, as `HOSTS: >`. */
+  const folded = (job: string, key: string): string[] => {
+    const lines = jobLines(job);
+    const at = lines.findIndex((line) => line.trim() === `${key}: >`);
+    assert.notEqual(at, -1, `the job "${job}" has the value "${key}"`);
+    const indent = (line: string | undefined): number =>
+      line?.search(/\S/) ?? -1;
+    const after = lines.slice(at + 1);
+    const end = after.findIndex((line) => indent(line) <= indent(lines[at]));
+    return after
+      .slice(0, end === -1 ? undefined : end)
+      .map((line) => line.trim());
+  };
+
+  describe(`each job of ${file}`, () => {
+    test("the workflow has jobs", () => {
+      assert.notEqual(jobs.length, 0);
     });
 
-    test(`${job} waits for its hosts right after Harden-Runner`, () => {
-      assert.deepEqual(stepsOf(job).slice(0, 2), [
-        `- name: ${BLOCK}`,
-        `- name: ${WAIT}`,
-      ]);
-      assert.deepEqual(
-        folded(job, "HOSTS"),
-        folded(job, "allowed-endpoints"),
-        "the wait asks exactly the hosts that the job may reach",
-      );
-      // Within the time limit of the job, with the two minutes of the wait for Docker.
-      assert.equal(step(job, WAIT).timeoutMinutes, "4");
-    });
-  }
+    for (const job of jobs) {
+      waits.push(() => step(job, WAIT).run);
 
-  test("all wait with the same script", () => {
-    assert.equal(new Set(JOBS.map((job) => step(job, WAIT).run)).size, 1);
+      test(`${job} blocks with a Harden-Runner that has the fix of the hang`, () => {
+        const uses = jobLines(job).find((line) =>
+          line.includes("step-security/harden-runner@"),
+        );
+        const version = /@[0-9a-f]{40} # v(\d+\.\d+\.\d+)$/.exec(
+          uses ?? "",
+        )?.[1];
+        assert.ok(version, `the job "${job}" pins Harden-Runner: ${uses}`);
+        assert.ok(
+          version.localeCompare(FIXED_VERSION, undefined, { numeric: true }) >=
+            0,
+          `v${version} of Harden-Runner in the job "${job}" still hangs; v${FIXED_VERSION} has the fix`,
+        );
+        assert.ok(
+          jobLines(job).includes("          egress-policy: block"),
+          `the job "${job}" blocks every host that it doesn't need`,
+        );
+      });
+
+      test(`${job} waits for its hosts right after Harden-Runner`, () => {
+        assert.deepEqual(stepsOf(job).slice(0, 2), [
+          `- name: ${block}`,
+          `- name: ${WAIT}`,
+        ]);
+        assert.deepEqual(
+          folded(job, "HOSTS"),
+          folded(job, "allowed-endpoints"),
+          "the wait asks exactly the hosts that the job may reach",
+        );
+        // Within the time limit of each job, the shortest of which has five minutes.
+        assert.equal(step(job, WAIT).timeoutMinutes, "4");
+      });
+    }
   });
+}
+
+test("every job of the workflows waits with the same script", () => {
+  assert.equal(new Set(waits.map((wait) => wait())).size, 1);
 });
 
 const skip =
@@ -105,7 +129,7 @@ interface Wait {
 
 /** Runs the wait as the runner does, on a network that refuses each host's first calls. */
 const runWait = (hosts: readonly string[], refusals: number): Wait => {
-  const dir = mkdtempSync(join(tmpdir(), "e2e-workflow-"));
+  const dir = mkdtempSync(join(tmpdir(), "harden-runner-"));
   try {
     const bin = join(dir, "bin");
     mkdirSync(bin);
@@ -132,7 +156,10 @@ const runWait = (hosts: readonly string[], refusals: number): Wait => {
     const clock = join(dir, "clock");
     writeFileSync(calls, "");
     writeFileSync(clock, "1000\n");
-    writeFileSync(join(dir, "step.sh"), step("gate", WAIT).run);
+    writeFileSync(
+      join(dir, "step.sh"),
+      readWorkflow("e2e.yml").step("gate", WAIT).run,
+    );
     const result = spawnSync(
       "bash",
       ["--noprofile", "--norc", "-e", join(dir, "step.sh")],
