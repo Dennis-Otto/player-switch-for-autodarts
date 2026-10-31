@@ -547,6 +547,30 @@ describe("the delivery", { skip }, () => {
       });
     }
 
+    for (const [what, env, earlier] of [
+      [
+        "the submission",
+        { FAKE_PUBLISH_EXIT: "7", FAKE_PUBLISH_NO_ANSWER: "1" },
+        "uploadState",
+      ],
+      [
+        "the status of an upload in progress",
+        {
+          FAKE_UPLOAD_ANSWER: JSON.stringify({ uploadState: "IN_PROGRESS" }),
+          FAKE_STATUS_EXIT: "7",
+          FAKE_STATUS_NO_ANSWER: "1",
+        },
+        "IN_PROGRESS",
+      ],
+    ] as const) {
+      test(`shows no earlier answer as the answer to ${what} when it gets none`, () => {
+        const result = deliver(env);
+        assert.equal(result.status, 1, result.stdout);
+        assert.equal(errors(result).length, 1);
+        assert.ok(!result.stdout.includes(earlier), result.stdout);
+      });
+    }
+
     test("fails when the store stops telling the state of an upload in progress", () => {
       const result = deliver({
         FAKE_UPLOAD_ANSWER: JSON.stringify({ uploadState: "IN_PROGRESS" }),

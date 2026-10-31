@@ -24,7 +24,7 @@ flowchart TB
     decide -- "a review is pending" --> wait
     decide -- "published already" --> has
     decide -- "the store lacks it" --> package --> store --> review
-    store -- "the dashboard lacks something<br>(INVALID_ITEM_METADATA)" --> fail
+    store -- "the dashboard lacks something" --> fail
     store -- "a review began in the meantime" --> wait
     fail --> issue
 

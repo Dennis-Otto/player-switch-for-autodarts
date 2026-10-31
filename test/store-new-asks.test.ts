@@ -15,7 +15,9 @@ import {
   run,
 } from "../scripts/store-new-asks.ts";
 
-// What the store's version and the release asked for when the store refused 1.0.0.
+// Shaped like the store's version and the release when the store refused 1.0.0, with a
+// new host added so that every kind of ask appears in the sentence; NEW_ASKS in
+// test/publish-store.test.ts holds the sentence of the real tags.
 const MANIFEST_0_2_0 = {
   manifest_version: 3,
   permissions: ["storage", "alarms"],

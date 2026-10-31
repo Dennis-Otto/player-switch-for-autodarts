@@ -691,6 +691,9 @@ jobs:
           for _ in $(seq 1 20); do
             [[ "$state" == IN_PROGRESS || "$state" == UPLOAD_IN_PROGRESS ]] || break
             sleep 15
+            # A call that gets no answer leaves the file as it was, and an earlier answer
+            # in the log would read as the store's answer to this one.
+            rm -f "$response"
             curl --fail-with-body --silent --show-error --retry 3 --retry-connrefused \
               --connect-timeout 15 --max-time 60 --output "$response" \
               --header @"$RUNNER_TEMP/authorization" "$ITEM:fetchStatus" ||
@@ -701,6 +704,7 @@ jobs:
             refused "The upload of $ZIP ended in the state ${state:-unknown}."
           fi
           echo "The store took the upload of $ZIP." | tee -a "$GITHUB_STEP_SUMMARY"
+          rm -f "$response"
           if ! curl --fail-with-body --silent --show-error --retry 3 --retry-connrefused \
             --connect-timeout 15 --max-time 120 --output "$response" \
             --header @"$RUNNER_TEMP/authorization" --header 'Content-Type: application/json' \
