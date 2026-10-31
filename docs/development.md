@@ -223,6 +223,8 @@ The checks of this project, `scripts/check-project.sh`, compare the manifest wit
 - **the focus,** in a walk with the keyboard alone through every action: the keys 1 to 9, a switch, an error, **Manage accounts**, a remembered and a forgotten password, a removal and **Add account** with its **Cancel**;
 - **the system:** a contrast theme keeps the player who plays apart, and reduced motion leaves no transition.
 
+The package has no dependency of its own, so an advisory for `package-lock.json` concerns a tool of the checks. A fixed version comes first, also for a package that another one pins: `overrides` in `package.json` moves the minimatch of addons-linter to one with the fix, and `test/advisories.test.ts` shows that the rules of ESLint in addons-linter still run with it. An advisory with no fixed version goes into `osv-scanner.toml`, with its reason and its `ignoreUntil`, and into `allow-ghsas` in `.github/dependency-review.yml`. So does that of deepmerge, which addons-linter pins: the same test fails when a manifest reaches deepmerge, and when an update moves it, so that the acceptance leaves with that update. After the date, OSV-Scanner reports the advisory again and a person looks again.
+
 ```sh
 npm run test:a11y
 ```

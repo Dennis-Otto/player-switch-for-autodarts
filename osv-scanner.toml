@@ -1,0 +1,17 @@
+# Advisories that OSV-Scanner and the OpenSSF Scorecard should not report, for a tool
+# that only the checks install. An advisory goes here only when no update can fix it:
+# a fixed version comes first, also through `overrides` in package.json. OSV-Scanner
+# reports it again after `ignoreUntil`, and a person looks again. Each one starts its
+# `reason` with the package and the version, .github/dependency-review.yml lists it under
+# allow-ghsas, and test/advisories.test.ts keeps the reason true and fails on the update
+# that ends it. Every release states these in its OpenVEX document.
+
+[[IgnoredVulns]]
+id = "GHSA-gcqx-w48m-w2h4"
+ignoreUntil = 2027-01-31
+reason = """deepmerge 4.3.1: addons-linter, which scripts/check-firefox.mjs runs on the
+package, pins this version exactly, and no fixed version exists: 4.3.1 is the newest
+release, the maintainer closed the report without a new one, and a dispute of the
+advisory is filed (https://github.com/TehShrike/deepmerge/issues/273). Only the checks
+install it, and the package ships none of it. addons-linter merges its own schemas
+with it, never a manifest, so nothing that somebody else writes reaches it."""
