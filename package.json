@@ -1,6 +1,6 @@
 {
   "name": "player-switch-for-autodarts",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "description": "A Chrome extension that switches between Autodarts accounts on a shared touch display with one tap, without signing in again.",
   "homepage": "https://github.com/Dennis-Otto/player-switch-for-autodarts#readme",
   "bugs": {

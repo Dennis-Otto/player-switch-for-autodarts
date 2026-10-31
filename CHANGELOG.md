@@ -6,6 +6,14 @@ the next release, or lists the pull requests when there is none.
 
 ## Unreleased
 
+## [1.1.1](https://github.com/Dennis-Otto/player-switch-for-autodarts/compare/v1.1.0...v1.1.1) (2026-10-31)
+
+
+### Bug fixes
+
+* a session signed in directly in the page can no longer be saved under another player's tile ([#111](https://github.com/Dennis-Otto/player-switch-for-autodarts/issues/111)) ([77ecb21](https://github.com/Dennis-Otto/player-switch-for-autodarts/commit/77ecb2103546e580ef72c1b02c796449d734a974))
+* make OSV-Scanner and Findings pass on main ([#110](https://github.com/Dennis-Otto/player-switch-for-autodarts/issues/110)) ([fe0ad64](https://github.com/Dennis-Otto/player-switch-for-autodarts/commit/fe0ad644b1f56b585e6f9e41af9363143b1cf309))
+
 ## [1.1.0](https://github.com/Dennis-Otto/player-switch-for-autodarts/compare/v1.0.0...v1.1.0) (2026-10-25)
 
 ### Features
