@@ -192,21 +192,16 @@ describe("the wait for the hosts", { skip }, () => {
     assert.equal(wait.status, 0);
     assert.equal(wait.seconds, 120);
     // From 0 to 120 seconds, and the host after it only once: the two minutes are over.
-    assert.equal(
-      wait.calls.filter((call) => call.endsWith("https://github.com/")).length,
-      41,
-    );
-    assert.equal(
-      wait.calls.filter((call) => call.endsWith("https://registry.npmjs.org/"))
-        .length,
-      1,
-    );
+    assert.deepEqual(wait.calls, [
+      ...Array.from({ length: 41 }, () => `${QUESTION} https://github.com/`),
+      `${QUESTION} https://registry.npmjs.org/`,
+    ]);
     for (const host of ["github.com", "registry.npmjs.org"]) {
-      assert.match(
-        wait.stdout,
-        new RegExp(
+      assert.ok(
+        wait.stdout.includes(
           `::warning::Harden-Runner still blocks ${host} after two minutes`,
         ),
+        wait.stdout,
       );
     }
   });
