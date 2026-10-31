@@ -559,6 +559,17 @@ test("Add account says when Autodarts can't be reached, and the page stays signe
   assert.equal(state.addingUntil, null);
 });
 
+test("with no Autodarts tab and no answer, Add account leaves the popup open with the reason", async () => {
+  const fake = browser();
+  await twoPlayers(fake);
+  await started(fake);
+  fake.broken.add("fetch");
+  const out = await popup(fake, { action: "signout" });
+  assert.deepEqual([out.ok, out.reason], [false, "unreachable"]);
+  assert.deepEqual(fake.opened, [PLAY_URL]);
+  assert.deepEqual(fake.focused, []);
+});
+
 test("Open Autodarts opens a tab, or shows the one there is", async () => {
   const fake = browser();
   // The browser may not know a window that was used last.

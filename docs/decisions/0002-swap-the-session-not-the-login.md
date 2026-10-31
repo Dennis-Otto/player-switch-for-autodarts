@@ -51,11 +51,15 @@ tile isn't saved ([decision 0004](0004-save-a-new-sign-in-only-in-a-window.md)).
 - A stored token, and an optional stored password, sit in `chrome.storage.local` on
   a trusted shared computer; see [the security design](../security.md).
 - A switch and a sign-out need Autodarts to answer for the session in the page. Without
-  an answer the page stays as it is and nothing is spent, also for **Add account** and
+  an answer the page stays as it is, also for **Add account** and
   the return after a break of the venue mode, which worked offline before.
 - A tab that closes in the moment between that renewal and the write leaves a spent token
   in the page's storage. The fresh token is parked first, but the next start of Autodarts
   sends the spent one, and Autodarts may end the session for it: the account then signs
   in again. Saving a session has the same short window.
+- An answer lost after Autodarts rotated the token, such as a connection reset, looks like
+  no answer, so the page keeps a spent token. Its next renewal or the next try sends that
+  token again, and the account then signs in again. Saving a session and renewing a parked
+  token carry the same risk.
 - Only `extension/content.js` touches the page's stored session, which keeps the
   sensitive surface to one small file.

@@ -625,7 +625,11 @@ export function startWorker(api: ChromeApi, platform: Platform): StartedWorker {
           return { ok: false, reason: "match" };
         }
         // The new player signs in on the page, so a page opens when none answers.
-        const result = await withPage(tabs, () => signOutForNewAccount(deps));
+        const result = await withPage(
+          tabs,
+          () => signOutForNewAccount(deps),
+          (outcome) => outcome.ok,
+        );
         return result.ok
           ? { ok: true, page: true }
           : { ok: false, reason: result.reason, page: true };
