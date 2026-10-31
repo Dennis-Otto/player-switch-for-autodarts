@@ -1,5 +1,6 @@
 // Saving, adding and removing accounts, in the real popup and the real service
 // worker, against the fake Autodarts of fixtures.ts.
+import { SESSION_KEY } from "../../src/autodarts.ts";
 import { ALICE, BOB, CAROL, expect, expectPlayer, test } from "./fixtures.ts";
 
 test("the install waits for the first sign-in and saves that account by itself", async ({
@@ -61,6 +62,33 @@ test("Add account signs the page out, parks the player and saves the next sign-i
   await display.signIn(page, BOB);
   await popup.reopen();
   await popup.expectAccounts([ALICE, BOB], BOB);
+});
+
+test("Add account parks a session signed in right in the page with its own account", async ({
+  display,
+}) => {
+  const page = await display.openAutodarts();
+  const popup = await display.saveAccounts(page, [ALICE, BOB]);
+
+  // Bob plays. In the page itself, someone signs out and signs in as Alice.
+  await page.evaluate(
+    (key) => window.localStorage.removeItem(key),
+    SESSION_KEY,
+  );
+  await page.reload();
+  await display.signIn(page, ALICE);
+
+  await popup.page.locator("#add").click();
+  await popup.ready();
+  await expect(popup.page.locator("#adding")).toBeVisible();
+  await expectPlayer(page, null);
+  await expect(popup.tile(BOB).locator(".chip")).toHaveText(
+    display.t("needsSignIn"),
+  );
+
+  await popup.tap(ALICE);
+  await expectPlayer(page, ALICE);
+  await popup.expectAccounts([ALICE, BOB], ALICE);
 });
 
 test("Remove account ends the session at Autodarts and forgets the account", async ({

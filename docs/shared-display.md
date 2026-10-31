@@ -93,7 +93,7 @@ At home, everyone at the display may play under any saved account, which is the 
 
 - **A manager PIN** guards **Manage accounts**, where accounts are removed and passwords remembered or forgotten, and the settings themselves. The popup and the players on the Autodarts page ask for it once as **Manage accounts** opens, and forget it as it closes.
 - **A PIN for each player who wants one,** 4 to 8 digits, under **PINs of the players**. A tap on that player's tile asks for it, on a number pad that works on a touch screen, before anything changes; their tile shows a lock. Nobody else plays under their account and spoils their statistics.
-- **Return after a break:** after 5 to 60 minutes without a tap, a click or a key on the Autodarts page, the display switches to a house account of your choice, or signs out, so that the next games don't count for the player who left. A match is never interrupted: the break starts once it has ended. The player before keeps their session parked, so a tap brings them back.
+- **Return after a break:** after 5 to 60 minutes without a tap, a click or a key on the Autodarts page, the display switches to a house account of your choice, or signs out, so that the next games don't count for the player who left. A match is never interrupted: the break starts once it has ended. The player before keeps their session parked, so a tap brings them back. While Autodarts can't be reached, the display stays as it is and tries again a minute later.
 
 Five wrong PINs in a row lock every PIN of the display for a minute, so that nobody tries them all by hand. The extension keeps no PIN, only a salted hash of it.
 

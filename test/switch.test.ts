@@ -56,6 +56,30 @@ function deps(
 const rejected = () => Promise.resolve(jsonResponse({}, 400));
 const offline = () => Promise.resolve(jsonResponse({}, 503));
 
+/**
+ * Autodarts that knows whose each token is: it answers a token that it lists with a
+ * fresh session of its account, doesn't answer for one listed as offline, and refuses
+ * every other.
+ */
+function renewing(
+  sessions: Record<string, readonly [id: string, fresh: string] | "offline">,
+): Deps["fetcher"] {
+  return router({
+    refresh: (_url, init) => {
+      const { refresh_token: token } = JSON.parse(String(init.body)) as {
+        refresh_token: string;
+      };
+      const session = sessions[token];
+      if (session === undefined) {
+        return rejected();
+      }
+      return session === "offline"
+        ? offline()
+        : Promise.resolve(sessionResponse(session[0], session[1]));
+    },
+  });
+}
+
 test("switchTo brings a parked account onto the page", async () => {
   const store = new FakeStore(park(EMPTY, ada, "ta", 0));
   const page = new FakePage(null);
@@ -79,15 +103,11 @@ test("switchTo parks the account that was playing", async () => {
   const store = new FakeStore(state);
   const page = new FakePage("pb");
   const result = await switchTo(
-    deps(
-      store,
-      page,
-      router({ refresh: () => Promise.resolve(sessionResponse("a", "fa")) }),
-    ),
+    deps(store, page, renewing({ ta: ["a", "fa"], pb: ["b", "fb"] })),
     "a",
   );
   assert.equal(result.state.activeId, "a");
-  assert.equal(find(result.state, "b")?.token, "pb");
+  assert.equal(find(result.state, "b")?.token, "fb");
   assert.equal(page.token, "fa");
 });
 
@@ -133,11 +153,12 @@ test("switchTo signs in with the stored password when there is no token", async 
   const page = new FakePage("pb");
   const fetcher = router({
     login: () => Promise.resolve(sessionResponse("a", "fresh")),
+    refresh: () => Promise.resolve(sessionResponse("b", "fb")),
   });
   const result = await switchTo(deps(store, page, fetcher), "a");
   assert.ok(result.ok);
   assert.equal(page.token, "fresh");
-  assert.equal(find(result.state, "b")?.token, "pb");
+  assert.equal(find(result.state, "b")?.token, "fb");
 });
 
 test("switchTo reports a temporary problem and changes nothing", async () => {
@@ -219,12 +240,12 @@ test("switchTo spends no token when the page is not there", async () => {
 test("switchTo keeps the renewed token when the page can't take it", async () => {
   const store = new FakeStore(setActive(park(EMPTY, ada, "ta", 0), bob));
   const page = new FakePage("pb", ["write"]);
-  const fetcher = router({
-    refresh: () => Promise.resolve(sessionResponse("a", "fa")),
-  });
+  const fetcher = renewing({ ta: ["a", "fa"], pb: ["b", "fb"] });
   await assert.rejects(switchTo(deps(store, page, fetcher), "a"));
+  // Every fresh token is kept, and nobody plays on a page that didn't take the new one.
   assert.equal(find(store.state, "a")?.token, "fa");
-  assert.equal(store.state.activeId, "b");
+  assert.equal(find(store.state, "b")?.token, "fb");
+  assert.equal(store.state.activeId, null);
   assert.equal(page.token, "pb");
 });
 
@@ -241,9 +262,11 @@ test("adoptCurrentSession keeps the renewed token when the page can't take it", 
 test("signOutForNewAccount keeps the session when the page can't let go", async () => {
   const store = new FakeStore(setActive(EMPTY, ada));
   await assert.rejects(
-    signOutForNewAccount(deps(store, new FakePage("pa", ["clear"]), router())),
+    signOutForNewAccount(
+      deps(store, new FakePage("pa", ["clear"]), renewing({ pa: ["a", "fa"] })),
+    ),
   );
-  assert.equal(find(store.state, "a")?.token, "pa");
+  assert.equal(find(store.state, "a")?.token, "fa");
   // The page still holds a session, so no new account is waited for.
   assert.equal(store.state.addingUntil, null);
 });
@@ -315,15 +338,17 @@ test("syncFromPage notices a sign-out in the page", async () => {
 test("signOutForNewAccount parks the account that was playing", async () => {
   const store = new FakeStore(setActive(EMPTY, ada));
   const page = new FakePage("pa");
-  const state = await signOutForNewAccount(deps(store, page, router()));
-  assert.equal(find(state, "a")?.token, "pa");
+  const { state } = await signOutForNewAccount(
+    deps(store, page, renewing({ pa: ["a", "fa"] })),
+  );
+  assert.equal(find(state, "a")?.token, "fa");
   assert.equal(state.activeId, null);
   assert.equal(page.token, null);
 });
 
 test("signOutForNewAccount clears an empty page without parking", async () => {
   const page = new FakePage(null);
-  const state = await signOutForNewAccount(
+  const { state } = await signOutForNewAccount(
     deps(new FakeStore(EMPTY), page, router()),
   );
   assert.equal(state.activeId, null);
@@ -331,8 +356,12 @@ test("signOutForNewAccount clears an empty page without parking", async () => {
 });
 
 test("signOutForNewAccount waits ten minutes for the new account", async () => {
-  const state = await signOutForNewAccount(
-    deps(new FakeStore(setActive(EMPTY, ada)), new FakePage("pa"), router()),
+  const { state } = await signOutForNewAccount(
+    deps(
+      new FakeStore(setActive(EMPTY, ada)),
+      new FakePage("pa"),
+      renewing({ pa: ["a", "fa"] }),
+    ),
   );
   assert.equal(state.addingUntil, 1000 + ADD_WINDOW_MS);
   assert.equal(ADD_WINDOW_MS, 600_000);
@@ -341,8 +370,10 @@ test("signOutForNewAccount waits ten minutes for the new account", async () => {
 test("leaveDisplay parks the account that was playing and waits for no new one", async () => {
   const store = new FakeStore(setActive(EMPTY, ada));
   const page = new FakePage("pa");
-  const state = await leaveDisplay(deps(store, page, router()));
-  assert.equal(find(state, "a")?.token, "pa");
+  const { state } = await leaveDisplay(
+    deps(store, page, renewing({ pa: ["a", "fa"] })),
+  );
+  assert.equal(find(state, "a")?.token, "fa");
   assert.equal(state.activeId, null);
   assert.equal(state.addingUntil, null);
   assert.equal(page.token, null);
@@ -353,7 +384,7 @@ test("leaveDisplay ends a wait for a new account that nobody finished", async ()
   // Someone signed in on the page while an account was being added, and walked away.
   const store = new FakeStore(startAdding(EMPTY, 5000));
   const page = new FakePage("unsaved");
-  const state = await leaveDisplay(deps(store, page, router()));
+  const { state } = await leaveDisplay(deps(store, page, router()));
   assert.equal(state.addingUntil, null);
   assert.equal(page.token, null);
 });
@@ -561,9 +592,269 @@ test("a switch to a saved account ends the adding", async () => {
 test("signOutForNewAccount does not park a session it can't place", async () => {
   const store = new FakeStore(EMPTY);
   const page = new FakePage("orphan");
-  const state = await signOutForNewAccount(deps(store, page, router()));
+  const { state } = await signOutForNewAccount(deps(store, page, router()));
   assert.equal(state.profiles.length, 0);
   assert.equal(page.token, null);
+});
+
+/** Ada plays as far as the extension knows; Bob and Cy are parked, each with a session. */
+function adaPlays() {
+  return setActive(park(park(EMPTY, bob, "tb", 0), cy, "tc", 0), ada);
+}
+
+test("switchTo parks the session in the page with the account it belongs to, not the one that played last", async () => {
+  // Ada played, and someone signed in as Cy right in the page.
+  const store = new FakeStore(adaPlays());
+  const page = new FakePage("pc");
+  const result = await switchTo(
+    deps(store, page, renewing({ tb: ["b", "fb"], pc: ["c", "fc"] })),
+    "b",
+  );
+  assert.ok(result.ok);
+  assert.equal(result.state.activeId, "b");
+  assert.equal(page.token, "fb");
+  assert.equal(find(result.state, "c")?.token, "fc");
+  // Ada's session left the page with the sign-out there, so her tile says so.
+  assert.equal(find(result.state, "a")?.token, null);
+  assert.equal(find(result.state, "a")?.needsSignIn, true);
+  assert.deepEqual(store.state, result.state);
+});
+
+test("signOutForNewAccount parks the session in the page with the account it belongs to", async () => {
+  const store = new FakeStore(adaPlays());
+  const page = new FakePage("pc");
+  const result = await signOutForNewAccount(
+    deps(store, page, renewing({ pc: ["c", "fc"] })),
+  );
+  assert.ok(result.ok);
+  assert.equal(result.state.activeId, null);
+  assert.equal(page.token, null);
+  assert.equal(find(result.state, "c")?.token, "fc");
+  assert.equal(find(result.state, "a")?.needsSignIn, true);
+  assert.equal(result.state.addingUntil, 1000 + ADD_WINDOW_MS);
+  assert.deepEqual(store.state, result.state);
+});
+
+test("leaveDisplay parks the session in the page with the account it belongs to", async () => {
+  const store = new FakeStore(adaPlays());
+  const page = new FakePage("pc");
+  const result = await leaveDisplay(
+    deps(store, page, renewing({ pc: ["c", "fc"] })),
+  );
+  assert.ok(result.ok);
+  assert.equal(page.token, null);
+  assert.equal(find(result.state, "c")?.token, "fc");
+  assert.equal(find(result.state, "a")?.needsSignIn, true);
+});
+
+test("the session of the page brings its account up to date, and a tile that needed a sign-in no longer does", async () => {
+  const state = endSession(
+    park(setActive(EMPTY, ada), { ...cy, name: "Old name" }, "tc", 0),
+    "c",
+  );
+  const store = new FakeStore(state);
+  const result = await signOutForNewAccount(
+    deps(store, new FakePage("pc"), renewing({ pc: ["c", "fc"] })),
+  );
+  const saved = find(result.state, "c");
+  assert.notEqual(saved?.name, "Old name");
+  assert.equal(saved?.token, "fc");
+  assert.equal(saved?.needsSignIn, false);
+});
+
+test("a session in the page that no account keeps is not saved at a switch or a sign-out", async () => {
+  // A guest signed in right in the page: a sign-in is saved only with a tap.
+  for (const leave of [
+    (board: Deps) => switchTo(board, "b"),
+    signOutForNewAccount,
+    leaveDisplay,
+  ]) {
+    const store = new FakeStore(adaPlays());
+    const page = new FakePage("guest");
+    const result = await leave(
+      deps(store, page, renewing({ tb: ["b", "fb"], guest: ["g", "fg"] })),
+    );
+    assert.ok(result.ok);
+    assert.equal(find(result.state, "g"), undefined);
+    assert.equal(result.state.profiles.length, 3);
+    assert.equal(find(result.state, "a")?.needsSignIn, true);
+    assert.notEqual(page.token, "guest");
+    assert.ok(
+      result.state.profiles.every(({ token }) => token !== "guest"),
+      "nothing keeps the session of the guest",
+    );
+  }
+});
+
+test("a tap on the account whose session is in the page plays that account", async () => {
+  const store = new FakeStore(adaPlays());
+  const page = new FakePage("pc");
+  const result = await switchTo(
+    deps(store, page, renewing({ tc: ["c", "fc"], pc: ["c", "fp"] })),
+    "c",
+  );
+  assert.ok(result.ok);
+  assert.equal(result.state.activeId, "c");
+  assert.equal(page.token, "fc");
+  assert.equal(find(result.state, "c")?.token, null);
+  assert.equal(find(result.state, "a")?.needsSignIn, true);
+});
+
+test("an ordinary switch parks a fresh session of the account that played", async () => {
+  const store = new FakeStore(adaPlays());
+  const page = new FakePage("pa");
+  const result = await switchTo(
+    deps(store, page, renewing({ tb: ["b", "fb"], pa: ["a", "fa"] })),
+    "b",
+  );
+  assert.equal(find(result.state, "a")?.token, "fa");
+  assert.equal(find(result.state, "a")?.needsSignIn, false);
+  assert.equal(find(result.state, "a")?.refreshedAt, 1000);
+  assert.equal(page.token, "fb");
+});
+
+test("a failed tap spends no token of the page", async () => {
+  for (const [answers, reason] of [
+    [renewing({ pa: ["a", "fa"] }), "signin"],
+    [renewing({ tb: "offline", pa: ["a", "fa"] }), "unreachable"],
+  ] as const) {
+    const store = new FakeStore(adaPlays());
+    const page = new FakePage("pa");
+    const fetcher = counting(answers);
+    const result = await switchTo(deps(store, page, fetcher), "b");
+    assert.equal(result.reason, reason);
+    assert.equal(
+      fetcher.calls,
+      1,
+      "only the token of the account that comes on",
+    );
+    assert.equal(page.token, "pa");
+    assert.equal(page.writes.length, 0);
+    assert.equal(result.state.activeId, "a");
+  }
+});
+
+test("switchTo changes nothing in the page when Autodarts stops answering for its session", async () => {
+  const store = new FakeStore(adaPlays());
+  const page = new FakePage("pa");
+  const result = await switchTo(
+    deps(store, page, renewing({ tb: ["b", "fb"], pa: "offline" })),
+    "b",
+  );
+  assert.equal(result.ok, false);
+  assert.equal(result.reason, "unreachable");
+  assert.equal(page.token, "pa");
+  assert.equal(page.writes.length, 0);
+  assert.equal(store.state.activeId, "a");
+  // The fresh token of the account that was coming on is kept, for the next tap.
+  assert.equal(find(store.state, "b")?.token, "fb");
+});
+
+test("a sign-out waits while Autodarts can't say whose session is in the page", async () => {
+  for (const leave of [signOutForNewAccount, leaveDisplay]) {
+    const before = adaPlays();
+    const store = new FakeStore(before);
+    const page = new FakePage("pa");
+    const result = await leave(deps(store, page, renewing({ pa: "offline" })));
+    assert.equal(result.ok, false);
+    assert.equal(result.reason, "unreachable");
+    assert.equal(page.token, "pa");
+    assert.equal(page.clears, 0);
+    assert.deepEqual(store.state, before);
+    assert.equal(store.saves, 0);
+  }
+});
+
+test("a session in the page that Autodarts refuses is parked nowhere, and the page moves on", async () => {
+  const store = new FakeStore(adaPlays());
+  const page = new FakePage("dead");
+  const result = await switchTo(
+    deps(store, page, renewing({ tb: ["b", "fb"] })),
+    "b",
+  );
+  assert.ok(result.ok);
+  assert.equal(page.token, "fb");
+  assert.equal(find(result.state, "a")?.token, null);
+  assert.equal(find(result.state, "a")?.needsSignIn, true);
+
+  const signedOut = new FakeStore(adaPlays());
+  const stale = new FakePage("dead");
+  const out = await signOutForNewAccount(deps(signedOut, stale, renewing({})));
+  assert.ok(out.ok);
+  assert.equal(stale.token, null);
+  assert.equal(find(out.state, "a")?.needsSignIn, true);
+});
+
+test("the token of the page is read again right before it is sent, so one the page renewed meanwhile isn't sent", async () => {
+  const store = new FakeStore(adaPlays());
+  const page = new FakePage("pa-1");
+  const sent: string[] = [];
+  const answers = renewing({ tb: ["b", "fb"], "pa-2": ["a", "fa"] });
+  const result = await switchTo(
+    deps(store, page, (url, init) => {
+      const { refresh_token: token } = JSON.parse(String(init.body)) as {
+        refresh_token: string;
+      };
+      sent.push(token);
+      // The page renews its session while Bob's renewal is on its way.
+      page.token = "pa-2";
+      return answers(url, init);
+    }),
+    "b",
+  );
+  assert.deepEqual(sent, ["tb", "pa-2"]);
+  assert.equal(find(result.state, "a")?.token, "fa");
+});
+
+test("a session that the page renewed while Autodarts was asked about it is the one that gets parked", async () => {
+  const store = new FakeStore(adaPlays());
+  const page = new FakePage("pa-1");
+  const answers = renewing({ "pa-2": ["a", "fa"] });
+  const result = await signOutForNewAccount(
+    deps(store, page, (url, init) => {
+      // The page got there first: Autodarts turns the old token away.
+      page.token = "pa-2";
+      return answers(url, init);
+    }),
+  );
+  assert.ok(result.ok);
+  assert.equal(find(result.state, "a")?.token, "fa");
+  assert.equal(find(result.state, "a")?.needsSignIn, false);
+  assert.equal(page.token, null);
+});
+
+test("a page that signed out while Autodarts was asked about its session leaves the account needing a new one", async () => {
+  const store = new FakeStore(adaPlays());
+  const page = new FakePage("pa");
+  const result = await signOutForNewAccount(
+    deps(store, page, () => {
+      page.token = null;
+      return rejected();
+    }),
+  );
+  assert.ok(result.ok);
+  assert.equal(find(result.state, "a")?.needsSignIn, true);
+});
+
+test("a switch that runs again after the page failed spends no token twice and loses no session", async () => {
+  const autodarts = new FakeAutodarts();
+  const store = new FakeStore(
+    park(setActive(EMPTY, ada), bob, autodarts.issue("b"), 0),
+  );
+  const page = new FakePage(autodarts.issue("a"), ["write"]);
+  const board = deps(store, page, autodarts.fetch);
+  await assert.rejects(switchTo(board, "b"));
+  // The session of the page is spent now, and its fresh token is kept with Ada.
+  assert.equal(store.state.activeId, null);
+  assert.equal(find(store.state, "a")?.token, autodarts.live.get("a"));
+  assert.equal(find(store.state, "b")?.token, autodarts.live.get("b"));
+
+  const answering = new FakePage(page.token);
+  const again = await switchTo({ ...board, page: answering }, "b");
+  assert.ok(again.ok);
+  assert.equal(answering.token, autodarts.live.get("b"));
+  assert.equal(find(again.state, "a")?.token, autodarts.live.get("a"));
+  assert.equal(autodarts.reuses, 0);
 });
 
 test("refreshParked renews a parked session", async () => {
@@ -798,7 +1089,8 @@ test("a double tap on a player renews its token once and keeps every session", a
   ]);
   assert.ok(first.ok);
   assert.ok(second.ok);
-  assert.equal(board.autodarts.refreshes.length, 1);
+  // Bob's token, and the one of the page as it leaves: the second tap sends nothing.
+  assert.equal(board.autodarts.refreshes.length, 2);
   assert.equal(board.store.state.activeId, "b");
   assert.deepEqual(board.page.writes, [board.autodarts.live.get("b")]);
   assertEverySessionKept(board);
@@ -815,8 +1107,9 @@ test("a switch during the background renewal keeps every rotated token", async (
   // Cy left the parked accounts on the way, so the run counts Bob alone.
   assert.deepEqual([run.renewed, run.rejected, run.unreachable], [1, 0, 0]);
   assert.equal(board.store.state.activeId, "c");
-  // Bob was renewed, Cy came onto the page, and the renewal left Cy to the page.
-  assert.equal(board.autodarts.refreshes.length, 2);
+  // Bob was renewed, Cy came onto the page, the session of the page left it for the
+  // account that played, and the renewal left Cy to the page.
+  assert.equal(board.autodarts.refreshes.length, 3);
   assertEverySessionKept(board);
 });
 
