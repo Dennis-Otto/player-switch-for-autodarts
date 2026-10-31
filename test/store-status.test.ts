@@ -178,6 +178,19 @@ test("a release in review waits for Google with a note, not a failure", () => {
   assert.match(decision.notes[0] ?? "", /v1\.1\.0 is in review/);
 });
 
+test("a tag given by hand changes nothing about a version in review", () => {
+  const same = decide(input({ status: pending("1.1.0"), explicit: true }));
+  assert.deepEqual(outcome(same), { deliver: false, errors: 0, warnings: 0 });
+  assert.match(same.notes[0] ?? "", /v1\.1\.0 is in review/);
+  const earlier = decide(input({ status: pending("1.0.5"), explicit: true }));
+  assert.deepEqual(outcome(earlier), {
+    deliver: false,
+    errors: 0,
+    warnings: 0,
+  });
+  assert.match(earlier.notes[0] ?? "", /reviews 1\.0\.5/);
+});
+
 test("a new release waits while the store reviews an earlier one", () => {
   const decision = decide(input({ status: pending("1.0.5") }));
   assert.deepEqual(outcome(decision), {

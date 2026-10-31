@@ -65,7 +65,7 @@ export interface Decision {
 
 type Json = Record<string, unknown>;
 
-const isObject = (value: unknown): value is Json =>
+export const isObject = (value: unknown): value is Json =>
   typeof value === "object" && value !== null && !Array.isArray(value);
 
 const revision = (value: unknown): Revision => {
@@ -254,7 +254,7 @@ export const summary = (input: Input, decision: Decision): string => {
 export const escapeData = (text: string): string =>
   text.replaceAll("%", "%25").replaceAll("\r", "%0D").replaceAll("\n", "%0A");
 
-const required = (env: NodeJS.ProcessEnv, name: string): string => {
+export const required = (env: NodeJS.ProcessEnv, name: string): string => {
   const value = env[name];
   if (!value) {
     throw new Error(`The variable ${name} is missing.`);

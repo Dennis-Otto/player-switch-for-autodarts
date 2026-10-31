@@ -5,7 +5,7 @@ config:
 ---
 flowchart TB
     accTitle: How a release reaches the Chrome Web Store
-    accDescr: After every release, every day at 00:17 UTC and when started by hand with a tag, the workflow signs in to the Chrome Web Store and asks for the state of the item. A sign-in that Google turns away, a rejected release, a warning, a takedown or a review of more than 7 days fail the run, with the reason and the fix in its summary, and the bot-health sweep of the night keeps an issue open. While a review is pending, the run ends with a note, and a later day delivers the release. When the store has the release already, nothing happens. Otherwise a job without any secret builds the zip from the tag and keeps it as an artifact, and a job that reaches only Google uploads it and submits it for review.
+    accDescr: After every release, every day at 00:17 UTC and when started by hand with a tag, the workflow signs in to the Chrome Web Store and asks for the state of the item. A sign-in that Google turns away, a rejected release, a warning, a takedown or a review of more than 7 days fail the run, with the reason and the fix in its summary, and the bot-health sweep of the night keeps an issue open. While a review is pending, the run ends with a note, and a later day delivers the release. When the store has the release already, nothing happens. Otherwise a job without any secret builds the zip from the tag and keeps it as an artifact, and a job that reaches only Google uploads it and submits it for review. When the store refuses the submission because the Developer Dashboard lacks something that the version needs, the run fails as well, and names what the release asks for beyond the version of the store. When a review began in the meantime, the run ends with the same note as for a pending review.
 
     start["After a release, every day at 00:17 UTC,<br>or by hand with a tag"]
     ask["Sign in and ask the store<br>for the state of the item"]
@@ -24,6 +24,8 @@ flowchart TB
     decide -- "a review is pending" --> wait
     decide -- "published already" --> has
     decide -- "the store lacks it" --> package --> store --> review
+    store -- "the dashboard lacks something<br>(INVALID_ITEM_METADATA)" --> fail
+    store -- "a review began in the meantime" --> wait
     fail --> issue
 
     classDef bot fill:#526cfe2e,stroke:#526cfe,stroke-width:2px
