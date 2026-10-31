@@ -8,11 +8,19 @@ the next release, or lists the pull requests when there is none.
 
 ## [1.1.1](https://github.com/Dennis-Otto/player-switch-for-autodarts/compare/v1.1.0...v1.1.1) (2026-10-31)
 
-
 ### Bug fixes
 
-* a session signed in directly in the page can no longer be saved under another player's tile ([#111](https://github.com/Dennis-Otto/player-switch-for-autodarts/issues/111)) ([77ecb21](https://github.com/Dennis-Otto/player-switch-for-autodarts/commit/77ecb2103546e580ef72c1b02c796449d734a974))
-* make OSV-Scanner and Findings pass on main ([#110](https://github.com/Dennis-Otto/player-switch-for-autodarts/issues/110)) ([fe0ad64](https://github.com/Dennis-Otto/player-switch-for-autodarts/commit/fe0ad644b1f56b585e6f9e41af9363143b1cf309))
+- The tools that check each change no longer install a minimatch with a known
+  vulnerability, and the project states why the advisory of deepmerge, which has no fix
+  yet and which only the Firefox check installs, doesn't concern the extension. The
+  extension that you install doesn't change.
+- A session that someone signed in with directly on the Autodarts page, without the
+  popup, no longer ends up under the tile of the player before. A tap on a tile or **Add
+  account** now asks Autodarts whose session is in the page and parks it with that
+  player, and the player who was signed out shows that they need a new sign-in. A
+  session of an account without a tile isn't saved. Because this takes an answer from
+  Autodarts, **Add account** and the return after a break of the venue mode now wait
+  while Autodarts can't be reached, and the page stays as it is until then.
 
 ## [1.1.0](https://github.com/Dennis-Otto/player-switch-for-autodarts/compare/v1.0.0...v1.1.0) (2026-10-25)
 
