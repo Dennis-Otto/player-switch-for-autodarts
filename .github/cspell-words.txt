@@ -9,4 +9,5 @@ Inkognitofenster
 minimatch
 mozilla
 Umschalt
+westus
 Willkommensseite
