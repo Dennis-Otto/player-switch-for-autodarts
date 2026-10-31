@@ -572,5 +572,21 @@ test("the popup sees no session and no password of any account", () => {
         );
       }
     }),
+    // A run of the CI found this input: of two stored profiles with the same id, the
+    // view took the time of the one and the session of the other.
+    {
+      examples: [
+        [
+          {
+            profiles: [
+              { id: "b", username: "", name: "", token: "\u0000" },
+              { id: "b", username: "", name: "", refreshedAt: 0 },
+            ],
+          },
+          false,
+          0,
+        ],
+      ],
+    },
   );
 });

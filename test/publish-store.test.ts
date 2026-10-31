@@ -21,14 +21,9 @@ import { tmpdir } from "node:os";
 import { delimiter, join } from "node:path";
 import { describe, test } from "node:test";
 import { fileURLToPath } from "node:url";
+import { readWorkflow } from "./workflow.ts";
 
-const WORKFLOW = readFileSync(
-  fileURLToPath(
-    new URL("../.github/workflows/publish-store.yml", import.meta.url),
-  ),
-  "utf8",
-).replaceAll("\r\n", "\n");
-const LINES = WORKFLOW.split("\n");
+const { text: WORKFLOW, jobLines, step } = readWorkflow("publish-store.yml");
 
 const SETUP = "Check the set-up of the environment";
 const REFRESH = "Sign in to the Chrome Web Store API with the refresh token";
@@ -38,54 +33,6 @@ const PROVIDER =
   "projects/123456789/locations/global/workloadIdentityPools/github/providers/player-switch";
 const SERVICE_ACCOUNT = "chrome-web-store@a-project.iam.gserviceaccount.com";
 const OIDC_URL = "https://token.actions.example/idtoken?api-version=2.0";
-
-/** The lines of a job, from its key to the key of the next job. */
-const jobLines = (job: string): string[] => {
-  const start = LINES.indexOf(`  ${job}:`);
-  assert.notEqual(start, -1, `the workflow has a job "${job}"`);
-  const end = LINES.findIndex(
-    (line, index) => index > start && /^ {2}\S/.test(line),
-  );
-  return LINES.slice(start, end === -1 ? undefined : end);
-};
-
-/** A step of a job: its condition, its environment and its script. */
-interface Step {
-  readonly if: string | undefined;
-  readonly env: string;
-  readonly run: string;
-}
-
-const step = (job: string, name: string): Step => {
-  const lines = jobLines(job);
-  const start = lines.indexOf(`      - name: ${name}`);
-  assert.notEqual(start, -1, `the job "${job}" has a step "${name}"`);
-  const end = lines.findIndex(
-    (line, index) => index > start && /^ {6}- /.test(line),
-  );
-  const body = lines.slice(start + 1, end === -1 ? undefined : end);
-  /** The lines below a key of the step that are indented deeper than the key. */
-  const block = (key: string): string[] => {
-    const at = body.findIndex((line) => line.startsWith(`        ${key}:`));
-    if (at === -1) {
-      return [];
-    }
-    const after = body.slice(at + 1);
-    const stop = after.findIndex((line) => /^ {0,8}\S/.test(line));
-    return after.slice(0, stop === -1 ? undefined : stop);
-  };
-  const condition = body
-    .find((line) => line.startsWith("        if: "))
-    ?.slice("        if: ".length);
-  return {
-    if: condition,
-    env: block("env").join("\n"),
-    run: `${block("run")
-      .map((line) => line.slice(10))
-      .join("\n")
-      .trimEnd()}\n`,
-  };
-};
 
 /** bash and jq, which the steps need. */
 const tools =

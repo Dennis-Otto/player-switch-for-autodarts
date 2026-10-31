@@ -272,6 +272,8 @@ FAST_CHECK_SEED=1473600459 FAST_CHECK_PATH=42:3:1 npm test
 
 The seed alone replays the same runs from the start and stops at the run count, so without the path give it the run count of the failing run too: `FAST_CHECK_RUNS=10000 FAST_CHECK_SEED=1473600459 npm test`.
 
+An input that broke a property stays with it, in the option `examples` of `fc.assert`, beside the test of that single case, and runs first in every test run.
+
 ## End-to-end tests
 
 The unit tests check `src/` without a browser: the service worker on a fake one, the content script beside a page of happy-dom. The end-to-end tests check what Chrome runs: the manifest, the service worker and the content script built into `lib/`, the Autodarts page, the popup and the switcher. Playwright starts its own Chromium with a new profile for each test and loads the extension from `extension/`, as **Load unpacked** does, and each test taps through it as a player does:
@@ -302,6 +304,8 @@ It builds `extension/lib/` from `src/` and runs every test of `test/e2e/`. `npm 
 A failed test keeps its trace and its screenshots in `test/e2e/results/`. `npx playwright show-trace test/e2e/results/<test>/trace.zip` shows each step with the page, its console and its requests, and `npx playwright show-report test/e2e/report` the report of the run.
 
 The workflow E2E, `.github/workflows/e2e.yml`, runs the tests for a pull request that changes the extension, `src/`, the tests, the packages or the workflow, after every push to `main` and every night, with the Chromium from the cache of the runner. On a failure it keeps the traces, the screenshots and the report as the artifact `e2e-<attempt>` of the run, and the flaky-test bot runs the failed job once more: a test that passes then is flaky, and the bot reports it in its issue. Playwright itself tries no test twice. A pull request that changes none of these, such as one of the documentation, passes the required check `e2e` in seconds.
+
+Each job of the workflow reaches only the hosts that it needs, with [Harden-Runner](https://github.com/step-security/harden-runner) in block mode, and its next step, *Wait until Harden-Runner lets the hosts through*, asks each of these hosts every 3 seconds, for two minutes at most. On the hosted runners of the region `westus2`, GitHub tries a DNS resolver of its own, so that Harden-Runner knows another address of a host than the runner connects to ([step-security/harden-runner#708](https://github.com/step-security/harden-runner/issues/708)). Before v2.22.3 of Harden-Runner, every job there ended badly: a step failed with `ECONNREFUSED`, or the job hung in *Cleaning up orphan processes* until its time limit, and those were the flaky runs of this workflow. The jobs of the workflows Upstream and Chrome Web Store, which this project owns as well, do the same; there, the hang ended a check of Autodarts or a delivery to the store. `test/harden-runner.test.ts` fails for a job of these three workflows with an older Harden-Runner, without the wait, or with other hosts in its `HOSTS` than in its `allowed-endpoints`. A job that needs a new host names it in both.
 
 ## What Autodarts and the next Chrome change
 
