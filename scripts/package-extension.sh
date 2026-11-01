@@ -15,7 +15,9 @@
 # manifest of a release has that version already, as the release bot writes it there; a
 # beta, such as 1.3.0-beta.2, comes from main, whose manifest has the version of the
 # last release: its zip gets 1.3.0, as a manifest takes only numbers, and the whole
-# version as version_name, which Chrome shows. It needs Node and Python 3.
+# version as version_name, which Chrome shows. It holds only the kinds of file below, and
+# stops at any other, so that nothing new reaches the users unnoticed. It needs Node and
+# Python 3.
 set -euo pipefail
 cd "$(dirname "${BASH_SOURCE[0]}")/.."
 
@@ -63,20 +65,53 @@ if release:
 else:
     release = version
 
+# What a package holds, by the path in extension/: all that the extension loads. A file
+# of another kind stops the build; its kind goes into SHIPS when the extension needs it,
+# and into STAYS_OUT when it doesn't.
+SHIPS = re.compile(
+    r"manifest\.json"
+    r"|_locales/[A-Za-z_]+/messages\.json"
+    r"|icons/[a-z0-9-]+\.png"
+    r"|[a-z]+\.(?:html|css)"
+    r"|lib/(?:[a-z0-9-]+/)*[a-z0-9-]+\.js"
+)
+# The configuration of Biome and the source maps, as in shipped() of
+# scripts/check-firefox.mjs.
+STAYS_OUT = re.compile(r"biome\.jsonc|.*\.map")
+paths = sorted(
+    path.relative_to(folder).as_posix() for path in folder.rglob("*") if path.is_file()
+)
+strange = [p for p in paths if not SHIPS.fullmatch(p) and not STAYS_OUT.fullmatch(p)]
+if strange:
+    sys.exit(
+        f"extension/ holds {', '.join(strange)}, of no kind that the package knows: add the"
+        " kind to SHIPS in scripts/package-extension.sh when the extension needs it, or to"
+        " STAYS_OUT when it doesn't."
+    )
+shipped = [p for p in paths if SHIPS.fullmatch(p)]
+# Each file that the manifest names, as a browser refuses a package without it.
+background = manifest.get("background", {})
+named = [
+    manifest.get("action", {}).get("default_popup"),
+    manifest.get("options_ui", {}).get("page"),
+    background.get("service_worker"),
+    *background.get("scripts", []),
+    *manifest.get("icons", {}).values(),
+    *(p for s in manifest.get("content_scripts", []) for p in s.get("js", []) + s.get("css", [])),
+    *(p for e in manifest.get("web_accessible_resources", []) for p in e.get("resources", [])),
+]
+missing = sorted({p for p in named if p is not None} - set(shipped))
+if missing:
+    sys.exit(f"The manifest names {', '.join(missing)}, which the package lacks.")
+
 # Zip files can't hold a time before 1980.
 stamp = time.gmtime(max(int(environ["SOURCE_DATE_EPOCH"]), 315532800))[:6]
-# The configuration of Biome stays out of the zip, as the source maps do; so does
-# shipped() of scripts/check-firefox.mjs.
-files = sorted(
-    path
-    for path in folder.rglob("*")
-    if path.is_file() and path.suffix != ".map" and path.name != "biome.jsonc"
-)
 out.mkdir(parents=True, exist_ok=True)
 target = out / f"player-switch-for-autodarts-{release}.zip"
 with zipfile.ZipFile(target, "w", zipfile.ZIP_STORED) as archive:
-    for path in files:
-        entry = zipfile.ZipInfo(path.relative_to(folder).as_posix(), stamp)
+    for name in shipped:
+        path = folder / name
+        entry = zipfile.ZipInfo(name, stamp)
         entry.compress_type = zipfile.ZIP_STORED
         entry.external_attr = 0o644 << 16
         # Made by Unix on every system, so that Windows makes the same bytes.

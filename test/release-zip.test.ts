@@ -313,6 +313,43 @@ describe("the zip of a release", { skip: skipScripts }, () => {
     }, "exit 3\n");
   });
 
+  test("fails for a file of no kind that the package knows, and writes no zip", () => {
+    inProject((dir, script) => {
+      writeFileSync(join(dir, "extension/notes.txt"), "a note\n");
+      const result = script("release-assets", join(dir, "out"), "1.2.0");
+      assert.equal(result.status, 1);
+      assert.match(result.stderr, /extension\/ holds notes\.txt, of no kind/);
+      assert.equal(existsSync(join(dir, "out")), false);
+    });
+  });
+
+  test("fails for a file that the manifest names and the package lacks", () => {
+    inProject((dir, script) => {
+      writeFileSync(
+        join(dir, "extension/manifest.json"),
+        JSON.stringify({
+          ...MANIFEST,
+          action: { default_popup: "popup.html" },
+          options_ui: { page: "options.html" },
+          background: {
+            service_worker: "lib/background.js",
+            scripts: ["lib/background.js"],
+          },
+          icons: { 16: "icons/icon-16.png" },
+          content_scripts: [{ js: ["lib/content.js"], css: ["page.css"] }],
+          web_accessible_resources: [{ resources: ["switcher.html"] }],
+        }),
+      );
+      const result = script("release-assets", join(dir, "out"), "1.2.0");
+      assert.equal(result.status, 1);
+      assert.match(
+        result.stderr,
+        /names icons\/icon-16\.png, lib\/content\.js, options\.html, page\.css, switcher\.html, which the package lacks/,
+      );
+      assert.equal(existsSync(join(dir, "out")), false);
+    });
+  });
+
   test("takes a folder and a version, as the hook of the release passes them", () => {
     inProject((_dir, script) => {
       const result = script("release-assets");
@@ -340,6 +377,8 @@ interface Run {
   readonly output: string;
   /** The arguments of each call of gh. */
   readonly calls: string[];
+  /** The sum of the zip of the release. */
+  readonly sha256: string;
 }
 
 /**
@@ -430,6 +469,12 @@ const take = (
       summary: readFileSync(paths.GITHUB_STEP_SUMMARY, "utf8"),
       output: readFileSync(paths.GITHUB_OUTPUT, "utf8"),
       calls: readFileSync(paths.FAKE_CALLS, "utf8").trim().split("\n"),
+      sha256:
+        files === undefined
+          ? ""
+          : createHash("sha256")
+              .update(readFileSync(join(dir, "fake.zip")))
+              .digest("hex"),
     };
   } finally {
     rmSync(dir, { recursive: true, force: true });
@@ -447,11 +492,12 @@ describe("the job that takes the zip of the release", () => {
     const result = take(manifest("1.2.0"));
     assert.equal(result.status, 0, result.stdout);
     assert.deepEqual(result.calls, [THE_VIEW, THE_DOWNLOAD, THE_VERIFY]);
-    assert.equal(result.output, `zip=${ZIP}\n`);
+    assert.equal(result.output, `zip=${ZIP}\nsha256=${result.sha256}\n`);
     assert.match(
       result.summary,
       /carries the version 1\.2\.0 and the provenance/,
     );
+    assert.ok(result.summary.includes(`\`${result.sha256}\``));
   });
 
   test("sends nothing to the store from a release without the zip", {
@@ -559,6 +605,107 @@ describe("the job that takes the zip of the release", () => {
       has("store", /^ {6}ZIP: dist\/\$\{\{ needs\.package\.outputs\.zip \}\}$/),
     );
   });
+});
+
+describe("the job that uploads", () => {
+  const SAME = "Check that it is the zip of the release, byte for byte";
+  const compare = (
+    sum: string,
+  ): {
+    readonly status: number | null;
+    readonly stdout: string;
+    readonly summary: string;
+  } => {
+    const dir = mkdtempSync(join(tmpdir(), "release-zip-same-"));
+    try {
+      mkdirSync(join(dir, "dist"));
+      writeFileSync(join(dir, "dist", ZIP), "the zip");
+      const summary = join(dir, "summary.md");
+      writeFileSync(summary, "");
+      writeFileSync(join(dir, "step.sh"), step("store", SAME).run);
+      const result = spawnSync(
+        "bash",
+        ["--noprofile", "--norc", "-e", join(dir, "step.sh")],
+        {
+          cwd: dir,
+          encoding: "utf8",
+          env: {
+            PATH: process.env.PATH ?? "",
+            TAG: "v1.2.0",
+            ZIP: `dist/${ZIP}`,
+            SHA256: sum,
+            GITHUB_STEP_SUMMARY: summary,
+          },
+        },
+      );
+      return {
+        status: result.status,
+        stdout: result.stdout,
+        summary: readFileSync(summary, "utf8"),
+      };
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  };
+
+  test("goes on with the bytes that the job before it checked", {
+    skip: skipScripts,
+  }, () => {
+    const sum = createHash("sha256").update("the zip").digest("hex");
+    assert.equal(compare(sum).status, 0);
+  });
+
+  for (const [what, sum, named] of [
+    ["other bytes", "0".repeat(64), "0".repeat(64)],
+    ["no sum from the job before it", "", "unknown"],
+  ] as const) {
+    test(`keeps a zip off the store with ${what}`, {
+      skip: skipScripts,
+    }, () => {
+      const result = compare(sum);
+      assert.equal(result.status, 1);
+      assert.match(result.stdout, /^::error title=Chrome Web Store::/m);
+      assert.ok(result.summary.includes(`whose sha256 is ${named}`));
+    });
+  }
+
+  test("compares the bytes before it signs in", () => {
+    const lines = jobLines("store");
+    const at = (name: string): number => lines.indexOf(`      - name: ${name}`);
+    assert.notEqual(at(SAME), -1);
+    assert.ok(
+      at(SAME) <
+        at("Sign in to the Chrome Web Store API with the refresh token"),
+    );
+    assert.ok(
+      lines.some((line) =>
+        /^ {6}SHA256: \$\{\{ needs\.package\.outputs\.sha256 \}\}$/.test(line),
+      ),
+    );
+    assert.ok(
+      jobLines("package").some((line) =>
+        /^ {6}sha256: \$\{\{ steps\.zip\.outputs\.sha256 \}\}$/.test(line),
+      ),
+    );
+  });
+});
+
+describe("the jobs of the store workflow", () => {
+  // A job that ends while Harden-Runner removes Docker can hang until its time limit.
+  for (const job of ["status", "package", "store"]) {
+    test(`"${job}" ends with waiting for Harden-Runner`, () => {
+      const lines = jobLines(job);
+      const names = lines.filter((line) => line.startsWith("      - name: "));
+      assert.equal(
+        names.at(-1),
+        "      - name: Wait until Harden-Runner has removed Docker",
+      );
+      assert.equal(
+        step(job, "Wait until Harden-Runner has removed Docker").if,
+        "always()",
+      );
+    });
+  }
 });
 
 describe("the settings of the release", () => {
