@@ -28,9 +28,10 @@ Option 3, with `copier update --data project_type=chrome-extension`.
 
 The update pull requests of the blueprint now keep the delivery current. A test here, `test/store-kind.test.ts`, keeps the settings that it depends on, and that the lint for Firefox reads what the package holds.
 
-Four things that this project had are gone until they reach the blueprint, each a smaller loss than a second copy of the workflow:
+Five things that this project had are gone until they reach the blueprint, each a smaller loss than a second copy of the workflow:
 
 - The job that uploads no longer compares its artifact with the sha256 of the job before it, and the summary of the run no longer names that sum. The provenance of the zip is checked as before, and an artifact keeps its digest within a run.
 - A refusal with `INVALID_ITEM_METADATA` names everything that the version asks for, not only what is new since the version in the store.
 - A review that begins while a run delivers fails that run, with the answer of the store, where it used to end with a note. The next daily run delivers the release.
 - The zip is compressed rather than stored, about 110 KB instead of 330 KB, so another build of zlib may make other bytes around the same files. The build of a release no longer starts from an empty `extension/lib/`, which a clean checkout has anyway.
+- The zip is no longer built in the job `project-assets` of `build-release.yml`, which may only read and has no environment. The step *Package the Chrome extension* runs `npm ci --ignore-scripts` and `npm run build` in the job `assets`, which has `id-token: write`, `attestations: write` and `contents: write` and the environment `release`. So code of an npm package, such as `typescript`, runs where it can reach the OIDC token, and a compromised one could attest a file of its own as `build-release.yml`, which is the provenance that `publish-store.yml` trusts. The lock file and the check *dependency-review* of each update stand against it until the blueprint builds the zip in the job that only reads and hands it to `assets` as an artifact, as its decision 0084 does for the hook.

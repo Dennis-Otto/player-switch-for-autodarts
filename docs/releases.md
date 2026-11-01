@@ -4,17 +4,17 @@ How a change becomes a release, and how a release reaches the Chrome Web Store. 
 
 ## How a release is made
 
-Every change reaches `main` through a pull request whose title follows [Conventional Commits](https://www.conventionalcommits.org/). The release bot keeps a pull request titled `chore: release x.y.z` open with the next version, decided from the titles merged since the last release (`fix` a patch, `feat` a minor, `!` a major version), and with the text of *Unreleased* in [the changelog](https://github.com/Dennis-Otto/player-switch-for-autodarts/blob/main/CHANGELOG.md) as its notes. Merging that pull request publishes the release on GitHub, with the zip of the extension, its SBOMs, third-party notices and the signed provenance of an isolated build, and raises the version in `package.json` and in `extension/manifest.json` together, so the extension always carries the version of its release.
+Every change reaches `main` through a pull request whose title follows [Conventional Commits](https://www.conventionalcommits.org/). The release bot keeps a pull request titled `chore: release x.y.z` open with the next version, decided from the titles merged since the last release (`fix` a patch, `feat` a minor, `!` a major version), and with the text of *Unreleased* in [the changelog](https://github.com/Dennis-Otto/player-switch-for-autodarts/blob/main/CHANGELOG.md) as its notes. Merging that pull request publishes the release on GitHub, with the zip of the extension, its SBOMs, third-party notices and the signed provenance of its build, and raises the version in `package.json` and in `extension/manifest.json` together, so the extension always carries the version of its release.
 
 [CONTRIBUTING](https://github.com/Dennis-Otto/player-switch-for-autodarts/blob/main/CONTRIBUTING.md) has the rules for changes; [SECURITY.md](https://github.com/Dennis-Otto/player-switch-for-autodarts/blob/main/SECURITY.md) says how to report a vulnerability, and [the package of a release](#the-package-of-a-release) how to verify the zip.
 
 ## The package of a release
 
-Every release carries the extension ready to load, `player-switch-for-autodarts-<version>.zip`, with `manifest.json` at its root, as the Chrome Web Store takes it and as a player loads it unpacked. The isolated build of the release makes it: `build-release.yml` runs `scripts/package-extension.sh` at the commit of the signed tag, describes the zip in the SBOMs, attests it and attaches it to the draft, before the release is published and immutable, and `verify-release.yml` checks that it holds the manifest of its version. So there is one package, for the players and for the store ([decision 0013](decisions/0013-send-the-store-the-zip-that-the-release-attests.md), [decision 0014](decisions/0014-take-the-chrome-extension-kind-of-the-blueprint.md)).
+Every release carries the extension ready to load, `player-switch-for-autodarts-<version>.zip`, with `manifest.json` at its root, as the Chrome Web Store takes it and as a player loads it unpacked. The build of the release makes it: `build-release.yml` runs `scripts/package-extension.sh` at the commit of the signed tag, describes the zip in the SBOMs, attests it and attaches it to the draft, before the release is published and immutable, and `verify-release.yml` checks that it holds the manifest of its version. So there is one package, for the players and for the store ([decision 0013](decisions/0013-send-the-store-the-zip-that-the-release-attests.md), [decision 0014](decisions/0014-take-the-chrome-extension-kind-of-the-blueprint.md)).
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="images/diagrams/one-zip.dark.svg">
-  <img src="images/diagrams/one-zip.svg" alt="One zip for the players and for the store: From the signed tag, the isolated build of the release runs scripts/package-extension.sh, describes the zip in the SBOMs, attests it and attaches it to the draft, and the published release can't change any more. A player downloads the zip and loads it unpacked. publish-store.yml checks its signed provenance and its version, and the Chrome Web Store gets exactly that file; a release without the zip, a zip without a valid provenance or of another version stays off the store, and the run fails.">
+  <img src="images/diagrams/one-zip.svg" alt="One zip for the players and for the store: From the signed tag, the build of the release runs scripts/package-extension.sh, describes the zip in the SBOMs, attests it and attaches it to the draft, and the published release can't change any more. A player downloads the zip and loads it unpacked. publish-store.yml checks its signed provenance and its version, and the Chrome Web Store gets exactly that file; a release without the zip, a zip without a valid provenance or of another version stays off the store, and the run fails.">
 </picture>
 
 Anyone can check that a zip is the one that the release built:
@@ -145,7 +145,7 @@ A pool of Workload Identity Federation in the Google Cloud project takes the OID
     gh workflow run publish-store.yml
     ```
 
-4. Once that run passes, the secrets of the other way are of no use and could still publish a version, and each run warns of them until they are gone. Delete them, delete the OAuth client under **APIs & Services → Credentials** of the project, which ends the refresh token at Google too, and remove the line `secrets = [...]` of `[environments.chrome-web-store]` from [`repository.project.toml`](https://github.com/Dennis-Otto/player-switch-for-autodarts/blob/main/.github/repository.project.toml) in a pull request; the table itself stays, as it keeps the environment to `main`:
+4. Once that run passes, the secrets of the other way are of no use and could still publish a version, and each run warns of them until they are gone. Delete them, delete the OAuth client under **APIs & Services → Credentials** of the project, which ends the refresh token at Google too. The environment stays, as it keeps the delivery to `main`, and its table in [`repository.toml`](https://github.com/Dennis-Otto/player-switch-for-autodarts/blob/main/.github/repository.toml) names no secret:
 
     ```sh
     gh secret delete CWS_CLIENT_ID --env chrome-web-store
@@ -172,7 +172,7 @@ Nothing of this expires: the access token lasts 20 minutes, longer than either j
     ```
 
     The answer holds the `refresh_token`.
-4. Set the three secrets in the environment `chrome-web-store`, which the settings bot creates from [`repository.project.toml`](https://github.com/Dennis-Otto/player-switch-for-autodarts/blob/main/.github/repository.project.toml):
+4. Set the three secrets in the environment `chrome-web-store`, which the settings bot creates from [`repository.toml`](https://github.com/Dennis-Otto/player-switch-for-autodarts/blob/main/.github/repository.toml):
 
     ```sh
     gh secret set CWS_CLIENT_ID --env chrome-web-store
@@ -201,7 +201,7 @@ A failed run names the reason and the fix in its summary and in an annotation, a
 - **In review for more than 7 days**: look in the dashboard whether Google asks for anything, or contact the support of the Chrome Web Store. A new permission makes a review take longer.
 - **A higher version in the store**: a version went to the store by hand without its release; release a version above it.
 - **The release has no zip**: a release made before the zip has none, and a release takes no file once it is published, so release a new version. For a newer release, the log of its job *release assets* in the Release workflow says why it built none.
-- **The zip has no valid provenance, or another version**: unless the log of the step shows a network error, for which the next daily run tries again, the file isn't what the isolated build attested for this tag. Don't upload it by hand. `gh attestation verify`, as in [the package of a release](#the-package-of-a-release), and the run of the Release workflow show what differs; a release from another branch than `main` fails here as well. Release a new version from `main`.
+- **The zip has no valid provenance, or another version**: unless the log of the step shows a network error, for which the next daily run tries again, the file isn't what the build of the release attested for this tag. Don't upload it by hand. `gh attestation verify`, as in [the package of a release](#the-package-of-a-release), and the run of the Release workflow show what differs; a release from another branch than `main` fails here as well. Release a new version from `main`.
 
 A run that failed for a reason of GitHub or of the network needs nothing: the next daily run delivers the release.
 

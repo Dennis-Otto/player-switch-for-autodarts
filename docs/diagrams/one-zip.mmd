@@ -5,10 +5,10 @@ config:
 ---
 flowchart TB
     accTitle: One zip for the players and for the store
-    accDescr: From the signed tag, the isolated build of the release runs scripts/package-extension.sh, describes the zip in the SBOMs, attests it and attaches it to the draft, and the published release can't change any more. A player downloads the zip and loads it unpacked. publish-store.yml checks its signed provenance and its version, and the Chrome Web Store gets exactly that file; a release without the zip, a zip without a valid provenance or of another version stays off the store, and the run fails.
+    accDescr: From the signed tag, the build of the release runs scripts/package-extension.sh, describes the zip in the SBOMs, attests it and attaches it to the draft, and the published release can't change any more. A player downloads the zip and loads it unpacked. publish-store.yml checks its signed provenance and its version, and the Chrome Web Store gets exactly that file; a release without the zip, a zip without a valid provenance or of another version stays off the store, and the run fails.
 
     tag["The signed tag of the release"]
-    hook["The isolated build of the release<br>runs scripts/package-extension.sh"]
+    hook["The build of the release<br>runs scripts/package-extension.sh"]
     attest["It describes the zip in the SBOMs,<br>attests it and attaches it to the draft"]
     release["The published release,<br>which can't change any more"]
     player["A player downloads the zip<br>and loads it unpacked"]
