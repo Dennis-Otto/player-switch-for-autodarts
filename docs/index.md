@@ -133,9 +133,24 @@ Over days and weeks, a saved account moves between these states:
 
 ## Which browsers {#browsers}
 
-- **Google Chrome 140 or newer**, and other browsers built on Chromium 140 or newer, from the Chrome Web Store once the listing is live, or [loaded unpacked](https://github.com/Dennis-Otto/player-switch-for-autodarts#install).
-- **Microsoft Edge 140 or newer** runs the same package: turn on **Allow extensions from other stores** under `edge://extensions` and install it from the Chrome Web Store, or load it unpacked. A listing in Edge Add-ons follows.
-- **Firefox 140 or newer**, to try it out, as a preview not yet tested by hand in Firefox: until the add-on is listed on addons.mozilla.org, load it as a temporary add-on in `about:debugging`, which Firefox removes when it closes. The add-on's page in `about:addons` lists, and addons.mozilla.org will ask at the install, that the add-on sends authentication information, which goes to the sign-in service of Autodarts alone. Firefox can't keep the extension's storage from its script in the Autodarts page, so a display in a club or a pub runs Chrome or Edge: [the security design](security.md#firefox) says why. Firefox for Android is not tested.
+- **Google Chrome 140 or newer**, and other browsers built on Chromium 140 or newer, such as Brave, Opera and Vivaldi, from the Chrome Web Store once the listing is live, or [from a release](#install-from-a-release).
+- **Microsoft Edge 140 or newer** runs the same package: turn on **Allow extensions from other stores** under `edge://extensions` and install it from the Chrome Web Store, or load it [from a release](#install-from-a-release). A listing in Edge Add-ons follows.
+- **Firefox 140 or newer**, to try it out, as a preview not yet tested by hand in Firefox: until the add-on is listed on addons.mozilla.org, unzip [a release](#install-from-a-release) and load its `manifest.json` as a temporary add-on in `about:debugging`, which Firefox removes when it closes. The add-on's page in `about:addons` lists, and addons.mozilla.org will ask at the install, that the add-on sends authentication information, which goes to the sign-in service of Autodarts alone. Firefox can't keep the extension's storage from its script in the Autodarts page, so a display in a club or a pub runs Chrome or Edge: [the security design](security.md#firefox) says why. Firefox for Android is not tested.
+
+## Install without the store {#install-from-a-release}
+
+Every release carries the extension ready to load, the very file that goes to the Chrome Web Store. It needs no Node.js and no build:
+
+1. Under **Assets** of the [latest release](https://github.com/Dennis-Otto/player-switch-for-autodarts/releases/latest), download `player-switch-for-autodarts-<version>.zip`.
+2. Unzip it into a folder that stays, such as `Documents/Player Switch`: the browser reads the extension from there each time it starts.
+3. Open `chrome://extensions`, or `edge://extensions` in Edge, turn on **Developer mode**, choose **Load unpacked** and pick that folder, the one with `manifest.json` in it.
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="images/load-unpacked.dark.png">
+  <img src="images/load-unpacked.png" alt="The top of the page chrome://extensions: the switch Developer mode at the top right is on, and Load unpacked, the first of three buttons below the title Extensions, appears with it. Both are marked.">
+</picture>
+
+A copy loaded this way gets no update by itself. For a new version, replace the contents of the folder with those of the new zip and choose the reload arrow of Player Switch on that page. Leave the folder where it is: the browser ties the saved accounts to its path, so a copy in another folder starts without them.
 
 ## Good to know
 

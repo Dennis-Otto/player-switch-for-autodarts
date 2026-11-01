@@ -5,7 +5,9 @@ real popup.html or switcher.html in a frame, with chrome-stub.js in place of Chr
 and made-up accounts. Every file comes from the repository through a route of the
 browser, and every other request fails, so that the network can't change a picture.
 The size, the scale, the scheme and the data of each picture are fixed, and so are
-its pixels.
+its pixels. The one picture of a page of the browser itself, chrome://extensions for
+the install from a release, comes from the whole Chromium of the image, as the
+headless one has no such page.
 
 Usage: python3 capture.py OUT, which writes each picture below OUT at its path in
 the repository.
@@ -15,15 +17,17 @@ from __future__ import annotations
 
 import io
 import mimetypes
+import os
 import subprocess
 import sys
+import tempfile
 from dataclasses import dataclass
 from pathlib import Path
 from urllib.parse import parse_qs, unquote, urlsplit
 
 import imageio_ffmpeg
 from PIL import Image
-from playwright.sync_api import Browser, Page, Route, sync_playwright
+from playwright.sync_api import Browser, Page, Playwright, Route, sync_playwright
 
 ROOT = Path(__file__).resolve().parents[2]
 ORIGIN = "http://harness.test"
@@ -39,6 +43,13 @@ OVERFLOWS = """() => [document, ...[...document.querySelectorAll("iframe")].map(
         return root.scrollHeight > root.clientHeight || root.scrollWidth > root.clientWidth
             || (panel !== null && panel.scrollHeight > panel.clientHeight);
     })"""
+# The ring around a control that a picture of the browser points at, in the amber of the
+# steps for a person in the diagrams.
+MARK = """(control) => {
+    control.style.outline = "3px solid #f59e0b";
+    control.style.outlineOffset = "4px";
+    control.style.borderRadius = "8px";
+}"""
 
 
 @dataclass(frozen=True)
@@ -310,8 +321,40 @@ def film(gif: Path, first: Image.Image) -> None:
         print(f"{made.relative_to(gif.parents[2])}: {size} KiB", file=sys.stderr)
 
 
+def load_unpacked(playwright: Playwright, out: Path) -> None:
+    """The top of chrome://extensions in the language of the page, with Developer mode
+    on and what the install from a release asks for marked. Without an extension in
+    the picture, a release doesn't change its pixels."""
+    for lang, path, dark in variants("load-unpacked", "png"):
+        # A profile of its own, as Chromium opens no such page in the private profile
+        # of a new context, and a browser for each language, which it reads as it starts.
+        with tempfile.TemporaryDirectory() as profile:
+            context = playwright.chromium.launch_persistent_context(
+                profile,
+                executable_path=str(whole_chromium()),
+                args=[f"--lang={lang}"] + (["--force-dark-mode"] if dark else []),
+                env={**os.environ, "LANGUAGE": lang},
+                viewport={"width": 800, "height": 260},
+                device_scale_factor=2,
+                color_scheme="dark" if dark else "light",
+                reduced_motion="reduce",
+            )
+            page = context.pages[0]
+            page.goto("chrome://extensions/")
+            page.locator("extensions-toolbar #devMode").click()
+            page.locator("extensions-toolbar #loadUnpacked").wait_for(state="visible")
+            for control in ("#devMode", "#loadUnpacked"):
+                page.locator(f"extensions-toolbar {control}").evaluate(MARK)
+            data = page.locator("extensions-toolbar").screenshot(
+                animations="disabled", caret="hide", scale="device"
+            )
+            save(Image.open(io.BytesIO(data)).convert("RGB"), out, path)
+            context.close()
+
+
 def main(out: Path) -> None:
     with sync_playwright() as playwright:
+        load_unpacked(playwright, out)
         # The browser of the image, whichever version of Playwright drives it.
         browser = playwright.chromium.launch(executable_path=str(chromium()))
         for shot in shots():
@@ -325,6 +368,15 @@ def main(out: Path) -> None:
             animation(switch(page), out, path)
             page.context.close()
         browser.close()
+
+
+def whole_chromium() -> Path:
+    """The whole Chromium of the Playwright image, whose pages of its own the headless
+    one lacks."""
+    found = sorted(Path("/ms-playwright").glob("chromium-*/chrome-linux*/chrome"))
+    if not found:
+        raise SystemExit("The Playwright image has no Chromium in /ms-playwright.")
+    return found[-1]
 
 
 def chromium() -> Path:
