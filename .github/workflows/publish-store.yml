@@ -18,7 +18,11 @@ name: Chrome Web Store
 # scripts/package-extension.sh, without any secret, checks that the manifest carries
 # the version of the release and keeps the zip as an artifact of the run for 30 days.
 # The job "store" uploads that zip with the Chrome Web Store API and submits it for
-# review; it runs no code of the repository and no npm package.
+# review; it runs no code of the repository and no npm package. When the store refuses
+# with INVALID_ITEM_METADATA, the dashboard lacks something that the version needs, and
+# the run fails and names what the release asks for beyond the version of the store,
+# which the job "status" found with scripts/store-new-asks.ts. A review that began after
+# that job asked is no failure: the run ends with a note, and a later day delivers.
 #
 # Each job lets its runner reach only the hosts that it needs, and
 # scripts/check-project.sh fails when a job of this workflow goes back to recording
@@ -87,6 +91,8 @@ jobs:
       tag: ${{ steps.decide.outputs.tag }}
       # How the job "store" signs in: keyless or refresh-token.
       sign-in: ${{ steps.setup.outputs.sign-in }}
+      # What the job "store" names when the store refuses the submission.
+      new-asks: ${{ steps.asks.outputs.new-asks }}
     steps:
       - name: Let the job reach only the hosts that it needs
         uses: step-security/harden-runner@46b06cea07f9e64621fdf066ba77ac6915163d43 # v2.22.3
@@ -377,6 +383,16 @@ jobs:
           SUBMITTED_AT: ${{ steps.store.outputs.at }}
           SUBMITTED_FROM: ${{ steps.store.outputs.from }}
         run: node scripts/store-status.ts
+      # Here, as the job "store" reaches only Google. A warned item fails the step above
+      # and still gets the release, and with it this step.
+      - name: Find what the release asks for beyond the version of the store
+        id: asks
+        if: ${{ !cancelled() && steps.decide.outputs.tag != '' }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+          STATUS: ${{ runner.temp }}/status.json
+          TAG: ${{ steps.decide.outputs.tag }}
+        run: node scripts/store-new-asks.ts
 
   package:
     name: the package of the release
@@ -628,41 +644,79 @@ jobs:
           [[ -n "$token" ]] || fail "Google's answer holds no access token of the service account."
           echo "::add-mask::$token"
           printf 'Authorization: Bearer %s\n' "$token" > "$RUNNER_TEMP/authorization"
-      - name: Upload the zip
+      - name: Upload the zip and submit it for review
+        env:
+          NEW_ASKS: ${{ needs.status.outputs.new-asks }}
         run: |
           set -euo pipefail
-          response="$RUNNER_TEMP/upload.json"
+          response="$RUNNER_TEMP/store.json"
+          status="$RUNNER_TEMP/status.json"
+          fail() {
+            local annotation="${1//'%'/%25}"
+            annotation="${annotation//$'\r'/%0D}"
+            annotation="${annotation//$'\n'/%0A}"
+            echo "::error title=Chrome Web Store::$annotation"
+            echo "- **Problem:** $1" >> "$GITHUB_STEP_SUMMARY"
+            exit 1
+          }
+          # The store takes no new version during a review, which may have begun since the
+          # job "status" asked: in the dashboard, or with a submission whose answer curl
+          # never got and sent again. The API documents no error for it, so the status of
+          # the item decides. Then the refusal is no failure, and a later day delivers.
+          refused() {
+            cat "$response" 2>/dev/null || true
+            # The annotation starts on a line of its own, whatever the answer ended with.
+            echo
+            if curl --fail-with-body --silent --show-error --retry 3 --retry-connrefused \
+              --connect-timeout 15 --max-time 60 --output "$status" \
+              --header @"$RUNNER_TEMP/authorization" "$ITEM:fetchStatus" &&
+              [[ "$(jq -r '.submittedItemRevisionStatus.state // empty' "$status" 2>/dev/null || true)" == PENDING_REVIEW ]]; then
+              submitted="$(jq -r '.submittedItemRevisionStatus.distributionChannels[0].crxVersion // empty' "$status")"
+              if [[ "$submitted" == "${TAG#v}" ]]; then
+                echo "$TAG is in review already; Google publishes it after the review." | tee -a "$GITHUB_STEP_SUMMARY"
+              else
+                echo "The store reviews ${submitted:-a submission} and takes no new version until the review ends; the daily run delivers $TAG after it." | tee -a "$GITHUB_STEP_SUMMARY"
+              fi
+              exit 0
+            fi
+            fail "$1"
+          }
           curl --fail-with-body --silent --show-error --retry 3 --retry-connrefused \
             --connect-timeout 15 --max-time 600 --output "$response" \
             --header @"$RUNNER_TEMP/authorization" --request POST --upload-file "$ZIP" "$UPLOAD" ||
-            { cat "$response"; echo "::error::The store refused the upload of $ZIP."; exit 1; }
+            refused "The store refused the upload of $ZIP."
           state="$(jq -r '.uploadState // empty' "$response")"
           # The store may go on processing the upload after its answer; the status of the
           # item says when it is done.
           for _ in $(seq 1 20); do
             [[ "$state" == IN_PROGRESS || "$state" == UPLOAD_IN_PROGRESS ]] || break
             sleep 15
+            # A call that gets no answer leaves the file as it was, and an earlier answer
+            # in the log would read as the store's answer to this one.
+            rm -f "$response"
             curl --fail-with-body --silent --show-error --retry 3 --retry-connrefused \
               --connect-timeout 15 --max-time 60 --output "$response" \
               --header @"$RUNNER_TEMP/authorization" "$ITEM:fetchStatus" ||
-              { cat "$response"; echo "::error::The store didn't tell the status of the upload."; exit 1; }
+              refused "The store didn't tell the status of the upload."
             state="$(jq -r '.lastAsyncUploadState // empty' "$response")"
           done
           if [[ "$state" != SUCCEEDED ]]; then
-            cat "$response"
-            echo "::error::The upload of $ZIP ended in the state ${state:-unknown}."
-            exit 1
+            refused "The upload of $ZIP ended in the state ${state:-unknown}."
           fi
           echo "The store took the upload of $ZIP." | tee -a "$GITHUB_STEP_SUMMARY"
-      - name: Submit the release for review
-        run: |
-          set -euo pipefail
-          response="$RUNNER_TEMP/publish.json"
-          curl --fail-with-body --silent --show-error --retry 3 --retry-connrefused \
+          rm -f "$response"
+          if ! curl --fail-with-body --silent --show-error --retry 3 --retry-connrefused \
             --connect-timeout 15 --max-time 120 --output "$response" \
             --header @"$RUNNER_TEMP/authorization" --header 'Content-Type: application/json' \
-            --request POST --data '{}' "$ITEM:publish" ||
-            { cat "$response"; echo "::error::The store refused to publish the release $TAG."; exit 1; }
+            --request POST --data '{}' "$ITEM:publish"; then
+            reason="$(jq -r '[.error.details[]?.reason? | strings] | first // empty' "$response" 2>/dev/null || true)"
+            if [[ "$reason" == INVALID_ITEM_METADATA ]]; then
+              link="$(jq -r '[.error.details[]?.links[]?.url? | strings] | first // empty' "$response" 2>/dev/null || true)"
+              refused "The store took the upload of $TAG but refused to submit it for review (INVALID_ITEM_METADATA): the Developer Dashboard lacks something that this version needs, and the API of the store can't set it. ${NEW_ASKS:+$NEW_ASKS }Under Privacy practices, paste the justifications from Permission justifications in store/listing.en.md; under Store listing, paste each new language from its file in store/; saving the draft shows whatever else is missing: ${link:-https://chrome.google.com/webstore/devconsole}. Then start this workflow by hand with gh workflow run publish-store.yml -f tag=$TAG, or leave it to the daily run. 'When a run fails' in docs/releases.md has the steps."
+            fi
+            detail="$(jq -r '.error.message // empty' "$response" 2>/dev/null || true)"
+            refused "The store refused to submit the release $TAG for review${reason:+ ($reason)}${detail:+: $detail}"
+          fi
           jq -r '.warningInfo.warnings[]? | "::warning::\(.reason): \(.description)"' "$response"
           state="$(jq -r '.state // empty' "$response")"
           case "$state" in
@@ -674,7 +728,7 @@ jobs:
               ;;
             *)
               cat "$response"
-              echo "::error::The submission of the release $TAG ended in the state ${state:-unknown}."
-              exit 1
+              echo
+              fail "The submission of the release $TAG ended in the state ${state:-unknown}."
               ;;
           esac

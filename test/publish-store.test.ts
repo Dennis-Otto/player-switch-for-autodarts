@@ -2,9 +2,10 @@
 // (decision 0010): the check of its set-up chooses between the refresh token and the
 // sign-in without a stored secret, only the two jobs that talk to the store may ask
 // GitHub for an OIDC token, the sign-in without a secret is the same in both, and it
-// runs against a fake curl that answers as GitHub and Google do. The steps run in bash
-// with jq, as on the runner; on a computer without them those tests skip, other than
-// in the CI.
+// runs against a fake curl that answers as GitHub and Google do. The delivery runs
+// against the same curl: what it says when the store refuses a submission, and that a
+// review that began in the meantime is no failure. The steps run in bash with jq, as
+// on the runner; on a computer without them those tests skip, other than in the CI.
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
 import {
@@ -28,6 +29,8 @@ const { text: WORKFLOW, jobLines, step } = readWorkflow("publish-store.yml");
 const SETUP = "Check the set-up of the environment";
 const REFRESH = "Sign in to the Chrome Web Store API with the refresh token";
 const KEYLESS = "Sign in to the Chrome Web Store API with GitHub's OIDC token";
+const ASKS = "Find what the release asks for beyond the version of the store";
+const DELIVER = "Upload the zip and submit it for review";
 
 const PROVIDER =
   "projects/123456789/locations/global/workloadIdentityPools/github/providers/player-switch";
@@ -99,6 +102,9 @@ const runStep = (
     mkdirSync(temp);
     writeFileSync(join(bin, "curl"), FAKE_CURL);
     chmodSync(join(bin, "curl"), 0o755);
+    // No test waits for the store to go on processing an upload.
+    writeFileSync(join(bin, "sleep"), "#!/usr/bin/env bash\n");
+    chmodSync(join(bin, "sleep"), 0o755);
     writeFileSync(join(dir, "step.sh"), script);
     const files = {
       summary: join(dir, "summary.md"),
@@ -204,6 +210,378 @@ describe("the jobs of the store", () => {
       jobLines("status").join("\n"),
       /^ {6}sign-in: \$\{\{ steps\.setup\.outputs\.sign-in \}\}$/m,
     );
+  });
+
+  test("the job that reaches GitHub finds what the release asks for, and the job that delivers names it", () => {
+    const status = jobLines("status");
+    const decides = status.indexOf("        run: node scripts/store-status.ts");
+    const finds = status.indexOf("        run: node scripts/store-new-asks.ts");
+    assert.notEqual(decides, -1);
+    assert.ok(finds > decides, "it runs after the decision");
+    // Also for a warned item, which fails the decision and still gets the release.
+    assert.match(
+      step("status", ASKS).if ?? "",
+      /^\$\{\{ !cancelled\(\) && steps\.decide\.outputs\.tag != '' \}\}$/,
+    );
+    assert.match(
+      status.join("\n"),
+      /^ {6}new-asks: \$\{\{ steps\.asks\.outputs\.new-asks \}\}$/m,
+    );
+    const delivery = step("store", DELIVER);
+    assert.match(
+      delivery.env.trim(),
+      /^NEW_ASKS: \$\{\{ needs\.status\.outputs\.new-asks \}\}$/,
+    );
+    assert.doesNotMatch(delivery.run, /\$\{\{/);
+  });
+
+  test("the job that delivers runs no code of the repository", () => {
+    assert.deepEqual(
+      jobLines("store").filter((line) =>
+        /actions\/checkout|node |npm /.test(line),
+      ),
+      [],
+    );
+  });
+});
+
+describe("the delivery", { skip }, () => {
+  const STORE = "https://chromewebstore.googleapis.com";
+  const ITEM = `${STORE}/v2/publishers/p/items/i`;
+  const UPLOAD = `${STORE}/upload/v2/publishers/p/items/i:upload`;
+  const ZIP = "dist/player-switch-for-autodarts-1.0.0.zip";
+  const EDIT_LINK = "https://chrome.google.com/webstore/devconsole/p/i/edit";
+  const NEW_ASKS =
+    "What v1.0.0 asks for beyond the store's version 0.2.0: the permissions scripting and unlimitedStorage; the web-accessible page switcher.html; the languages es, fr, and nl.";
+  const SUBMIT_REFUSED = {
+    message:
+      "Your submission does not meet the requirements to be published in the store. Check the Developer Dashboard for steps to resolve.",
+    status: "INVALID_ARGUMENT",
+    code: 400,
+  };
+  // The answer of the store that refused 1.0.0 on 2026-10-25.
+  const LACKS_SOMETHING = JSON.stringify({
+    error: {
+      ...SUBMIT_REFUSED,
+      details: [
+        {
+          "@type": "type.googleapis.com/google.rpc.ErrorInfo",
+          reason: "INVALID_ITEM_METADATA",
+          domain: "chromewebstore.googleapis.com",
+          metadata: { itemId: "i", publisherId: "p" },
+        },
+        {
+          "@type": "type.googleapis.com/google.rpc.LocalizedMessage",
+          locale: "en-US",
+          message: SUBMIT_REFUSED.message,
+        },
+        {
+          "@type": "type.googleapis.com/google.rpc.Help",
+          links: [{ description: "Edit Item Link", url: EDIT_LINK }],
+        },
+      ],
+    },
+  });
+  const inReview = (version?: string): string =>
+    JSON.stringify({
+      submittedItemRevisionStatus: {
+        state: "PENDING_REVIEW",
+        distributionChannels:
+          version === undefined ? [] : [{ crxVersion: version }],
+      },
+    });
+  const deliver = (env: Readonly<Record<string, string>> = {}): Result =>
+    runStep(
+      `printf 'Authorization: Bearer store-token\\n' > "$RUNNER_TEMP/authorization"\n${step("store", DELIVER).run}`,
+      {
+        TAG: "v1.0.0",
+        ITEM,
+        UPLOAD,
+        ZIP,
+        NEW_ASKS,
+        FAKE_UPLOAD_ANSWER: JSON.stringify({ uploadState: "SUCCEEDED" }),
+        FAKE_PUBLISH_ANSWER: JSON.stringify({ state: "PENDING_REVIEW" }),
+        FAKE_STATUS_ANSWER: "{}",
+        ...env,
+      },
+    );
+  const errors = (result: Result): string[] =>
+    result.stdout.split("\n").filter((line) => line.startsWith("::error"));
+  const urls = (result: Result): (string | undefined)[] =>
+    result.calls.map((call) => call.url);
+
+  test("uploads the zip, submits it and says so", () => {
+    const result = deliver();
+    assert.equal(result.status, 0, result.stdout);
+    assert.deepEqual(urls(result), [UPLOAD, `${ITEM}:publish`]);
+    assert.deepEqual(result.calls[1]?.headers, [
+      "Authorization: Bearer store-token",
+      "Content-Type: application/json",
+    ]);
+    assert.match(result.summary, /^The store took the upload of dist\//);
+    assert.match(result.summary, /The release v1\.0\.0 is submitted;/);
+    assert.deepEqual(errors(result), []);
+  });
+
+  test("waits for an upload that the store goes on processing", () => {
+    const result = deliver({
+      FAKE_UPLOAD_ANSWER: JSON.stringify({ uploadState: "IN_PROGRESS" }),
+      FAKE_STATUS_ANSWER: JSON.stringify({ lastAsyncUploadState: "SUCCEEDED" }),
+    });
+    assert.equal(result.status, 0, result.stdout);
+    assert.deepEqual(urls(result), [
+      UPLOAD,
+      `${ITEM}:fetchStatus`,
+      `${ITEM}:publish`,
+    ]);
+  });
+
+  test("passes on the warnings of a submission and takes a staged one", () => {
+    const result = deliver({
+      FAKE_PUBLISH_ANSWER: JSON.stringify({
+        state: "STAGED",
+        warningInfo: {
+          warnings: [{ reason: "A_REASON", description: "A description." }],
+        },
+      }),
+    });
+    assert.equal(result.status, 0, result.stdout);
+    assert.match(result.stdout, /^::warning::A_REASON: A description\.$/m);
+    assert.match(
+      result.summary,
+      /The release v1\.0\.0 is in the state STAGED\./,
+    );
+  });
+
+  test("fails on a state of the submission that it doesn't know", () => {
+    const result = deliver({ FAKE_PUBLISH_ANSWER: JSON.stringify({}) });
+    assert.equal(result.status, 1);
+    assert.deepEqual(errors(result), [
+      "::error title=Chrome Web Store::The submission of the release v1.0.0 ended in the state unknown.",
+    ]);
+  });
+
+  describe("when the store refuses with INVALID_ITEM_METADATA", () => {
+    const refused = (env: Readonly<Record<string, string>> = {}): Result =>
+      deliver({
+        FAKE_PUBLISH_EXIT: "22",
+        FAKE_PUBLISH_ANSWER: LACKS_SOMETHING,
+        ...env,
+      });
+
+    test("says in the summary and the annotation what the dashboard lacks and how to go on", () => {
+      const result = refused();
+      assert.equal(result.status, 1);
+      const [error, ...more] = errors(result);
+      assert.deepEqual(more, []);
+      const lines = result.summary.split("\n");
+      const problem = lines.find((line) => line.startsWith("- **Problem:** "));
+      for (const text of [error, problem]) {
+        for (const part of [
+          "The store took the upload of v1.0.0 but refused to submit it for review (INVALID_ITEM_METADATA)",
+          "the Developer Dashboard lacks something that this version needs",
+          NEW_ASKS,
+          "Permission justifications in store/listing.en.md",
+          EDIT_LINK,
+          "gh workflow run publish-store.yml -f tag=v1.0.0",
+          "'When a run fails' in docs/releases.md",
+        ]) {
+          assert.ok(text?.includes(part), `${part} is in: ${text}`);
+        }
+      }
+    });
+
+    test("keeps the answer of the store in the log", () => {
+      const result = refused();
+      assert.ok(result.stdout.includes(LACKS_SOMETHING), result.stdout);
+    });
+
+    test("points to the dashboard, and leaves out the comparison, when it has neither link nor comparison", () => {
+      const result = refused({
+        NEW_ASKS: "",
+        FAKE_PUBLISH_ANSWER: JSON.stringify({
+          error: { details: [{ reason: "INVALID_ITEM_METADATA" }] },
+        }),
+      });
+      assert.equal(result.status, 1);
+      const [error] = errors(result);
+      assert.match(
+        error ?? "",
+        /can't set it\. Under Privacy practices, .* is missing: https:\/\/chrome\.google\.com\/webstore\/devconsole\. Then/,
+      );
+    });
+
+    test("escapes what would end the line of the annotation, not the summary", () => {
+      const result = refused({ NEW_ASKS: "100% of it\nand more." });
+      const [error] = errors(result);
+      assert.ok(error?.includes("100%25 of it%0Aand more."), error);
+      assert.ok(result.summary.includes("100% of it\nand more."));
+    });
+  });
+
+  describe("when a review began after the job that decides asked", () => {
+    for (const [what, env, expected] of [
+      [
+        "the submission is refused for this version",
+        {
+          FAKE_PUBLISH_EXIT: "22",
+          FAKE_PUBLISH_ANSWER: LACKS_SOMETHING,
+          FAKE_STATUS_ANSWER: inReview("1.0.0"),
+        },
+        "v1.0.0 is in review already; Google publishes it after the review.",
+      ],
+      [
+        "the upload is refused for an earlier version",
+        {
+          FAKE_UPLOAD_EXIT: "22",
+          FAKE_UPLOAD_ANSWER: JSON.stringify({ error: { code: 400 } }),
+          FAKE_STATUS_ANSWER: inReview("0.9.0"),
+        },
+        "The store reviews 0.9.0 and takes no new version until the review ends; the daily run delivers v1.0.0 after it.",
+      ],
+      [
+        "the upload ends in a failure, for a version that the store doesn't name",
+        {
+          FAKE_UPLOAD_ANSWER: JSON.stringify({ uploadState: "FAILED" }),
+          FAKE_STATUS_ANSWER: inReview(),
+        },
+        "The store reviews a submission and takes no new version until the review ends; the daily run delivers v1.0.0 after it.",
+      ],
+    ] as const) {
+      test(`a note and no failure when ${what}`, () => {
+        const result = deliver(env);
+        assert.equal(result.status, 0, result.stdout);
+        assert.deepEqual(errors(result), []);
+        assert.ok(result.stdout.includes(expected), result.stdout);
+        assert.ok(result.summary.includes(expected), result.summary);
+        assert.equal(urls(result).at(-1), `${ITEM}:fetchStatus`);
+      });
+    }
+
+    test("the submission doesn't follow an upload that the review refused", () => {
+      const result = deliver({
+        FAKE_UPLOAD_EXIT: "22",
+        FAKE_UPLOAD_ANSWER: "{}",
+        FAKE_STATUS_ANSWER: inReview("1.0.0"),
+      });
+      assert.deepEqual(urls(result), [UPLOAD, `${ITEM}:fetchStatus`]);
+    });
+  });
+
+  describe("when no review explains a refusal", () => {
+    for (const [what, env, message] of [
+      [
+        "the store refuses the upload",
+        { FAKE_UPLOAD_EXIT: "22", FAKE_UPLOAD_ANSWER: "<html>" },
+        `The store refused the upload of ${ZIP}.`,
+      ],
+      [
+        "the upload ends in a failure",
+        { FAKE_UPLOAD_ANSWER: JSON.stringify({ uploadState: "FAILED" }) },
+        `The upload of ${ZIP} ended in the state FAILED.`,
+      ],
+      [
+        "the store doesn't tell the state of the upload",
+        { FAKE_UPLOAD_ANSWER: "{}" },
+        `The upload of ${ZIP} ended in the state unknown.`,
+      ],
+      [
+        "the store refuses the submission for another reason",
+        {
+          FAKE_PUBLISH_EXIT: "22",
+          FAKE_PUBLISH_ANSWER: JSON.stringify({
+            error: {
+              message: "Not this time.",
+              details: [{ reason: "ANOTHER_REASON" }],
+            },
+          }),
+        },
+        "The store refused to submit the release v1.0.0 for review (ANOTHER_REASON): Not this time.",
+      ],
+      [
+        "the store refuses the submission without an answer",
+        { FAKE_PUBLISH_EXIT: "22", FAKE_PUBLISH_ANSWER: "<html>" },
+        "The store refused to submit the release v1.0.0 for review",
+      ],
+      [
+        "the status of the item is another than a review",
+        {
+          FAKE_PUBLISH_EXIT: "22",
+          FAKE_PUBLISH_ANSWER: "{}",
+          FAKE_STATUS_ANSWER: JSON.stringify({
+            submittedItemRevisionStatus: { state: "REJECTED" },
+          }),
+        },
+        "The store refused to submit the release v1.0.0 for review",
+      ],
+      [
+        "the store answers the status with no JSON",
+        {
+          FAKE_PUBLISH_EXIT: "22",
+          FAKE_PUBLISH_ANSWER: "{}",
+          FAKE_STATUS_ANSWER: "<html>",
+        },
+        "The store refused to submit the release v1.0.0 for review",
+      ],
+      [
+        "the store doesn't answer the status of the item",
+        {
+          FAKE_PUBLISH_EXIT: "22",
+          FAKE_PUBLISH_ANSWER: "{}",
+          FAKE_STATUS_EXIT: "22",
+          FAKE_STATUS_ANSWER: "",
+        },
+        "The store refused to submit the release v1.0.0 for review",
+      ],
+    ] as const) {
+      test(`fails with the reason when ${what}`, () => {
+        const result = deliver(env);
+        assert.equal(result.status, 1, result.stdout);
+        assert.deepEqual(errors(result), [
+          `::error title=Chrome Web Store::${message}`,
+        ]);
+        assert.ok(
+          result.summary.includes(`- **Problem:** ${message}`),
+          result.summary,
+        );
+      });
+    }
+
+    for (const [what, env, earlier] of [
+      [
+        "the submission",
+        { FAKE_PUBLISH_EXIT: "7", FAKE_PUBLISH_NO_ANSWER: "1" },
+        "uploadState",
+      ],
+      [
+        "the status of an upload in progress",
+        {
+          FAKE_UPLOAD_ANSWER: JSON.stringify({ uploadState: "IN_PROGRESS" }),
+          FAKE_STATUS_EXIT: "7",
+          FAKE_STATUS_NO_ANSWER: "1",
+        },
+        "IN_PROGRESS",
+      ],
+    ] as const) {
+      test(`shows no earlier answer as the answer to ${what} when it gets none`, () => {
+        const result = deliver(env);
+        assert.equal(result.status, 1, result.stdout);
+        assert.equal(errors(result).length, 1);
+        assert.ok(!result.stdout.includes(earlier), result.stdout);
+      });
+    }
+
+    test("fails when the store stops telling the state of an upload in progress", () => {
+      const result = deliver({
+        FAKE_UPLOAD_ANSWER: JSON.stringify({ uploadState: "IN_PROGRESS" }),
+        FAKE_STATUS_EXIT: "22",
+        FAKE_STATUS_ANSWER: "",
+      });
+      assert.equal(result.status, 1);
+      assert.deepEqual(errors(result), [
+        "::error title=Chrome Web Store::The store didn't tell the status of the upload.",
+      ]);
+    });
   });
 });
 
