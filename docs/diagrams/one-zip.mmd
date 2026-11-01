@@ -1,0 +1,29 @@
+---
+config:
+  flowchart:
+    wrappingWidth: 400
+---
+flowchart TB
+    accTitle: One zip for the players and for the store
+    accDescr: From the signed tag, the job assets of the project runs scripts/release-assets.sh, without a token that may write and without a secret. The job release assets describes the zip in the SBOMs, attests it and attaches it to the draft, and the published release can't change any more. A player downloads the zip and loads it unpacked. publish-store.yml checks its signed provenance and its version, and the Chrome Web Store gets exactly that file; a release without the zip, a zip without a valid provenance or of another version stays off the store, and the run fails.
+
+    tag["The signed tag of the release"]
+    hook["The job assets of the project runs<br>scripts/release-assets.sh, without a token<br>that may write and without a secret"]
+    attest["The job release assets describes the zip<br>in the SBOMs, attests it and attaches it to the draft"]
+    release["The published release,<br>which can't change any more"]
+    player["A player downloads the zip<br>and loads it unpacked"]
+    check["publish-store.yml checks its signed<br>provenance and its version"]
+    store["The Chrome Web Store<br>gets exactly that file"]
+    off["It stays off the store,<br>and the run fails"]
+
+    tag --> hook --> attest --> release
+    release --> player
+    release --> check --> store
+    check -- "no zip, no valid provenance<br>or another version" --> off
+
+    classDef bot fill:#526cfe2e,stroke:#526cfe,stroke-width:2px
+    classDef done fill:#16a34a2e,stroke:#16a34a,stroke-width:2px
+    classDef person fill:#f59e0b2e,stroke:#f59e0b,stroke-width:2px
+    class hook,attest,check bot
+    class release,player,store done
+    class off person

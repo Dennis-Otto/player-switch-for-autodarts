@@ -1,6 +1,6 @@
 # Look after the store every day, from jobs with a closed network
 
-- Status: accepted
+- Status: accepted, and the build in the job *package* replaced by [0013](0013-send-the-store-the-zip-that-the-release-attests.md)
 - Date: 2026-10-25
 
 ## Context

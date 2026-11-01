@@ -170,7 +170,7 @@ describe("the jobs of the store", () => {
         );
       }
     }
-    // The job that builds the package, with npm, reaches no host of Google.
+    // The job that checks the package of the release reaches no host of Google.
     assert.deepEqual(
       jobLines("package").filter((line) =>
         /^ +[a-z0-9.-]+\.googleapis\.com:443$/.test(line),

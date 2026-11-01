@@ -16,6 +16,8 @@
 #   switch.mp4 and switch.webp beside it, the video and its poster for the website,
 #   and the popup's "Manage accounts" (manage.png) and the switcher on a board
 #   display (switcher.png), each also .dark and in German (.de, .de.dark);
+# - docs/images/load-unpacked.png, what the install from a release asks for on the page
+#   chrome://extensions of the browser itself, in the same four forms;
 # - store/images/, the screenshots (1280×800) and the promo tiles (440×280 and
 #   1400×560) of the Chrome Web Store, in every language of extension/_locales (.en,
 #   .de, .nl, .fr and .es), with the texts around the extension from

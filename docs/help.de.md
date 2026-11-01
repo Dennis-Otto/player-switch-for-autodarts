@@ -100,7 +100,7 @@ Wer den Spieler entfernt, der gerade spielt, oder **Alle Konten vergessen** wäh
 
 **Was es bedeutet:** Bei einer Erneuerung hat Autodarts alle geparkten Konten auf einmal abgewiesen, mindestens zwei. Ein einzelnes Konto kann seine Sitzung auch allein verlieren; alle zur selben Zeit heißt eher, dass Autodarts die Anmeldung geändert hat und die Erweiterung dafür ein Update braucht.
 
-**Was du tust:** Melde noch nicht alle neu an. **Bekannte Probleme und Updates** öffnet die Liste der bekannten Probleme. Chrome holt eine neue Version einer Erweiterung innerhalb weniger Stunden von selbst; um sie gleich zu holen, schalte unter `chrome://extensions` den **Entwicklermodus** ein und wähle **Aktualisieren**. Entpackt aus dem Quellcode installiert? Dann holt Chrome nichts von selbst: Hol den neuesten Quellcode (`git pull`), führe `npm run build` aus und wähle unter `chrome://extensions` den Pfeil zum Neuladen von Player Switch, wie im [Schnellstart der README](https://github.com/Dennis-Otto/player-switch-for-autodarts#quick-start). Ist die neue Version da, melde nur die Konten neu an, die es dann noch zeigen.
+**Was du tust:** Melde noch nicht alle neu an. **Bekannte Probleme und Updates** öffnet die Liste der bekannten Probleme. Chrome holt eine neue Version einer Erweiterung innerhalb weniger Stunden von selbst; um sie gleich zu holen, schalte unter `chrome://extensions` den **Entwicklermodus** ein und wähle **Aktualisieren**. Entpackt installiert? Dann holt Chrome nichts von selbst: Ersetze den Inhalt des Ordners durch den des Zip-Archivs des [neuesten Releases](https://github.com/Dennis-Otto/player-switch-for-autodarts/releases/latest), oder hol den neuesten Quellcode (`git pull`) und führe `npm run build` aus, und wähle unter `chrome://extensions` den Pfeil zum Neuladen von Player Switch, wie im [Schnellstart der README](https://github.com/Dennis-Otto/player-switch-for-autodarts#quick-start). Ist die neue Version da, melde nur die Konten neu an, die es dann noch zeigen.
 
 ### Erneuert vor 3 Stunden {#renewed}
 
@@ -276,7 +276,7 @@ Jedes Browserprofil auf jedem Computer behält seine eigenen Konten, und nichts 
 
 ### In welchen Browsern geht es?
 
-Die Erweiterung ist für Google Chrome 140 oder neuer gemacht, unter Windows, macOS, Linux und ChromeOS. Browser, die auf Chromium aufbauen, installieren sie ebenso aus dem Chrome Web Store, etwa Chromium auf einem Raspberry Pi oder Microsoft Edge. Nutze ein normales Fenster eines Browserprofils: Chrome führt in einem Gastfenster keine Erweiterung aus, und in einem Inkognitofenster nur, wenn du es erlaubst.
+Die Erweiterung ist für Google Chrome 140 oder neuer gemacht, unter Windows, macOS, Linux und ChromeOS. Browser, die auf Chromium aufbauen, installieren sie ebenso aus dem Chrome Web Store, etwa Chromium auf einem Raspberry Pi, Microsoft Edge, Brave, Opera oder Vivaldi. Nutze ein normales Fenster eines Browserprofils: Chrome führt in einem Gastfenster keine Erweiterung aus, und in einem Inkognitofenster nur, wenn du es erlaubst.
 
 ### Alles entfernen
 

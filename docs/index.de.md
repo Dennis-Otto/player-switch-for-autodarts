@@ -133,9 +133,24 @@ Autodarts Play speichert die Anmeldung als einen einzigen Wert im Browser, einen
 
 ## Welche Browser {#browsers}
 
-- **Google Chrome 140 oder neuer**, und andere Browser auf Basis von Chromium 140 oder neuer, aus dem Chrome Web Store, sobald der Eintrag online ist, oder [entpackt geladen](https://github.com/Dennis-Otto/player-switch-for-autodarts#install).
-- **Microsoft Edge 140 oder neuer** führt dasselbe Paket aus: unter `edge://extensions` **Erweiterungen aus anderen Stores zulassen** einschalten und sie aus dem Chrome Web Store installieren, oder sie entpackt laden. Ein Eintrag bei Edge Add-ons folgt.
-- **Firefox 140 oder neuer**, zum Ausprobieren, als Vorschau, die in Firefox noch nicht von Hand getestet ist: Bis das Add-on auf addons.mozilla.org gelistet ist, lädst du es in `about:debugging` als temporäres Add-on, das Firefox beim Schließen wieder entfernt. Die Seite des Add-ons in `about:addons` zeigt, und addons.mozilla.org wird bei der Installation fragen, dass das Add-on Authentifizierungsdaten sendet, die nur an den Anmeldedienst von Autodarts gehen. Firefox kann den Speicher der Erweiterung nicht vor ihrem Skript in der Autodarts-Seite verbergen, darum läuft ein Display in einem Verein oder einer Kneipe mit Chrome oder Edge: [das Sicherheitsdesign](security.md#firefox) sagt, warum. Firefox für Android ist nicht getestet.
+- **Google Chrome 140 oder neuer**, und andere Browser auf Basis von Chromium 140 oder neuer, etwa Brave, Opera und Vivaldi, aus dem Chrome Web Store, sobald der Eintrag online ist, oder [aus einem Release](#install-from-a-release).
+- **Microsoft Edge 140 oder neuer** führt dasselbe Paket aus: unter `edge://extensions` **Erweiterungen aus anderen Stores zulassen** einschalten und sie aus dem Chrome Web Store installieren, oder sie [aus einem Release](#install-from-a-release) laden. Ein Eintrag bei Edge Add-ons folgt.
+- **Firefox 140 oder neuer**, zum Ausprobieren, als Vorschau, die in Firefox noch nicht von Hand getestet ist: Bis das Add-on auf addons.mozilla.org gelistet ist, entpackst du [ein Release](#install-from-a-release) und lädst seine `manifest.json` in `about:debugging` als temporäres Add-on, das Firefox beim Schließen wieder entfernt. Die Seite des Add-ons in `about:addons` zeigt, und addons.mozilla.org wird bei der Installation fragen, dass das Add-on Authentifizierungsdaten sendet, die nur an den Anmeldedienst von Autodarts gehen. Firefox kann den Speicher der Erweiterung nicht vor ihrem Skript in der Autodarts-Seite verbergen, darum läuft ein Display in einem Verein oder einer Kneipe mit Chrome oder Edge: [das Sicherheitsdesign](security.md#firefox) sagt, warum. Firefox für Android ist nicht getestet.
+
+## Ohne den Store installieren {#install-from-a-release}
+
+Jedes Release enthält die Erweiterung fertig zum Laden, genau die Datei, die auch in den Chrome Web Store geht. Node.js und ein Build sind nicht nötig:
+
+1. Lade unter **Assets** des [neuesten Releases](https://github.com/Dennis-Otto/player-switch-for-autodarts/releases/latest) die Datei `player-switch-for-autodarts-<version>.zip` herunter.
+2. Entpacke sie in einen Ordner, der bleibt, etwa `Dokumente/Player Switch`: Der Browser liest die Erweiterung bei jedem Start von dort.
+3. Öffne `chrome://extensions`, in Edge `edge://extensions`, schalte den **Entwicklermodus** ein, wähle **Entpackte Erweiterung laden** und dann diesen Ordner, den mit der `manifest.json` darin.
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="images/load-unpacked.de.dark.png">
+  <img src="images/load-unpacked.de.png" alt="Der obere Teil der Seite chrome://extensions: Der Schalter Entwicklermodus oben rechts ist an, und mit ihm erscheint Entpackte Erweiterung laden, die erste von drei Schaltflächen unter dem Titel Erweiterungen. Beide sind markiert.">
+</picture>
+
+Eine so geladene Kopie aktualisiert sich nicht von selbst. Für eine neue Version ersetzt du den Inhalt des Ordners durch den des neuen Zip-Archivs und wählst auf derselben Seite den Pfeil zum Neuladen von Player Switch. Lass den Ordner, wo er ist: Der Browser bindet die gespeicherten Konten an seinen Pfad, eine Kopie in einem anderen Ordner beginnt ohne sie.
 
 ## Gut zu wissen
 
