@@ -1,0 +1,686 @@
+// What this project asks of its manifest and its store listings, on top of
+// scripts/check-manifest.mjs of the blueprint, which checks what the Chrome Web Store
+// refuses or holds up and runs in the step "Extension" of scripts/check.sh. Some rules
+// are in both, as this file holds them to the stricter measure of this project (decision
+// 0014): it guards against a permission, a host or an opening that nobody meant to add.
+// It checks that:
+//
+// - the permissions, the hosts and the web-accessible pages are exactly those that
+//   store/permissions.json allows, each with its reason, and that the store listing of
+//   every language justifies each of them and nothing else;
+// - nothing opens the extension wider: no externally_connectable, no optional or
+//   sandboxed extras, no content script in the world of the page, and a content
+//   security policy that runs only the extension's own scripts and connects only to the
+//   hosts of the manifest;
+// - Firefox runs the same background.js as Chrome and Edge, as background.scripts,
+//   under the fixed id of the add-on, from the first Firefox that shows the data the
+//   add-on sends at its install, and that data is exactly what store/permissions.json
+//   declares (decision 0012);
+// - the manifest names a minimum version of Chrome and a homepage, its icons have the
+//   sizes it declares, and the name and description in every language, and the short
+//   descriptions of the listings, fit the limits of the store, and each language of
+//   the extension has a store listing, store/listing.<code>.md, and each listing a
+//   language of the extension;
+// - each language of the extension has the texts of the pictures of its listing,
+//   store/pictures.<code>.json, with the same texts as English, each picture of
+//   store/images/ belongs to a language of the extension, and the release guide lists
+//   the pictures of each language;
+// - extension/ holds only the kinds of file that the package may hold (decision 0014).
+//
+// Run by scripts/check-project.sh; scripts/check-extension.test.mjs tests it. No dependencies.
+import { existsSync, readdirSync, readFileSync } from "node:fs";
+import { join, relative, sep } from "node:path";
+import { fileURLToPath } from "node:url";
+
+/**
+ * The oldest Chrome that the extension may name: the first one in which
+ * chrome.storage.local.setAccessLevel works, which keeps the accounts from the content script.
+ */
+export const CHROME_MIN = 140;
+
+/**
+ * The id of the add-on in Firefox, which keeps the storage of the add-on under it and
+ * lists it under it on addons.mozilla.org: another id is another add-on, whose players
+ * all have to sign in again. It never changes.
+ */
+export const FIREFOX_ID = "player-switch-for-autodarts@dennis-otto.github.io";
+
+/**
+ * The oldest Firefox that the extension may name, and the oldest Firefox for Android:
+ * the first ones that show at the install the data that an add-on sends,
+ * browser_specific_settings.gecko.data_collection_permissions (decision 0012).
+ */
+export const FIREFOX_MIN = 140;
+export const FIREFOX_ANDROID_MIN = 142;
+
+/** The limits of the Chrome Web Store for the name and the short description. */
+export const NAME_MAX = 75;
+export const DESCRIPTION_MAX = 132;
+
+/** What happens when a permission comes in with an update, said with every finding of it. */
+export const WHY =
+  "Chrome disables an installed extension after an update that asks for a new permission or host, until someone " +
+  "accepts the new warning in chrome://extensions, and a board display in kiosk mode then stops switching without " +
+  "a word. So store/permissions.json allows each permission, host and web-accessible page with its reason, and " +
+  "every store listing justifies it.";
+
+/** Keys that open the extension wider than it needs, and why each is left out. */
+const FORBIDDEN = {
+  externally_connectable:
+    "lets web pages and other extensions send requests to the service worker",
+  optional_permissions:
+    "grants permissions at run time that store/permissions.json doesn't list",
+  optional_host_permissions:
+    "grants hosts at run time that store/permissions.json doesn't list",
+  sandbox: "serves pages under a looser content security policy",
+  update_url:
+    "takes the updates from somewhere other than the Chrome Web Store",
+};
+
+/** The directives of a content security policy, each with its sources. */
+function directives(policy) {
+  const parsed = new Map();
+  for (const part of policy.split(";")) {
+    const [name, ...sources] = part.trim().split(/\s+/);
+    if (name !== undefined && name !== "") {
+      parsed.set(name.toLowerCase(), sources);
+    }
+  }
+  return parsed;
+}
+
+/** The origin that a host permission such as https://api.autodarts.com/* grants. */
+const originOf = (pattern) => pattern.replace(/\/\*$/, "");
+
+/** The host that a host permission grants, or the pattern itself when it names no single host, such as <all_urls>. */
+function hostOf(pattern) {
+  const origin = originOf(pattern);
+  return URL.canParse(origin) ? new URL(origin).host : pattern;
+}
+
+/** The text of a section of a listing, from its heading to the next one. */
+function section(text, heading) {
+  const start = text.search(heading);
+  if (start === -1) {
+    return null;
+  }
+  const rest = text.slice(start).replace(/^.*\n/, "");
+  const end = rest.search(/^## /m);
+  return end === -1 ? rest : rest.slice(0, end);
+}
+
+/** Compares what the manifest asks for with what the allowlist allows. */
+function compare(problems, what, asked, allowed) {
+  for (const entry of asked) {
+    if (!(entry in allowed)) {
+      problems.push(
+        `extension/manifest.json asks for the ${what} ${entry}, which store/permissions.json doesn't allow. ` +
+          "Remove it, or add it there with its reason and justify it in every store listing.",
+      );
+    }
+  }
+  for (const entry of Object.keys(allowed)) {
+    if (!asked.includes(entry)) {
+      problems.push(
+        `store/permissions.json allows the ${what} ${entry}, which extension/manifest.json doesn't ask for. ` +
+          "Remove it there and from every store listing.",
+      );
+    }
+  }
+}
+
+/** The permissions, hosts and pages; the names in the problems say which list each one is in. */
+function checkAccess(problems, manifest, allowed) {
+  const hosts = manifest.host_permissions ?? [];
+  compare(
+    problems,
+    "permission",
+    manifest.permissions ?? [],
+    allowed.permissions,
+  );
+  compare(problems, "host", hosts, allowed.host_permissions);
+  const pages = manifest.web_accessible_resources ?? [];
+  compare(
+    problems,
+    "web-accessible page",
+    pages.flatMap((entry) => entry.resources ?? []),
+    allowed.web_accessible_resources,
+  );
+  for (const entry of pages) {
+    for (const match of entry.matches ?? []) {
+      if (!hosts.includes(match)) {
+        problems.push(
+          `extension/manifest.json opens ${entry.resources} to ${match}, a site it has no access to; open it only to the Autodarts page.`,
+        );
+      }
+    }
+    if (entry.extension_ids !== undefined) {
+      problems.push(
+        "extension/manifest.json opens a web-accessible page to other extensions; remove extension_ids.",
+      );
+    }
+  }
+  for (const script of manifest.content_scripts ?? []) {
+    for (const match of script.matches ?? []) {
+      if (!hosts.includes(match)) {
+        problems.push(
+          `extension/manifest.json runs content.js on ${match}, a site it has no access to; add the host or remove the match.`,
+        );
+      }
+    }
+    if (script.world === "MAIN") {
+      problems.push(
+        "extension/manifest.json runs a content script in the world of the page, where the scripts of the page reach it; remove world.",
+      );
+    }
+  }
+  for (const [key, reason] of Object.entries(FORBIDDEN)) {
+    if (key in manifest) {
+      problems.push(
+        `extension/manifest.json declares ${key}, which ${reason}; remove it.`,
+      );
+    }
+  }
+}
+
+/** The major version of a version of Firefox, such as 140 for "140.0"; NaN for none. */
+function major(version) {
+  return /^\d+(\.\d+)*$/.test(version ?? "")
+    ? Number(version.split(".")[0])
+    : Number.NaN;
+}
+
+/** What Firefox runs and shows: its background, the id of the add-on, its versions and the data it sends. */
+function checkFirefox(problems, manifest, allowed) {
+  const background = manifest.background ?? {};
+  const scripts = background.scripts ?? [];
+  if (
+    typeof background.service_worker !== "string" ||
+    scripts.length !== 1 ||
+    scripts[0] !== background.service_worker
+  ) {
+    problems.push(
+      `extension/manifest.json runs ${JSON.stringify(scripts)} as background.scripts, which Firefox runs, and ` +
+        `${background.service_worker ?? "nothing"} as background.service_worker, which Chrome and Edge run; name the ` +
+        "one background.js in both, so that every browser runs the same worker.",
+    );
+  }
+  const settings = manifest.browser_specific_settings ?? {};
+  const gecko = settings.gecko ?? {};
+  if (gecko.id !== FIREFOX_ID) {
+    problems.push(
+      `extension/manifest.json names ${gecko.id ?? "no id"} as browser_specific_settings.gecko.id, not ${FIREFOX_ID}. ` +
+        "Firefox keeps the accounts of an add-on under its id, so another id is another add-on whose players all " +
+        "have to sign in again; keep the id.",
+    );
+  }
+  for (const [where, version, min] of [
+    ["gecko", gecko.strict_min_version, FIREFOX_MIN],
+    [
+      "gecko_android",
+      settings.gecko_android?.strict_min_version,
+      FIREFOX_ANDROID_MIN,
+    ],
+  ]) {
+    if (!(major(version) >= min)) {
+      problems.push(
+        `extension/manifest.json names ${version ?? "no"} strict_min_version in browser_specific_settings.${where}; ` +
+          `Firefox shows the data that the add-on sends at its install only from ${min}.0, and an older one installs ` +
+          `it without asking. Name ${min}.0 or newer.`,
+      );
+    }
+  }
+  const declared = gecko.data_collection_permissions ?? {};
+  const required = declared.required ?? [];
+  const allowedData = allowed.data_collection_permissions ?? {};
+  if ((declared.optional ?? []).length > 0) {
+    problems.push(
+      `extension/manifest.json asks Firefox for the optional data ${declared.optional.join(", ")}; the extension ` +
+        "sends nothing that it doesn't need, so it asks for no optional data.",
+    );
+  }
+  if (required.length === 0) {
+    problems.push(
+      "extension/manifest.json declares no data_collection_permissions.required in browser_specific_settings.gecko; " +
+        "Firefox asks every add-on to declare the data that it sends off the computer, or none, and shows it at the " +
+        "install. Declare what data_collection_permissions in store/permissions.json names.",
+    );
+    return;
+  }
+  for (const data of required) {
+    if (!(data in allowedData)) {
+      const what = data === "none" ? "no data" : data;
+      problems.push(
+        `extension/manifest.json declares that the add-on sends ${what}, which data_collection_permissions in ` +
+          "store/permissions.json doesn't name; send nothing more, or add it there with its reason, in " +
+          "docs/privacy.md and in a record of docs/decisions/.",
+      );
+    }
+  }
+  for (const data of Object.keys(allowedData)) {
+    if (!required.includes(data)) {
+      problems.push(
+        `store/permissions.json says that the add-on sends ${data}, which data_collection_permissions.required ` +
+          "in extension/manifest.json doesn't declare; Firefox shows at the install only what the manifest declares.",
+      );
+    }
+  }
+}
+
+/** The content security policy of the pages and the service worker of the extension. */
+function checkPolicy(problems, manifest) {
+  const policy = manifest.content_security_policy?.extension_pages;
+  if (typeof policy !== "string") {
+    problems.push(
+      "extension/manifest.json has no content_security_policy.extension_pages; without one, the pages and the service " +
+        "worker may load images and send requests anywhere.",
+    );
+    return;
+  }
+  const parsed = directives(policy);
+  const only = (name, allowed) => {
+    const sources = parsed.get(name);
+    if (
+      sources === undefined ||
+      sources.length === 0 ||
+      sources.some((source) => !allowed.includes(source))
+    ) {
+      problems.push(
+        `The content security policy of extension/manifest.json must say ${allowed.map((source) => `"${name} ${source}"`).join(" or ")}, not "${name} ${sources?.join(" ") ?? ""}".`,
+      );
+    }
+  };
+  only("default-src", ["'self'", "'none'"]);
+  only("script-src", ["'self'"]);
+  only("object-src", ["'none'"]);
+  const origins = (manifest.host_permissions ?? []).map(originOf);
+  const connect = parsed.get("connect-src") ?? [];
+  if (connect.length === 0) {
+    problems.push(
+      "The content security policy of extension/manifest.json has no connect-src, so the service worker may send requests " +
+        "anywhere; name the hosts of the manifest that it talks to.",
+    );
+  }
+  for (const source of connect) {
+    if (!origins.includes(source)) {
+      problems.push(
+        `The content security policy of extension/manifest.json lets the extension connect to ${source}, which is no host of the manifest.`,
+      );
+    }
+  }
+}
+
+/** The text of a message of the manifest, such as __MSG_extName__, in one language. */
+function resolve(value, messages) {
+  const key = /^__MSG_(\w+)__$/.exec(value ?? "")?.[1];
+  return key === undefined ? value : messages[key]?.message;
+}
+
+/** The minimum version, the homepage, the icons and what the store shows of the manifest. */
+function checkDetails(problems, manifest, locales, imageSize) {
+  if (!/^\d+$/.test(manifest.minimum_chrome_version ?? "")) {
+    problems.push(
+      "extension/manifest.json names no minimum_chrome_version; an older Chrome installs the extension and then fails as " +
+        "it runs. docs/development.md says which version the code needs.",
+    );
+  } else if (Number(manifest.minimum_chrome_version) < CHROME_MIN) {
+    problems.push(
+      `extension/manifest.json names minimum_chrome_version ${manifest.minimum_chrome_version}, but Chrome makes ` +
+        `chrome.storage.local.setAccessLevel work only from ${CHROME_MIN}; an older Chrome lets the script in the ` +
+        `Autodarts page read every saved account. Name ${CHROME_MIN} or newer.`,
+    );
+  }
+  if (!/^https:\/\//.test(manifest.homepage_url ?? "")) {
+    problems.push(
+      "extension/manifest.json has no homepage_url that starts with https://; chrome://extensions links it.",
+    );
+  }
+  for (const [size, path] of Object.entries(manifest.icons ?? {})) {
+    const actual = imageSize(path);
+    if (actual === null) {
+      problems.push(
+        `extension/manifest.json names the icon ${path}, which is no PNG in extension/.`,
+      );
+    } else if (
+      actual.width !== Number(size) ||
+      actual.height !== Number(size)
+    ) {
+      problems.push(
+        `extension/manifest.json declares ${path} as ${size}×${size} pixels, but it has ${actual.width}×${actual.height}.`,
+      );
+    }
+  }
+  for (const [language, messages] of Object.entries(locales)) {
+    for (const [field, max] of [
+      ["name", NAME_MAX],
+      ["description", DESCRIPTION_MAX],
+    ]) {
+      const text = resolve(manifest[field], messages);
+      if (typeof text !== "string" || text === "") {
+        problems.push(
+          `The ${field} of extension/manifest.json has no text in ${language}.`,
+        );
+      } else if (text.length > max) {
+        problems.push(
+          `The ${field} of extension/manifest.json has ${text.length} characters in ${language}; the store takes ${max} at most.`,
+        );
+      }
+    }
+  }
+}
+
+/** The headings of the sections of a listing that the checks read, in each language of the listings. */
+const SHORT_DESCRIPTION = /^## Short description/m;
+const JUSTIFICATIONS = /^## Permission justifications/m;
+
+/** The language of a listing, from its path, such as nl for store/listing.nl.md. */
+export const LISTING_PATH = /^store\/listing\.([A-Za-z0-9_]+)\.md$/;
+
+/** Each language of the extension has a store listing, and each listing a language. */
+function checkLanguages(problems, locales, listings) {
+  const languages = new Set(
+    Object.keys(listings).map((file) => LISTING_PATH.exec(file)?.[1]),
+  );
+  for (const code of Object.keys(locales)) {
+    if (!languages.has(code)) {
+      problems.push(
+        `The extension speaks ${code}, but store/listing.${code}.md is missing; the store would show the listing of another language to its users.`,
+      );
+    }
+  }
+  for (const file of Object.keys(listings)) {
+    const code = LISTING_PATH.exec(file)?.[1];
+    if (!(code in locales)) {
+      problems.push(
+        `${file} is the listing of a language that the extension doesn't speak; the store takes a listing only for a language of extension/_locales/.`,
+      );
+    }
+  }
+}
+
+/** The language of the texts on the pictures, such as nl for store/pictures.nl.json. */
+export const PICTURES_PATH = /^store\/pictures\.([A-Za-z0-9_]+)\.json$/;
+
+/** The language of a picture of the store, such as nl for store/images/marquee.nl.png. */
+const IMAGE_PATH = /^store\/images\/[^.]+\.([A-Za-z0-9_]+)\.png$/;
+
+/** Each text of a picture with the place where it stands, such as slides.2.title. */
+function textsOf(value, place = "") {
+  if (typeof value !== "object" || value === null) {
+    return [[place, value]];
+  }
+  return Object.entries(value).flatMap(([key, inner]) =>
+    textsOf(inner, place === "" ? key : `${place}.${key}`),
+  );
+}
+
+/** The texts of a language against those of English, which the stage asks for. */
+function checkPictureTexts(problems, file, texts, english) {
+  const own = new Map(textsOf(texts));
+  for (const place of english.keys()) {
+    const text = own.get(place);
+    if (typeof text !== "string" || text.trim() === "") {
+      problems.push(
+        `${file} has no text for ${place}; the picture would show a gap in that language. Translate the text of store/pictures.en.json.`,
+      );
+    }
+  }
+  for (const place of own.keys()) {
+    if (!english.has(place)) {
+      problems.push(
+        `${file} has a text for ${place}, which store/pictures.en.json doesn't have; no picture shows it. Remove it, or add it in every language.`,
+      );
+    }
+  }
+}
+
+/** The second screenshot names the number of languages, which a new language changes. */
+function checkLanguageCount(problems, file, texts, locales) {
+  const text = texts.slides?.[2]?.points?.[2];
+  const count = String(Object.keys(locales).length);
+  if (text !== undefined && text.match(/\d+/)?.[0] !== count) {
+    problems.push(
+      `${file} says "${text}" on the second screenshot, but the extension speaks ${count} languages; write the number of folders of extension/_locales/ as a digit.`,
+    );
+  }
+}
+
+/**
+ * The pictures of the listings: each language has their texts and the release guide
+ * lists them, and each file of texts and each picture belongs to a language. A new
+ * language may come without its pictures: the screenshot bot renders them after the
+ * merge, which only needs the texts.
+ */
+function checkPictures(problems, locales, pictures, images, releaseGuide) {
+  const english = new Map(textsOf(pictures["store/pictures.en.json"] ?? {}));
+  for (const code of Object.keys(locales)) {
+    const file = `store/pictures.${code}.json`;
+    if (file in pictures) {
+      checkPictureTexts(problems, file, pictures[file], english);
+      checkLanguageCount(problems, file, pictures[file], locales);
+    } else {
+      problems.push(
+        `The extension speaks ${code}, but ${file} is missing; scripts/screenshots.sh renders the pictures of its listing from these texts.`,
+      );
+    }
+    if (!releaseGuide.includes(`store/images/*.${code}.png`)) {
+      problems.push(
+        `docs/releases.md doesn't list store/images/*.${code}.png; the guide of the store must name the pictures of each language of the listing.`,
+      );
+    }
+  }
+  for (const file of Object.keys(pictures)) {
+    if (!(PICTURES_PATH.exec(file)?.[1] in locales)) {
+      problems.push(
+        `${file} holds the texts of a language that the extension doesn't speak; the store takes a listing only for a language of extension/_locales/.`,
+      );
+    }
+  }
+  // Not the .gitkeep of the blueprint, which each of its updates would bring back.
+  for (const image of images.filter((path) => !/\/\.[^/]*$/.test(path))) {
+    if (!(IMAGE_PATH.exec(image)?.[1] in locales)) {
+      problems.push(
+        `${image} belongs to no language of extension/_locales/, so scripts/screenshots.sh no longer renders it; delete it.`,
+      );
+    }
+  }
+}
+
+/** The store listings: their short descriptions, and that they justify exactly what the manifest asks for. */
+function checkListings(problems, manifest, listings) {
+  const permissions = manifest.permissions ?? [];
+  const hosts = (manifest.host_permissions ?? []).map(hostOf);
+  const pages = (manifest.web_accessible_resources ?? []).flatMap(
+    (entry) => entry.resources ?? [],
+  );
+  for (const [file, text] of Object.entries(listings)) {
+    const short = section(text, SHORT_DESCRIPTION)?.trim();
+    if (short === undefined || short === "") {
+      problems.push(`${file} has no short description.`);
+    } else if (short.length > DESCRIPTION_MAX) {
+      problems.push(
+        `The short description of ${file} has ${short.length} characters; the store takes ${DESCRIPTION_MAX} at most.`,
+      );
+    }
+    const justified = section(text, JUSTIFICATIONS);
+    if (justified === null) {
+      problems.push(`${file} has no section that justifies the permissions.`);
+      continue;
+    }
+    const named = [...justified.matchAll(/^• ([a-z][A-Za-z]*) —/gm)].map(
+      (match) => match[1],
+    );
+    for (const permission of permissions) {
+      if (!named.includes(permission)) {
+        problems.push(
+          `${file} doesn't justify the permission ${permission}; add a line "• ${permission} — why".`,
+        );
+      }
+    }
+    for (const name of named) {
+      if (!permissions.includes(name)) {
+        problems.push(
+          `${file} justifies the permission ${name}, which extension/manifest.json doesn't ask for; remove it.`,
+        );
+      }
+    }
+    for (const needed of [...hosts, ...pages]) {
+      if (!justified.includes(needed)) {
+        problems.push(
+          `${file} doesn't justify the access to ${needed}; name it in the justification.`,
+        );
+      }
+    }
+    for (const host of new Set(
+      justified.match(/\b(?:[a-z0-9-]+\.)*autodarts\.[a-z]+\b/g),
+    )) {
+      if (!hosts.includes(host)) {
+        problems.push(
+          `${file} justifies the access to ${host}, which extension/manifest.json doesn't ask for; remove it.`,
+        );
+      }
+    }
+  }
+}
+
+/**
+ * The problems of a manifest; none when it asks for exactly what the allowlist allows
+ * and fits the store.
+ *
+ * @param {object} input
+ * @param {Record<string, any>} input.manifest the parsed extension/manifest.json
+ * @param {{permissions: Record<string, string>, host_permissions: Record<string, string>, web_accessible_resources: Record<string, string>}} input.allowed
+ *   the parsed store/permissions.json
+ * @param {Record<string, Record<string, {message: string}>>} input.locales the messages of each language, by its code
+ * @param {Record<string, string>} input.listings the text of each store listing, by its path
+ * @param {Record<string, object>} input.pictures the parsed texts on the pictures of each language, by their path
+ * @param {string[]} input.images the path of each file in store/images/
+ * @param {string} input.releaseGuide the text of docs/releases.md
+ * @param {(path: string) => {width: number, height: number} | null} input.imageSize the size of a PNG of extension/
+ * @returns {string[]}
+ */
+export function checkManifest({
+  manifest,
+  allowed,
+  locales,
+  listings,
+  pictures,
+  images,
+  releaseGuide,
+  imageSize,
+}) {
+  const problems = [];
+  checkAccess(problems, manifest, allowed);
+  checkPolicy(problems, manifest);
+  checkFirefox(problems, manifest, allowed);
+  checkDetails(problems, manifest, locales, imageSize);
+  checkListings(problems, manifest, listings);
+  checkLanguages(problems, locales, listings);
+  checkPictures(problems, locales, pictures, images, releaseGuide);
+  return problems;
+}
+
+/** The width and height of a PNG, from its header; null for a file that is missing or no PNG. */
+export function pngSize(bytes) {
+  const signature = "89504e470d0a1a0a";
+  if (
+    bytes === null ||
+    bytes.length < 24 ||
+    Buffer.from(bytes.subarray(0, 8)).toString("hex") !== signature
+  ) {
+    return null;
+  }
+  const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+  return { width: view.getUint32(16), height: view.getUint32(20) };
+}
+
+/**
+ * What a package holds, by the path in extension/: all that the extension loads. A file
+ * of another kind fails the check; its kind goes into SHIPS when the extension needs it,
+ * and into STAYS_OUT when it doesn't, so that nothing new reaches the users unnoticed.
+ */
+export const SHIPS =
+  /^(?:manifest\.json|_locales\/[A-Za-z_]+\/messages\.json|icons\/[a-z0-9-]+\.png|[a-z]+\.(?:html|css)|lib\/(?:[a-z0-9-]+\/)*[a-z0-9-]+\.js)$/;
+
+/** What scripts/package-extension.sh of the blueprint leaves out: Biome, the source maps. */
+export const STAYS_OUT = /^(?:biome\.jsonc|.*\.map)$/;
+
+/** Each file of extension/, by its path there, that is of no kind that the package knows. */
+export function checkKinds(files) {
+  return files
+    .filter((file) => !SHIPS.test(file) && !STAYS_OUT.test(file))
+    .map(
+      (file) =>
+        `extension/${file} is of no kind that the package knows: add its kind to SHIPS in scripts/check-extension.mjs when the extension needs it, or to STAYS_OUT when it doesn't.`,
+    );
+}
+
+function main() {
+  const root = new URL("../", import.meta.url);
+  const read = (path) => readFileSync(new URL(path, root), "utf8");
+  const json = (path) => JSON.parse(read(path));
+  const manifest = json("extension/manifest.json");
+  const locales = Object.fromEntries(
+    readdirSync(new URL("extension/_locales/", root)).map((code) => [
+      code,
+      json(`extension/_locales/${code}/messages.json`),
+    ]),
+  );
+  const listings = Object.fromEntries(
+    readdirSync(new URL("store/", root))
+      .filter((name) => LISTING_PATH.test(`store/${name}`))
+      .map((name) => [`store/${name}`, read(`store/${name}`)]),
+  );
+  const pictures = Object.fromEntries(
+    readdirSync(new URL("store/", root))
+      .filter((name) => PICTURES_PATH.test(`store/${name}`))
+      .map((name) => [`store/${name}`, json(`store/${name}`)]),
+  );
+  const images = readdirSync(new URL("store/images/", root)).map(
+    (name) => `store/images/${name}`,
+  );
+  const imageSize = (path) => {
+    const file = new URL(`extension/${path}`, root);
+    return pngSize(existsSync(file) ? readFileSync(file) : null);
+  };
+  const files = readdirSync(new URL("extension/", root), {
+    recursive: true,
+    withFileTypes: true,
+  })
+    .filter((entry) => entry.isFile())
+    .map((entry) =>
+      relative(
+        fileURLToPath(new URL("extension/", root)),
+        join(entry.parentPath, entry.name),
+      ).replaceAll(sep, "/"),
+    );
+  const problems = [
+    ...checkManifest({
+      manifest,
+      allowed: json("store/permissions.json"),
+      locales,
+      listings,
+      pictures,
+      images,
+      releaseGuide: read("docs/releases.md"),
+      imageSize,
+    }),
+    ...checkKinds(files),
+  ];
+  if (problems.length > 0) {
+    for (const problem of problems) {
+      console.error(problem);
+    }
+    console.error(`Why it matters: ${WHY}`);
+    process.exit(1);
+  }
+  console.log(
+    `The manifest asks for the ${manifest.permissions.length} permissions and ${manifest.host_permissions.length} hosts ` +
+      `that store/permissions.json allows, the listings of its ${Object.keys(locales).length} languages justify them and have the texts of their pictures, and its policy connects only to those hosts.`,
+  );
+}
+
+// Run as a script, not imported by its test.
+if (import.meta.main) {
+  main();
+}

@@ -6,7 +6,7 @@
 
 Player Switch for Autodarts
 
-## Descripción breve (132 caracteres como máximo)
+## Short description
 
 Cambia entre cuentas de Autodarts en una pantalla compartida con un solo toque, sin volver a iniciar sesión.
 
@@ -55,7 +55,7 @@ guía para una pantalla de diana en modo quiosco que arranca con el ordenador.
 
 Sin relación con Autodarts.
 
-## Justificación de los permisos
+## Permission justifications
 
 • storage — para guardar tus cuentas, sus sesiones y los ajustes en tu ordenador,
   en el modo para clubs y bares también los hashes con sal de los PIN.
@@ -74,12 +74,12 @@ Sin relación con Autodarts.
   jugadores que el botón de la página de Autodarts muestra sobre la página. Es una
   página de la extensión en un marco, así que los scripts de la página de
   Autodarts no pueden leer de ella las cuentas guardadas.
-• Acceso al host play.autodarts.com — para llevar una sesión a la página de
+• Acceso al host `https://play.autodarts.com/*` — para llevar una sesión a la página de
   Autodarts y sacarla de ella, mostrar allí el botón y encontrar las pestañas de
   Autodarts abiertas, de modo que un cambio tenga efecto en la de delante y las
   demás se recarguen. La extensión no puede leer la dirección ni el título de
   otras pestañas.
-• Acceso al host api.autodarts.com — para iniciar sesión, renovar una sesión y
+• Acceso al host `https://api.autodarts.com/*` — para iniciar sesión, renovar una sesión y
   cerrarla, las mismas peticiones que hace la web de Autodarts. La extensión no se
   conecta a ningún otro servidor, y su política de seguridad de contenido lo
   impone.

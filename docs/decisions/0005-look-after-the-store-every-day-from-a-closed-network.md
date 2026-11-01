@@ -1,6 +1,6 @@
 # Look after the store every day, from jobs with a closed network
 
-- Status: accepted, and the build in the job *package* replaced by [0013](0013-send-the-store-the-zip-that-the-release-attests.md)
+- Status: accepted, the build in the job *package* replaced by [0013](0013-send-the-store-the-zip-that-the-release-attests.md), and the workflow and `scripts/store-status.ts` now those of the blueprint, by [0014](0014-take-the-chrome-extension-kind-of-the-blueprint.md)
 - Date: 2026-10-25
 
 ## Context

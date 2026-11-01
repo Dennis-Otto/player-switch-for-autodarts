@@ -117,7 +117,7 @@ code_scanning_tools = [
 ]
 
 [variables]
-PUBLISH_TO = "npm"
+PUBLISH_TO = "chrome-web-store"
 # The GitHub App that opens the release pull requests, so that their checks run, by
 # the name in its address: https://github.com/apps/dennis-otto-release-automation
 RELEASE_APP = "dennis-otto-release-automation"
@@ -142,5 +142,9 @@ secrets = ["RELEASE_AUTOMATION_PRIVATE_KEY"]
 [environments.issue-assistant]
 secrets = ["CLAUDE_CODE_OAUTH_TOKEN"]
 
-[environments.npm]
+# The Chrome Web Store, to which publish-store.yml delivers every release. Its jobs
+# sign in to Google with the OIDC token of GitHub (decision 0085 of the blueprint), so
+# the environment needs no secret; it keeps the delivery to main. docs/releases.md
+# says how to set the variables of the item and of the sign-in.
+[environments.chrome-web-store]
 secrets = []

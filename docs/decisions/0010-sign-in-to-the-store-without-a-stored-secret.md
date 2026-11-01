@@ -1,6 +1,6 @@
 # Sign in to the Chrome Web Store with GitHub's OIDC token instead of a stored secret
 
-- Status: accepted
+- Status: accepted, and the workflow now that of the blueprint, with the same sign-in, by [0014](0014-take-the-chrome-extension-kind-of-the-blueprint.md)
 - Date: 2026-10-25
 
 ## Context

@@ -4,7 +4,7 @@
 
 Player Switch for Autodarts
 
-## Kurzbeschreibung (höchstens 132 Zeichen)
+## Short description
 
 Wechsle an einem gemeinsamen Display mit einem Tipp zwischen Autodarts-Konten, ohne dich neu anzumelden.
 
@@ -52,7 +52,7 @@ startet.
 
 Nicht mit Autodarts verbunden.
 
-## Begründung der Berechtigungen
+## Permission justifications
 
 • storage — um deine gespeicherten Konten, ihre Sitzungen und die Einstellungen auf
   dem Computer zu halten, im Modus für Verein und Kneipe auch die gesalzenen Hashes
@@ -71,11 +71,11 @@ Nicht mit Autodarts verbunden.
   Spieler, die der Knopf auf der Autodarts-Seite über der Seite zeigt. Sie ist eine
   Seite der Erweiterung in einem Rahmen, darum können die Skripte der
   Autodarts-Seite die gespeicherten Konten nicht daraus lesen.
-• Host-Zugriff auf play.autodarts.com — um eine Sitzung in die Autodarts-Seite und
+• Host-Zugriff auf `https://play.autodarts.com/*` — um eine Sitzung in die Autodarts-Seite und
   aus ihr heraus zu bringen, dort den Knopf zu zeigen und die offenen Autodarts-Tabs
   zu finden, damit der Wechsel im vorderen wirkt und die anderen neu laden. Adresse
   und Titel anderer Tabs kann die Erweiterung nicht lesen.
-• Host-Zugriff auf api.autodarts.com — um anzumelden, eine Sitzung zu erneuern und
+• Host-Zugriff auf `https://api.autodarts.com/*` — um anzumelden, eine Sitzung zu erneuern und
   zu beenden, dieselben Anfragen wie die Autodarts-Website. Mit keinem anderen
   Server verbindet sich die Erweiterung, und ihre Content Security Policy setzt das
   durch.

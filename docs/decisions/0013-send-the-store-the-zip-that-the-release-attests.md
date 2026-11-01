@@ -1,6 +1,6 @@
 # Send the store the zip that the release attests
 
-- Status: accepted
+- Status: accepted, and the hook, the stored files and the comparison of the sha256 replaced by [0014](0014-take-the-chrome-extension-kind-of-the-blueprint.md)
 - Date: 2026-11-01
 
 ## Context

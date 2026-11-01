@@ -6,7 +6,7 @@
 
 Player Switch for Autodarts
 
-## Description courte (132 caractères au maximum)
+## Short description
 
 Passez d'un compte Autodarts à l'autre d'une simple pression sur un écran partagé, sans vous reconnecter.
 
@@ -54,7 +54,7 @@ La page d'assistance, en anglais, explique chaque message de l'extension et renv
 
 Non affilié à Autodarts.
 
-## Justification des autorisations
+## Permission justifications
 
 • storage — pour garder vos comptes enregistrés, leurs sessions et les paramètres
   sur votre ordinateur, dans le mode pour club ou bar aussi les empreintes salées
@@ -74,12 +74,12 @@ Non affilié à Autodarts.
   uniquement — les joueurs que le bouton de la page Autodarts affiche par-dessus
   la page. C'est une page de l'extension dans un cadre, et les scripts de la page
   Autodarts ne peuvent pas y lire les comptes enregistrés.
-• Accès à l'hôte play.autodarts.com — pour faire entrer une session dans la page
+• Accès à l'hôte `https://play.autodarts.com/*` — pour faire entrer une session dans la page
   Autodarts et l'en faire sortir, y afficher le bouton et trouver les onglets
   Autodarts ouverts, afin qu'un changement s'applique dans celui du premier plan
   et que les autres se rechargent. L'extension ne peut lire ni l'adresse ni le
   titre des autres onglets.
-• Accès à l'hôte api.autodarts.com — pour se connecter, renouveler une session et
+• Accès à l'hôte `https://api.autodarts.com/*` — pour se connecter, renouveler une session et
   y mettre fin, les mêmes requêtes que celles du site Autodarts. L'extension ne se
   connecte à aucun autre serveur, et sa politique de sécurité du contenu
   l'impose.

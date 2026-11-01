@@ -1,6 +1,6 @@
 # Deliver each release to the Chrome Web Store from the release workflow
 
-- Status: accepted, extended by [0005](0005-look-after-the-store-every-day-from-a-closed-network.md) and [0010](0010-sign-in-to-the-store-without-a-stored-secret.md), and the zip built from the tag replaced by [0013](0013-send-the-store-the-zip-that-the-release-attests.md)
+- Status: accepted, extended by [0005](0005-look-after-the-store-every-day-from-a-closed-network.md) and [0010](0010-sign-in-to-the-store-without-a-stored-secret.md), the zip built from the tag replaced by [0013](0013-send-the-store-the-zip-that-the-release-attests.md), and the workflow now that of the blueprint, by [0014](0014-take-the-chrome-extension-kind-of-the-blueprint.md)
 - Date: 2026-10-15
 
 ## Context

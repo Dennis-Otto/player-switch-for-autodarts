@@ -5,9 +5,9 @@ config:
 ---
 flowchart TB
     accTitle: One package for Chrome, Edge and Firefox
-    accDescr: The release builds one zip from extension/, with one manifest.json. Chrome 140 and newer, and Edge 140 and newer, run background.js as the service worker that background.service_worker names, and ignore the keys of Firefox. Firefox 140 and newer runs the same background.js from background.scripts, under the id of browser_specific_settings.gecko, and shows at the install that the add-on sends authentication data to Autodarts. scripts/check-manifest.mjs checks that both keys name background.js and that the data matches store/permissions.json, and addons-linter, the linter of addons.mozilla.org, finds no error in the package.
+    accDescr: The release builds one zip from extension/, with one manifest.json. Chrome 140 and newer, and Edge 140 and newer, run background.js as the service worker that background.service_worker names, and ignore the keys of Firefox. Firefox 140 and newer runs the same background.js from background.scripts, under the id of browser_specific_settings.gecko, and shows at the install that the add-on sends authentication data to Autodarts. scripts/check-extension.mjs checks that both keys name background.js and that the data matches store/permissions.json, and addons-linter, the linter of addons.mozilla.org, finds no error in the package.
 
-    checks["scripts/check-manifest.mjs and addons-linter<br>in scripts/check.sh"]
+    checks["scripts/check-extension.mjs and addons-linter<br>in scripts/check.sh"]
     zip["One zip from extension/<br>with one manifest.json"]
     chrome["Chrome 140 and newer<br>and Edge 140 and newer"]
     firefox["Firefox 140 and newer"]

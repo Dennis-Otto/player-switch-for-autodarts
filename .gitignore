@@ -38,8 +38,7 @@ credentials*.json
 /coverage/
 /lcov.info
 *.tgz
-
-# The extension code compiled from src/
+# The extension that the build compiles from src/, which the store package zips.
 /extension/lib/
 
 # Playwright MCP snapshots

@@ -12,18 +12,3 @@ required_checks = ["e2e"]
 # An environment of this project and the secrets it needs:
 # [environments.deploy]
 # secrets = ["DEPLOY_TOKEN"]
-
-# A browser extension is loaded unpacked or from a zip, not published to npm, so the
-# release bot builds and signs the release but delivers it nowhere. Its zip comes from
-# scripts/release-assets.sh, which the blueprint refuses for chrome-web-store, as that
-# value keeps every *.zip for a build of its own (decision 0013).
-[variables]
-PUBLISH_TO = "none"
-
-# The Chrome Web Store, to which publish-store.yml delivers every release, from main
-# alone. The workflow signs in with the OIDC token of GitHub through the repository
-# variables CWS_WORKLOAD_IDENTITY_PROVIDER and CWS_SERVICE_ACCOUNT (decision 0010), so
-# this environment holds no secret; the table keeps the environment to main. The IDs of
-# the item and of the publisher are the repository variables CWS_EXTENSION_ID and
-# CWS_PUBLISHER_ID. All four variables are set by hand, as docs/releases.md describes.
-[environments.chrome-web-store]

@@ -1,43 +1,37 @@
 name: Chrome Web Store
 
-# Delivers each release to the Chrome Web Store, where Google reviews it and then
-# publishes it, and looks after it every day until the users have it. The release bot
-# publishes a release with the GITHUB_TOKEN, whose events start no workflow, so this
-# one starts after every run of the Release workflow that a push or a start by hand
-# began, every day from the schedule, and by hand with a tag.
+# Delivers each release of a Chrome extension to the Chrome Web Store, where Google
+# reviews it and then publishes it, and looks after it every day until the users have
+# it (decision 0085). The release bot publishes a release with the GITHUB_TOKEN, whose
+# events start no workflow, so this one starts after every run of the Release workflow
+# that a push or a start by hand began, every day from the schedule, and by hand with a
+# tag. It runs where the repository variable PUBLISH_TO is chrome-web-store: in a
+# repository of the kind chrome-extension, never in the blueprint or a fork.
 #
 # The job "status" signs in, asks the store for the state of the item and lets
-# scripts/store-status.ts decide (decision 0005): a release that the store lacks goes
-# to the store when no review is pending; while one is, the run waits with a note,
-# and a later day delivers the release. A rejected submission, an item that Google
-# warned or took down, a review of more than 7 days, a sign-in that Google turns away
-# and a store version above the release fail the run with the reason and the fix in
-# its summary, and the bot-health sweep of the night keeps an issue open about it. The
-# daily sign-in also keeps a refresh token in use, which Google expires after six
-# months without one. The job "package" takes the zip that the isolated build of the
-# release attached, without any secret, checks its signed provenance and that its
-# manifest carries the version of the release, and keeps it as an artifact of the run
-# for 30 days, so the store gets exactly the package that the release attests (decision
-# 0013). The job "store" checks that the artifact is that zip, byte for byte, uploads it
-# with the Chrome Web Store API and submits it for review. Neither runs code of the
-# repository or an npm package. When the store refuses
-# with INVALID_ITEM_METADATA, the dashboard lacks something that the version needs, and
-# the run fails and names what the release asks for beyond the version of the store,
-# which the job "status" found with scripts/store-new-asks.ts. A review that began after
-# that job asked is no failure: the run ends with a note, and a later day delivers.
+# scripts/store-status.mjs decide: a release that the store lacks goes to the store
+# when no review is pending; while one is, the run waits with a note, and a later day
+# delivers the release. A rejected submission, an item that Google warned or took
+# down, a review of more than 7 days, a sign-in that Google turns away and a store
+# version above the release fail the run with the reason and the fix in its summary,
+# and the bot-health sweep of the night keeps an issue open about it. The job
+# "package" takes the zip that the isolated build of the release attached, checks its
+# signed provenance and its version and keeps it as an artifact of the run for 30
+# days, so the store gets exactly the package that the release attests. The job
+# "store" uploads that zip with the Chrome Web Store API and submits it for review; it
+# runs no code of the repository and no npm package.
 #
-# Each job lets its runner reach only the hosts that it needs, and
-# scripts/check-project.sh fails when a job of this workflow goes back to recording
-# the traffic only, or runs on a runner image that moves. The two jobs that talk to
-# the store sign in to Google without a stored secret once the variables
-# CWS_WORKLOAD_IDENTITY_PROVIDER and CWS_SERVICE_ACCOUNT are set (decision 0010): the
-# OIDC token of GitHub for the job, which Google takes only from this workflow on
-# main, becomes an access token of a service account for 20 minutes, and they alone
-# may ask GitHub for one. Until then they sign in with the OAuth client and the
-# refresh token of the developer account, the secrets of the environment
-# chrome-web-store. The IDs of the item and of the publisher are the variables
-# CWS_EXTENSION_ID and CWS_PUBLISHER_ID; docs/releases.md describes the one-time
-# set-up of either way and how to renew the refresh token.
+# Each job lets its runner reach only the hosts that it needs. The two jobs that talk
+# to the store sign in to Google without a stored secret once the variables
+# CWS_WORKLOAD_IDENTITY_PROVIDER and CWS_SERVICE_ACCOUNT are set: the OIDC token of
+# GitHub for the job, which Google takes only from this workflow on main, becomes an
+# access token of a service account for 20 minutes, and they alone may ask GitHub for
+# one. Until then they sign in with the OAuth client and the refresh token of the
+# developer account, the secrets of the environment chrome-web-store, which the daily
+# sign-in keeps in use, as Google expires a refresh token after six months without
+# one. The IDs of the item and of the publisher are the variables CWS_EXTENSION_ID and
+# CWS_PUBLISHER_ID; docs/releases.md describes the one-time set-up of either way.
+# https://github.com/Dennis-Otto/repo-blueprint
 
 on:
   workflow_run:
@@ -46,7 +40,7 @@ on:
     branches: [main]
   schedule:
     # Before the bot-health sweep of the night, which then finds a failed run.
-    - cron: "17 0 * * *"
+    - cron: "41 0 * * *"
   workflow_dispatch:
     inputs:
       tag:
@@ -66,10 +60,11 @@ env:
 jobs:
   status:
     name: the state of the store
-    # A failed run of the Release workflow published no release, and its hourly runs
-    # from the schedule publish none either; the daily run here looks after those.
+    # A failed run of the Release workflow published no release, and its runs from the
+    # schedule publish none either; the daily run here looks after those. A fork has
+    # none of the variables of the repository, so PUBLISH_TO keeps it out too.
     if: >-
-      !github.event.repository.fork && (
+      vars.PUBLISH_TO == 'chrome-web-store' && (
         github.event_name != 'workflow_run' ||
         (github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.event != 'schedule')
       )
@@ -84,7 +79,7 @@ jobs:
       contents: read
       # The artifact of the delivery of the version in review, for the days of its review.
       actions: read
-      # The OIDC token of GitHub for the sign-in without a stored secret (decision 0010).
+      # The OIDC token of GitHub for the sign-in without a stored secret.
       id-token: write
     env:
       # The item in the Chrome Web Store API: https://developer.chrome.com/docs/webstore/api
@@ -93,10 +88,8 @@ jobs:
       tag: ${{ steps.decide.outputs.tag }}
       # How the job "store" signs in: keyless or refresh-token.
       sign-in: ${{ steps.setup.outputs.sign-in }}
-      # What the job "store" names when the store refuses the submission.
-      new-asks: ${{ steps.asks.outputs.new-asks }}
     steps:
-      - name: Let the job reach only the hosts that it needs
+      - name: Block every host that the job doesn't need
         uses: step-security/harden-runner@46b06cea07f9e64621fdf066ba77ac6915163d43 # v2.22.3
         with:
           egress-policy: block
@@ -106,7 +99,7 @@ jobs:
           # refresh token (oauth2) or with the OIDC token of GitHub (sts, iamcredentials),
           # and for the store. The hosts of the Actions service itself, which hands out
           # the OIDC token, are allowed anyway.
-          allowed-endpoints: >
+          allowed-endpoints: >-
             api.github.com:443
             github.com:443
             objects.githubusercontent.com:443
@@ -120,7 +113,7 @@ jobs:
         # that address for as long as systemd-resolved keeps it, up to a minute.
         timeout-minutes: 4
         env:
-          HOSTS: >
+          HOSTS: >-
             api.github.com:443
             github.com:443
             objects.githubusercontent.com:443
@@ -196,10 +189,10 @@ jobs:
         run: |
           missing=0
           if [[ -n "$CWS_WORKLOAD_IDENTITY_PROVIDER" || -n "$CWS_SERVICE_ACCOUNT" ]]; then
-            # The sign-in without a stored secret (decision 0010), which needs both variables.
+            # The sign-in without a stored secret, which needs both variables.
             echo "sign-in=keyless" >> "$GITHUB_OUTPUT"
             if [[ ! "$CWS_WORKLOAD_IDENTITY_PROVIDER" =~ ^projects/[0-9]+/locations/global/workloadIdentityPools/[a-z0-9-]+/providers/[a-z0-9-]+$ ]]; then
-              echo "::error::The variable CWS_WORKLOAD_IDENTITY_PROVIDER is missing or names no provider of a workload identity pool, such as projects/123456789/locations/global/workloadIdentityPools/github/providers/player-switch with the number of the project; docs/releases.md says how to set it."
+              echo "::error::The variable CWS_WORKLOAD_IDENTITY_PROVIDER is missing or names no provider of a workload identity pool, such as projects/123456789/locations/global/workloadIdentityPools/github/providers/chrome-web-store with the number of the project; docs/releases.md says how to set it."
               missing=1
             fi
             if [[ ! "$CWS_SERVICE_ACCOUNT" =~ ^[a-z0-9-]+@[a-z0-9.-]+\.iam\.gserviceaccount\.com$ ]]; then
@@ -209,14 +202,14 @@ jobs:
             # A secret that the sign-in no longer needs could still publish a version.
             for secret in CWS_CLIENT_ID CWS_CLIENT_SECRET CWS_REFRESH_TOKEN; do
               if [[ -n "${!secret}" ]]; then
-                echo "::warning title=Chrome Web Store::The sign-in needs the secret $secret no more: delete it with gh secret delete $secret --env chrome-web-store, and remove it from .github/repository.project.toml, as docs/releases.md says."
+                echo "::warning title=Chrome Web Store::The sign-in needs the secret $secret no more: delete it with gh secret delete $secret --env chrome-web-store, as docs/releases.md says."
               fi
             done
           else
             echo "sign-in=refresh-token" >> "$GITHUB_OUTPUT"
             for secret in CWS_CLIENT_ID CWS_CLIENT_SECRET CWS_REFRESH_TOKEN; do
               if [[ -z "${!secret}" ]]; then
-                echo "::error::The secret $secret of the environment chrome-web-store is missing; docs/releases.md says how to set it."
+                echo "::error::The secret $secret of the environment chrome-web-store is missing, and so are the variables of the sign-in without a stored secret, CWS_WORKLOAD_IDENTITY_PROVIDER and CWS_SERVICE_ACCOUNT; docs/releases.md says how to set up either."
                 missing=1
               fi
             done
@@ -240,7 +233,7 @@ jobs:
           # An access token of an hour from the refresh token. It goes into a file of the
           # job for the steps below, so that it is in no log and no environment.
           response="$RUNNER_TEMP/token.json"
-          if ! curl --fail-with-body --silent --show-error --retry 3 --retry-connrefused \
+          if ! curl --fail-with-body --silent --show-error --retry 3 --retry-all-errors \
             --connect-timeout 15 --max-time 60 --output "$response" \
             --data-urlencode "client_id=$CWS_CLIENT_ID" \
             --data-urlencode "client_secret=$CWS_CLIENT_SECRET" \
@@ -252,7 +245,7 @@ jobs:
             rm -f "$response"
             case "$error" in
               invalid_grant)
-                message="Google turned the refresh token away (invalid_grant): it has expired or was revoked, as after six months without use, a new password of the account or a consent screen in testing. Get a new one as 'Renew the refresh token' in docs/releases.md says, and set it with: gh secret set CWS_REFRESH_TOKEN --env chrome-web-store"
+                message="Google turned the refresh token away (invalid_grant): it has expired or was revoked, as after six months without use, a new password of the account or a consent screen in testing. Sign in without a stored secret, or renew the refresh token, as docs/releases.md says."
                 ;;
               invalid_client | unauthorized_client)
                 message="Google doesn't know the OAuth client ($error). Set CWS_CLIENT_ID and CWS_CLIENT_SECRET of the environment chrome-web-store again from the Google Cloud Console, as docs/releases.md says."
@@ -281,16 +274,21 @@ jobs:
         run: |
           set -euo pipefail
           umask 077
-          # The sign-in without a stored secret (decision 0010), the same in both jobs that
-          # talk to the store, which test/publish-store.test.ts keeps so. GitHub's OIDC token
-          # of the job names the repository, the branch and the workflow; Google's Security
-          # Token Service trades it for a federated token when the condition of the provider
-          # admits all three, and IAM trades that for an access token of the service account,
-          # which the Developer Dashboard admits to the item, for 20 minutes: longer than
-          # either job may run. Each token stays in a file of the job, in no log and no
-          # environment, and every file but the last is gone when the step ends.
+          # The sign-in without a stored secret, the same in both jobs that talk to the
+          # store, which a test of the blueprint keeps so. GitHub's OIDC token of the job
+          # names the repository, the branch and the workflow; Google's Security Token
+          # Service trades it for a federated token when the condition of the provider
+          # admits all three, and IAM trades that for an access token of the service
+          # account, which the Developer Dashboard admits to the item, for 20 minutes:
+          # longer than either job may run. Each token stays in a file of the job, in no
+          # log and no environment, and every file but the last is gone when the step ends.
           oidc="$RUNNER_TEMP/oidc.json" jwt="$RUNNER_TEMP/oidc.jwt"
           sts="$RUNNER_TEMP/sts.json" iam="$RUNNER_TEMP/iam.json"
+          # Names, not hosts that the job reaches: the audience of the OIDC token, and
+          # the scopes of the federated token and of the token of the store.
+          audience="https://iam.googleapis.com/$PROVIDER"
+          cloud="https://www.googleapis.com/auth/cloud-platform"
+          store="https://www.googleapis.com/auth/chromewebstore"
           trap 'rm -f "$oidc" "$jwt" "$sts" "$iam"' EXIT
           fail() {
             echo "::error title=Chrome Web Store::$1"
@@ -300,20 +298,20 @@ jobs:
           if [[ -z "${ACTIONS_ID_TOKEN_REQUEST_URL:-}" || -z "${ACTIONS_ID_TOKEN_REQUEST_TOKEN:-}" ]]; then
             fail "GitHub offers this job no OIDC token: the job needs the permission id-token: write."
           fi
-          curl --fail-with-body --silent --show-error --retry 3 --retry-connrefused \
+          curl --fail-with-body --silent --show-error --retry 3 --retry-all-errors \
             --connect-timeout 15 --max-time 60 --output "$oidc" \
             --header @<(printf 'Authorization: bearer %s\n' "$ACTIONS_ID_TOKEN_REQUEST_TOKEN") \
-            --get --data-urlencode "audience=https://iam.googleapis.com/$PROVIDER" \
+            --get --data-urlencode "audience=$audience" \
             "$ACTIONS_ID_TOKEN_REQUEST_URL" ||
             fail "GitHub issued no OIDC token for the job. Start the run again."
           jq -j '.value // empty' "$oidc" > "$jwt"
           [[ -s "$jwt" ]] || fail "GitHub's answer holds no OIDC token."
-          if ! curl --fail-with-body --silent --show-error --retry 3 --retry-connrefused \
+          if ! curl --fail-with-body --silent --show-error --retry 3 --retry-all-errors \
             --connect-timeout 15 --max-time 60 --output "$sts" \
             --data-urlencode "audience=//iam.googleapis.com/$PROVIDER" \
             --data-urlencode grant_type=urn:ietf:params:oauth:grant-type:token-exchange \
             --data-urlencode requested_token_type=urn:ietf:params:oauth:token-type:access_token \
-            --data-urlencode scope=https://www.googleapis.com/auth/cloud-platform \
+            --data-urlencode "scope=$cloud" \
             --data-urlencode subject_token_type=urn:ietf:params:oauth:token-type:jwt \
             --data-urlencode "subject_token@$jwt" \
             https://sts.googleapis.com/v1/token; then
@@ -324,11 +322,11 @@ jobs:
           federated="$(jq -r '.access_token // empty' "$sts")"
           [[ -n "$federated" ]] || fail "The answer of Google's Security Token Service holds no token."
           echo "::add-mask::$federated"
-          if ! curl --fail-with-body --silent --show-error --retry 3 --retry-connrefused \
+          if ! curl --fail-with-body --silent --show-error --retry 3 --retry-all-errors \
             --connect-timeout 15 --max-time 60 --output "$iam" \
             --header @<(printf 'Authorization: Bearer %s\n' "$federated") \
             --header 'Content-Type: application/json' \
-            --data '{"scope": ["https://www.googleapis.com/auth/chromewebstore"], "lifetime": "1200s"}' \
+            --data "{\"scope\": [\"$store\"], \"lifetime\": \"1200s\"}" \
             "https://iamcredentials.googleapis.com/v1/projects/-/serviceAccounts/$SERVICE_ACCOUNT:generateAccessToken"; then
             error="$(jq -r '.error.message // empty' "$iam" 2>/dev/null || true)"
             fail "Google issued no access token of the service account in CWS_SERVICE_ACCOUNT (${error:-no answer}). The pool needs the role Workload Identity User on the service account, and the project the IAM Service Account Credentials API, as 'Sign in without a stored secret' in docs/releases.md sets it up."
@@ -347,15 +345,15 @@ jobs:
         run: |
           set -euo pipefail
           status="$RUNNER_TEMP/status.json"
-          if ! curl --fail-with-body --silent --show-error --retry 3 --retry-connrefused \
+          if ! curl --fail-with-body --silent --show-error --retry 3 --retry-all-errors \
             --connect-timeout 15 --max-time 60 --output "$status" \
             --header @"$RUNNER_TEMP/authorization" "$ITEM:fetchStatus"; then
             cat "$status"
             if [[ "$SIGN_IN" == keyless ]]; then
               # Google signed the service account in, but the store may not know it.
-              echo "::error title=Chrome Web Store::The store didn't tell the status of the item. When it answered 401 or 403, the Developer Dashboard doesn't name the service account in CWS_SERVICE_ACCOUNT under Account, as 'Sign in without a stored secret' in docs/releases.md sets it up."
+              echo "::error title=Chrome Web Store::The store didn't tell the status of the item. When it answered 401 or 403, the Developer Dashboard doesn't name the service account in CWS_SERVICE_ACCOUNT under Account, as 'Sign in without a stored secret' in docs/releases.md sets it up; when it answered 404, CWS_EXTENSION_ID or CWS_PUBLISHER_ID names no item of the publisher."
             else
-              echo "::error::The store didn't tell the status of the item."
+              echo "::error title=Chrome Web Store::The store didn't tell the status of the item. When it answered 404, CWS_EXTENSION_ID or CWS_PUBLISHER_ID names no item of the publisher, as docs/releases.md says."
             fi
             exit 1
           fi
@@ -384,17 +382,8 @@ jobs:
           EXPLICIT: ${{ steps.release.outputs.explicit }}
           SUBMITTED_AT: ${{ steps.store.outputs.at }}
           SUBMITTED_FROM: ${{ steps.store.outputs.from }}
-        run: node scripts/store-status.ts
-      # Here, as the job "store" reaches only Google. A warned item fails the step above
-      # and still gets the release, and with it this step.
-      - name: Find what the release asks for beyond the version of the store
-        id: asks
-        if: ${{ !cancelled() && steps.decide.outputs.tag != '' }}
-        env:
-          GH_TOKEN: ${{ github.token }}
-          STATUS: ${{ runner.temp }}/status.json
-          TAG: ${{ steps.decide.outputs.tag }}
-        run: node scripts/store-new-asks.ts
+          DOCS: ${{ github.server_url }}/${{ github.repository }}/blob/main/docs/releases.md
+        run: node scripts/store-status.mjs
       - name: Wait until Harden-Runner has removed Docker
         # Harden-Runner removes Docker with apt-get in the background; a job that ends
         # before it finishes hangs in "Cleaning up orphan processes" until its timeout.
@@ -421,17 +410,16 @@ jobs:
       TAG: ${{ needs.status.outputs.tag }}
     outputs:
       zip: ${{ steps.zip.outputs.zip }}
-      sha256: ${{ steps.zip.outputs.sha256 }}
     steps:
-      - name: Let the job reach only the hosts that it needs
+      - name: Block every host that the job doesn't need
         uses: step-security/harden-runner@46b06cea07f9e64621fdf066ba77ac6915163d43 # v2.22.3
         with:
           egress-policy: block
           disable-sudo-and-containers: true
-          # GitHub for the release and its attestation, Sigstore for the keys that check
-          # it. The hosts of the Actions service itself, which keeps the artifact, are
-          # allowed anyway.
-          allowed-endpoints: >
+          # GitHub for the release and its attestation, Sigstore for the keys that
+          # check it. The hosts of the Actions service itself, which keeps the
+          # artifact, are allowed anyway.
+          allowed-endpoints: >-
             api.github.com:443
             github.com:443
             release-assets.githubusercontent.com:443
@@ -444,7 +432,7 @@ jobs:
         # that address for as long as systemd-resolved keeps it, up to a minute.
         timeout-minutes: 4
         env:
-          HOSTS: >
+          HOSTS: >-
             api.github.com:443
             github.com:443
             release-assets.githubusercontent.com:443
@@ -479,29 +467,24 @@ jobs:
             echo "- **Problem:** $1" >> "$GITHUB_STEP_SUMMARY"
             exit 1
           }
-          version="${TAG#v}"
-          zip="player-switch-for-autodarts-$version.zip"
-          # The zip that scripts/release-assets.sh built in the isolated build of the
-          # release, from the signed tag, and that the build attested.
-          names="$(gh release view "$TAG" --json assets --jq '.assets[].name')" ||
-            fail "GitHub didn't list the files of the release $TAG, so nothing goes to the store. The log above says why; for a reason of GitHub or of the network, the next daily run tries again."
-          grep -qxF "$zip" <<<"$names" ||
-            fail "The release $TAG has no $zip, so nothing goes to the store. A release made before the zip has none: release a new version, whose build attaches it."
-          gh release download "$TAG" --pattern "$zip" --dir dist ||
-            fail "GitHub didn't hand out $zip of the release $TAG, so nothing goes to the store. The next daily run tries again."
-          gh attestation verify "dist/$zip" --repo "$GH_REPO" \
+          mkdir -p dist
+          # The zip that build-release.yml built from the signed tag and attested.
+          gh release download "$TAG" --pattern '*.zip' --dir dist ||
+            fail "The release $TAG has no zip of the extension, as a release made before the repository became a Chrome extension of the blueprint: release a new version, whose build attaches one."
+          shopt -s nullglob
+          zips=(dist/*.zip)
+          [[ ${#zips[@]} -eq 1 ]] || fail "The release $TAG has ${#zips[@]} zips; the store takes one."
+          zip="${zips[0]}"
+          gh attestation verify "$zip" --repo "$GH_REPO" \
             --signer-workflow "$GH_REPO/.github/workflows/build-release.yml" \
             --source-ref refs/heads/main --deny-self-hosted-runners >/dev/null ||
-            fail "$zip of the release $TAG has no valid provenance of the isolated build from main, so it stays off the store. If the log above shows a network error, the next daily run tries again; otherwise 'When a run fails' in docs/releases.md has the steps."
-          packaged="$(unzip -p "dist/$zip" manifest.json 2>/dev/null | jq -r .version 2>/dev/null || true)"
+            fail "$zip of the release $TAG carries no valid provenance of the isolated build of the release, so it stays off the store."
+          version="${TAG#v}"
+          packaged="$(unzip -p "$zip" manifest.json | jq -r .version)"
           [[ "$packaged" == "$version" ]] ||
-            fail "The manifest.json of $zip has the version ${packaged:-none}; the release is $version. 'When a run fails' in docs/releases.md has the steps."
-          sha256="$(sha256sum "dist/$zip" | cut -d ' ' -f 1)"
-          {
-            echo "zip=$zip"
-            echo "sha256=$sha256"
-          } >> "$GITHUB_OUTPUT"
-          echo "The zip $zip carries the version $version and the provenance of the release; its sha256 is \`$sha256\`." >> "$GITHUB_STEP_SUMMARY"
+            fail "The manifest.json of $zip has the version $packaged; the release is $version."
+          echo "zip=${zip#dist/}" >> "$GITHUB_OUTPUT"
+          echo "The zip ${zip#dist/} carries the version $version and the provenance of the release." >> "$GITHUB_STEP_SUMMARY"
       # What went to the store, to look at later, and when: the job "status" counts the
       # days of the review from it.
       - name: Keep the zip as an artifact of the run
@@ -534,16 +517,15 @@ jobs:
     permissions:
       # The artifact of the job "package".
       actions: read
-      # The OIDC token of GitHub for the sign-in without a stored secret (decision 0010).
+      # The OIDC token of GitHub for the sign-in without a stored secret.
       id-token: write
     env:
       TAG: ${{ needs.status.outputs.tag }}
       ZIP: dist/${{ needs.package.outputs.zip }}
-      SHA256: ${{ needs.package.outputs.sha256 }}
       ITEM: https://chromewebstore.googleapis.com/v2/publishers/${{ vars.CWS_PUBLISHER_ID }}/items/${{ vars.CWS_EXTENSION_ID }}
       UPLOAD: https://chromewebstore.googleapis.com/upload/v2/publishers/${{ vars.CWS_PUBLISHER_ID }}/items/${{ vars.CWS_EXTENSION_ID }}:upload
     steps:
-      - name: Let the job reach only the hosts that it needs
+      - name: Block every host that the job doesn't need
         uses: step-security/harden-runner@46b06cea07f9e64621fdf066ba77ac6915163d43 # v2.22.3
         with:
           egress-policy: block
@@ -551,7 +533,7 @@ jobs:
           # Google for the sign-in and the store, nothing else: this job holds the
           # token that publishes to every user. The hosts of the Actions service
           # itself, which hands out the artifact and the OIDC token, are allowed anyway.
-          allowed-endpoints: >
+          allowed-endpoints: >-
             oauth2.googleapis.com:443
             sts.googleapis.com:443
             iamcredentials.googleapis.com:443
@@ -561,7 +543,7 @@ jobs:
         # that address for as long as systemd-resolved keeps it, up to a minute.
         timeout-minutes: 4
         env:
-          HOSTS: >
+          HOSTS: >-
             oauth2.googleapis.com:443
             sts.googleapis.com:443
             iamcredentials.googleapis.com:443
@@ -586,14 +568,6 @@ jobs:
         with:
           name: chrome-web-store-${{ needs.status.outputs.tag }}
           path: dist
-      - name: Check that it is the zip of the release, byte for byte
-        run: |
-          if ! echo "$SHA256  $ZIP" | sha256sum --check --strict --status; then
-            message="$ZIP isn't the zip of the release $TAG, whose sha256 is ${SHA256:-unknown}, so it stays off the store."
-            echo "::error title=Chrome Web Store::$message"
-            echo "- **Problem:** $message" >> "$GITHUB_STEP_SUMMARY"
-            exit 1
-          fi
       - name: Sign in to the Chrome Web Store API with the refresh token
         if: needs.status.outputs.sign-in != 'keyless'
         env:
@@ -605,7 +579,7 @@ jobs:
           umask 077
           # The same sign-in as in the job "status": a job can't hand a token to another.
           response="$RUNNER_TEMP/token.json"
-          if ! curl --fail-with-body --silent --show-error --retry 3 --retry-connrefused \
+          if ! curl --fail-with-body --silent --show-error --retry 3 --retry-all-errors \
             --connect-timeout 15 --max-time 60 --output "$response" \
             --data-urlencode "client_id=$CWS_CLIENT_ID" \
             --data-urlencode "client_secret=$CWS_CLIENT_SECRET" \
@@ -633,16 +607,21 @@ jobs:
         run: |
           set -euo pipefail
           umask 077
-          # The sign-in without a stored secret (decision 0010), the same in both jobs that
-          # talk to the store, which test/publish-store.test.ts keeps so. GitHub's OIDC token
-          # of the job names the repository, the branch and the workflow; Google's Security
-          # Token Service trades it for a federated token when the condition of the provider
-          # admits all three, and IAM trades that for an access token of the service account,
-          # which the Developer Dashboard admits to the item, for 20 minutes: longer than
-          # either job may run. Each token stays in a file of the job, in no log and no
-          # environment, and every file but the last is gone when the step ends.
+          # The sign-in without a stored secret, the same in both jobs that talk to the
+          # store, which a test of the blueprint keeps so. GitHub's OIDC token of the job
+          # names the repository, the branch and the workflow; Google's Security Token
+          # Service trades it for a federated token when the condition of the provider
+          # admits all three, and IAM trades that for an access token of the service
+          # account, which the Developer Dashboard admits to the item, for 20 minutes:
+          # longer than either job may run. Each token stays in a file of the job, in no
+          # log and no environment, and every file but the last is gone when the step ends.
           oidc="$RUNNER_TEMP/oidc.json" jwt="$RUNNER_TEMP/oidc.jwt"
           sts="$RUNNER_TEMP/sts.json" iam="$RUNNER_TEMP/iam.json"
+          # Names, not hosts that the job reaches: the audience of the OIDC token, and
+          # the scopes of the federated token and of the token of the store.
+          audience="https://iam.googleapis.com/$PROVIDER"
+          cloud="https://www.googleapis.com/auth/cloud-platform"
+          store="https://www.googleapis.com/auth/chromewebstore"
           trap 'rm -f "$oidc" "$jwt" "$sts" "$iam"' EXIT
           fail() {
             echo "::error title=Chrome Web Store::$1"
@@ -652,20 +631,20 @@ jobs:
           if [[ -z "${ACTIONS_ID_TOKEN_REQUEST_URL:-}" || -z "${ACTIONS_ID_TOKEN_REQUEST_TOKEN:-}" ]]; then
             fail "GitHub offers this job no OIDC token: the job needs the permission id-token: write."
           fi
-          curl --fail-with-body --silent --show-error --retry 3 --retry-connrefused \
+          curl --fail-with-body --silent --show-error --retry 3 --retry-all-errors \
             --connect-timeout 15 --max-time 60 --output "$oidc" \
             --header @<(printf 'Authorization: bearer %s\n' "$ACTIONS_ID_TOKEN_REQUEST_TOKEN") \
-            --get --data-urlencode "audience=https://iam.googleapis.com/$PROVIDER" \
+            --get --data-urlencode "audience=$audience" \
             "$ACTIONS_ID_TOKEN_REQUEST_URL" ||
             fail "GitHub issued no OIDC token for the job. Start the run again."
           jq -j '.value // empty' "$oidc" > "$jwt"
           [[ -s "$jwt" ]] || fail "GitHub's answer holds no OIDC token."
-          if ! curl --fail-with-body --silent --show-error --retry 3 --retry-connrefused \
+          if ! curl --fail-with-body --silent --show-error --retry 3 --retry-all-errors \
             --connect-timeout 15 --max-time 60 --output "$sts" \
             --data-urlencode "audience=//iam.googleapis.com/$PROVIDER" \
             --data-urlencode grant_type=urn:ietf:params:oauth:grant-type:token-exchange \
             --data-urlencode requested_token_type=urn:ietf:params:oauth:token-type:access_token \
-            --data-urlencode scope=https://www.googleapis.com/auth/cloud-platform \
+            --data-urlencode "scope=$cloud" \
             --data-urlencode subject_token_type=urn:ietf:params:oauth:token-type:jwt \
             --data-urlencode "subject_token@$jwt" \
             https://sts.googleapis.com/v1/token; then
@@ -676,11 +655,11 @@ jobs:
           federated="$(jq -r '.access_token // empty' "$sts")"
           [[ -n "$federated" ]] || fail "The answer of Google's Security Token Service holds no token."
           echo "::add-mask::$federated"
-          if ! curl --fail-with-body --silent --show-error --retry 3 --retry-connrefused \
+          if ! curl --fail-with-body --silent --show-error --retry 3 --retry-all-errors \
             --connect-timeout 15 --max-time 60 --output "$iam" \
             --header @<(printf 'Authorization: Bearer %s\n' "$federated") \
             --header 'Content-Type: application/json' \
-            --data '{"scope": ["https://www.googleapis.com/auth/chromewebstore"], "lifetime": "1200s"}' \
+            --data "{\"scope\": [\"$store\"], \"lifetime\": \"1200s\"}" \
             "https://iamcredentials.googleapis.com/v1/projects/-/serviceAccounts/$SERVICE_ACCOUNT:generateAccessToken"; then
             error="$(jq -r '.error.message // empty' "$iam" 2>/dev/null || true)"
             fail "Google issued no access token of the service account in CWS_SERVICE_ACCOUNT (${error:-no answer}). The pool needs the role Workload Identity User on the service account, and the project the IAM Service Account Credentials API, as 'Sign in without a stored secret' in docs/releases.md sets it up."
@@ -689,78 +668,79 @@ jobs:
           [[ -n "$token" ]] || fail "Google's answer holds no access token of the service account."
           echo "::add-mask::$token"
           printf 'Authorization: Bearer %s\n' "$token" > "$RUNNER_TEMP/authorization"
-      - name: Upload the zip and submit it for review
-        env:
-          NEW_ASKS: ${{ needs.status.outputs.new-asks }}
+      - name: Upload the zip
         run: |
           set -euo pipefail
-          response="$RUNNER_TEMP/store.json"
-          status="$RUNNER_TEMP/status.json"
+          response="$RUNNER_TEMP/upload.json"
           fail() {
-            local annotation="${1//'%'/%25}"
-            annotation="${annotation//$'\r'/%0D}"
-            annotation="${annotation//$'\n'/%0A}"
-            echo "::error title=Chrome Web Store::$annotation"
+            echo "::error title=Chrome Web Store::$1"
             echo "- **Problem:** $1" >> "$GITHUB_STEP_SUMMARY"
             exit 1
           }
-          # The store takes no new version during a review, which may have begun since the
-          # job "status" asked: in the dashboard, or with a submission whose answer curl
-          # never got and sent again. The API documents no error for it, so the status of
-          # the item decides. Then the refusal is no failure, and a later day delivers.
+          # Why the store refused the upload, and what fixes it.
           refused() {
-            cat "$response" 2>/dev/null || true
-            # The annotation starts on a line of its own, whatever the answer ended with.
-            echo
-            if curl --fail-with-body --silent --show-error --retry 3 --retry-connrefused \
-              --connect-timeout 15 --max-time 60 --output "$status" \
-              --header @"$RUNNER_TEMP/authorization" "$ITEM:fetchStatus" &&
-              [[ "$(jq -r '.submittedItemRevisionStatus.state // empty' "$status" 2>/dev/null || true)" == PENDING_REVIEW ]]; then
-              submitted="$(jq -r '.submittedItemRevisionStatus.distributionChannels[0].crxVersion // empty' "$status")"
-              if [[ "$submitted" == "${TAG#v}" ]]; then
-                echo "$TAG is in review already; Google publishes it after the review." | tee -a "$GITHUB_STEP_SUMMARY"
-              else
-                echo "The store reviews ${submitted:-a submission} and takes no new version until the review ends; the daily run delivers $TAG after it." | tee -a "$GITHUB_STEP_SUMMARY"
-              fi
-              exit 0
-            fi
-            fail "$1"
+            local said
+            said="$(jq -r '[.error.details[]?.reason, .error.message, .error.status, .itemError[]?.error_detail] | map(strings) | join("; ")' "$response" 2>/dev/null || true)"
+            case "$said" in
+              *[Vv]ersion*)
+                fail "The store refused $ZIP ($said): the store takes only a version above the one it has. Release a version above that of the Developer Dashboard. docs/releases.md#when-a-run-fails says more." ;;
+              *[Mm]anifest*)
+                fail "The store refused $ZIP for its manifest ($said): run node scripts/check-manifest.mjs, fix what the store names, and release a new version. docs/releases.md#when-a-run-fails says more." ;;
+              *[Rr]eview* | *[Pp]ending*)
+                fail "The store refused $ZIP while a review is pending ($said): the item takes no new package until Google has decided. The daily run delivers it then, or cancel the review in the Developer Dashboard. docs/releases.md#when-a-run-fails says more." ;;
+            esac
+            fail "The store refused $ZIP ($1, ${said:-no reason}); its answer is in the log above. docs/releases.md#when-a-run-fails says what to do."
           }
-          curl --fail-with-body --silent --show-error --retry 3 --retry-connrefused \
+          if ! curl --fail-with-body --silent --show-error --retry 3 --retry-connrefused \
             --connect-timeout 15 --max-time 600 --output "$response" \
-            --header @"$RUNNER_TEMP/authorization" --request POST --upload-file "$ZIP" "$UPLOAD" ||
-            refused "The store refused the upload of $ZIP."
+            --header @"$RUNNER_TEMP/authorization" --request POST --upload-file "$ZIP" "$UPLOAD"; then
+            cat "$response"
+            refused "the upload"
+          fi
           state="$(jq -r '.uploadState // empty' "$response")"
           # The store may go on processing the upload after its answer; the status of the
           # item says when it is done.
           for _ in $(seq 1 20); do
             [[ "$state" == IN_PROGRESS || "$state" == UPLOAD_IN_PROGRESS ]] || break
             sleep 15
-            # A call that gets no answer leaves the file as it was, and an earlier answer
-            # in the log would read as the store's answer to this one.
-            rm -f "$response"
-            curl --fail-with-body --silent --show-error --retry 3 --retry-connrefused \
+            curl --fail-with-body --silent --show-error --retry 3 --retry-all-errors \
               --connect-timeout 15 --max-time 60 --output "$response" \
               --header @"$RUNNER_TEMP/authorization" "$ITEM:fetchStatus" ||
-              refused "The store didn't tell the status of the upload."
+              { cat "$response"; fail "The store didn't tell the status of the upload of $ZIP; the next daily run tries again."; }
             state="$(jq -r '.lastAsyncUploadState // empty' "$response")"
           done
           if [[ "$state" != SUCCEEDED ]]; then
-            refused "The upload of $ZIP ended in the state ${state:-unknown}."
+            cat "$response"
+            refused "the state ${state:-unknown}"
           fi
-          echo "The store took the upload of $ZIP, the zip of the release with the sha256 \`$SHA256\`." | tee -a "$GITHUB_STEP_SUMMARY"
-          rm -f "$response"
+          echo "The store took the upload of $ZIP." | tee -a "$GITHUB_STEP_SUMMARY"
+      - name: Submit the release for review
+        run: |
+          set -euo pipefail
+          response="$RUNNER_TEMP/publish.json"
+          fail() {
+            echo "::error title=Chrome Web Store::$1"
+            echo "- **Problem:** $1" >> "$GITHUB_STEP_SUMMARY"
+            exit 1
+          }
           if ! curl --fail-with-body --silent --show-error --retry 3 --retry-connrefused \
             --connect-timeout 15 --max-time 120 --output "$response" \
             --header @"$RUNNER_TEMP/authorization" --header 'Content-Type: application/json' \
             --request POST --data '{}' "$ITEM:publish"; then
-            reason="$(jq -r '[.error.details[]?.reason? | strings] | first // empty' "$response" 2>/dev/null || true)"
+            cat "$response"
+            reason="$(jq -r '[.error.details[]?.reason, .error.status] | map(strings) | first // empty' "$response" 2>/dev/null || true)"
             if [[ "$reason" == INVALID_ITEM_METADATA ]]; then
-              link="$(jq -r '[.error.details[]?.links[]?.url? | strings] | first // empty' "$response" 2>/dev/null || true)"
-              refused "The store took the upload of $TAG but refused to submit it for review (INVALID_ITEM_METADATA): the Developer Dashboard lacks something that this version needs, and the API of the store can't set it. ${NEW_ASKS:+$NEW_ASKS }Under Privacy practices, paste the justifications from Permission justifications in store/listing.en.md; under Store listing, paste each new language from its file in store/; saving the draft shows whatever else is missing: ${link:-https://chrome.google.com/webstore/devconsole}. Then start this workflow by hand with gh workflow run publish-store.yml -f tag=$TAG, or leave it to the daily run. 'When a run fails' in docs/releases.md has the steps."
+              # The store took the package but not its submission: the Developer
+              # Dashboard lacks what only a person can fill in there, which the API
+              # can't set, most often the justification of a permission or a host that
+              # is new in this version, or the listing of a new language.
+              asks="$(unzip -p "$ZIP" manifest.json | jq -r '[(.permissions // [])[], (.optional_permissions // [])[],
+                (.host_permissions // [])[], (.optional_host_permissions // [])[], (.content_scripts // [])[].matches[]?,
+                ((.web_accessible_resources // [])[].resources[]? | "web-accessible " + .)] | unique | join(", ")')"
+              languages="$(unzip -Z1 "$ZIP" | sed -n 's|^_locales/\([^/]*\)/messages\.json$|\1|p' | sort | paste -sd, - | sed 's/,/, /g')"
+              fail "The store refused to submit $TAG for review (INVALID_ITEM_METADATA): the Developer Dashboard lacks something that this version needs, which the API can't set. The version asks for ${asks:-nothing} and speaks ${languages:-one language}: under Privacy practices, justify each permission and host that is new since the version in the store, from store/permissions.json; under Store listing, fill in each new language from store/listing.<language>.md. Save the draft, which names any other field that is missing, then submit $TAG in the dashboard or start this workflow by hand with the tag: gh workflow run publish-store.yml -f tag=$TAG. docs/releases.md#when-a-run-fails says more."
             fi
-            detail="$(jq -r '.error.message // empty' "$response" 2>/dev/null || true)"
-            refused "The store refused to submit the release $TAG for review${reason:+ ($reason)}${detail:+: $detail}"
+            fail "The store refused to submit $TAG for review (${reason:-no reason}); its answer is in the log above. docs/releases.md#when-a-run-fails says what to do."
           fi
           jq -r '.warningInfo.warnings[]? | "::warning::\(.reason): \(.description)"' "$response"
           state="$(jq -r '.state // empty' "$response")"
@@ -773,8 +753,7 @@ jobs:
               ;;
             *)
               cat "$response"
-              echo
-              fail "The submission of the release $TAG ended in the state ${state:-unknown}."
+              fail "The submission of the release $TAG ended in the state ${state:-unknown}, which the workflow doesn't know; the Developer Dashboard shows the state of the item. docs/releases.md#when-a-run-fails says what to do."
               ;;
           esac
       - name: Wait until Harden-Runner has removed Docker

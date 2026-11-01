@@ -12,12 +12,22 @@ import { fileURLToPath } from "node:url";
 export const ACCEPTED = {
   BACKGROUND_SERVICE_WORKER_IGNORED:
     "Firefox ignores background.service_worker, which Chrome and Edge run, and runs the same background.js " +
-    "from background.scripts instead; scripts/check-manifest.mjs checks that both name it.",
+    "from background.scripts instead; scripts/check-extension.mjs checks that both name it.",
 };
 
-/** The files of extension/ that the package leaves out, as scripts/package-extension.sh does. */
+/**
+ * Whether the package holds a file of extension/: without source maps, TypeScript, the
+ * configuration of tools and hidden files, as scripts/package-extension.sh of the
+ * blueprint leaves them out, which test/store-kind.test.ts keeps so.
+ */
 export function shipped(path) {
-  return !path.endsWith(".map") && !/(^|[/\\])biome\.jsonc$/.test(path);
+  const parts = path.split(/[/\\]/);
+  const name = parts.at(-1);
+  return (
+    !/\.(?:map|ts)$/.test(name) &&
+    !/^(?:biome\.jsonc?|tsconfig.*\.json)$/.test(name) &&
+    !parts.some((part) => part.startsWith("."))
+  );
 }
 
 /** One finding of addons-linter as a line, with its file and line where it names them. */

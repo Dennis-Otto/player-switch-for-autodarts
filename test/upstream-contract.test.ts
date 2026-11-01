@@ -12,6 +12,7 @@ import {
   checkLogout,
   checkPage,
   checkRefresh,
+  escapeData,
   type Finding,
   locate,
   MADE_UP,
@@ -31,6 +32,10 @@ import {
 } from "../src/autodarts.ts";
 
 const ROOT = fileURLToPath(new URL("..", import.meta.url));
+
+test("escapeData keeps a message on the one line of a workflow command", () => {
+  assert.equal(escapeData("100% done\r\nnext"), "100%25 done%0D%0Anext");
+});
 
 /** The start page of the fake Autodarts Play, with its scripts as Vite writes them. */
 const PAGE = `<!doctype html><html><head>
