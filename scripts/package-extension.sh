@@ -8,8 +8,9 @@
 #   bash scripts/package-extension.sh [FOLDER] [VERSION]
 #
 # writes FOLDER/player-switch-for-autodarts-<version>.zip, dist/ by default, and prints
-# its path. The same commit makes the same zip, byte for byte: the files in their
-# order, each with the time of the commit, and forward slashes on every system. The
+# its path. The same commit makes the same zip, byte for byte, from a clean checkout:
+# the files in their order, each with the time of the commit, forward slashes, and
+# stored rather than compressed, as what zlib makes of a file depends on its build. The
 # build of a release passes its version through scripts/release-assets.sh, and the
 # manifest of a release has that version already, as the release bot writes it there; a
 # beta, such as 1.3.0-beta.2, comes from main, whose manifest has the version of the
@@ -26,6 +27,8 @@ if [[ -z "$python" ]]; then
   exit 1
 fi
 
+# From nothing, as tsc never removes a file of an earlier build, which would ship.
+rm -rf extension/lib
 npm run --silent build
 
 # The time of the commit, for every file of the zip; the time of now outside Git.
@@ -71,10 +74,10 @@ files = sorted(
 )
 out.mkdir(parents=True, exist_ok=True)
 target = out / f"player-switch-for-autodarts-{release}.zip"
-with zipfile.ZipFile(target, "w", zipfile.ZIP_DEFLATED) as archive:
+with zipfile.ZipFile(target, "w", zipfile.ZIP_STORED) as archive:
     for path in files:
         entry = zipfile.ZipInfo(path.relative_to(folder).as_posix(), stamp)
-        entry.compress_type = zipfile.ZIP_DEFLATED
+        entry.compress_type = zipfile.ZIP_STORED
         entry.external_attr = 0o644 << 16
         # Made by Unix on every system, so that Windows makes the same bytes.
         entry.create_system = 3

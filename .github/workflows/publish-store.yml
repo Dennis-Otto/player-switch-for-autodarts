@@ -471,15 +471,19 @@ jobs:
           zip="player-switch-for-autodarts-$version.zip"
           # The zip that scripts/release-assets.sh built in the isolated build of the
           # release, from the signed tag, and that the build attested.
-          gh release download "$TAG" --pattern "$zip" --dir dist ||
+          names="$(gh release view "$TAG" --json assets --jq '.assets[].name')" ||
+            fail "GitHub didn't list the files of the release $TAG, so nothing goes to the store. The log above says why; for a reason of GitHub or of the network, the next daily run tries again."
+          grep -qxF "$zip" <<<"$names" ||
             fail "The release $TAG has no $zip, so nothing goes to the store. A release made before the zip has none: release a new version, whose build attaches it."
+          gh release download "$TAG" --pattern "$zip" --dir dist ||
+            fail "GitHub didn't hand out $zip of the release $TAG, so nothing goes to the store. The next daily run tries again."
           gh attestation verify "dist/$zip" --repo "$GH_REPO" \
             --signer-workflow "$GH_REPO/.github/workflows/build-release.yml" \
             --source-ref refs/heads/main --deny-self-hosted-runners >/dev/null ||
-            fail "$zip of the release $TAG has no valid provenance of the isolated build from main, so it stays off the store. 'When a run fails' in docs/releases.md has the steps."
+            fail "$zip of the release $TAG has no valid provenance of the isolated build from main, so it stays off the store. If the log above shows a network error, the next daily run tries again; otherwise 'When a run fails' in docs/releases.md has the steps."
           packaged="$(unzip -p "dist/$zip" manifest.json 2>/dev/null | jq -r .version 2>/dev/null || true)"
           [[ "$packaged" == "$version" ]] ||
-            fail "The manifest.json of $zip has the version ${packaged:-none}; the release is $version."
+            fail "The manifest.json of $zip has the version ${packaged:-none}; the release is $version. 'When a run fails' in docs/releases.md has the steps."
           echo "zip=$zip" >> "$GITHUB_OUTPUT"
           echo "The zip $zip carries the version $version and the provenance of the release." >> "$GITHUB_STEP_SUMMARY"
       # What went to the store, to look at later, and when: the job "status" counts the

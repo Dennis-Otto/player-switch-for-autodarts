@@ -6,7 +6,7 @@ How a change becomes a release, and how a release reaches the Chrome Web Store. 
 
 Every change reaches `main` through a pull request whose title follows [Conventional Commits](https://www.conventionalcommits.org/). The release bot keeps a pull request titled `chore: release x.y.z` open with the next version, decided from the titles merged since the last release (`fix` a patch, `feat` a minor, `!` a major version), and with the text of *Unreleased* in [the changelog](https://github.com/Dennis-Otto/player-switch-for-autodarts/blob/main/CHANGELOG.md) as its notes. Merging that pull request publishes the release on GitHub, with the zip of the extension, its SBOMs, third-party notices and the signed provenance of an isolated build, and raises the version in `package.json` and in `extension/manifest.json` together, so the extension always carries the version of its release.
 
-[CONTRIBUTING](https://github.com/Dennis-Otto/player-switch-for-autodarts/blob/main/CONTRIBUTING.md) has the rules for changes; [SECURITY.md](https://github.com/Dennis-Otto/player-switch-for-autodarts/blob/main/SECURITY.md) says how to verify a release.
+[CONTRIBUTING](https://github.com/Dennis-Otto/player-switch-for-autodarts/blob/main/CONTRIBUTING.md) has the rules for changes; [SECURITY.md](https://github.com/Dennis-Otto/player-switch-for-autodarts/blob/main/SECURITY.md) says how to report a vulnerability, and [the package of a release](#the-package-of-a-release) how to verify the zip.
 
 ## The package of a release
 
@@ -24,7 +24,7 @@ gh release download vX.Y.Z --repo Dennis-Otto/player-switch-for-autodarts --patt
 gh attestation verify player-switch-for-autodarts-X.Y.Z.zip --repo Dennis-Otto/player-switch-for-autodarts --signer-workflow Dennis-Otto/player-switch-for-autodarts/.github/workflows/build-release.yml
 ```
 
-From a checkout, `bash scripts/package-extension.sh` builds the extension and writes the same zip to `dist/`, without source maps, with forward slashes in every path on every system. The same commit makes the same zip, byte for byte. It needs Node.js and Python 3.
+From a checkout, `bash scripts/package-extension.sh` builds the extension from nothing and writes the zip to `dist/`, without source maps, with forward slashes in every path. From a clean checkout, the same commit makes the same zip, byte for byte, on every system: its files are stored rather than compressed, because what zlib makes of a file depends on its build. A file that a checkout has beside those of Git would go into the zip, so compare from a clean one. It needs Node.js and Python 3.
 
 ## The first listing
 
@@ -199,7 +199,7 @@ A failed run names the reason and the fix in its summary and in an annotation, a
 - **In review for more than 7 days**: look in the dashboard whether Google asks for anything, or contact the support of the Chrome Web Store. A new permission makes a review take longer.
 - **A higher version in the store**: a version went to the store by hand without its release; release a version above it.
 - **The release has no zip**: a release made before the zip has none, and a release takes no file once it is published, so release a new version. For a newer release, the log of its job *assets of the project* in the Release workflow says why it built none.
-- **The zip has no valid provenance, or another version**: the file isn't what the isolated build attested for this tag. Don't upload it by hand. `gh attestation verify`, as in [the package of a release](#the-package-of-a-release), and the run of the Release workflow show what differs; a release from another branch than `main` fails here as well. Release a new version from `main`.
+- **The zip has no valid provenance, or another version**: unless the log of the step shows a network error, for which the next daily run tries again, the file isn't what the isolated build attested for this tag. Don't upload it by hand. `gh attestation verify`, as in [the package of a release](#the-package-of-a-release), and the run of the Release workflow show what differs; a release from another branch than `main` fails here as well. Release a new version from `main`.
 
 A run that failed for a reason of GitHub or of the network needs nothing: the next daily run delivers the release.
 

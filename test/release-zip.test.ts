@@ -71,10 +71,34 @@ const MANIFEST = {
   version: "1.2.0",
 };
 
-/** Runs a test in a small copy of the project, whose npm only records its calls. */
+/** What the fake npm does: it records its call and builds extension/lib/. */
+const BUILD = `echo "$*" >> "$FAKE_NPM"
+mkdir -p extension/lib
+echo 'export {};' > extension/lib/background.js
+echo '{}' > extension/lib/background.js.map
+`;
+
+/** The times of the entries of a zip. */
+const stamps = (zip: string): number[][] => {
+  const result = spawnSync(
+    python ?? "python3",
+    [
+      "-c",
+      "import json, sys, zipfile\n" +
+        "print(json.dumps([i.date_time for i in zipfile.ZipFile(sys.argv[1]).infolist()]))",
+      zip,
+    ],
+    { encoding: "utf8" },
+  );
+  assert.equal(result.status, 0, result.stderr);
+  return JSON.parse(result.stdout) as number[][];
+};
+
+/** Runs a test in a small copy of the project, whose npm only pretends to build. */
 const inProject = <T>(
   run: (dir: string, script: (name: string, ...args: string[]) => Script) => T,
-  npm = 'echo "$*" >> "$FAKE_NPM"\n',
+  npm = BUILD,
+  env: Readonly<Record<string, string>> = { SOURCE_DATE_EPOCH: "1800000000" },
 ): T => {
   const dir = mkdtempSync(join(tmpdir(), "release-zip-"));
   try {
@@ -89,8 +113,6 @@ const inProject = <T>(
       "extension/manifest.json": `${JSON.stringify(MANIFEST, null, 2)}\n`,
       "extension/popup.html": "<!doctype html>\n",
       "extension/biome.jsonc": "{}\n",
-      "extension/lib/background.js": "export {};\n",
-      "extension/lib/background.js.map": "{}\n",
       "extension/_locales/en/messages.json": "{}\n",
     };
     for (const [file, text] of Object.entries(files)) {
@@ -110,7 +132,7 @@ const inProject = <T>(
         env: {
           PATH: `${bin}${delimiter}${process.env.PATH ?? ""}`,
           FAKE_NPM: record,
-          SOURCE_DATE_EPOCH: "1800000000",
+          ...env,
         },
       });
       return {
@@ -176,6 +198,71 @@ describe("the zip of a release", { skip: skipScripts }, () => {
       );
       script("release-assets", join(dir, "out"), "1.2.0");
       assert.equal(hash(), first);
+    });
+  });
+
+  test("doesn't depend on zlib: a fixed tree makes these very bytes", () => {
+    inProject((dir, script) => {
+      const result = script("release-assets", join(dir, "out"), "1.2.0");
+      assert.equal(result.status, 0, result.stderr);
+      const zip = readFileSync(join(dir, "out", ZIP));
+      // Stored, so the sum of a Python on Windows and of one on Linux is the same.
+      assert.equal(
+        createHash("sha256").update(zip).digest("hex"),
+        "3b5f98fd985bf9522be99b1925c5d5000fdb5a8ce9ef9dec67ce715052446e2d",
+      );
+    });
+  });
+
+  test("takes the time of the commit, when nothing else names a time", () => {
+    inProject(
+      (dir, script) => {
+        const git = (...args: string[]): void => {
+          const done = spawnSync(
+            "git",
+            [
+              "-c",
+              "user.name=test",
+              "-c",
+              "user.email=test@example.org",
+              "-c",
+              "commit.gpgsign=false",
+              ...args,
+            ],
+            {
+              cwd: dir,
+              encoding: "utf8",
+              env: {
+                ...process.env,
+                GIT_AUTHOR_DATE: "2026-02-03T04:05:06Z",
+                GIT_COMMITTER_DATE: "2026-02-03T04:05:06Z",
+              },
+            },
+          );
+          assert.equal(done.status, 0, done.stderr);
+        };
+        git("init", "-q");
+        git("commit", "-q", "--allow-empty", "-m", "the commit");
+        const result = script("release-assets", join(dir, "out"), "1.2.0");
+        assert.equal(result.status, 0, result.stderr);
+        const times = stamps(join(dir, "out", ZIP));
+        assert.ok(times.length > 0);
+        for (const time of times) {
+          assert.deepEqual(time, [2026, 2, 3, 4, 5, 6]);
+        }
+      },
+      BUILD,
+      {},
+    );
+  });
+
+  test("leaves out what an earlier build left in extension/lib/", () => {
+    inProject((dir, script) => {
+      mkdirSync(join(dir, "extension/lib"), { recursive: true });
+      writeFileSync(join(dir, "extension/lib/removed.js"), "export {};\n");
+      const result = script("release-assets", join(dir, "out"), "1.2.0");
+      assert.equal(result.status, 0, result.stderr);
+      assert.ok(!("lib/removed.js" in contents(join(dir, "out", ZIP))));
     });
   });
 
@@ -255,15 +342,22 @@ interface Run {
   readonly calls: string[];
 }
 
-/** A gh that records its calls and hands out the zip of FAKE_ZIP, if there is one. */
+/**
+ * A gh that records its calls, lists the zip of FAKE_ZIP beside the notices, if there
+ * is one, and hands it out.
+ */
 const FAKE_GH = `#!/usr/bin/env bash
 echo "$*" >> "$FAKE_CALLS"
 case "$1 $2" in
+  "release view")
+    [[ -z "\${FAKE_VIEW_FAILS:-}" ]] || exit 1
+    echo THIRD_PARTY_NOTICES.md
+    # A longer name that holds the name of the zip is another file.
+    echo "player-switch-for-autodarts-1.2.0.zip.sig"
+    [[ -z "\${FAKE_ZIP:-}" ]] || echo "player-switch-for-autodarts-1.2.0.zip"
+    ;;
   "release download")
-    if [[ -z "\${FAKE_ZIP:-}" ]]; then
-      echo "no assets to download" >&2
-      exit 1
-    fi
+    [[ -z "\${FAKE_DOWNLOAD_FAILS:-}" ]] || exit 1
     mkdir -p "$7"
     cp "$FAKE_ZIP" "$7/$5"
     ;;
@@ -272,6 +366,8 @@ case "$1 $2" in
 esac
 `;
 
+const THE_VIEW = "release view v1.2.0 --json assets --jq .assets[].name";
+const THE_DOWNLOAD = `release download v1.2.0 --pattern ${ZIP} --dir dist`;
 const THE_VERIFY =
   "attestation verify dist/player-switch-for-autodarts-1.2.0.zip --repo o/r " +
   "--signer-workflow o/r/.github/workflows/build-release.yml " +
@@ -350,10 +446,7 @@ describe("the job that takes the zip of the release", () => {
   }, () => {
     const result = take(manifest("1.2.0"));
     assert.equal(result.status, 0, result.stdout);
-    assert.deepEqual(result.calls, [
-      `release download v1.2.0 --pattern ${ZIP} --dir dist`,
-      THE_VERIFY,
-    ]);
+    assert.deepEqual(result.calls, [THE_VIEW, THE_DOWNLOAD, THE_VERIFY]);
     assert.equal(result.output, `zip=${ZIP}\n`);
     assert.match(
       result.summary,
@@ -366,9 +459,7 @@ describe("the job that takes the zip of the release", () => {
   }, () => {
     const result = take(undefined);
     assert.equal(result.status, 1);
-    assert.deepEqual(result.calls, [
-      `release download v1.2.0 --pattern ${ZIP} --dir dist`,
-    ]);
+    assert.deepEqual(result.calls, [THE_VIEW]);
     assert.equal(result.output, "");
     assert.match(
       result.stdout,
@@ -376,6 +467,30 @@ describe("the job that takes the zip of the release", () => {
     );
     assert.match(result.summary, /release a new version/);
   });
+
+  for (const [what, env, calls] of [
+    [
+      "doesn't list the files of the release",
+      { FAKE_VIEW_FAILS: "1" },
+      [THE_VIEW],
+    ],
+    [
+      "doesn't hand out a zip that the release has",
+      { FAKE_DOWNLOAD_FAILS: "1" },
+      [THE_VIEW, THE_DOWNLOAD],
+    ],
+  ] as const) {
+    test(`asks for no new release when GitHub ${what}`, {
+      skip: skipJob,
+    }, () => {
+      const result = take(manifest("1.2.0"), env);
+      assert.equal(result.status, 1);
+      assert.deepEqual(result.calls, calls);
+      assert.equal(result.output, "");
+      assert.match(result.summary, /the next daily run tries again/i);
+      assert.doesNotMatch(result.summary, /release a new version/);
+    });
+  }
 
   test("keeps a zip off the store whose provenance doesn't hold", {
     skip: skipJob,
