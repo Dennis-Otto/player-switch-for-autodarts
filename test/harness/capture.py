@@ -19,7 +19,7 @@ import subprocess
 import sys
 from dataclasses import dataclass
 from pathlib import Path
-from urllib.parse import unquote, urlsplit
+from urllib.parse import parse_qs, unquote, urlsplit
 
 import imageio_ffmpeg
 from PIL import Image
@@ -28,7 +28,9 @@ from playwright.sync_api import Browser, Page, Route, sync_playwright
 ROOT = Path(__file__).resolve().parents[2]
 ORIGIN = "http://harness.test"
 STUB = ROOT / "test" / "harness" / "chrome-stub.js"
-LANGUAGES = ("en", "de")
+# The languages of the website, and with it of the pictures of the documentation. The
+# pictures of the store come in every language of the extension: store_languages().
+DOCUMENTATION_LANGUAGES = ("en", "de")
 # Whether the stage, or a page in one of its frames, is larger than the window.
 OVERFLOWS = """() => [document, ...[...document.querySelectorAll("iframe")].map(
     (frame) => frame.contentDocument)].some((page) => {
@@ -58,7 +60,7 @@ def variants(name: str, suffix: str) -> list[tuple[str, str, bool]]:
     """The language, the path and the scheme of each picture of the documentation:
     NAME.png, NAME.dark.png, NAME.de.png and NAME.de.dark.png, as the diagrams."""
     found = []
-    for lang in LANGUAGES:
+    for lang in DOCUMENTATION_LANGUAGES:
         for dark in (False, True):
             parts = (
                 [name] + ([lang] if lang != "en" else []) + (["dark"] if dark else [])
@@ -67,8 +69,31 @@ def variants(name: str, suffix: str) -> list[tuple[str, str, bool]]:
     return found
 
 
+def store_languages() -> list[str]:
+    """Every folder of extension/_locales: the store takes pictures for each language of
+    its listing, and a new language needs nothing here but the texts on its pictures."""
+    found = sorted(
+        path.name for path in (ROOT / "extension" / "_locales").iterdir() if path.is_dir()
+    )
+    for lang in found:
+        if not (ROOT / "store" / f"pictures.{lang}.json").is_file():
+            raise SystemExit(
+                f"The extension speaks {lang}, but store/pictures.{lang}.json is "
+                "missing: copy store/pictures.en.json and translate it."
+            )
+    return found
+
+
+def locale(query: str) -> str:
+    """The language that the browser reports for the language in the address of a stage,
+    as Chrome reports it: en-US, de or pt-BR."""
+    lang = parse_qs(query)["lang"][0]
+    return "en-US" if lang == "en" else lang.replace("_", "-")
+
+
 def shots() -> list[Shot]:
-    """Every still picture: the documentation's in both schemes, the store's in light."""
+    """Every still picture: the documentation's in both schemes, the store's in light and
+    in every language of the extension."""
     found = []
     for lang, path, dark in variants("manage", "png"):
         found.append(
@@ -84,7 +109,7 @@ def shots() -> list[Shot]:
         )
     for lang, path, dark in variants("switcher", "png"):
         found.append(Shot(path, f"layout=board&lang={lang}", 960, 600, 1.5, dark))
-    for lang in LANGUAGES:
+    for lang in store_languages():
         for slide in (1, 2, 3):
             # 1280x800, the size that the Chrome Web Store asks for.
             found.append(
@@ -145,7 +170,7 @@ def open_stage(
         viewport={"width": width, "height": height},
         device_scale_factor=scale,
         color_scheme="dark" if dark else "light",
-        locale="de-DE" if "lang=de" in query else "en-US",
+        locale=locale(query),
         timezone_id="Europe/Berlin",
         reduced_motion="reduce",
     )
@@ -164,7 +189,8 @@ def picture(page: Page, fit: bool) -> Image.Image:
         size = page.viewport_size or {}
         raise SystemExit(
             f"{page.url} needs more than {size.get('width')}x{size.get('height')}: "
-            "shorten its text in stage.js or give the picture more room in shots()."
+            "shorten its text in store/pictures.<lang>.json, or give the picture more "
+            "room in shots() or test/harness/stage.css."
         )
     options = {"animations": "disabled", "caret": "hide", "scale": "device"}
     data = (

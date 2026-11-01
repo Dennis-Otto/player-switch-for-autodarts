@@ -17,7 +17,11 @@
 //   sizes it declares, and the name and description in every language, and the short
 //   descriptions of the listings, fit the limits of the store, and each language of
 //   the extension has a store listing, store/listing.<code>.md, and each listing a
-//   language of the extension.
+//   language of the extension;
+// - each language of the extension has the texts of the pictures of its listing,
+//   store/pictures.<code>.json, with the same texts as English, each picture of
+//   store/images/ belongs to a language of the extension, and the release guide lists
+//   the pictures of each language.
 //
 // Run by scripts/check-project.sh; scripts/check-manifest.test.mjs tests it. No dependencies.
 import { existsSync, readdirSync, readFileSync } from "node:fs";
@@ -390,6 +394,93 @@ function checkLanguages(problems, locales, listings) {
   }
 }
 
+/** The language of the texts on the pictures, such as nl for store/pictures.nl.json. */
+export const PICTURES_PATH = /^store\/pictures\.([A-Za-z0-9_]+)\.json$/;
+
+/** The language of a picture of the store, such as nl for store/images/marquee.nl.png. */
+const IMAGE_PATH = /^store\/images\/[^.]+\.([A-Za-z0-9_]+)\.png$/;
+
+/** Each text of a picture with the place where it stands, such as slides.2.title. */
+function textsOf(value, place = "") {
+  if (typeof value !== "object" || value === null) {
+    return [[place, value]];
+  }
+  return Object.entries(value).flatMap(([key, inner]) =>
+    textsOf(inner, place === "" ? key : `${place}.${key}`),
+  );
+}
+
+/** The texts of a language against those of English, which the stage asks for. */
+function checkPictureTexts(problems, file, texts, english) {
+  const own = new Map(textsOf(texts));
+  for (const place of english.keys()) {
+    const text = own.get(place);
+    if (typeof text !== "string" || text.trim() === "") {
+      problems.push(
+        `${file} has no text for ${place}; the picture would show a gap in that language. Translate the text of store/pictures.en.json.`,
+      );
+    }
+  }
+  for (const place of own.keys()) {
+    if (!english.has(place)) {
+      problems.push(
+        `${file} has a text for ${place}, which store/pictures.en.json doesn't have; no picture shows it. Remove it, or add it in every language.`,
+      );
+    }
+  }
+}
+
+/** The second screenshot names the number of languages, which a new language changes. */
+function checkLanguageCount(problems, file, texts, locales) {
+  const text = texts.slides?.[2]?.points?.[2];
+  const count = String(Object.keys(locales).length);
+  if (text !== undefined && text.match(/\d+/)?.[0] !== count) {
+    problems.push(
+      `${file} says "${text}" on the second screenshot, but the extension speaks ${count} languages; write the number of folders of extension/_locales/ as a digit.`,
+    );
+  }
+}
+
+/**
+ * The pictures of the listings: each language has their texts and the release guide
+ * lists them, and each file of texts and each picture belongs to a language. A new
+ * language may come without its pictures: the screenshot bot renders them after the
+ * merge, which only needs the texts.
+ */
+function checkPictures(problems, locales, pictures, images, releaseGuide) {
+  const english = new Map(textsOf(pictures["store/pictures.en.json"] ?? {}));
+  for (const code of Object.keys(locales)) {
+    const file = `store/pictures.${code}.json`;
+    if (file in pictures) {
+      checkPictureTexts(problems, file, pictures[file], english);
+      checkLanguageCount(problems, file, pictures[file], locales);
+    } else {
+      problems.push(
+        `The extension speaks ${code}, but ${file} is missing; scripts/screenshots.sh renders the pictures of its listing from these texts.`,
+      );
+    }
+    if (!releaseGuide.includes(`store/images/*.${code}.png`)) {
+      problems.push(
+        `docs/releases.md doesn't list store/images/*.${code}.png; the guide of the store must name the pictures of each language of the listing.`,
+      );
+    }
+  }
+  for (const file of Object.keys(pictures)) {
+    if (!(PICTURES_PATH.exec(file)?.[1] in locales)) {
+      problems.push(
+        `${file} holds the texts of a language that the extension doesn't speak; the store takes a listing only for a language of extension/_locales/.`,
+      );
+    }
+  }
+  for (const image of images) {
+    if (!(IMAGE_PATH.exec(image)?.[1] in locales)) {
+      problems.push(
+        `${image} belongs to no language of extension/_locales/, so scripts/screenshots.sh no longer renders it; delete it.`,
+      );
+    }
+  }
+}
+
 /** The store listings: their short descriptions, and that they justify exactly what the manifest asks for. */
 function checkListings(problems, manifest, listings) {
   const permissions = manifest.permissions ?? [];
@@ -457,6 +548,9 @@ function checkListings(problems, manifest, listings) {
  *   the parsed store/permissions.json
  * @param {Record<string, Record<string, {message: string}>>} input.locales the messages of each language, by its code
  * @param {Record<string, string>} input.listings the text of each store listing, by its path
+ * @param {Record<string, object>} input.pictures the parsed texts on the pictures of each language, by their path
+ * @param {string[]} input.images the path of each file in store/images/
+ * @param {string} input.releaseGuide the text of docs/releases.md
  * @param {(path: string) => {width: number, height: number} | null} input.imageSize the size of a PNG of extension/
  * @returns {string[]}
  */
@@ -465,6 +559,9 @@ export function checkManifest({
   allowed,
   locales,
   listings,
+  pictures,
+  images,
+  releaseGuide,
   imageSize,
 }) {
   const problems = [];
@@ -474,6 +571,7 @@ export function checkManifest({
   checkDetails(problems, manifest, locales, imageSize);
   checkListings(problems, manifest, listings);
   checkLanguages(problems, locales, listings);
+  checkPictures(problems, locales, pictures, images, releaseGuide);
   return problems;
 }
 
@@ -507,6 +605,14 @@ function main() {
       .filter((name) => LISTING_PATH.test(`store/${name}`))
       .map((name) => [`store/${name}`, read(`store/${name}`)]),
   );
+  const pictures = Object.fromEntries(
+    readdirSync(new URL("store/", root))
+      .filter((name) => PICTURES_PATH.test(`store/${name}`))
+      .map((name) => [`store/${name}`, json(`store/${name}`)]),
+  );
+  const images = readdirSync(new URL("store/images/", root)).map(
+    (name) => `store/images/${name}`,
+  );
   const imageSize = (path) => {
     const file = new URL(`extension/${path}`, root);
     return pngSize(existsSync(file) ? readFileSync(file) : null);
@@ -516,6 +622,9 @@ function main() {
     allowed: json("store/permissions.json"),
     locales,
     listings,
+    pictures,
+    images,
+    releaseGuide: read("docs/releases.md"),
     imageSize,
   });
   if (problems.length > 0) {
@@ -527,7 +636,7 @@ function main() {
   }
   console.log(
     `The manifest asks for the ${manifest.permissions.length} permissions and ${manifest.host_permissions.length} hosts ` +
-      `that store/permissions.json allows, the listings of its ${Object.keys(locales).length} languages justify them, and its policy connects only to those hosts.`,
+      `that store/permissions.json allows, the listings of its ${Object.keys(locales).length} languages justify them and have the texts of their pictures, and its policy connects only to those hosts.`,
   );
 }
 

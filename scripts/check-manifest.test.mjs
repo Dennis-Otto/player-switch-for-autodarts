@@ -85,6 +85,12 @@ Switch players with one tap.
 ## Category
 `;
 
+/** The texts on the pictures of the store in one language. */
+const PICTURES = {
+  note: "Not affiliated with Autodarts.",
+  slides: { 1: { title: "One tap.", points: ["Save", "Switch"] } },
+};
+
 /** The problems of a manifest, with the other inputs as the fixtures have them unless given. */
 function check(changes = {}) {
   const locales = changes.locales ?? {
@@ -106,6 +112,21 @@ function check(changes = {}) {
           LISTING,
         ]),
       ),
+    // The texts of the pictures for each language, unless a test gives its own.
+    pictures:
+      changes.pictures ??
+      Object.fromEntries(
+        Object.keys(locales).map((code) => [
+          `store/pictures.${code}.json`,
+          PICTURES,
+        ]),
+      ),
+    images: changes.images ?? [],
+    releaseGuide:
+      changes.releaseGuide ??
+      Object.keys(locales)
+        .map((code) => `store/images/*.${code}.png`)
+        .join("\n"),
     imageSize:
       changes.imageSize ??
       ((path) => ({
@@ -125,7 +146,7 @@ test("a manifest that keeps every rule passes", () => {
   assert.deepEqual(check(), []);
 });
 
-test("the manifest of the extension passes against the allowlist, its languages and their listings", () => {
+test("the manifest of the extension passes against the allowlist, its languages, their listings and pictures", () => {
   // The same check that the script runs, here so a failing self-test shows it at once.
   const url = (path) => new URL(`../${path}`, import.meta.url);
   const read = (path) => readFileSync(url(path));
@@ -146,6 +167,16 @@ test("the manifest of the extension passes against the allowlist, its languages 
         read(`store/listing.${code}.md`).toString(),
       ]),
     ),
+    pictures: Object.fromEntries(
+      codes.map((code) => [
+        `store/pictures.${code}.json`,
+        JSON.parse(read(`store/pictures.${code}.json`)),
+      ]),
+    ),
+    images: readdirSync(url("store/images/")).map(
+      (name) => `store/images/${name}`,
+    ),
+    releaseGuide: read("docs/releases.md").toString(),
     imageSize: (path) => pngSize(read(`extension/${path}`)),
   });
   assert.deepEqual(problems, []);
@@ -560,6 +591,139 @@ test("each language of the extension has a store listing, and each listing a lan
       },
     }),
     /store\/listing\.fr\.md is the listing of a language that the extension doesn't speak/,
+  );
+});
+
+test("each language of the extension has the texts of its pictures, and each of them a language", () => {
+  const locales = {
+    en: {
+      extName: { message: "Player Switch" },
+      extDescription: { message: "Switch." },
+    },
+    nl: {
+      extName: { message: "Player Switch" },
+      extDescription: { message: "Wissel." },
+    },
+  };
+  findsOne(
+    check({ locales, pictures: { "store/pictures.en.json": PICTURES } }),
+    /The extension speaks nl, but store\/pictures\.nl\.json is missing/,
+  );
+  findsOne(
+    check({
+      pictures: {
+        "store/pictures.en.json": PICTURES,
+        "store/pictures.fr.json": PICTURES,
+      },
+    }),
+    /store\/pictures\.fr\.json holds the texts of a language that the extension doesn't speak/,
+  );
+});
+
+test("the texts of a picture in each language are those of English", () => {
+  const locales = {
+    en: {
+      extName: { message: "Player Switch" },
+      extDescription: { message: "Switch." },
+    },
+    fr: {
+      extName: { message: "Player Switch" },
+      extDescription: { message: "Changer." },
+    },
+  };
+  const pictures = (texts) => ({
+    "store/pictures.en.json": PICTURES,
+    "store/pictures.fr.json": texts,
+  });
+  assert.deepEqual(
+    check({
+      locales,
+      pictures: pictures({
+        note: "Non affilié à Autodarts.",
+        slides: {
+          1: { title: "Une pression.", points: ["Garder", "Changer"] },
+        },
+      }),
+    }),
+    [],
+  );
+  findsOne(
+    check({
+      locales,
+      pictures: pictures({
+        note: "Non affilié à Autodarts.",
+        slides: { 1: { title: "Une pression.", points: ["Garder"] } },
+      }),
+    }),
+    /store\/pictures\.fr\.json has no text for slides\.1\.points\.1/,
+  );
+  findsOne(
+    check({
+      locales,
+      pictures: pictures({
+        note: "  ",
+        slides: {
+          1: { title: "Une pression.", points: ["Garder", "Changer"] },
+        },
+      }),
+    }),
+    /store\/pictures\.fr\.json has no text for note/,
+  );
+  findsOne(
+    check({
+      locales,
+      pictures: pictures({
+        note: "Non affilié à Autodarts.",
+        title: "Une pression.",
+        slides: {
+          1: { title: "Une pression.", points: ["Garder", "Changer"] },
+        },
+      }),
+    }),
+    /store\/pictures\.fr\.json has a text for title, which store\/pictures\.en\.json doesn't have/,
+  );
+});
+
+test("the second screenshot names the number of languages of the extension", () => {
+  const says = (point) => ({
+    note: "Not affiliated with Autodarts.",
+    slides: {
+      1: { title: "One tap.", points: ["Save", "Switch"] },
+      2: { points: ["Local", "No tracking", point] },
+    },
+  });
+  const pictures = (point) => ({
+    pictures: {
+      "store/pictures.en.json": { ...PICTURES, ...says(point) },
+    },
+  });
+  assert.deepEqual(check(pictures("In 1 language")), []);
+  findsOne(
+    check(pictures("In 2 languages")),
+    /store\/pictures\.en\.json says "In 2 languages" on the second screenshot, but the extension speaks 1 languages/,
+  );
+  findsOne(
+    check(pictures("In many languages")),
+    /store\/pictures\.en\.json says "In many languages" on the second screenshot/,
+  );
+});
+
+test("a picture of the store belongs to a language of the extension", () => {
+  assert.deepEqual(check({ images: ["store/images/marquee.en.png"] }), []);
+  findsOne(
+    check({ images: ["store/images/marquee.it.png"] }),
+    /store\/images\/marquee\.it\.png belongs to no language of extension\/_locales\//,
+  );
+  findsOne(
+    check({ images: ["store/images/marquee.png"] }),
+    /store\/images\/marquee\.png belongs to no language of extension\/_locales\//,
+  );
+});
+
+test("the release guide lists the pictures of each language of the listing", () => {
+  findsOne(
+    check({ releaseGuide: "No pictures here." }),
+    /docs\/releases\.md doesn't list store\/images\/\*\.en\.png/,
   );
 });
 

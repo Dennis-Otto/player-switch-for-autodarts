@@ -1,0 +1,37 @@
+{
+  "note": "Not affiliated with Autodarts.",
+  "tagline": "One tap to switch players",
+  "marquee": "One shared display, everyone on their own account, one tap to switch.",
+  "slides": {
+    "1": {
+      "eyebrow": "Player Switch for Autodarts",
+      "title": "One display. Every account. One tap.",
+      "lead": "Everyone plays under their own Autodarts account, without signing in again and again.",
+      "points": [
+        "Save each account once",
+        "Switch with a single tap",
+        "Sessions stay ready in the background"
+      ]
+    },
+    "2": {
+      "eyebrow": "Optional",
+      "title": "Keeps itself going.",
+      "lead": "Parked sessions are renewed in the background. If you like, the extension remembers a password and signs an account back in by itself.",
+      "points": [
+        "Everything stays on your computer",
+        "Only Autodarts, no tracking",
+        "In 5 languages"
+      ]
+    },
+    "3": {
+      "eyebrow": "On the board display",
+      "title": "Switch right on the board.",
+      "lead": "In fullscreen or kiosk mode, a round button on the page opens the players in big tiles for a touch screen.",
+      "points": [
+        "Fullscreen and kiosk mode",
+        "Keys 1 to 9 pick a player",
+        "Asks before a match ends"
+      ]
+    }
+  }
+}

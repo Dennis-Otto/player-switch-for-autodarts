@@ -31,16 +31,24 @@ The first listing is done by hand, once:
 
 ## The images of the store
 
-`bash scripts/screenshots.sh` renders every picture of the listing from the real popup and switcher, with made-up accounts, in exactly the size that the store asks for, and the screenshot bot keeps them current with every change of the popup ([how](development.md#pictures)). The store takes them under **Store listing → Graphic assets**, first for the default language, English, and then, with the language of the listing switched to German, the `.de` files for the German one. Dutch, French and Spanish take the `.en` files, until the pictures come in those languages too ([#70](https://github.com/Dennis-Otto/player-switch-for-autodarts/issues/70)):
+`bash scripts/screenshots.sh` renders every picture of the listing from the real popup and switcher, with made-up accounts, in exactly the size that the store asks for and in every language of `extension/_locales/`, and the screenshot bot keeps them current with every change of the popup or of the texts on the pictures, `store/pictures.<code>.json` ([how](development.md#pictures)). The store takes them under **Store listing → Graphic assets**, first for the default language, English, and then, with the language of the listing switched, for each of the others. The slots are the same in every language, and `<code>` is the code of the language:
 
 | Slot in the dashboard | Size | Files |
 | --- | --- | --- |
-| Store icon | 128×128 | `extension/icons/icon-128.png` |
-| Screenshots, in this order | 1280×800 | `store/images/screenshot-1.en.png` (the players), `screenshot-2.en.png` (**Manage accounts**), `screenshot-3.en.png` (the switcher on a board display) |
-| Small promo tile | 440×280 | `store/images/promo-small.en.png` |
-| Marquee promo tile | 1400×560 | `store/images/marquee.en.png` |
+| Store icon | 128×128 | `extension/icons/icon-128.png`, the same in every language |
+| Screenshots, in this order | 1280×800 | `store/images/screenshot-1.<code>.png` (the players), `screenshot-2.<code>.png` (**Manage accounts**), `screenshot-3.<code>.png` (the switcher on a board display) |
+| Small promo tile | 440×280 | `store/images/promo-small.<code>.png` |
+| Marquee promo tile | 1400×560 | `store/images/marquee.<code>.png` |
 
-The pictures show no logo and no design of Autodarts, and each screenshot says that the extension is not affiliated with Autodarts. A new picture of the store comes into `test/harness/capture.py` and `test/harness/stage.js`; a change of one reaches the store only by hand, as the listing texts do.
+| Language of the listing | Its pictures |
+| --- | --- |
+| English, the default | `store/images/*.en.png` |
+| German | `store/images/*.de.png` |
+| Dutch | `store/images/*.nl.png` |
+| French | `store/images/*.fr.png` |
+| Spanish | `store/images/*.es.png` |
+
+The pictures show no logo and no design of Autodarts, and each screenshot says that the extension is not affiliated with Autodarts. A new picture of the store comes into `test/harness/capture.py` and `test/harness/stage.js`, and a new language brings its pictures by itself, from `store/pictures.<code>.json` ([Add a language](development.md#add-a-language)); a change of one reaches the store only by hand, as the listing texts do.
 
 ## Later versions
 

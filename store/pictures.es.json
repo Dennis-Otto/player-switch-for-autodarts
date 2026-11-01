@@ -1,0 +1,37 @@
+{
+  "note": "Sin relación con Autodarts.",
+  "tagline": "Cambia de jugador con un toque",
+  "marquee": "Una pantalla compartida, cada uno con su propia cuenta, un toque para cambiar.",
+  "slides": {
+    "1": {
+      "eyebrow": "Player Switch for Autodarts",
+      "title": "Una pantalla. Cada cuenta. Un toque.",
+      "lead": "Cada uno juega con su propia cuenta de Autodarts, sin tener que iniciar sesión una y otra vez.",
+      "points": [
+        "Guarda cada cuenta una vez",
+        "Cambia con un solo toque",
+        "Las sesiones siguen listas en segundo plano"
+      ]
+    },
+    "2": {
+      "eyebrow": "Opcional",
+      "title": "Sigue funcionando solo.",
+      "lead": "Las sesiones aparcadas se renuevan en segundo plano. Si quieres, la extensión recuerda una contraseña y vuelve a iniciar la sesión de una cuenta por sí sola.",
+      "points": [
+        "Todo se queda en tu ordenador",
+        "Solo Autodarts, sin rastreo",
+        "En 5 idiomas"
+      ]
+    },
+    "3": {
+      "eyebrow": "En la pantalla de la diana",
+      "title": "Cambia justo en la diana.",
+      "lead": "En pantalla completa o en modo quiosco, un botón redondo en la página abre los jugadores en tarjetas grandes para una pantalla táctil.",
+      "points": [
+        "Pantalla completa y modo quiosco",
+        "Las teclas del 1 al 9 eligen un jugador",
+        "Pregunta antes de que termine una partida"
+      ]
+    }
+  }
+}

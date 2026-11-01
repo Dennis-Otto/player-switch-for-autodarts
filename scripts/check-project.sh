@@ -24,7 +24,8 @@ node scripts/check-locales.mjs
 node scripts/check-pages.mjs
 
 # The manifest asks for exactly the permissions, hosts and web-accessible pages that
-# store/permissions.json allows, the store listing of every language justifies them,
+# store/permissions.json allows, the store listing of every language justifies them
+# and has the texts of its pictures,
 # its content security policy connects only to those hosts, and it fits the store. The checker tests itself
 # first, with fixture manifests that each break one rule.
 node --test --test-reporter=dot scripts/check-manifest.test.mjs

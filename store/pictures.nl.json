@@ -1,0 +1,37 @@
+{
+  "note": "Niet verbonden aan Autodarts.",
+  "tagline": "Met één tik van speler wisselen",
+  "marquee": "Eén gedeeld scherm, iedereen op zijn eigen account, één tik om te wisselen.",
+  "slides": {
+    "1": {
+      "eyebrow": "Player Switch for Autodarts",
+      "title": "Eén scherm. Alle accounts. Eén tik.",
+      "lead": "Iedereen speelt onder zijn eigen Autodarts-account, zonder steeds opnieuw in te loggen.",
+      "points": [
+        "Sla elk account één keer op",
+        "Wissel met één tik",
+        "Sessies blijven op de achtergrond klaarstaan"
+      ]
+    },
+    "2": {
+      "eyebrow": "Optioneel",
+      "title": "Blijft vanzelf werken.",
+      "lead": "Geparkeerde sessies worden op de achtergrond vernieuwd. Als je wilt, onthoudt de extensie een wachtwoord en logt ze een account vanzelf weer in.",
+      "points": [
+        "Alles blijft op je computer",
+        "Alleen Autodarts, geen tracking",
+        "In 5 talen"
+      ]
+    },
+    "3": {
+      "eyebrow": "Op het bordscherm",
+      "title": "Wissel direct bij het bord.",
+      "lead": "Op volledig scherm of in kioskmodus opent een ronde knop op de pagina de spelers in grote tegels voor een touchscreen.",
+      "points": [
+        "Volledig scherm en kioskmodus",
+        "De toetsen 1 tot en met 9 kiezen een speler",
+        "Vraagt het eerst voordat een wedstrijd eindigt"
+      ]
+    }
+  }
+}

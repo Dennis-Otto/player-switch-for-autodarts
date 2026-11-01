@@ -6,100 +6,30 @@
 //   layout=store   a 1280×800 picture of the store listing, slide=1, 2 or 3
 //   layout=promo   the small promo tile of the store
 //   layout=marquee the large promo tile of the store
-//   lang=en|de     the language of the extension and of the text around it
+//   lang=en        the language of the extension and of the text around it: a folder of
+//                  extension/_locales, with that text in store/pictures.<lang>.json
 //
 // The pages of the extension in the frames are the real ones; chrome-stub.js stands
 // in for Chrome in each of them.
 
 const setup = new URLSearchParams(location.search);
 const layout = setup.get("layout") ?? "frame";
-const lang = setup.get("lang") === "de" ? "de" : "en";
+// The language from the address as chrome-stub.js accepts it, one of its LANGUAGES, so
+// the address can't choose the file that the texts below come from.
+const lang = chrome.i18n.getUILanguage();
 const shot = document.querySelector("#shot");
-document.documentElement.lang = lang;
+document.documentElement.lang = lang.replace("_", "-");
 
 const ICON = "/extension/icons/icon-128.png";
 
-// The texts around the extension. The extension's own texts come from its _locales.
-const TEXTS = {
-  en: {
-    note: "Not affiliated with Autodarts.",
-    tagline: "One tap to switch players",
-    marquee:
-      "One shared display, everyone on their own account, one tap to switch.",
-    slides: {
-      1: {
-        eyebrow: "Player Switch for Autodarts",
-        title: "One display. Every account. One tap.",
-        lead: "Everyone plays under their own Autodarts account, without signing in again and again.",
-        points: [
-          "Save each account once",
-          "Switch with a single tap",
-          "Sessions stay ready in the background",
-        ],
-        numbered: true,
-      },
-      2: {
-        eyebrow: "Optional",
-        title: "Keeps itself going.",
-        lead: "Parked sessions are renewed in the background. If you like, the extension remembers a password and signs an account back in by itself.",
-        points: [
-          "Everything stays on your computer",
-          "Only Autodarts, no tracking",
-          "English and German",
-        ],
-      },
-      3: {
-        eyebrow: "On the board display",
-        title: "Switch right on the board.",
-        lead: "In fullscreen or kiosk mode, a round button on the page opens the players in big tiles for a touch screen.",
-        points: [
-          "Fullscreen and kiosk mode",
-          "Keys 1 to 9 pick a player",
-          "Asks before a match ends",
-        ],
-      },
-    },
-  },
-  de: {
-    note: "Nicht mit Autodarts verbunden.",
-    tagline: "Spieler wechseln mit einem Tipp",
-    marquee:
-      "Ein gemeinsames Display, jeder mit seinem eigenen Konto, ein Tipp zum Wechseln.",
-    slides: {
-      1: {
-        eyebrow: "Player Switch for Autodarts",
-        title: "Ein Display. Alle Konten. Ein Tipp.",
-        lead: "Jeder spielt unter seinem eigenen Autodarts-Konto, ohne sich jedes Mal neu anzumelden.",
-        points: [
-          "Konten einmal speichern",
-          "Mit einem Tipp wechseln",
-          "Sitzungen bleiben im Hintergrund bereit",
-        ],
-        numbered: true,
-      },
-      2: {
-        eyebrow: "Optional",
-        title: "Läuft von selbst weiter.",
-        lead: "Geparkte Sitzungen werden im Hintergrund erneuert. Auf Wunsch merkt sich die Erweiterung ein Passwort und meldet ein Konto von selbst wieder an.",
-        points: [
-          "Alles bleibt auf deinem Computer",
-          "Nur Autodarts, kein Tracking",
-          "Deutsch und Englisch",
-        ],
-      },
-      3: {
-        eyebrow: "Am Board-Display",
-        title: "Direkt am Board wechseln.",
-        lead: "Im Vollbild oder Kiosk-Modus öffnet ein runder Knopf auf der Seite die Spieler in großen Kacheln für den Touchscreen.",
-        points: [
-          "Vollbild und Kiosk-Modus",
-          "Die Tasten 1 bis 9 wählen",
-          "Fragt, bevor ein Match endet",
-        ],
-      },
-    },
-  },
-}[lang];
+// The texts around the extension, read once from the folder of the listing, as
+// chrome-stub.js reads the extension's own texts from its _locales.
+const TEXTS = (() => {
+  const request = new XMLHttpRequest();
+  request.open("GET", `/store/pictures.${lang}.json`, false);
+  request.send();
+  return JSON.parse(request.responseText);
+})();
 
 /** An element with its class and children; a string child becomes text. */
 function make(tag, className, ...children) {
@@ -169,7 +99,7 @@ function board(accounts) {
   return make("div", "board", match, extensionPage("switcher", accounts));
 }
 
-function copy(slide) {
+function copy(slide, numbered) {
   const list = make(
     "ul",
     "points",
@@ -177,7 +107,7 @@ function copy(slide) {
       make(
         "li",
         "",
-        make("span", "mark", slide.numbered ? String(index + 1) : "✓"),
+        make("span", "mark", numbered ? String(index + 1) : "✓"),
         point,
       ),
     ),
@@ -226,9 +156,10 @@ switch (layout) {
       // Three players fill one row of the smaller display.
       visual = make("div", "screen", board(3));
     }
-    shot.className = number === 3 ? "store wide" : "store";
+    shot.className = ["store", "store tall", "store wide"][number - 1];
     shot.append(
-      copy(TEXTS.slides[number]),
+      // The first slide lists the steps of a player, the others what comes with it.
+      copy(TEXTS.slides[number], number === 1),
       visual,
       make("p", "note", TEXTS.note),
     );
