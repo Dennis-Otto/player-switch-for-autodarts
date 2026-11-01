@@ -150,7 +150,7 @@ Every release carries the extension ready to load, the very file that goes to th
   <img src="images/load-unpacked.png" alt="The top of the page chrome://extensions: the switch Developer mode at the top right is on, and Load unpacked, the first of three buttons below the title Extensions, appears with it. Both are marked.">
 </picture>
 
-A copy loaded this way gets no update by itself. For a new version, replace the contents of the folder with those of the new zip and choose the reload arrow of Player Switch on that page. Leave the folder where it is: the browser ties the saved accounts to its path, so a copy in another folder starts without them.
+A copy loaded this way gets no update by itself. For a new version, replace the contents of the folder with those of the new zip and choose the reload arrow of Player Switch on that page. Leave the folder where it is: the browser ties the saved accounts to its path, so a copy in another folder starts without them. The zip is the very file that goes to the Chrome Web Store, and [the release guide](releases.md#the-package-of-a-release) says how to check that a release built it.
 
 ## Good to know
 

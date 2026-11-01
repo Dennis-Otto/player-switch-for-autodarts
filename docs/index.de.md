@@ -150,7 +150,7 @@ Jedes Release enthält die Erweiterung fertig zum Laden, genau die Datei, die au
   <img src="images/load-unpacked.de.png" alt="Der obere Teil der Seite chrome://extensions: Der Schalter Entwicklermodus oben rechts ist an, und mit ihm erscheint Entpackte Erweiterung laden, die erste von drei Schaltflächen unter dem Titel Erweiterungen. Beide sind markiert.">
 </picture>
 
-Eine so geladene Kopie aktualisiert sich nicht von selbst. Für eine neue Version ersetzt du den Inhalt des Ordners durch den des neuen Zip-Archivs und wählst auf derselben Seite den Pfeil zum Neuladen von Player Switch. Lass den Ordner, wo er ist: Der Browser bindet die gespeicherten Konten an seinen Pfad, eine Kopie in einem anderen Ordner beginnt ohne sie.
+Eine so geladene Kopie aktualisiert sich nicht von selbst. Für eine neue Version ersetzt du den Inhalt des Ordners durch den des neuen Zip-Archivs und wählst auf derselben Seite den Pfeil zum Neuladen von Player Switch. Lass den Ordner, wo er ist: Der Browser bindet die gespeicherten Konten an seinen Pfad, eine Kopie in einem anderen Ordner beginnt ohne sie. Das Zip-Archiv ist genau die Datei, die in den Chrome Web Store geht, und [die Release-Anleitung](releases.md#the-package-of-a-release) sagt, wie du es prüfst.
 
 ## Gut zu wissen
 

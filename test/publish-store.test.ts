@@ -298,6 +298,7 @@ describe("the delivery", { skip }, () => {
         ITEM,
         UPLOAD,
         ZIP,
+        SHA256: "abc123",
         NEW_ASKS,
         FAKE_UPLOAD_ANSWER: JSON.stringify({ uploadState: "SUCCEEDED" }),
         FAKE_PUBLISH_ANSWER: JSON.stringify({ state: "PENDING_REVIEW" }),
@@ -319,6 +320,7 @@ describe("the delivery", { skip }, () => {
       "Content-Type: application/json",
     ]);
     assert.match(result.summary, /^The store took the upload of dist\//);
+    assert.match(result.summary, /the sha256 `abc123`/);
     assert.match(result.summary, /The release v1\.0\.0 is submitted;/);
     assert.deepEqual(errors(result), []);
   });

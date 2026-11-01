@@ -24,7 +24,9 @@ gh release download vX.Y.Z --repo Dennis-Otto/player-switch-for-autodarts --patt
 gh attestation verify player-switch-for-autodarts-X.Y.Z.zip --repo Dennis-Otto/player-switch-for-autodarts --signer-workflow Dennis-Otto/player-switch-for-autodarts/.github/workflows/build-release.yml
 ```
 
-From a checkout, `bash scripts/package-extension.sh` builds the extension from nothing and writes the zip to `dist/`, without source maps, with forward slashes in every path. From a clean checkout, the same commit makes the same zip, byte for byte, on every system: its files are stored rather than compressed, because what zlib makes of a file depends on its build. A file that a checkout has beside those of Git would go into the zip, so compare from a clean one. It needs Node.js and Python 3.
+From a checkout, `bash scripts/package-extension.sh` builds the extension from nothing and writes the zip to `dist/`, without source maps, with forward slashes in every path. It holds the manifest, the pages with their styles, the icons, the languages and `lib/`, and each file that the manifest names; a file of another kind stops the build until `SHIPS` or `STAYS_OUT` in that script lists it, so nothing new reaches the users unnoticed. From a clean checkout, the same commit makes the same zip, byte for byte, on every system, and `scripts/check-project.sh` builds it twice to prove that, the second time as a release does, in another time zone: its files are stored rather than compressed, because what zlib makes of a file depends on its build. A file of an allowed kind that a checkout has beside those of Git would go into the zip, so compare from a clean one. It needs Node.js and Python 3.
+
+Every run that delivers names the sha256 of the zip in its summary, so compare that with the sum of a download or of a build of your own: `sha256sum dist/player-switch-for-autodarts-X.Y.Z.zip`. The job that uploads takes the zip of the job before it as an artifact and compares that sum before it signs in.
 
 ## The first listing
 

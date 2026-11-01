@@ -18,8 +18,9 @@ name: Chrome Web Store
 # release attached, without any secret, checks its signed provenance and that its
 # manifest carries the version of the release, and keeps it as an artifact of the run
 # for 30 days, so the store gets exactly the package that the release attests (decision
-# 0013). The job "store" uploads that zip with the Chrome Web Store API and submits it
-# for review. Neither runs code of the repository or an npm package. When the store refuses
+# 0013). The job "store" checks that the artifact is that zip, byte for byte, uploads it
+# with the Chrome Web Store API and submits it for review. Neither runs code of the
+# repository or an npm package. When the store refuses
 # with INVALID_ITEM_METADATA, the dashboard lacks something that the version needs, and
 # the run fails and names what the release asks for beyond the version of the store,
 # which the job "status" found with scripts/store-new-asks.ts. A review that began after
@@ -394,6 +395,16 @@ jobs:
           STATUS: ${{ runner.temp }}/status.json
           TAG: ${{ steps.decide.outputs.tag }}
         run: node scripts/store-new-asks.ts
+      - name: Wait until Harden-Runner has removed Docker
+        # Harden-Runner removes Docker with apt-get in the background; a job that ends
+        # before it finishes hangs in "Cleaning up orphan processes" until its timeout.
+        if: always()
+        run: |
+          for _ in {1..120}; do
+            pgrep -x 'apt-get|dpkg' >/dev/null || exit 0
+            sleep 1
+          done
+          echo "::warning::Harden-Runner still removes Docker after two minutes; the job may hang until its timeout."
 
   package:
     name: the package of the release
@@ -410,6 +421,7 @@ jobs:
       TAG: ${{ needs.status.outputs.tag }}
     outputs:
       zip: ${{ steps.zip.outputs.zip }}
+      sha256: ${{ steps.zip.outputs.sha256 }}
     steps:
       - name: Let the job reach only the hosts that it needs
         uses: step-security/harden-runner@46b06cea07f9e64621fdf066ba77ac6915163d43 # v2.22.3
@@ -484,8 +496,12 @@ jobs:
           packaged="$(unzip -p "dist/$zip" manifest.json 2>/dev/null | jq -r .version 2>/dev/null || true)"
           [[ "$packaged" == "$version" ]] ||
             fail "The manifest.json of $zip has the version ${packaged:-none}; the release is $version. 'When a run fails' in docs/releases.md has the steps."
-          echo "zip=$zip" >> "$GITHUB_OUTPUT"
-          echo "The zip $zip carries the version $version and the provenance of the release." >> "$GITHUB_STEP_SUMMARY"
+          sha256="$(sha256sum "dist/$zip" | cut -d ' ' -f 1)"
+          {
+            echo "zip=$zip"
+            echo "sha256=$sha256"
+          } >> "$GITHUB_OUTPUT"
+          echo "The zip $zip carries the version $version and the provenance of the release; its sha256 is \`$sha256\`." >> "$GITHUB_STEP_SUMMARY"
       # What went to the store, to look at later, and when: the job "status" counts the
       # days of the review from it.
       - name: Keep the zip as an artifact of the run
@@ -523,6 +539,7 @@ jobs:
     env:
       TAG: ${{ needs.status.outputs.tag }}
       ZIP: dist/${{ needs.package.outputs.zip }}
+      SHA256: ${{ needs.package.outputs.sha256 }}
       ITEM: https://chromewebstore.googleapis.com/v2/publishers/${{ vars.CWS_PUBLISHER_ID }}/items/${{ vars.CWS_EXTENSION_ID }}
       UPLOAD: https://chromewebstore.googleapis.com/upload/v2/publishers/${{ vars.CWS_PUBLISHER_ID }}/items/${{ vars.CWS_EXTENSION_ID }}:upload
     steps:
@@ -569,6 +586,14 @@ jobs:
         with:
           name: chrome-web-store-${{ needs.status.outputs.tag }}
           path: dist
+      - name: Check that it is the zip of the release, byte for byte
+        run: |
+          if ! echo "$SHA256  $ZIP" | sha256sum --check --strict --status; then
+            message="$ZIP isn't the zip of the release $TAG, whose sha256 is ${SHA256:-unknown}, so it stays off the store."
+            echo "::error title=Chrome Web Store::$message"
+            echo "- **Problem:** $message" >> "$GITHUB_STEP_SUMMARY"
+            exit 1
+          fi
       - name: Sign in to the Chrome Web Store API with the refresh token
         if: needs.status.outputs.sign-in != 'keyless'
         env:
@@ -723,7 +748,7 @@ jobs:
           if [[ "$state" != SUCCEEDED ]]; then
             refused "The upload of $ZIP ended in the state ${state:-unknown}."
           fi
-          echo "The store took the upload of $ZIP." | tee -a "$GITHUB_STEP_SUMMARY"
+          echo "The store took the upload of $ZIP, the zip of the release with the sha256 \`$SHA256\`." | tee -a "$GITHUB_STEP_SUMMARY"
           rm -f "$response"
           if ! curl --fail-with-body --silent --show-error --retry 3 --retry-connrefused \
             --connect-timeout 15 --max-time 120 --output "$response" \
@@ -752,3 +777,13 @@ jobs:
               fail "The submission of the release $TAG ended in the state ${state:-unknown}."
               ;;
           esac
+      - name: Wait until Harden-Runner has removed Docker
+        # Harden-Runner removes Docker with apt-get in the background; a job that ends
+        # before it finishes hangs in "Cleaning up orphan processes" until its timeout.
+        if: always()
+        run: |
+          for _ in {1..120}; do
+            pgrep -x 'apt-get|dpkg' >/dev/null || exit 0
+            sleep 1
+          done
+          echo "::warning::Harden-Runner still removes Docker after two minutes; the job may hang until its timeout."
