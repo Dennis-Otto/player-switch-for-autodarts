@@ -6,6 +6,22 @@ the next release, or lists the pull requests when there is none.
 
 ## Unreleased
 
+## [1.2.0](https://github.com/Dennis-Otto/player-switch-for-autodarts/compare/v1.1.0...v1.2.0) (2026-11-01)
+
+
+### Features
+
+* **release:** attach the ready-to-load extension to every release and send the store exactly that file ([#120](https://github.com/Dennis-Otto/player-switch-for-autodarts/issues/120)) ([ae905e5](https://github.com/Dennis-Otto/player-switch-for-autodarts/commit/ae905e5052bcf9f5eb526c7a3bf86fa0e27c0b13))
+* **release:** check what the release zip holds and compare its bytes before the store upload ([#121](https://github.com/Dennis-Otto/player-switch-for-autodarts/issues/121)) ([e008390](https://github.com/Dennis-Otto/player-switch-for-autodarts/commit/e008390ec903bd549c662e3a2f04e3343e564850))
+* render the store pictures in Dutch, French and Spanish ([#115](https://github.com/Dennis-Otto/player-switch-for-autodarts/issues/115)) ([e19ed80](https://github.com/Dennis-Otto/player-switch-for-autodarts/commit/e19ed804e2a84c872e6a1921db0c67bb57dcc4be))
+
+
+### Bug fixes
+
+* a session signed in directly in the page can no longer be saved under another player's tile ([#111](https://github.com/Dennis-Otto/player-switch-for-autodarts/issues/111)) ([77ecb21](https://github.com/Dennis-Otto/player-switch-for-autodarts/commit/77ecb2103546e580ef72c1b02c796449d734a974))
+* make OSV-Scanner and Findings pass on main ([#110](https://github.com/Dennis-Otto/player-switch-for-autodarts/issues/110)) ([fe0ad64](https://github.com/Dennis-Otto/player-switch-for-autodarts/commit/fe0ad644b1f56b585e6f9e41af9363143b1cf309))
+* the store run explains INVALID_ITEM_METADATA and a version that is already in review ([#114](https://github.com/Dennis-Otto/player-switch-for-autodarts/issues/114)) ([d169e10](https://github.com/Dennis-Otto/player-switch-for-autodarts/commit/d169e10b86b71b5635e529a11107aa5debb9a168))
+
 ## [1.1.0](https://github.com/Dennis-Otto/player-switch-for-autodarts/compare/v1.0.0...v1.1.0) (2026-10-25)
 
 ### Features
