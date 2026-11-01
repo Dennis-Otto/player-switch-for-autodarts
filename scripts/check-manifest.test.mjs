@@ -684,6 +684,30 @@ test("the texts of a picture in each language are those of English", () => {
   );
 });
 
+test("the second screenshot names the number of languages of the extension", () => {
+  const says = (point) => ({
+    note: "Not affiliated with Autodarts.",
+    slides: {
+      1: { title: "One tap.", points: ["Save", "Switch"] },
+      2: { points: ["Local", "No tracking", point] },
+    },
+  });
+  const pictures = (point) => ({
+    pictures: {
+      "store/pictures.en.json": { ...PICTURES, ...says(point) },
+    },
+  });
+  assert.deepEqual(check(pictures("In 1 language")), []);
+  findsOne(
+    check(pictures("In 2 languages")),
+    /store\/pictures\.en\.json says "In 2 languages" on the second screenshot, but the extension speaks 1 languages/,
+  );
+  findsOne(
+    check(pictures("In many languages")),
+    /store\/pictures\.en\.json says "In many languages" on the second screenshot/,
+  );
+});
+
 test("a picture of the store belongs to a language of the extension", () => {
   assert.deepEqual(check({ images: ["store/images/marquee.en.png"] }), []);
   findsOne(

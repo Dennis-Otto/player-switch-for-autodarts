@@ -72,7 +72,9 @@ def variants(name: str, suffix: str) -> list[tuple[str, str, bool]]:
 def store_languages() -> list[str]:
     """Every folder of extension/_locales: the store takes pictures for each language of
     its listing, and a new language needs nothing here but the texts on its pictures."""
-    found = sorted(path.name for path in (ROOT / "extension" / "_locales").iterdir())
+    found = sorted(
+        path.name for path in (ROOT / "extension" / "_locales").iterdir() if path.is_dir()
+    )
     for lang in found:
         if not (ROOT / "store" / f"pictures.{lang}.json").is_file():
             raise SystemExit(

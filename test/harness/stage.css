@@ -189,7 +189,7 @@ iframe {
 
 h1 {
     margin: 0 0 14px;
-    /* A long title in another language breaks between its sentences, not after a word. */
+    /* A long title in another language gets lines of about the same length. */
     text-wrap: balance;
     font-size: 38px;
     font-weight: 800;

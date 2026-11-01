@@ -44,7 +44,8 @@ name that Chrome doesn't read or a missing or invalid `messages.json`, a languag
 no store listing `store/listing.<code>.md` or a listing has no language, a language
 has no texts for the pictures of the store `store/pictures.<code>.json`, other texts
 there than in English or a file there without a language, a picture in `store/images/`
-belongs to no language, `docs/releases.md` doesn't list the pictures of a language, a
+belongs to no language, `docs/releases.md` doesn't list the pictures of a language, the
+second screenshot names another number of languages than the extension has, a
 language without its own help page doesn't link the English help, a text or an `aria-label` in a page
 differs from its English message, a file
 that the manifest names is missing, the help, `docs/help.md` and `docs/help.de.md`,
@@ -91,7 +92,8 @@ to `ACCEPTED` in `scripts/check-firefox.mjs`. A folder of `extension/_locales/` 
 named with a code that Chrome knows, such as `nl` or `pt_BR`, and holds a complete
 `messages.json`; add or remove `store/listing.<code>.md` so that every language has one
 listing; translate the texts of `store/pictures.en.json` into
-`store/pictures.<code>.json`, add the language to the table in `docs/releases.md` and
+`store/pictures.<code>.json`, write the new number of languages on the second
+screenshot in every `store/pictures.*.json`, add the language to the table in `docs/releases.md` and
 delete the pictures of a language that is gone; a language without `docs/help.<code>.md` sets its message `helpUrl` to the
 English help. A failed test of the popup names the view
 and the element; `npm run test:a11y` runs it alone, in the Chrome or Edge of your

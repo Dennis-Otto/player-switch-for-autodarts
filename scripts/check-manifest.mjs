@@ -430,6 +430,17 @@ function checkPictureTexts(problems, file, texts, english) {
   }
 }
 
+/** The second screenshot names the number of languages, which a new language changes. */
+function checkLanguageCount(problems, file, texts, locales) {
+  const text = texts.slides?.[2]?.points?.[2];
+  const count = String(Object.keys(locales).length);
+  if (text !== undefined && text.match(/\d+/)?.[0] !== count) {
+    problems.push(
+      `${file} says "${text}" on the second screenshot, but the extension speaks ${count} languages; write the number of folders of extension/_locales/ as a digit.`,
+    );
+  }
+}
+
 /**
  * The pictures of the listings: each language has their texts and the release guide
  * lists them, and each file of texts and each picture belongs to a language. A new
@@ -442,6 +453,7 @@ function checkPictures(problems, locales, pictures, images, releaseGuide) {
     const file = `store/pictures.${code}.json`;
     if (file in pictures) {
       checkPictureTexts(problems, file, pictures[file], english);
+      checkLanguageCount(problems, file, pictures[file], locales);
     } else {
       problems.push(
         `The extension speaks ${code}, but ${file} is missing; scripts/screenshots.sh renders the pictures of its listing from these texts.`,
