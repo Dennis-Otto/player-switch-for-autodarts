@@ -14,7 +14,9 @@
 
 const setup = new URLSearchParams(location.search);
 const layout = setup.get("layout") ?? "frame";
-const lang = setup.get("lang") ?? "en";
+// The language from the address as chrome-stub.js accepts it, one of its LANGUAGES, so
+// the address can't choose the file that the texts below come from.
+const lang = chrome.i18n.getUILanguage();
 const shot = document.querySelector("#shot");
 document.documentElement.lang = lang.replace("_", "-");
 

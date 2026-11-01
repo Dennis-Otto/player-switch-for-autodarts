@@ -4,7 +4,9 @@
 # address, --get, and each header and field of data with the content of a file that
 # it names, and answers as the service of the address: FAKE_<SERVICE>_ANSWER into the
 # file of --output, and FAKE_<SERVICE>_EXIT as its exit code, where the service is STS,
-# IAM or else OIDC, the token service of GitHub.
+# IAM, UPLOAD, PUBLISH or STATUS of the Chrome Web Store, or else OIDC, the token service
+# of GitHub. With FAKE_<SERVICE>_NO_ANSWER it leaves that file alone, like a curl whose
+# call never got an answer.
 set -euo pipefail
 out="" url=""
 {
@@ -42,8 +44,13 @@ out="" url=""
 case "$url" in
   https://sts.googleapis.com/*) service=STS ;;
   https://iamcredentials.googleapis.com/*) service=IAM ;;
+  https://chromewebstore.googleapis.com/upload/*) service=UPLOAD ;;
+  https://chromewebstore.googleapis.com/*:publish) service=PUBLISH ;;
+  https://chromewebstore.googleapis.com/*:fetchStatus) service=STATUS ;;
   *) service=OIDC ;;
 esac
-answer="FAKE_${service}_ANSWER" code="FAKE_${service}_EXIT"
-printf '%s' "${!answer:-}" >"$out"
+answer="FAKE_${service}_ANSWER" code="FAKE_${service}_EXIT" silent="FAKE_${service}_NO_ANSWER"
+if [[ -z "${!silent:-}" ]]; then
+  printf '%s' "${!answer:-}" >"$out"
+fi
 exit "${!code:-0}"
