@@ -5,7 +5,7 @@ config:
 ---
 flowchart TB
     accTitle: How the pictures are made
-    accDescr: scripts/screenshots.sh builds the extension and starts the pinned Playwright image with the repository read-only. Inside, run.sh installs the Inter font and the tools, and capture.py opens the stage in Chromium. The stage shows the real popup or switcher of the extension in a frame, with a stand-in for Chrome and made-up accounts; every file comes from the repository and no request leaves the browser. capture.py takes each picture at a fixed size, scale, scheme and language and writes the GIF, and the pictures leave the container as an archive, into docs/images and store/images. After a change of main, every release and every week, the screenshot bot runs the script and opens a pull request with the pictures whose pixels changed.
+    accDescr: scripts/screenshots.sh builds the extension and starts the pinned Playwright image with the repository read-only. Inside, run.sh installs the Inter font and the tools, and capture.py opens the stage in Chromium. The stage shows the real popup or switcher of the extension in a frame, with a stand-in for Chrome and made-up accounts; every file comes from the repository and no request leaves the browser. capture.py takes each picture at a fixed size, scale, scheme and language and writes the GIF, and the pictures leave the container as an archive, into docs/images, in English and German, and store/images, in every language of the extension. After a change of main, every release and every week, the screenshot bot runs the script and opens a pull request with the pictures whose pixels changed.
 
     bot["The screenshot bot<br>after a change of main, every release and every week"]
     script["scripts/screenshots.sh<br>builds extension/lib from src/"]
@@ -28,7 +28,7 @@ flowchart TB
     end
 
     script --> run
-    pages --> pictures["docs/images: switch.gif, manage.png, switcher.png<br>store/images: screenshots and promo tiles<br>in English and German"]
+    pages --> pictures["docs/images: switch.gif, manage.png, switcher.png<br>in English and German<br>store/images: screenshots and promo tiles<br>in every language of the extension"]
     pictures --> pull["The bot's pull request with the pictures<br>whose pixels changed"]
 
     classDef bot fill:#526cfe2e,stroke:#526cfe,stroke-width:2px

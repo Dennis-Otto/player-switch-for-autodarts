@@ -42,7 +42,10 @@ text, shows other placeholders than in English or is used nowhere, the message
 `locale` of a language doesn't name its folder, a folder of `extension/_locales/` has a
 name that Chrome doesn't read or a missing or invalid `messages.json`, a language has
 no store listing `store/listing.<code>.md` or a listing has no language, a language
-without its own help page doesn't link the English help, a text or an `aria-label` in a page
+has no texts for the pictures of the store `store/pictures.<code>.json`, other texts
+there than in English or a file there without a language, a picture in `store/images/`
+belongs to no language, `docs/releases.md` doesn't list the pictures of a language, a
+language without its own help page doesn't link the English help, a text or an `aria-label` in a page
 differs from its English message, a file
 that the manifest names is missing, the help, `docs/help.md` and `docs/help.de.md`,
 doesn't quote a message that tells a player about a problem, a job of
@@ -59,7 +62,8 @@ with its reason, or the test of the popup in a browser,
 smaller than 44 by 44 pixels, a text smaller than 12 pixels, a button text that breaks,
 or the focus in the wrong place after an action."""
 why = """The store ships the manifest with its version, Chrome shows a missing message as
-an empty text, and a player who searches the help for the words on the screen has to
+an empty text, a picture of the store shows the words of `store/pictures.<code>.json`
+to everyone who looks at the listing in that language, and a player who searches the help for the words on the screen has to
 find them there, in English and German; a translation that drops a placeholder
 drops the name of a player. The jobs of the store workflow hold the token
 that publishes a version to every user, so a compromised action or package must not be
@@ -86,7 +90,9 @@ line and code: fix it, or, for a warning that has to stay, add its code with the
 to `ACCEPTED` in `scripts/check-firefox.mjs`. A folder of `extension/_locales/` is
 named with a code that Chrome knows, such as `nl` or `pt_BR`, and holds a complete
 `messages.json`; add or remove `store/listing.<code>.md` so that every language has one
-listing; a language without `docs/help.<code>.md` sets its message `helpUrl` to the
+listing; translate the texts of `store/pictures.en.json` into
+`store/pictures.<code>.json`, add the language to the table in `docs/releases.md` and
+delete the pictures of a language that is gone; a language without `docs/help.<code>.md` sets its message `helpUrl` to the
 English help. A failed test of the popup names the view
 and the element; `npm run test:a11y` runs it alone, in the Chrome or Edge of your
 computer. Then run the checks

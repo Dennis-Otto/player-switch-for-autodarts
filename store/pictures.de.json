@@ -1,0 +1,37 @@
+{
+  "note": "Nicht mit Autodarts verbunden.",
+  "tagline": "Spieler wechseln mit einem Tipp",
+  "marquee": "Ein gemeinsames Display, jeder mit seinem eigenen Konto, ein Tipp zum Wechseln.",
+  "slides": {
+    "1": {
+      "eyebrow": "Player Switch for Autodarts",
+      "title": "Ein Display. Alle Konten. Ein Tipp.",
+      "lead": "Jeder spielt unter seinem eigenen Autodarts-Konto, ohne sich jedes Mal neu anzumelden.",
+      "points": [
+        "Konten einmal speichern",
+        "Mit einem Tipp wechseln",
+        "Sitzungen bleiben im Hintergrund bereit"
+      ]
+    },
+    "2": {
+      "eyebrow": "Optional",
+      "title": "Läuft von selbst weiter.",
+      "lead": "Geparkte Sitzungen werden im Hintergrund erneuert. Auf Wunsch merkt sich die Erweiterung ein Passwort und meldet ein Konto von selbst wieder an.",
+      "points": [
+        "Alles bleibt auf deinem Computer",
+        "Nur Autodarts, kein Tracking",
+        "In fünf Sprachen"
+      ]
+    },
+    "3": {
+      "eyebrow": "Am Board-Display",
+      "title": "Direkt am Board wechseln.",
+      "lead": "Im Vollbild oder Kiosk-Modus öffnet ein runder Knopf auf der Seite die Spieler in großen Kacheln für den Touchscreen.",
+      "points": [
+        "Vollbild und Kiosk-Modus",
+        "Die Tasten 1 bis 9 wählen",
+        "Fragt, bevor ein Match endet"
+      ]
+    }
+  }
+}

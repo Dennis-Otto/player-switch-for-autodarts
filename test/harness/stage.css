@@ -189,6 +189,8 @@ iframe {
 
 h1 {
     margin: 0 0 14px;
+    /* A long title in another language breaks between its sentences, not after a word. */
+    text-wrap: balance;
     font-size: 38px;
     font-weight: 800;
     line-height: 1.08;
@@ -251,6 +253,12 @@ h1 {
     height: 520px;
     border-radius: 10px;
     zoom: 0.55;
+}
+
+/* "Manage accounts" is higher than the picture, in some languages by far, so it is
+   smaller than life too, by the same factor in every language. */
+.store.tall .window {
+    zoom: 0.76;
 }
 
 /* The display takes more room, so its text is smaller. */

@@ -1,0 +1,37 @@
+{
+  "note": "Non affilié à Autodarts.",
+  "tagline": "Changer de joueur d'une pression",
+  "marquee": "Un seul écran partagé, chacun sur son propre compte, une pression pour changer.",
+  "slides": {
+    "1": {
+      "eyebrow": "Player Switch for Autodarts",
+      "title": "Un écran. Tous les comptes. Une pression.",
+      "lead": "Chacun joue avec son propre compte Autodarts, sans se reconnecter à chaque fois.",
+      "points": [
+        "Enregistrez chaque compte une fois",
+        "Changez d'une simple pression",
+        "Les sessions restent prêtes en arrière-plan"
+      ]
+    },
+    "2": {
+      "eyebrow": "En option",
+      "title": "Continue tout seul.",
+      "lead": "Les sessions mises de côté sont renouvelées en arrière-plan. Si vous le souhaitez, l'extension mémorise un mot de passe et reconnecte un compte d'elle-même.",
+      "points": [
+        "Tout reste sur votre ordinateur",
+        "Uniquement Autodarts, sans pistage",
+        "En cinq langues"
+      ]
+    },
+    "3": {
+      "eyebrow": "Sur l'écran de la cible",
+      "title": "Changez à la cible.",
+      "lead": "En plein écran ou en mode kiosque, un bouton rond sur la page affiche les joueurs en grandes vignettes pour un écran tactile.",
+      "points": [
+        "Plein écran et mode kiosque",
+        "Touches 1 à 9 pour choisir",
+        "Demande avant la fin d'un match"
+      ]
+    }
+  }
+}

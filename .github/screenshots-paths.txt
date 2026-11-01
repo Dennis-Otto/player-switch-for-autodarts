@@ -17,5 +17,7 @@ extension/_locales/**
 src/health.ts
 src/onboarding.ts
 src/page.ts
+# The texts on the pictures of the store.
+store/pictures.*.json
 # The stage, the stand-in for Chrome and the tools that render them.
 test/harness/**

@@ -17,7 +17,9 @@
 #   and the popup's "Manage accounts" (manage.png) and the switcher on a board
 #   display (switcher.png), each also .dark and in German (.de, .de.dark);
 # - store/images/, the screenshots (1280×800) and the promo tiles (440×280 and
-#   1400×560) of the Chrome Web Store, in English (.en) and German (.de).
+#   1400×560) of the Chrome Web Store, in every language of extension/_locales (.en,
+#   .de, .nl, .fr and .es), with the texts around the extension from
+#   store/pictures.<code>.json.
 #
 # It needs Docker, and Node for the code of the extension. The blueprint brought it
 # once; it belongs to this project.
