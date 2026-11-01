@@ -6,6 +6,50 @@ the next release, or lists the pull requests when there is none.
 
 ## Unreleased
 
+## [1.2.0](https://github.com/Dennis-Otto/player-switch-for-autodarts/compare/v1.1.0...v1.2.0) (2026-11-01)
+
+### Features
+
+- Every release now carries the extension ready to load: download
+  `player-switch-for-autodarts-<version>.zip` from the latest release, unzip it and choose
+  **Load unpacked**, without the Chrome Web Store and without Node.js. The README and the
+  website show how, with a picture, and say that Brave, Opera and Vivaldi install from the
+  Chrome Web Store too.
+- The Chrome Web Store now gets exactly that file, and only after a check of the signed
+  provenance of the release and of its version. So what a player downloads and what the
+  store publishes are one package, and anyone can check where it comes from.
+- Each delivery to the Chrome Web Store now names the sha256 of the zip that it uploaded,
+  and checks those bytes against the zip of the release before it signs in, so you can
+  compare what went to the store with a download or a build of your own.
+- The zip of a release holds only the kinds of file that the extension loads, and a build
+  stops at any other. Two builds of one commit, in different time zones, are compared byte
+  for byte before every merge.
+- The pictures for the Chrome Web Store now also come in Dutch, French and Spanish, and the
+  second screenshot no longer says that the extension speaks only English and German.
+
+### Bug fixes
+
+- The tools that check each change no longer install a minimatch with a known
+  vulnerability, and the project states why the advisory of deepmerge, which has no fix
+  yet and which only the Firefox check installs, doesn't concern the extension. The
+  extension that you install doesn't change.
+- A session that someone signed in with directly on the Autodarts page, without the
+  popup, no longer ends up under the tile of the player before. A tap on a tile or **Add
+  account** now asks Autodarts whose session is in the page and parks it with that
+  player, and the player who was signed out shows that they need a new sign-in. A
+  session of an account without a tile isn't saved. Because this takes an answer from
+  Autodarts, **Add account** and the return after a break of the venue mode now wait
+  while Autodarts can't be reached, and the page stays as it is until then.
+- When the Chrome Web Store takes a new version but refuses to submit it because its
+  Developer Dashboard lacks something (`INVALID_ITEM_METADATA`), the run of the store
+  workflow now says so, in its summary and in an annotation: it names the permissions,
+  hosts, web-accessible pages and languages that the release asks for beyond the version
+  in the store, links the item in the dashboard, and says where the justifications are
+  and how to submit the version again.
+- A review that begins while a run is delivering, such as after a click on **Submit for
+  review** in the dashboard, no longer fails the run: it ends with a note, as it does
+  for any review, and a later day delivers the release.
+
 ## [1.1.0](https://github.com/Dennis-Otto/player-switch-for-autodarts/compare/v1.0.0...v1.1.0) (2026-10-25)
 
 ### Features
