@@ -16,8 +16,9 @@
 // time of the commit (or of SOURCE_DATE_EPOCH) as the UTC of the zip, the same attributes
 // on every system, nothing from the file system, and no compression. The bytes of
 // zlib depend on its version and on the instructions of the processor, while a stored
-// file is itself; the zip of the extension is some 300 KB either way, and the stores
-// compress what they hand out. .gitattributes keeps LF in every checkout on Windows too.
+// file is itself; the zip of the extension is some 330 KB rather than 110 KB, and the
+// stores compress what they hand out. .gitattributes keeps LF in every checkout on
+// Windows too.
 import { execFileSync } from "node:child_process";
 import {
   existsSync,
