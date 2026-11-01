@@ -1,11 +1,8 @@
 ### Features
 
-- Every new release carries the zip of the extension,
-  `player-switch-for-autodarts-<version>.zip`, with its signed provenance: load it
-  unpacked in Chrome or Edge, and check with `gh attestation verify` that it comes from
-  the build of the release. The README says how.
-- The Chrome Web Store now gets exactly that zip, and its run names the sha256 that it
-  uploaded. A zip without a valid provenance goes nowhere.
-- The same commit always makes the same zip, byte for byte, on Linux and on Windows, so
-  anybody can build it from the source of a release and compare it. It holds only the
-  kinds of file that the extension loads.
+- Each delivery to the Chrome Web Store now names the sha256 of the zip that it uploaded,
+  and checks those bytes against the zip of the release before it signs in, so you can
+  compare what went to the store with a download or a build of your own.
+- The zip of a release holds only the kinds of file that the extension loads, and a build
+  stops at any other. Two builds of one commit, in different time zones, are compared byte
+  for byte before every merge.

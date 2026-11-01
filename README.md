@@ -76,30 +76,33 @@ Over days and weeks, a saved account moves between these states:
 
 ### Install
 
-**From the Chrome Web Store** — once the listing is live, install it in one click from its store page; updates then arrive on their own. The link goes here when it is. It needs Google Chrome 140 or newer, or a browser built on Chromium 140 or newer.
+**From the Chrome Web Store** — once the listing is live, install it in one click from its store page; updates then arrive on their own. The link goes here when it is. It needs Google Chrome 140 or newer, or a browser built on Chromium 140 or newer: Brave, Opera and Vivaldi install from the Chrome Web Store as well, some after they ask you to allow extensions from other stores.
 
 **In Microsoft Edge 140 or newer** — Edge runs the same package. Turn on **Allow extensions from other stores** under `edge://extensions` and install it from the Chrome Web Store, or load it unpacked as below. A listing in Edge Add-ons follows.
 
-**In Firefox 140 or newer, to try it out** — Firefox runs the same package too, as a preview that has not yet been tested by hand in Firefox. Until it is listed on addons.mozilla.org, build it as below, open `about:debugging#/runtime/this-firefox`, choose **Load Temporary Add-on…** and pick `extension/manifest.json`; Firefox removes it again when it closes. The add-on's page in `about:addons` lists, and addons.mozilla.org will ask at the install, that the add-on sends authentication information: the sessions and remembered passwords go to the sign-in service of Autodarts, and nowhere else. Firefox can't keep the extension's storage from its script in the Autodarts page, so set up a display in a club or a pub with Chrome or Edge; the [security design](docs/security.md#firefox) explains why. Firefox for Android is not tested.
+**In Firefox 140 or newer, to try it out** — Firefox runs the same package too, as a preview that has not yet been tested by hand in Firefox. Until it is listed on addons.mozilla.org, download and unzip the zip of a release as below, open `about:debugging#/runtime/this-firefox`, choose **Load Temporary Add-on…** and pick the `manifest.json` in that folder; Firefox removes it again when it closes. The add-on's page in `about:addons` lists, and addons.mozilla.org will ask at the install, that the add-on sends authentication information: the sessions and remembered passwords go to the sign-in service of Autodarts, and nowhere else. Firefox can't keep the extension's storage from its script in the Autodarts page, so set up a display in a club or a pub with Chrome or Edge; the [security design](docs/security.md#firefox) explains why. Firefox for Android is not tested.
 
-**From the zip of a release, unpacked** — every new [release](https://github.com/Dennis-Otto/player-switch-for-autodarts/releases) carries `player-switch-for-autodarts-<version>.zip`, the zip that goes to the Chrome Web Store. Unpack it into a folder of its own, open `chrome://extensions`, or `edge://extensions` in Edge, turn on **Developer mode**, choose **Load unpacked** and pick that folder. It doesn't update by itself: unpack the next one over it and press **Reload** on its card. With the [GitHub CLI](https://cli.github.com/), check first that the zip comes from the build of the release:
+**From a release, without the store and without Node.js:**
 
-```sh
-gh attestation verify player-switch-for-autodarts-<version>.zip \
-  --repo Dennis-Otto/player-switch-for-autodarts \
-  --signer-workflow Dennis-Otto/player-switch-for-autodarts/.github/workflows/build-release.yml
-```
+1. Under **Assets** of the [latest release](https://github.com/Dennis-Otto/player-switch-for-autodarts/releases/latest), download `player-switch-for-autodarts-<version>.zip`.
+2. Unzip it into a folder that stays, such as `Documents/Player Switch`: the browser reads the extension from there each time it starts.
+3. Open `chrome://extensions`, or `edge://extensions` in Edge, turn on **Developer mode**, choose **Load unpacked** and pick that folder, the one with `manifest.json` in it.
 
-[Check a zip](docs/releases.md#check-a-zip) also says how to build the same bytes from the source.
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/images/load-unpacked.dark.png">
+  <img src="docs/images/load-unpacked.png" alt="The top of the page chrome://extensions: the switch Developer mode at the top right is on, and Load unpacked, the first of three buttons below the title Extensions, appears with it. Both are marked.">
+</picture>
 
-**Unpacked, from the source:**
+A copy loaded this way gets no update by itself. For a new version, replace the contents of the folder with those of the new zip and choose the reload arrow of Player Switch on that page. Leave the folder where it is: the browser ties the saved accounts to its path, so a copy in another folder starts without them. The zip is the very file that goes to the Chrome Web Store, and [the release guide](docs/releases.md#the-package-of-a-release) says how to check that a release built it.
+
+**From the source,** to change something:
 
 ```sh
 npm ci
 npm run build
 ```
 
-Then in Chrome open `chrome://extensions`, or `edge://extensions` in Edge, turn on **Developer mode**, choose **Load unpacked** and pick the `extension/` folder of this repository. [Firefox and Edge](docs/development.md#firefox-and-edge) says what differs in the other browsers and how to check a release in them.
+Then load it in the same way, with the `extension/` folder of this repository. [Firefox and Edge](docs/development.md#firefox-and-edge) says what differs in the other browsers and how to check a release in them.
 
 The extension asks only for access to `play.autodarts.com` and `api.autodarts.com`, its own storage, a timer for the renewal and the right to run its own script in the Autodarts tabs after an update, or in a tab where it stopped answering. It can't read the address or title of your other tabs, or your browsing history. Its content security policy lets it connect to `api.autodarts.com` alone, and the script that it runs in the Autodarts page can't read the saved accounts; the [security design](docs/security.md#trust-boundaries) has the details.
 

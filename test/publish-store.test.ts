@@ -4,13 +4,10 @@
 // GitHub for an OIDC token, the sign-in without a secret is the same in both, and it
 // runs against a fake curl that answers as GitHub and Google do. The delivery runs
 // against the same curl: what it says when the store refuses a submission, and that a
-// review that began in the meantime is no failure. The job that takes the zip of the
-// release runs against a fake gh: no zip goes further without its provenance and the
-// version of the release (decision 0013). The steps run in bash with jq and unzip, as
+// review that began in the meantime is no failure. The steps run in bash with jq, as
 // on the runner; on a computer without them those tests skip, other than in the CI.
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
-import { createHash } from "node:crypto";
 import {
   chmodSync,
   existsSync,
@@ -25,7 +22,6 @@ import { tmpdir } from "node:os";
 import { delimiter, join } from "node:path";
 import { describe, test } from "node:test";
 import { fileURLToPath } from "node:url";
-import { zipBytes } from "../scripts/package-extension.ts";
 import { readWorkflow } from "./workflow.ts";
 
 const { text: WORKFLOW, jobLines, step } = readWorkflow("publish-store.yml");
@@ -35,35 +31,23 @@ const REFRESH = "Sign in to the Chrome Web Store API with the refresh token";
 const KEYLESS = "Sign in to the Chrome Web Store API with GitHub's OIDC token";
 const ASKS = "Find what the release asks for beyond the version of the store";
 const DELIVER = "Upload the zip and submit it for review";
-const TAKE = "Take the zip of the release and check its provenance";
-const SAME = "Check that it is the zip of the release, byte for byte";
 
 const PROVIDER =
   "projects/123456789/locations/global/workloadIdentityPools/github/providers/player-switch";
 const SERVICE_ACCOUNT = "chrome-web-store@a-project.iam.gserviceaccount.com";
 const OIDC_URL = "https://token.actions.example/idtoken?api-version=2.0";
 
-/** bash, jq, unzip and sha256sum, which the steps need. */
+/** bash and jq, which the steps need. */
 const tools =
-  spawnSync(
-    "bash",
-    ["-c", "command -v jq && command -v unzip && command -v sha256sum"],
-    { encoding: "utf8" },
-  ).status === 0;
+  spawnSync("bash", ["-c", "command -v jq"], { encoding: "utf8" }).status === 0;
 const skip =
   tools || process.env.CI
     ? false
-    : "No bash with jq and unzip here: the runs of the steps skip; the CI runs them.";
+    : "No bash with jq here: the runs of the sign-in skip; the CI runs them.";
 
 /** A curl that records each call and answers as the service of its address. */
 const FAKE_CURL = readFileSync(
   fileURLToPath(new URL("fake-curl.sh", import.meta.url)),
-  "utf8",
-);
-
-/** A GitHub CLI that records each call and hands out the assets of a folder. */
-const FAKE_GH = readFileSync(
-  fileURLToPath(new URL("fake-gh.sh", import.meta.url)),
   "utf8",
 );
 
@@ -100,14 +84,12 @@ interface Result {
   readonly summary: string;
   readonly output: string;
   readonly calls: Call[];
-  /** The calls of the fake gh, each with its arguments. */
-  readonly ghCalls: string[];
   /** The files in RUNNER_TEMP after the step. */
   readonly files: string[];
   readonly authorization: string | undefined;
 }
 
-/** Runs a script of the workflow as the runner does, in bash -e, in a folder of its own, with a fake curl and a fake gh. */
+/** Runs a script of the workflow as the runner does, in bash -e, with a fake curl. */
 const runStep = (
   script: string,
   env: Readonly<Record<string, string>>,
@@ -120,8 +102,6 @@ const runStep = (
     mkdirSync(temp);
     writeFileSync(join(bin, "curl"), FAKE_CURL);
     chmodSync(join(bin, "curl"), 0o755);
-    writeFileSync(join(bin, "gh"), FAKE_GH);
-    chmodSync(join(bin, "gh"), 0o755);
     // No test waits for the store to go on processing an upload.
     writeFileSync(join(bin, "sleep"), "#!/usr/bin/env bash\n");
     chmodSync(join(bin, "sleep"), 0o755);
@@ -130,7 +110,6 @@ const runStep = (
       summary: join(dir, "summary.md"),
       output: join(dir, "output"),
       calls: join(dir, "calls"),
-      ghCalls: join(dir, "gh-calls"),
     };
     for (const file of Object.values(files)) {
       writeFileSync(file, "");
@@ -139,7 +118,6 @@ const runStep = (
       "bash",
       ["--noprofile", "--norc", "-e", join(dir, "step.sh")],
       {
-        cwd: dir,
         encoding: "utf8",
         env: {
           PATH: `${bin}${delimiter}${process.env.PATH ?? ""}`,
@@ -147,7 +125,6 @@ const runStep = (
           GITHUB_STEP_SUMMARY: files.summary,
           GITHUB_OUTPUT: files.output,
           FAKE_CALLS: files.calls,
-          FAKE_GH_CALLS: files.ghCalls,
           ...env,
         },
       },
@@ -159,9 +136,6 @@ const runStep = (
       summary: readFileSync(files.summary, "utf8"),
       output: readFileSync(files.output, "utf8"),
       calls: parseCalls(readFileSync(files.calls, "utf8")),
-      ghCalls: readFileSync(files.ghCalls, "utf8")
-        .split("\n")
-        .filter((line) => line !== ""),
       files: readdirSync(temp),
       authorization: existsSync(authorization)
         ? readFileSync(authorization, "utf8")
@@ -196,7 +170,7 @@ describe("the jobs of the store", () => {
         );
       }
     }
-    // The job that takes the zip of the release reaches no host of Google.
+    // The job that checks the package of the release reaches no host of Google.
     assert.deepEqual(
       jobLines("package").filter((line) =>
         /^ +[a-z0-9.-]+\.googleapis\.com:443$/.test(line),
@@ -268,198 +242,6 @@ describe("the jobs of the store", () => {
       ),
       [],
     );
-  });
-
-  test("no job builds a package: what the store gets is the zip of the release", () => {
-    assert.deepEqual(
-      jobLines("package").filter((line) =>
-        /actions\/checkout|setup-node|node |npm |registry\.npmjs\.org/.test(
-          line,
-        ),
-      ),
-      [],
-    );
-    assert.doesNotMatch(WORKFLOW, /npm ci|npm run|package-extension/);
-  });
-
-  test("the job that checks the provenance holds no secret and may read it", () => {
-    const lines = jobLines("package");
-    assert.ok(lines.includes("      attestations: read"));
-    assert.deepEqual(
-      lines.filter((line) => /secrets\.|^ {4}environment:/.test(line)),
-      [],
-    );
-    assert.equal(WORKFLOW.match(/attestations: read$/gm)?.length, 1);
-    // It reaches the keys of Sigstore that check the attestation.
-    for (const host of [
-      "rekor.sigstore.dev:443",
-      "tuf-repo-cdn.sigstore.dev:443",
-      "tuf-repo.github.com:443",
-    ]) {
-      assert.ok(lines.includes(`            ${host}`), `it reaches ${host}`);
-    }
-  });
-
-  test("the job that delivers takes only what passed the check, and checks it before it signs in", () => {
-    const lines = jobLines("store");
-    const job = lines.join("\n");
-    assert.match(
-      job,
-      /^ {4}if: \$\{\{ !cancelled\(\) && needs\.package\.result == 'success' \}\}$/m,
-    );
-    assert.match(
-      job,
-      /^ {6}SHA256: \$\{\{ needs\.package\.outputs\.sha256 \}\}$/m,
-    );
-    const compares = lines.indexOf(`      - name: ${SAME}`);
-    assert.ok(compares > 0, "it compares the bytes");
-    assert.ok(compares < lines.indexOf(`      - name: ${REFRESH}`));
-    assert.ok(compares < lines.indexOf(`      - name: ${KEYLESS}`));
-    // The artifact holds the zip that the job "package" checked.
-    assert.match(
-      jobLines("package").join("\n"),
-      /^ {6}sha256: \$\{\{ steps\.zip\.outputs\.sha256 \}\}$/m,
-    );
-  });
-});
-
-describe("the zip of the release", { skip }, () => {
-  const NAME = "player-switch-for-autodarts-1.0.0.zip";
-  const zipOf = (manifest: string): Buffer =>
-    zipBytes(
-      [
-        { path: "manifest.json", data: Buffer.from(manifest) },
-        { path: "lib/worker.js", data: Buffer.from("export {};\n") },
-      ],
-      1800000000,
-    );
-  const ZIP = zipOf('{"version":"1.0.0"}\n');
-  const SHA256 = createHash("sha256").update(ZIP).digest("hex");
-
-  /** The step, for a release with these assets. */
-  const take = (
-    assets: Readonly<Record<string, Uint8Array>>,
-    env: Readonly<Record<string, string>> = {},
-  ): Result => {
-    const release = mkdtempSync(join(tmpdir(), "publish-store-release-"));
-    try {
-      for (const [name, data] of Object.entries(assets)) {
-        writeFileSync(join(release, name), data);
-      }
-      return runStep(step("package", TAKE).run, {
-        TAG: "v1.0.0",
-        GH_REPO: "owner/name",
-        GH_TOKEN: "a-token",
-        FAKE_RELEASE: release,
-        ...env,
-      });
-    } finally {
-      rmSync(release, { recursive: true, force: true });
-    }
-  };
-  const problem = (result: Result): string =>
-    result.stdout
-      .split("\n")
-      .filter((line) => line.startsWith("::error title=Chrome Web Store::"))
-      .join("\n");
-
-  test("downloads it, checks it and hands it on with its digest", () => {
-    const result = take({ [NAME]: ZIP });
-    assert.equal(result.status, 0, result.stdout);
-    assert.deepEqual(result.ghCalls, [
-      "release download v1.0.0 --pattern *.zip --dir dist",
-      `attestation verify dist/${NAME} --repo owner/name --signer-workflow owner/name/.github/workflows/build-release.yml --source-ref refs/heads/main --deny-self-hosted-runners`,
-    ]);
-    assert.equal(result.output, `zip=${NAME}\nsha256=${SHA256}\n`);
-    assert.match(result.summary, new RegExp(`\`${SHA256}\``));
-  });
-
-  const stopsAt = (result: Result, words: RegExp): void => {
-    assert.equal(result.status, 1, result.stdout);
-    assert.match(problem(result), words);
-    assert.match(result.summary, /\*\*Problem:\*\*/);
-    // The job fails, and the job "store" asks for its success.
-    assert.equal(result.output, "");
-  };
-
-  test("fails for a zip whose provenance doesn't hold, and hands nothing on", () => {
-    const result = take({ [NAME]: ZIP }, { FAKE_ATTESTATION_EXIT: "1" });
-    stopsAt(result, /carries no valid provenance of its isolated build/);
-    assert.match(problem(result), /stays off the store/);
-  });
-
-  test("fails for a release without a zip, as those from before the zip, and says what to do", () => {
-    const result = take({});
-    stopsAt(result, /GitHub hands out no zip of the release v1\.0\.0/);
-    assert.match(problem(result), /release a new version/);
-    assert.equal(result.ghCalls.length, 1, "it checks nothing that it lacks");
-  });
-
-  test("fails when GitHub doesn't hand out the zip", () => {
-    const result = take({ [NAME]: ZIP }, { FAKE_DOWNLOAD_EXIT: "1" });
-    stopsAt(result, /GitHub hands out no zip of the release v1\.0\.0/);
-  });
-
-  test("fails for a release with two zips, of which the store takes one", () => {
-    const result = take({ [NAME]: ZIP, "other.zip": ZIP });
-    stopsAt(result, /The release v1\.0\.0 has 2 zips; the store takes one\./);
-    assert.equal(result.ghCalls.length, 1);
-  });
-
-  test("fails for a zip of another version", () => {
-    const result = take({ [NAME]: zipOf('{"version":"0.9.0"}\n') });
-    stopsAt(result, /has the version 0\.9\.0; the release is 1\.0\.0\./);
-  });
-
-  test("fails for a zip without a manifest", () => {
-    const result = take({
-      [NAME]: zipBytes(
-        [{ path: "a.css", data: Buffer.from("\n") }],
-        1800000000,
-      ),
-    });
-    stopsAt(result, /has the version none; the release is 1\.0\.0\./);
-  });
-
-  test("fails for something that is no zip", () => {
-    const result = take({ [NAME]: Buffer.from("not a zip") });
-    stopsAt(result, /has the version none; the release is 1\.0\.0\./);
-  });
-
-  describe("in the job that delivers", () => {
-    const same = (zip: Uint8Array, sha256: string): Result => {
-      const folder = mkdtempSync(join(tmpdir(), "publish-store-artifact-"));
-      try {
-        writeFileSync(join(folder, NAME), zip);
-        return runStep(`cd "$ARTIFACT"\n${step("store", SAME).run}`, {
-          ARTIFACT: folder,
-          TAG: "v1.0.0",
-          ZIP: NAME,
-          SHA256: sha256,
-        });
-      } finally {
-        rmSync(folder, { recursive: true, force: true });
-      }
-    };
-
-    test("passes for the zip that the job before it checked", () => {
-      const result = same(ZIP, SHA256);
-      assert.equal(result.status, 0, result.stdout);
-      assert.equal(problem(result), "");
-    });
-
-    test("fails for any other bytes", () => {
-      const result = same(zipOf('{"version":"1.0.1"}\n'), SHA256);
-      assert.equal(result.status, 1);
-      assert.match(problem(result), /isn't the zip of the release v1\.0\.0/);
-      assert.match(problem(result), /stays off the store/);
-    });
-
-    test("fails without a digest to compare it with", () => {
-      const result = same(ZIP, "");
-      assert.equal(result.status, 1);
-      assert.match(problem(result), /whose sha256 is unknown/);
-    });
   });
 });
 

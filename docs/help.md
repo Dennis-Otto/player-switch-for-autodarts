@@ -100,7 +100,7 @@ Removing the player who plays, or **Forget all accounts**, signs the page out, a
 
 **What it means:** in one renewal, Autodarts turned away every parked account at once, at least two of them. One account can lose its session on its own; all of them at the same time more likely means that Autodarts changed how it signs in, and the extension needs an update for that.
 
-**What to do:** don't sign everybody in again yet. **Known problems and updates** opens the list of known problems. Chrome brings a new version of an extension by itself within a few hours; to fetch it now, turn on **Developer mode** under `chrome://extensions` and choose **Update**. Installed unpacked, from the source? Then Chrome fetches nothing by itself: get the latest source (`git pull`), run `npm run build`, and choose the reload arrow of Player Switch under `chrome://extensions`, as in the [quick start](https://github.com/Dennis-Otto/player-switch-for-autodarts#quick-start). Once the new version is there, sign in again only the accounts that still say so.
+**What to do:** don't sign everybody in again yet. **Known problems and updates** opens the list of known problems. Chrome brings a new version of an extension by itself within a few hours; to fetch it now, turn on **Developer mode** under `chrome://extensions` and choose **Update**. Installed unpacked? Then Chrome fetches nothing by itself: replace the contents of the folder with those of the zip of the [latest release](https://github.com/Dennis-Otto/player-switch-for-autodarts/releases/latest), or get the latest source (`git pull`) and run `npm run build`, and choose the reload arrow of Player Switch under `chrome://extensions`, as in the [quick start](https://github.com/Dennis-Otto/player-switch-for-autodarts#quick-start). Once the new version is there, sign in again only the accounts that still say so.
 
 ### Renewed 3 hours ago {#renewed}
 
@@ -276,7 +276,7 @@ Each browser profile on each computer keeps accounts of its own, and nothing is 
 
 ### Which browsers does it work in?
 
-It is made for Google Chrome 140 or newer, on Windows, macOS, Linux and ChromeOS. Browsers built on Chromium install it from the Chrome Web Store as well, such as Chromium on a Raspberry Pi or Microsoft Edge. Use a normal window of a browser profile: Chrome runs no extension in a guest window, and one in an incognito window only when you allow it.
+It is made for Google Chrome 140 or newer, on Windows, macOS, Linux and ChromeOS. Browsers built on Chromium install it from the Chrome Web Store as well, such as Chromium on a Raspberry Pi, Microsoft Edge, Brave, Opera or Vivaldi. Use a normal window of a browser profile: Chrome runs no extension in a guest window, and one in an incognito window only when you allow it.
 
 ### Remove everything
 

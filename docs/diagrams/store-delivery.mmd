@@ -5,7 +5,7 @@ config:
 ---
 flowchart TB
     accTitle: How a release reaches the Chrome Web Store
-    accDescr: After every release, every day at 00:17 UTC and when started by hand with a tag, the workflow signs in to the Chrome Web Store and asks for the state of the item. A sign-in that Google turns away, a rejected release, a warning, a takedown or a review of more than 7 days fail the run, with the reason and the fix in its summary, and the bot-health sweep of the night keeps an issue open. While a review is pending, the run ends with a note, and a later day delivers the release. When the store has the release already, nothing happens. Otherwise a job without any secret takes the zip of the release and checks its provenance and its version; a release without a zip or a zip without a valid provenance fails the run. It keeps the zip as an artifact, and a job that reaches only Google compares its bytes, uploads it and submits it for review. When the store refuses the submission because the Developer Dashboard lacks something that the version needs, the run fails as well, and names what the release asks for beyond the version of the store. When a review began in the meantime, the run ends with the same note as for a pending review.
+    accDescr: After every release, every day at 00:17 UTC and when started by hand with a tag, the workflow signs in to the Chrome Web Store and asks for the state of the item. A sign-in that Google turns away, a rejected release, a warning, a takedown or a review of more than 7 days fail the run, with the reason and the fix in its summary, and the bot-health sweep of the night keeps an issue open. While a review is pending, the run ends with a note, and a later day delivers the release. When the store has the release already, nothing happens. Otherwise a job without any secret takes the zip of the release, checks its signed provenance and its version and keeps it as an artifact, and a job that reaches only Google uploads it and submits it for review. A release without the zip, or a zip that fails the check, stays off the store and fails the run. When the store refuses the submission because the Developer Dashboard lacks something that the version needs, the run fails as well, and names what the release asks for beyond the version of the store. When a review began in the meantime, the run ends with the same note as for a pending review.
 
     start["After a release, every day at 00:17 UTC,<br>or by hand with a tag"]
     ask["Sign in and ask the store<br>for the state of the item"]
@@ -14,8 +14,8 @@ flowchart TB
     issue["The bot-health sweep of the night<br>keeps an issue open"]
     wait["A note: a review is pending,<br>a later day delivers the release"]
     has["A note: the store has it already"]
-    package["Take the zip of the release, check its provenance<br>without any secret, keep it as an artifact"]
-    store["Compare its bytes, upload it and submit it,<br>from a job that reaches only Google"]
+    package["Take the zip of the release without any secret,<br>check its provenance and version, keep it as an artifact"]
+    store["Upload the zip and submit it,<br>from a job that reaches only Google"]
     review["Google reviews the release<br>and publishes it"]
 
     start --> ask --> decide
@@ -24,7 +24,7 @@ flowchart TB
     decide -- "a review is pending" --> wait
     decide -- "published already" --> has
     decide -- "the store lacks it" --> package --> store --> review
-    package -- "no zip, or no valid provenance" --> fail
+    package -- "no zip, no valid provenance<br>or another version" --> fail
     store -- "the dashboard lacks something" --> fail
     store -- "a review began in the meantime" --> wait
     fail --> issue

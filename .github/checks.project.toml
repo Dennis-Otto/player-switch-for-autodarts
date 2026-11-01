@@ -99,9 +99,9 @@ listing; translate the texts of `store/pictures.en.json` into
 screenshot in every `store/pictures.*.json`, add the language to the table in `docs/releases.md` and
 delete the pictures of a language that is gone; a language without `docs/help.<code>.md` sets its message `helpUrl` to the
 English help. A file in `extension/` of no kind that the package knows goes into `SHIPS`
-of `scripts/package-extension.ts` when the extension loads it, and into `STAYS_OUT` when it
-doesn't; two builds that differ have something in the build or in the writer that depends on
-the time or the computer, so compare the two zips, file by file. A failed test of the popup names the view
+in `scripts/package-extension.sh` when the extension loads it, and into `STAYS_OUT` when it
+doesn't; two builds that differ have something in the build that depends on the time or
+the computer, so compare the two zips, file by file. A failed test of the popup names the view
 and the element; `npm run test:a11y` runs it alone, in the Chrome or Edge of your
 computer. Then run the checks
 again:"""

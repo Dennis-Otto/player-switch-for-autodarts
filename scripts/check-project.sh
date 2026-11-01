@@ -40,8 +40,8 @@ node scripts/check-firefox.mjs
 
 # Two builds of one commit make the same zip, byte for byte, in another time zone too,
 # so that anybody can check the zip of a release against the source of its tag, and the
-# zip holds only the kinds of file that scripts/package-extension.ts allows (decision 0013).
-# The second build is the one of a release, by the script that the release runs.
+# zip holds only the kinds of file that scripts/package-extension.sh allows (decision
+# 0013). The second build is the one of a release, by the script that the release runs.
 zips="$(mktemp -d)"
 trap 'rm -rf "$zips"' EXIT
 first="$(bash scripts/package-extension.sh "$zips/first")"

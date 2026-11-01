@@ -14,13 +14,13 @@ name: Chrome Web Store
 # and a store version above the release fail the run with the reason and the fix in
 # its summary, and the bot-health sweep of the night keeps an issue open about it. The
 # daily sign-in also keeps a refresh token in use, which Google expires after six
-# months without one. The job "package", without any secret, takes the zip that the
-# isolated build of the release, build-release.yml, attested, checks its provenance and
-# that its manifest carries the version of the release, and keeps it as an artifact of
-# the run for 30 days; it builds nothing (decision 0013). The job "store" checks that
-# the artifact is that zip, byte for byte, uploads it with the Chrome Web Store API and
-# submits it for review; it runs no code of the repository and no npm package. When the
-# store refuses
+# months without one. The job "package" takes the zip that the isolated build of the
+# release attached, without any secret, checks its signed provenance and that its
+# manifest carries the version of the release, and keeps it as an artifact of the run
+# for 30 days, so the store gets exactly the package that the release attests (decision
+# 0013). The job "store" checks that the artifact is that zip, byte for byte, uploads it
+# with the Chrome Web Store API and submits it for review. Neither runs code of the
+# repository or an npm package. When the store refuses
 # with INVALID_ITEM_METADATA, the dashboard lacks something that the version needs, and
 # the run fails and names what the release asks for beyond the version of the store,
 # which the job "status" found with scripts/store-new-asks.ts. A review that began after
@@ -429,12 +429,11 @@ jobs:
           egress-policy: block
           disable-sudo-and-containers: true
           # GitHub for the release and its attestation, Sigstore for the keys that check
-          # the attestation, and the storage of GitHub's attestations. The hosts of the
-          # Actions service itself, which keeps the artifact, are allowed anyway.
+          # it. The hosts of the Actions service itself, which keeps the artifact, are
+          # allowed anyway.
           allowed-endpoints: >
             api.github.com:443
             github.com:443
-            objects.githubusercontent.com:443
             release-assets.githubusercontent.com:443
             rekor.sigstore.dev:443
             tuf-repo-cdn.sigstore.dev:443
@@ -448,7 +447,6 @@ jobs:
           HOSTS: >
             api.github.com:443
             github.com:443
-            objects.githubusercontent.com:443
             release-assets.githubusercontent.com:443
             rekor.sigstore.dev:443
             tuf-repo-cdn.sigstore.dev:443
@@ -481,32 +479,29 @@ jobs:
             echo "- **Problem:** $1" >> "$GITHUB_STEP_SUMMARY"
             exit 1
           }
-          mkdir -p dist
-          # The zip that the isolated build of the release built from the signed tag, and
-          # no other: this job builds nothing, and no zip reaches the store past this step.
-          gh release download "$TAG" --pattern '*.zip' --dir dist ||
-            fail "GitHub hands out no zip of the release $TAG. A release from before the releases carried the zip of the extension has none, and nothing else goes to the store: release a new version, whose build attaches its zip. 'When a run fails' in docs/releases.md has the steps."
-          shopt -s nullglob
-          zips=(dist/*.zip)
-          [[ ${#zips[@]} -eq 1 ]] || fail "The release $TAG has ${#zips[@]} zips; the store takes one."
-          zip="${zips[0]}"
-          # The Release workflow runs on main, so its provenance names that branch, not
-          # the tag; its build checks the signed tag, and the version below ties the zip
-          # to this release.
-          gh attestation verify "$zip" --repo "$GH_REPO" \
+          version="${TAG#v}"
+          zip="player-switch-for-autodarts-$version.zip"
+          # The zip that scripts/release-assets.sh built in the isolated build of the
+          # release, from the signed tag, and that the build attested.
+          names="$(gh release view "$TAG" --json assets --jq '.assets[].name')" ||
+            fail "GitHub didn't list the files of the release $TAG, so nothing goes to the store. The log above says why; for a reason of GitHub or of the network, the next daily run tries again."
+          grep -qxF "$zip" <<<"$names" ||
+            fail "The release $TAG has no $zip, so nothing goes to the store. A release made before the zip has none: release a new version, whose build attaches it."
+          gh release download "$TAG" --pattern "$zip" --dir dist ||
+            fail "GitHub didn't hand out $zip of the release $TAG, so nothing goes to the store. The next daily run tries again."
+          gh attestation verify "dist/$zip" --repo "$GH_REPO" \
             --signer-workflow "$GH_REPO/.github/workflows/build-release.yml" \
             --source-ref refs/heads/main --deny-self-hosted-runners >/dev/null ||
-            fail "${zip#dist/} of the release $TAG carries no valid provenance of its isolated build, build-release.yml on main, so it stays off the store. Don't upload it by hand: 'When a run fails' in docs/releases.md has the steps."
-          version="${TAG#v}"
-          packaged="$(unzip -p "$zip" manifest.json 2>/dev/null | jq -r .version 2>/dev/null || true)"
+            fail "$zip of the release $TAG has no valid provenance of the isolated build from main, so it stays off the store. If the log above shows a network error, the next daily run tries again; otherwise 'When a run fails' in docs/releases.md has the steps."
+          packaged="$(unzip -p "dist/$zip" manifest.json 2>/dev/null | jq -r .version 2>/dev/null || true)"
           [[ "$packaged" == "$version" ]] ||
-            fail "The manifest.json of ${zip#dist/} has the version ${packaged:-none}; the release is $version."
-          sha256="$(sha256sum "$zip" | cut -d ' ' -f 1)"
+            fail "The manifest.json of $zip has the version ${packaged:-none}; the release is $version. 'When a run fails' in docs/releases.md has the steps."
+          sha256="$(sha256sum "dist/$zip" | cut -d ' ' -f 1)"
           {
-            echo "zip=${zip#dist/}"
+            echo "zip=$zip"
             echo "sha256=$sha256"
           } >> "$GITHUB_OUTPUT"
-          echo "The zip ${zip#dist/} of the release carries the version $version and the provenance of its isolated build; its sha256 is \`$sha256\`." >> "$GITHUB_STEP_SUMMARY"
+          echo "The zip $zip carries the version $version and the provenance of the release; its sha256 is \`$sha256\`." >> "$GITHUB_STEP_SUMMARY"
       # What went to the store, to look at later, and when: the job "status" counts the
       # days of the review from it.
       - name: Keep the zip as an artifact of the run
