@@ -1,6 +1,6 @@
 # Look after the store every day, from jobs with a closed network
 
-- Status: accepted
+- Status: accepted, extended by [0013](0013-ship-the-zip-with-the-release-and-deliver-exactly-that-one.md), whose job *package* takes the zip of the release and no longer reaches npm
 - Date: 2026-10-25
 
 ## Context

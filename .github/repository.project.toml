@@ -14,7 +14,8 @@ required_checks = ["e2e"]
 # secrets = ["DEPLOY_TOKEN"]
 
 # A browser extension is loaded unpacked or from a zip, not published to npm, so the
-# release bot builds and signs the release but delivers it nowhere.
+# release bot builds and signs the release, with the zip of scripts/release-assets.sh, but
+# delivers it nowhere; publish-store.yml takes that zip to the Chrome Web Store.
 [variables]
 PUBLISH_TO = "none"
 

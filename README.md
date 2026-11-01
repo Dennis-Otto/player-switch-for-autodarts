@@ -82,6 +82,16 @@ Over days and weeks, a saved account moves between these states:
 
 **In Firefox 140 or newer, to try it out** — Firefox runs the same package too, as a preview that has not yet been tested by hand in Firefox. Until it is listed on addons.mozilla.org, build it as below, open `about:debugging#/runtime/this-firefox`, choose **Load Temporary Add-on…** and pick `extension/manifest.json`; Firefox removes it again when it closes. The add-on's page in `about:addons` lists, and addons.mozilla.org will ask at the install, that the add-on sends authentication information: the sessions and remembered passwords go to the sign-in service of Autodarts, and nowhere else. Firefox can't keep the extension's storage from its script in the Autodarts page, so set up a display in a club or a pub with Chrome or Edge; the [security design](docs/security.md#firefox) explains why. Firefox for Android is not tested.
 
+**From the zip of a release, unpacked** — every new [release](https://github.com/Dennis-Otto/player-switch-for-autodarts/releases) carries `player-switch-for-autodarts-<version>.zip`, the zip that goes to the Chrome Web Store. Unpack it into a folder of its own, open `chrome://extensions`, or `edge://extensions` in Edge, turn on **Developer mode**, choose **Load unpacked** and pick that folder. It doesn't update by itself: unpack the next one over it and press **Reload** on its card. With the [GitHub CLI](https://cli.github.com/), check first that the zip comes from the build of the release:
+
+```sh
+gh attestation verify player-switch-for-autodarts-<version>.zip \
+  --repo Dennis-Otto/player-switch-for-autodarts \
+  --signer-workflow Dennis-Otto/player-switch-for-autodarts/.github/workflows/build-release.yml
+```
+
+[Check a zip](docs/releases.md#check-a-zip) also says how to build the same bytes from the source.
+
 **Unpacked, from the source:**
 
 ```sh

@@ -136,6 +136,15 @@ Autodarts Play speichert die Anmeldung als einen einzigen Wert im Browser, einen
 - **Google Chrome 140 oder neuer**, und andere Browser auf Basis von Chromium 140 oder neuer, aus dem Chrome Web Store, sobald der Eintrag online ist, oder [entpackt geladen](https://github.com/Dennis-Otto/player-switch-for-autodarts#install).
 - **Microsoft Edge 140 oder neuer** führt dasselbe Paket aus: unter `edge://extensions` **Erweiterungen aus anderen Stores zulassen** einschalten und sie aus dem Chrome Web Store installieren, oder sie entpackt laden. Ein Eintrag bei Edge Add-ons folgt.
 - **Firefox 140 oder neuer**, zum Ausprobieren, als Vorschau, die in Firefox noch nicht von Hand getestet ist: Bis das Add-on auf addons.mozilla.org gelistet ist, lädst du es in `about:debugging` als temporäres Add-on, das Firefox beim Schließen wieder entfernt. Die Seite des Add-ons in `about:addons` zeigt, und addons.mozilla.org wird bei der Installation fragen, dass das Add-on Authentifizierungsdaten sendet, die nur an den Anmeldedienst von Autodarts gehen. Firefox kann den Speicher der Erweiterung nicht vor ihrem Skript in der Autodarts-Seite verbergen, darum läuft ein Display in einem Verein oder einer Kneipe mit Chrome oder Edge: [das Sicherheitsdesign](security.md#firefox) sagt, warum. Firefox für Android ist nicht getestet.
+- **Aus dem Zip eines Releases**, in Chrome oder Edge: Jedes neue [Release](https://github.com/Dennis-Otto/player-switch-for-autodarts/releases) enthält das Zip, das auch in den Store geht. Entpacke es in einen eigenen Ordner, schalte unter `chrome://extensions` oder `edge://extensions` den **Entwicklermodus** ein, wähle **Entpackte Erweiterung laden** und dann diesen Ordner; es aktualisiert sich nicht von selbst. Prüfe vorher, dass es aus dem Build des Releases stammt:
+
+    ```sh
+    gh attestation verify player-switch-for-autodarts-<version>.zip \
+      --repo Dennis-Otto/player-switch-for-autodarts \
+      --signer-workflow Dennis-Otto/player-switch-for-autodarts/.github/workflows/build-release.yml
+    ```
+
+    [Check a zip](releases.md#check-a-zip) (auf Englisch) sagt auch, wie du dieselben Bytes aus dem Quellcode baust.
 
 ## Gut zu wissen
 

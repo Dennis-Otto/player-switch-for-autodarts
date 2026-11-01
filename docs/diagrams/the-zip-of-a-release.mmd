@@ -1,0 +1,30 @@
+---
+config:
+  flowchart:
+    wrappingWidth: 400
+---
+flowchart TB
+    accTitle: How the zip of a release is made and who checks it
+    accDescr: From the signed tag, a job that may write nothing builds the zip. The isolated build of the release attests it and attaches it to the release, which is immutable once published. The workflow of the store takes the zip from the release, checks its provenance and its version without any secret, and hands on its sha256. A job that reaches only Google compares the bytes and uploads them, and Google reviews and publishes the version. Someone who loads the extension unpacked downloads the same zip and checks it with gh attestation verify. Anybody can build the zip again from the tag, and gets the same sha256.
+
+    tag["The signed tag of the release"]
+    build["Build the zip in a job<br>that may write nothing"]
+    attest["The isolated build attests the zip<br>and attaches it to the release"]
+    release["The release, immutable once published,<br>with the zip and its provenance"]
+    check["Check the provenance and the version<br>without any secret, hand on the sha256"]
+    upload["Compare the bytes and upload them,<br>from a job that reaches only Google"]
+    google["Google reviews the version<br>and publishes it"]
+    person["Someone who loads it unpacked checks it<br>with gh attestation verify"]
+    again["Anybody builds the zip again from the tag<br>and gets the same sha256"]
+
+    tag --> build --> attest --> release
+    release --> check --> upload --> google
+    release --> person
+    tag --> again
+
+    classDef bot fill:#526cfe2e,stroke:#526cfe,stroke-width:2px
+    classDef done fill:#16a34a2e,stroke:#16a34a,stroke-width:2px
+    classDef person fill:#f59e0b2e,stroke:#f59e0b,stroke-width:2px
+    class build,attest,check,upload bot
+    class release,google done
+    class person,again person

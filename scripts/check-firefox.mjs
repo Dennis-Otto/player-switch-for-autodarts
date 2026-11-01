@@ -15,7 +15,7 @@ export const ACCEPTED = {
     "from background.scripts instead; scripts/check-manifest.mjs checks that both name it.",
 };
 
-/** The files of extension/ that the package leaves out, as scripts/package-extension.sh does. */
+/** The files of extension/ that the package leaves out, as scripts/package-extension.ts does. */
 export function shipped(path) {
   return !path.endsWith(".map") && !/(^|[/\\])biome\.jsonc$/.test(path);
 }

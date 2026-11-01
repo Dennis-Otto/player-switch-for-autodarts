@@ -136,6 +136,15 @@ Over days and weeks, a saved account moves between these states:
 - **Google Chrome 140 or newer**, and other browsers built on Chromium 140 or newer, from the Chrome Web Store once the listing is live, or [loaded unpacked](https://github.com/Dennis-Otto/player-switch-for-autodarts#install).
 - **Microsoft Edge 140 or newer** runs the same package: turn on **Allow extensions from other stores** under `edge://extensions` and install it from the Chrome Web Store, or load it unpacked. A listing in Edge Add-ons follows.
 - **Firefox 140 or newer**, to try it out, as a preview not yet tested by hand in Firefox: until the add-on is listed on addons.mozilla.org, load it as a temporary add-on in `about:debugging`, which Firefox removes when it closes. The add-on's page in `about:addons` lists, and addons.mozilla.org will ask at the install, that the add-on sends authentication information, which goes to the sign-in service of Autodarts alone. Firefox can't keep the extension's storage from its script in the Autodarts page, so a display in a club or a pub runs Chrome or Edge: [the security design](security.md#firefox) says why. Firefox for Android is not tested.
+- **From the zip of a release**, in Chrome or Edge: every new [release](https://github.com/Dennis-Otto/player-switch-for-autodarts/releases) carries the zip that goes to the store. Unpack it into a folder of its own, turn on **Developer mode** under `chrome://extensions` or `edge://extensions`, choose **Load unpacked** and pick that folder; it doesn't update by itself. Check first that it comes from the build of the release:
+
+    ```sh
+    gh attestation verify player-switch-for-autodarts-<version>.zip \
+      --repo Dennis-Otto/player-switch-for-autodarts \
+      --signer-workflow Dennis-Otto/player-switch-for-autodarts/.github/workflows/build-release.yml
+    ```
+
+    [Check a zip](releases.md#check-a-zip) also says how to build the same bytes from the source.
 
 ## Good to know
 

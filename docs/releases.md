@@ -4,19 +4,52 @@ How a change becomes a release, and how a release reaches the Chrome Web Store. 
 
 ## How a release is made
 
-Every change reaches `main` through a pull request whose title follows [Conventional Commits](https://www.conventionalcommits.org/). The release bot keeps a pull request titled `chore: release x.y.z` open with the next version, decided from the titles merged since the last release (`fix` a patch, `feat` a minor, `!` a major version), and with the text of *Unreleased* in [the changelog](https://github.com/Dennis-Otto/player-switch-for-autodarts/blob/main/CHANGELOG.md) as its notes. Merging that pull request publishes the release on GitHub, with its SBOMs, third-party notices and the signed provenance of an isolated build, and raises the version in `package.json` and in `extension/manifest.json` together, so the extension always carries the version of its release.
+Every change reaches `main` through a pull request whose title follows [Conventional Commits](https://www.conventionalcommits.org/). The release bot keeps a pull request titled `chore: release x.y.z` open with the next version, decided from the titles merged since the last release (`fix` a patch, `feat` a minor, `!` a major version), and with the text of *Unreleased* in [the changelog](https://github.com/Dennis-Otto/player-switch-for-autodarts/blob/main/CHANGELOG.md) as its notes. Merging that pull request publishes the release on GitHub, with [the zip of the extension](#the-zip-of-a-release), its SBOMs, third-party notices and the signed provenance of an isolated build, and raises the version in `package.json` and in `extension/manifest.json` together, so the extension always carries the version of its release.
 
 [CONTRIBUTING](https://github.com/Dennis-Otto/player-switch-for-autodarts/blob/main/CONTRIBUTING.md) has the rules for changes; [SECURITY.md](https://github.com/Dennis-Otto/player-switch-for-autodarts/blob/main/SECURITY.md) says how to verify a release.
 
-## The package for the store
+## The zip of a release
 
-The Chrome Web Store takes a zip with `manifest.json` at its root. From a checkout at the release:
+Every release carries `player-switch-for-autodarts-<version>.zip`, the one package that the stores get and that a player can [load unpacked](https://github.com/Dennis-Otto/player-switch-for-autodarts#install). `scripts/release-assets.sh`, the hook of the blueprint for the assets of a project, builds it from the signed tag in a job of the isolated build that may write nothing. The build attests it with the other assets and attaches it to the release, and [the workflow of the store](#later-versions) uploads exactly that file. [Decision 0013](decisions/0013-ship-the-zip-with-the-release-and-deliver-exactly-that-one.md) records why.
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="images/diagrams/the-zip-of-a-release.dark.svg">
+  <img src="images/diagrams/the-zip-of-a-release.svg" alt="How the zip of a release is made and who checks it: From the signed tag, a job that may write nothing builds the zip. The isolated build of the release attests it and attaches it to the release, which is immutable once published. The workflow of the store takes the zip from the release, checks its provenance and its version without any secret, and hands on its sha256. A job that reaches only Google compares the bytes and uploads them, and Google reviews and publishes the version. Someone who loads the extension unpacked downloads the same zip and checks it with gh attestation verify. Anybody can build the zip again from the tag, and gets the same sha256.">
+</picture>
+
+From a checkout, the same zip comes from:
 
 ```sh
 bash scripts/package-extension.sh
 ```
 
-builds the extension and writes `dist/player-switch-for-autodarts-<version>.zip` with the contents of `extension/` at the root of the archive, forward slashes in every path and no source maps. On Windows the script falls back to PowerShell, whose archives use backslashes; the store prefers forward slashes, so build the upload archive where `zip` is available, such as WSL or the CI.
+It builds `extension/lib/` from nothing and writes `dist/player-switch-for-autodarts-<version>.zip`, with `manifest.json` at the root of the archive and forward slashes in every path, on Windows too.
+
+- **What goes in** is the manifest, the pages with their styles, the icons, the languages and `lib/`: of `extension/`, what Git knows and what the build wrote. A file of another kind fails the build until `SHIPS` or `STAYS_OUT` in `scripts/package-extension.ts` lists it, so nothing new reaches the users unnoticed, and an untracked file stays out by itself. Source maps and the settings of Biome stay out.
+- **The same commit makes the same bytes,** on every computer: the files in the order of their bytes, each with the time of the commit, the same attributes and no compression, whose bytes depend on the version of zlib and on the processor. `scripts/check-project.sh` builds the zip twice and fails when the two differ, and `test/package-extension.test.ts` pins the digest of a zip of made-up files on every system.
+- **A beta,** such as `1.3.0-beta.2`, comes from `main`, whose manifest still has the version of the last release: its zip gets `1.3.0` as the version of the manifest, which takes only numbers, and the whole version as `version_name`. Any other version that the manifest doesn't carry fails the build, and the release stays a draft.
+
+### Check a zip
+
+The provenance says that the zip comes from the isolated build of a release of this repository:
+
+```sh
+gh attestation verify player-switch-for-autodarts-<version>.zip \
+  --repo Dennis-Otto/player-switch-for-autodarts \
+  --signer-workflow Dennis-Otto/player-switch-for-autodarts/.github/workflows/build-release.yml
+```
+
+To go further, build it from the source of the tag, with the Node of `.nvmrc`, and compare:
+
+```sh
+git clone --branch v1.2.3 https://github.com/Dennis-Otto/player-switch-for-autodarts.git
+cd player-switch-for-autodarts
+npm ci --ignore-scripts
+bash scripts/package-extension.sh
+sha256sum dist/player-switch-for-autodarts-1.2.3.zip
+```
+
+The sha256 is that of the zip of the release, and the one that the summary of the run of *Chrome Web Store* names for that version. What the store hands out holds the same files and a `_metadata` folder of the store's own, so compare it with the zip file by file.
 
 ## The first listing
 
@@ -52,11 +85,11 @@ The pictures show no logo and no design of Autodarts, and each screenshot says t
 
 ## Later versions
 
-Every release after the first reaches the store on its own: the workflow [`publish-store.yml`](https://github.com/Dennis-Otto/player-switch-for-autodarts/blob/main/.github/workflows/publish-store.yml) starts after every run of the Release workflow, every day at 00:17 UTC, and by hand under *Actions → Chrome Web Store* with a tag. It signs in, asks the store for the state of the item and decides. A release that the store lacks goes to the store once no review is pending: a job without any secret builds the package from the tag of the release, checks that the manifest carries the version of the release and keeps the package as an artifact of the run for 30 days, so that what went to the store can be looked at later; then a job that reaches only Google uploads it with the Chrome Web Store API and submits it for review. Google reviews each version again and publishes it after the review; a prerelease stays off the store.
+Every release after the first reaches the store on its own: the workflow [`publish-store.yml`](https://github.com/Dennis-Otto/player-switch-for-autodarts/blob/main/.github/workflows/publish-store.yml) starts after every run of the Release workflow, every day at 00:17 UTC, and by hand under *Actions → Chrome Web Store* with a tag. It signs in, asks the store for the state of the item and decides. A release that the store lacks goes to the store once no review is pending: a job without any secret takes [the zip of the release](#the-zip-of-a-release), checks with `gh attestation verify` that it comes from the isolated build on `main` and that its manifest carries the version of the release, and keeps it as an artifact of the run for 30 days, which also tells when it went to the store; then a job that reaches only Google compares the artifact with the sha256 of that zip, uploads it with the Chrome Web Store API, submits it for review and names the sha256 in the summary. Nothing in the workflow builds a package or runs `npm`. Google reviews each version again and publishes it after the review; a prerelease stays off the store.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="images/diagrams/store-delivery.dark.svg">
-  <img src="images/diagrams/store-delivery.svg" alt="How a release reaches the Chrome Web Store: After every release, every day at 00:17 UTC and when started by hand with a tag, the workflow signs in to the Chrome Web Store and asks for the state of the item. A sign-in that Google turns away, a rejected release, a warning, a takedown or a review of more than 7 days fail the run, with the reason and the fix in its summary, and the bot-health sweep of the night keeps an issue open. While a review is pending, the run ends with a note, and a later day delivers the release. When the store has the release already, nothing happens. Otherwise a job without any secret builds the zip from the tag and keeps it as an artifact, and a job that reaches only Google uploads it and submits it for review. When the store refuses the submission because the Developer Dashboard lacks something that the version needs, the run fails as well, and names what the release asks for beyond the version of the store. When a review began in the meantime, the run ends with the same note as for a pending review.">
+  <img src="images/diagrams/store-delivery.svg" alt="How a release reaches the Chrome Web Store: After every release, every day at 00:17 UTC and when started by hand with a tag, the workflow signs in to the Chrome Web Store and asks for the state of the item. A sign-in that Google turns away, a rejected release, a warning, a takedown or a review of more than 7 days fail the run, with the reason and the fix in its summary, and the bot-health sweep of the night keeps an issue open. While a review is pending, the run ends with a note, and a later day delivers the release. When the store has the release already, nothing happens. Otherwise a job without any secret takes the zip of the release and checks its provenance and its version; a release without a zip or a zip without a valid provenance fails the run. It keeps the zip as an artifact, and a job that reaches only Google compares its bytes, uploads it and submits it for review. When the store refuses the submission because the Developer Dashboard lacks something that the version needs, the run fails as well, and names what the release asks for beyond the version of the store. When a review began in the meantime, the run ends with the same note as for a pending review.">
 </picture>
 
 Every run writes a table into its summary: the release, the version that the store publishes and the one submitted since, each with its state, the days that a pending review has taken, and whether Google warned the item or took it down. `scripts/store-status.ts` decides, the job that delivers goes by what the store answers it, and `test/store-status.test.ts` and `test/publish-store.test.ts` cover every row of this table:
@@ -64,7 +97,7 @@ Every run writes a table into its summary: the release, the version that the sto
 | What the store says | What the run does |
 | --- | --- |
 | It publishes the release, or has it approved | A note: nothing to deliver. |
-| It lacks the release, and no review is pending | Delivers the release. |
+| It lacks the release, and no review is pending | Delivers the zip of the release; without a zip or a valid provenance, fails. |
 | It reviews the release, or an earlier version | A note. The store takes no new version during a review, so a later day delivers the release. |
 | The review has taken more than 7 days | Fails. |
 | Google rejected the release | Fails. A start by hand with the tag submits it again. |
@@ -185,6 +218,9 @@ A failed run names the reason and the fix in its summary and in an annotation, a
     gh workflow run publish-store.yml -f tag=v1.2.3
     ```
 
+- **GitHub hands out no zip of the release**: a release from before the releases carried the zip has none, and nothing else goes to the store. Merge the next release; its build attaches the zip, and the run after it passes.
+- **The zip carries no valid provenance**: the store gets nothing, so don't upload it by hand. `gh attestation verify`, as in [Check a zip](#check-a-zip), says what doesn't hold. When a run on GitHub's side failed, start the workflow again; when the zip or the provenance really is wrong, treat it as an incident of [the security policy](https://github.com/Dennis-Otto/player-switch-for-autodarts/security/policy) and release a new version.
+- **The artifact isn't the zip of the release**: its bytes changed between the two jobs of one run. Start the run again; when it happens again, treat it as an incident as above.
 - **Rejected**: the mail of Google and the [Developer Dashboard](https://chrome.google.com/webstore/devconsole) say why. Fix the cause and release a new version; when only the listing or the privacy practices had to change, change them in the dashboard and start the workflow by hand with the tag, which submits the same version again.
 - **Warned or taken down**: the dashboard says which policy and until when. Fix it there or with a new release, and ask for a review. A warned item gets the new release from the daily run; for a taken-down item, start the workflow by hand with the tag of the fixing release.
 - **In review for more than 7 days**: look in the dashboard whether Google asks for anything, or contact the support of the Chrome Web Store. A new permission makes a review take longer.
@@ -208,14 +244,14 @@ The jobs that sign in to the store could publish a version to every user, so eac
 | Job | Secrets | Hosts |
 | --- | --- | --- |
 | *the state of the store* | none, or the OAuth client and the refresh token | GitHub, `oauth2.googleapis.com`, `sts.googleapis.com`, `iamcredentials.googleapis.com`, `chromewebstore.googleapis.com` |
-| *the package of the release* | none | GitHub, `registry.npmjs.org` |
+| *the package of the release* | none | GitHub, `rekor.sigstore.dev`, `tuf-repo-cdn.sigstore.dev`, `tuf-repo.github.com`, `tmaproduction.blob.core.windows.net` |
 | *deliver to the Chrome Web Store* | none, or the OAuth client and the refresh token | `oauth2.googleapis.com`, `sts.googleapis.com`, `iamcredentials.googleapis.com`, `chromewebstore.googleapis.com` |
 
-`oauth2.googleapis.com` is for the refresh token, `sts.googleapis.com` and `iamcredentials.googleapis.com` for the sign-in without a stored secret. Only the two jobs that sign in may ask GitHub for an OIDC token (`id-token: write`), and `test/publish-store.test.ts` fails when another job may, or when the sign-in of one job differs from that of the other.
+`oauth2.googleapis.com` is for the refresh token, `sts.googleapis.com` and `iamcredentials.googleapis.com` for the sign-in without a stored secret; the hosts of Sigstore and the storage of GitHub's attestations are for `gh attestation verify`. Only the two jobs that sign in may ask GitHub for an OIDC token (`id-token: write`), and `test/publish-store.test.ts` fails when another job may, or when the sign-in of one job differs from that of the other.
 
-GitHub means `api.github.com`, `github.com` and the two hosts of its downloads, for Node.js should the runner image lack its version; the hosts of the Actions service itself, such as those of the artifacts and of the OIDC token, are open to every job. The job that uploads runs no code of the repository and no npm package: it takes the zip of the job before it as an artifact. When a new version of an action needs another host, its run fails at the blocked request, and the insights of Harden-Runner, linked in the log of its first step, name the host to add to `allowed-endpoints`. `scripts/check-project.sh` fails when a job of the workflow goes back to recording its traffic only, gives up `disable-sudo-and-containers` or runs on `ubuntu-latest`.
+GitHub means `api.github.com`, `github.com` and the two hosts of its downloads; the hosts of the Actions service itself, such as those of the artifacts and of the OIDC token, are open to every job. No job runs a package of npm beside the sign-in, and the job that uploads runs no code of the repository: it takes the zip of the job before it as an artifact and compares its sha256. When a new version of an action needs another host, its run fails at the blocked request, and the insights of Harden-Runner, linked in the log of its first step, name the host to add to `allowed-endpoints`. `scripts/check-project.sh` fails when a job of the workflow goes back to recording its traffic only, gives up `disable-sudo-and-containers` or runs on `ubuntu-latest`.
 
-The package is not attached to the GitHub release: a release is immutable once published, and only the isolated build of the release workflow could add a file with its signed provenance; the artifact of the run holds it instead. [Decision 0003](decisions/0003-deliver-each-release-to-the-chrome-web-store.md), [decision 0005](decisions/0005-look-after-the-store-every-day-from-a-closed-network.md) and [decision 0010](decisions/0010-sign-in-to-the-store-without-a-stored-secret.md) record the reasons.
+[Decision 0003](decisions/0003-deliver-each-release-to-the-chrome-web-store.md), [decision 0005](decisions/0005-look-after-the-store-every-day-from-a-closed-network.md), [decision 0010](decisions/0010-sign-in-to-the-store-without-a-stored-secret.md) and [decision 0013](decisions/0013-ship-the-zip-with-the-release-and-deliver-exactly-that-one.md) record the reasons.
 
 ## Edge and Firefox {#edge-and-firefox}
 

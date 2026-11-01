@@ -58,7 +58,8 @@ runs the same `background.js` in Firefox, under the id and from the versions of 
 that it names, with the data that `store/permissions.json` declares
 (`scripts/check-manifest.mjs`), addons-linter, the linter of addons.mozilla.org, found an
 error in the extension or a warning that `scripts/check-firefox.mjs` doesn't accept
-with its reason, or the test of the popup in a browser,
+with its reason, `extension/` holds a file of no kind that the package knows, two builds
+of the zip of one commit differ, or the test of the popup in a browser,
 `test/harness/a11y.mjs`, found a problem of accessibility: a rule of axe-core, a control
 smaller than 44 by 44 pixels, a text smaller than 12 pixels, a button text that breaks,
 or the focus in the wrong place after an action."""
@@ -73,7 +74,9 @@ asks for a new permission or host, until someone accepts the new warning in
 `chrome://extensions`, and a board display in kiosk mode then stops switching without
 a word; and every permission is one more way to the saved sessions and passwords.
 Firefox refuses an add-on with an error of addons-linter, and addons.mozilla.org
-reviews it with the same rules. The
+reviews it with the same rules. The zip of a release goes to the store and handles
+passwords, so anybody has to be able to check it against the source of its tag, and only
+what the extension loads may reach its users. The
 popup is used with a finger on a touch display, with a keyboard and with a screen
 reader, which loses its place when the focus falls back to the page."""
 fix = """Do what the line says. A new message goes into the list `explained` of
@@ -95,7 +98,10 @@ listing; translate the texts of `store/pictures.en.json` into
 `store/pictures.<code>.json`, write the new number of languages on the second
 screenshot in every `store/pictures.*.json`, add the language to the table in `docs/releases.md` and
 delete the pictures of a language that is gone; a language without `docs/help.<code>.md` sets its message `helpUrl` to the
-English help. A failed test of the popup names the view
+English help. A file in `extension/` of no kind that the package knows goes into `SHIPS`
+of `scripts/package-extension.ts` when the extension loads it, and into `STAYS_OUT` when it
+doesn't; two builds that differ have something in the build or in the writer that depends on
+the time or the computer, so compare the two zips, file by file. A failed test of the popup names the view
 and the element; `npm run test:a11y` runs it alone, in the Chrome or Edge of your
 computer. Then run the checks
 again:"""
