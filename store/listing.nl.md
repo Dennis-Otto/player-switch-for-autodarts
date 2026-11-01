@@ -6,7 +6,7 @@
 
 Player Switch for Autodarts
 
-## Korte beschrijving (maximaal 132 tekens)
+## Short description
 
 Wissel op een gedeeld scherm met één tik tussen Autodarts-accounts, zonder opnieuw in te loggen.
 
@@ -53,7 +53,7 @@ handleiding voor een bordscherm in kioskmodus dat met de computer start.
 
 Niet verbonden aan Autodarts.
 
-## Rechtvaardiging van de machtigingen
+## Permission justifications
 
 • storage — om je opgeslagen accounts, hun sessies en de instellingen op je
   computer te bewaren, in de modus voor club of café ook de gezouten hashes van de
@@ -72,11 +72,11 @@ Niet verbonden aan Autodarts.
   die de knop op de Autodarts-pagina over de pagina toont. Het is een pagina van de
   extensie in een frame, zodat de scripts van de Autodarts-pagina de opgeslagen
   accounts er niet uit kunnen lezen.
-• Hosttoegang tot play.autodarts.com — om een sessie in de Autodarts-pagina en
+• Hosttoegang tot `https://play.autodarts.com/*` — om een sessie in de Autodarts-pagina en
   eruit te halen, daar de knop te tonen en de open Autodarts-tabbladen te vinden,
   zodat een wissel werkt in het tabblad vooraan en de andere opnieuw laden. Het
   adres en de titel van andere tabbladen kan de extensie niet lezen.
-• Hosttoegang tot api.autodarts.com — om in te loggen, een sessie te vernieuwen en
+• Hosttoegang tot `https://api.autodarts.com/*` — om in te loggen, een sessie te vernieuwen en
   te beëindigen, dezelfde verzoeken als de website van Autodarts. De extensie
   maakt met geen enkele andere server verbinding, en haar content security policy
   dwingt dat af.

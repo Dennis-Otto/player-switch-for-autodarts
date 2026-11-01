@@ -4,7 +4,7 @@
 
 Player Switch for Autodarts
 
-## Short description (132 characters max)
+## Short description
 
 Switch between Autodarts accounts on a shared display with one tap, without signing in again.
 
@@ -64,11 +64,11 @@ Not affiliated with Autodarts.
   that the button on the Autodarts page shows over the page. It is a page of the
   extension in a frame, so the scripts of the Autodarts page can't read the saved
   accounts out of it.
-• Host access to play.autodarts.com — to move a session into the Autodarts page and
+• Host access to `https://play.autodarts.com/*` — to move a session into the Autodarts page and
   out of it, to show the button there, and to find the open Autodarts tabs, so a
   switch takes effect in the one in front and the others reload. The extension can't
   read the address or title of any other tab.
-• Host access to api.autodarts.com — to sign in, renew a session and end it, the
+• Host access to `https://api.autodarts.com/*` — to sign in, renew a session and end it, the
   same requests the Autodarts website makes. The extension connects to no other
   server, and its content security policy enforces that.
 

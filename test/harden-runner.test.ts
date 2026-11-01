@@ -5,8 +5,8 @@
 // and the runner can't reach its own service at the end of the job, which hangs until
 // its time limit (step-security/harden-runner#708). So each job pins a Harden-Runner
 // with the fix, and waits until it may reach its hosts before a step needs them. The
-// wait runs in bash with a fake curl and clock, as the steps of publish-store.test.ts
-// do; on a computer without bash it skips, other than in the CI.
+// wait runs in bash with a fake curl and clock; on a computer without bash it skips,
+// other than in the CI.
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
 import {
@@ -29,7 +29,6 @@ import { readWorkflow } from "./workflow.ts";
 const WORKFLOWS = {
   "e2e.yml": "Block every host that the job doesn't need",
   "upstream.yml": "Block every host that the job doesn't need",
-  "publish-store.yml": "Let the job reach only the hosts that it needs",
 };
 const WAIT = "Wait until Harden-Runner lets the hosts through";
 /** The first version that takes GitHub's trial of a DNS resolver off the runner. */

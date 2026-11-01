@@ -59,7 +59,7 @@ all take, and `extension/` loads as it is in each browser. The manifest names:
   `docs/privacy.md` explains that it goes to Autodarts alone; the privacy practices of
   the Chrome Web Store declare the same, *authentication information*.
   `store/permissions.json` holds the same list with its reason, and
-  `scripts/check-manifest.mjs` fails when they differ.
+  `scripts/check-extension.mjs` fails when they differ.
 
 `trust.ts` compares the address of a sender with the address of the extension's own
 pages, `chrome.runtime.getURL("")`, instead of with its id, and the bug form names

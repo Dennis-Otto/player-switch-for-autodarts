@@ -267,6 +267,7 @@ version_in() {
 }
 version_in package.json '"version": "[^"]+"'
 version_in package-lock.json '"version": "[^"]+"'
+version_in extension/manifest.json '"version": "[^"]+"'
 echo "Every file has version $release."
 
 step "Git hooks"
@@ -335,9 +336,12 @@ else
   npm test
 fi
 
-step "Package"
-npm run --silent build
-npm pack --dry-run
+step "Extension"
+# The manifest against what the Chrome Web Store refuses or holds up in its review, as
+# scripts/check-manifest.mjs lists it, and the zip of the store from the build, as the
+# release builds it.
+node scripts/check-manifest.mjs
+bash scripts/package-extension.sh
 
 step "Website"
 # The website of the Docs workflow, built strictly as the check docs builds it, so

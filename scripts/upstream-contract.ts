@@ -29,7 +29,10 @@ import {
   SESSION_KEY,
   signIn,
 } from "../src/autodarts.ts";
-import { escapeData } from "./store-status.ts";
+
+/** Keeps a message on the one line of a workflow command of GitHub. */
+export const escapeData = (text: string): string =>
+  text.replaceAll("%", "%25").replaceAll("\r", "%0D").replaceAll("\n", "%0A");
 
 /** The old address of Autodarts Play, which forwards every address to PLAY_ORIGIN. */
 export const OLD_PLAY_ORIGIN = "https://play.autodarts.io";

@@ -89,5 +89,10 @@ test("the lint leaves out what the package leaves out", () => {
   assert.ok(!shipped("lib/switch.js.map"));
   assert.ok(!shipped("biome.jsonc"));
   assert.ok(!shipped("lib\\biome.jsonc"));
+  assert.ok(!shipped("biome.json"));
+  assert.ok(!shipped("tsconfig.build.json"));
+  assert.ok(!shipped("lib/background.d.ts"));
+  assert.ok(!shipped(".DS_Store"));
+  assert.ok(!shipped(".cache/lib.js"));
   assert.ok(shipped("not-biome.jsonc.txt"));
 });

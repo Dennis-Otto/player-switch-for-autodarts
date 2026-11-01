@@ -1,4 +1,4 @@
-// The self-test of scripts/check-manifest.mjs, with fixture manifests that each break
+// The self-test of scripts/check-extension.mjs, with fixture manifests that each break
 // one rule. scripts/check-project.sh runs it with `node --test` before the check itself.
 import assert from "node:assert/strict";
 import { readdirSync, readFileSync } from "node:fs";
@@ -6,6 +6,7 @@ import { test } from "node:test";
 
 import {
   CHROME_MIN,
+  checkKinds,
   checkManifest,
   DESCRIPTION_MAX,
   FIREFOX_ANDROID_MIN,
@@ -14,7 +15,7 @@ import {
   NAME_MAX,
   pngSize,
   WHY,
-} from "./check-manifest.mjs";
+} from "./check-extension.mjs";
 
 const POLICY =
   "default-src 'self'; script-src 'self'; object-src 'none'; img-src 'self' https: data:; connect-src https://api.example.com";
@@ -710,6 +711,7 @@ test("the second screenshot names the number of languages of the extension", () 
 
 test("a picture of the store belongs to a language of the extension", () => {
   assert.deepEqual(check({ images: ["store/images/marquee.en.png"] }), []);
+  assert.deepEqual(check({ images: ["store/images/.gitkeep"] }), []);
   findsOne(
     check({ images: ["store/images/marquee.it.png"] }),
     /store\/images\/marquee\.it\.png belongs to no language of extension\/_locales\//,
@@ -727,14 +729,15 @@ test("the release guide lists the pictures of each language of the listing", () 
   );
 });
 
-test("a listing in Dutch, French or Spanish is read by the headings of its language", () => {
+test("a listing in any language is read by the headings in English, as the check of the blueprint reads it", () => {
   const headings = {
     nl: ["Korte beschrijving", "Rechtvaardiging van de machtigingen"],
     fr: ["Description courte", "Justification des autorisations"],
     es: ["Descripción breve", "Justificación de los permisos"],
   };
   for (const [code, [short, justified]] of Object.entries(headings)) {
-    const listing = LISTING.replace("Short description", short).replace(
+    const listing = LISTING;
+    const translated = LISTING.replace("Short description", short).replace(
       "Permission justifications",
       justified,
     );
@@ -767,6 +770,44 @@ test("a listing in Dutch, French or Spanish is read by the headings of its langu
       new RegExp(
         `listing\\.${code}\\.md doesn't justify the permission alarms`,
       ),
+    );
+    assert.deepEqual(
+      check({
+        locales,
+        listings: { "store/listing.en.md": LISTING, [file]: translated },
+      }),
+      [
+        `${file} has no short description.`,
+        `${file} has no section that justifies the permissions.`,
+      ],
+    );
+  }
+});
+
+test("extension/ holds only the kinds of file that the package knows", () => {
+  assert.deepEqual(
+    checkKinds([
+      "manifest.json",
+      "_locales/pt_BR/messages.json",
+      "icons/icon-128.png",
+      "popup.html",
+      "popup.css",
+      "lib/background.js",
+      "lib/pages/popup.js",
+      "lib/background.js.map",
+      "biome.jsonc",
+    ]),
+    [],
+  );
+  for (const file of [
+    "notes.txt",
+    "lib/old.ts",
+    "icons/icon.svg",
+    ".DS_Store",
+  ]) {
+    assert.match(
+      checkKinds([file]).join(),
+      new RegExp(`^extension/${file}.* is of no kind that the package knows`),
     );
   }
 });

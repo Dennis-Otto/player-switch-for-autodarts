@@ -41,13 +41,13 @@ A release is immutable once it is published, and GitHub signs an attestation of 
 
 ```sh
 gh release verify vX.Y.Z --repo Dennis-Otto/player-switch-for-autodarts
-gh release download vX.Y.Z --repo Dennis-Otto/player-switch-for-autodarts --pattern '*.tgz'
-gh attestation verify ./*.tgz --repo Dennis-Otto/player-switch-for-autodarts --signer-workflow Dennis-Otto/player-switch-for-autodarts/.github/workflows/build-release.yml
+gh release download vX.Y.Z --repo Dennis-Otto/player-switch-for-autodarts --pattern '*.zip'
+gh attestation verify ./*.zip --repo Dennis-Otto/player-switch-for-autodarts --signer-workflow Dennis-Otto/player-switch-for-autodarts/.github/workflows/build-release.yml
 ```
 
 Every asset of a release carries this provenance, those that the project builds itself with `scripts/release-assets.sh`, such as the zip of a browser extension, too.
 
-`npm audit signatures` checks the signatures and the provenance of the package as npm installed it.
+The Chrome Web Store gets exactly this zip: the workflow *Chrome Web Store* downloads it from the release, checks its provenance as above and only then uploads it, signed in to Google without a stored secret, as [docs/releases.md](docs/releases.md) describes.
 
 Every release describes what it ships in an SBOM, as SPDX in `player-switch-for-autodarts.spdx.json` and as CycloneDX in `player-switch-for-autodarts.cdx.json`: the package that you install, with every component inside it, under the name `player-switch-for-autodarts` and the version of the release. A scanner such as [Grype](https://github.com/anchore/grype) checks it against the advisories it knows. When the project accepts an advisory in `osv-scanner.toml`, with its reason, the release carries the OpenVEX document `player-switch-for-autodarts.openvex.json` too, which tells the scanner that the advisory doesn't affect the release; without that document, leave out `--vex`:
 
