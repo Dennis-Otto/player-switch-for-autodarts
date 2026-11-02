@@ -20,7 +20,7 @@ import {
 } from "node:fs";
 import { tmpdir } from "node:os";
 import { delimiter, dirname, join, relative } from "node:path";
-import { describe, test } from "node:test";
+import { suite, test } from "node:test";
 import { fileURLToPath } from "node:url";
 
 const root = (path: string): string =>
@@ -43,7 +43,7 @@ const skipScript =
     ? false
     : "No bash with Python here: the run of the script skips; the CI runs it.";
 
-describe("the kind of this repository", () => {
+suite("the kind of this repository", () => {
   test("is the Chrome extension of the blueprint", () => {
     assert.match(
       read(".copier-answers.yml"),
@@ -114,7 +114,7 @@ const filesIn = (folder: string): string[] =>
     )
     .sort();
 
-describe("the package of the store", { skip: skipScript }, () => {
+suite("the package of the store", { skip: skipScript }, () => {
   test("holds the files of extension/ that the lint for Firefox reads, with the manifest at its root", () => {
     const dir = mkdtempSync(join(tmpdir(), "store-kind-"));
     try {
