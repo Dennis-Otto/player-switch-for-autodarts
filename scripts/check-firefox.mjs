@@ -31,7 +31,7 @@ export function shipped(path) {
 }
 
 /** One finding of addons-linter as a line, with its file and line where it names them. */
-function describe(kind, finding) {
+function describeFinding(kind, finding) {
   const where = [finding.file, finding.line].filter(Boolean).join(":");
   const text = [finding.message, finding.description]
     .flat()
@@ -51,10 +51,10 @@ function describe(kind, finding) {
 export function judge(results, accepted = ACCEPTED) {
   const errors = results.errors ?? [];
   const warnings = results.warnings ?? [];
-  const problems = errors.map((error) => describe("error", error));
+  const problems = errors.map((error) => describeFinding("error", error));
   for (const warning of warnings) {
     if (!(warning.code in accepted)) {
-      problems.push(describe("warning", warning));
+      problems.push(describeFinding("warning", warning));
     }
   }
   for (const code of Object.keys(accepted)) {
