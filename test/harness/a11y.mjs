@@ -18,7 +18,7 @@ import { existsSync, readdirSync } from "node:fs";
 import { readFile } from "node:fs/promises";
 import { createRequire } from "node:module";
 import { extname, relative, resolve } from "node:path";
-import { after, before, describe, test } from "node:test";
+import { after, before, suite, test } from "node:test";
 import { fileURLToPath } from "node:url";
 import { chromium } from "playwright-core";
 
@@ -260,7 +260,7 @@ const LANGUAGES = readdirSync(
   new URL("../../extension/_locales/", import.meta.url),
 ).sort();
 
-describe("the popup in axe-core", { skip: browser === null }, () => {
+suite("the popup in axe-core", { skip: browser === null }, () => {
   for (const lang of LANGUAGES) {
     for (const scheme of ["light", "dark"]) {
       test(`every view, in ${lang} and ${scheme}`, async () => {
@@ -333,7 +333,7 @@ describe("the popup in axe-core", { skip: browser === null }, () => {
   });
 });
 
-describe("the question for a PIN of the venue mode", {
+suite("the question for a PIN of the venue mode", {
   skip: browser === null,
 }, () => {
   /** Taps the tile of Jonas, whose account asks for a PIN, as the worker refuses it first. */
@@ -439,7 +439,7 @@ describe("the question for a PIN of the venue mode", {
   });
 });
 
-describe("the options page with the venue mode", {
+suite("the options page with the venue mode", {
   skip: browser === null,
 }, () => {
   test("every part, in both languages and color schemes", async () => {
@@ -526,7 +526,7 @@ describe("the options page with the venue mode", {
   });
 });
 
-describe("the popup with the keyboard alone", {
+suite("the popup with the keyboard alone", {
   skip: browser === null,
 }, () => {
   let page;
@@ -690,7 +690,7 @@ describe("the popup with the keyboard alone", {
   });
 });
 
-describe("the popup in the settings of the system", {
+suite("the popup in the settings of the system", {
   skip: browser === null,
 }, () => {
   test("a contrast theme keeps the player who plays and the chips apart", async () => {

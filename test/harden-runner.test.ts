@@ -19,7 +19,7 @@ import {
 } from "node:fs";
 import { tmpdir } from "node:os";
 import { delimiter, join } from "node:path";
-import { describe, test } from "node:test";
+import { suite, test } from "node:test";
 import { readWorkflow } from "./workflow.ts";
 
 /**
@@ -65,7 +65,7 @@ for (const [file, block] of Object.entries(WORKFLOWS)) {
       .map((line) => line.trim());
   };
 
-  describe(`each job of ${file}`, () => {
+  suite(`each job of ${file}`, () => {
     test("the workflow has jobs", () => {
       assert.notEqual(jobs.length, 0);
     });
@@ -187,7 +187,7 @@ const runWait = (hosts: readonly string[], refusals: number): Wait => {
 const QUESTION =
   "--silent --head --connect-timeout 3 --max-time 5 --output /dev/null";
 
-describe("the wait for the hosts", { skip }, () => {
+suite("the wait for the hosts", { skip }, () => {
   test("asks each host once, and only that, when Harden-Runner lets it through", () => {
     const wait = runWait(["api.github.com:443", "github.com:443"], 0);
     assert.equal(wait.status, 0);
