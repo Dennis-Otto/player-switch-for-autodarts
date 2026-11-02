@@ -12,7 +12,8 @@
   display: none;
 }
 
-/* The popup keeps the width of the GIF it takes the place of, which the page gives. */
+/* The popup keeps the width of the GIF it takes the place of, which the page gives, and
+   stays in the column on a phone, where that width would make the reader scroll sideways. */
 .md-typeset video.blueprint-video[src*="switch"] {
-  max-width: 396px;
+  max-width: min(396px, 100%);
 }
