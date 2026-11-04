@@ -6,6 +6,13 @@ the next release, or lists the pull requests when there is none.
 
 ## Unreleased
 
+## [1.2.1](https://github.com/Dennis-Otto/player-switch-for-autodarts/compare/v1.2.0...v1.2.1) (2026-11-04)
+
+
+### Bug fixes
+
+* **docs:** keep the switching video inside the column on a phone ([#142](https://github.com/Dennis-Otto/player-switch-for-autodarts/issues/142)) ([e5ae901](https://github.com/Dennis-Otto/player-switch-for-autodarts/commit/e5ae9017e5fec1a8442a8803019d123757807944))
+
 ## [1.2.0](https://github.com/Dennis-Otto/player-switch-for-autodarts/compare/v1.1.0...v1.2.0) (2026-11-01)
 
 ### Features
