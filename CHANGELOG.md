@@ -8,10 +8,22 @@ the next release, or lists the pull requests when there is none.
 
 ## [1.2.1](https://github.com/Dennis-Otto/player-switch-for-autodarts/compare/v1.2.0...v1.2.1) (2026-11-04)
 
+### Changed
+
+- The delivery to the Chrome Web Store now comes from the blueprint's workflow, which
+  checks the signed provenance of the zip as before. Its summary no longer names the
+  sha256 of the zip, and a refusal with `INVALID_ITEM_METADATA` names everything that the
+  version asks for, not only what is new since the version in the store.
+- A review that begins while a run delivers now fails that run with the answer of the
+  store, and the next daily run delivers the release.
+- The zip of a release is now compressed, about 110 KB instead of 330 KB, so another
+  build of zlib may make other bytes around the same files. A check stops a file of an
+  unknown kind before it merges, rather than the build of the release.
 
 ### Bug fixes
 
-* **docs:** keep the switching video inside the column on a phone ([#142](https://github.com/Dennis-Otto/player-switch-for-autodarts/issues/142)) ([e5ae901](https://github.com/Dennis-Otto/player-switch-for-autodarts/commit/e5ae9017e5fec1a8442a8803019d123757807944))
+- The switching video on the home page of the website now fits the screen of a phone, so
+  the page no longer scrolls sideways there.
 
 ## [1.2.0](https://github.com/Dennis-Otto/player-switch-for-autodarts/compare/v1.1.0...v1.2.0) (2026-11-01)
 
