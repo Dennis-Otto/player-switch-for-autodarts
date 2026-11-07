@@ -58,3 +58,7 @@ allow-dependencies-licenses:
   # (scripts/check-firefox.mjs) that no release ships: BSD-2-Clause, which the review
   # reads as BSD-2-Clause AND BSD-2-Clause-Views.
   - pkg:npm/uri-js
+  # The XML writer that web-ext brings in for its Firefox profiles (firefox-profile,
+  # xml2js), a tool of the checks that no release ships: MIT, as its package.json and
+  # LICENSE say, which the review reads as MIT AND LicenseRef-scancode-unicode.
+  - pkg:npm/xmlbuilder

@@ -317,7 +317,7 @@ Playwright loads no add-on into Firefox, so the tests of `test/firefox/` drive F
 npm run e2e:firefox
 ```
 
-It takes the Firefox of the computer, from where Firefox installs itself or from `E2E_FIREFOX_PATH`, and skips without one, other than in the CI; `E2E_HEADED=1` shows the window. Firefox 140 or newer runs them: in the CI the newest Firefox of the runner image, and Firefox ESR 140 of Debian passed them too. Without a Firefox, a container runs them, after `npm ci` and `npm run build` on the computer: `docker run --rm -v "$PWD":/app -w /app node:24-trixie-slim sh -c 'apt-get update && apt-get install -y firefox-esr && node --test "test/firefox/*.spec.ts"'`.
+It takes the Firefox of the computer, from where Firefox installs itself or from `E2E_FIREFOX_PATH`, and skips without one, other than in the CI; `E2E_HEADED=1` shows the window. Firefox 140 or newer runs them: in the CI the newest Firefox of the runner image, and Firefox 140 ESR, 153 ESR and 159 passed them when they were written. Without a Firefox, a container runs them, after `npm ci` and `npm run build` on the computer: `docker run --rm -v "$PWD":/app -w /app node:24-trixie-slim sh -c 'apt-get update && apt-get install -y firefox-esr && node --test "test/firefox/*.spec.ts"'`.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="images/diagrams/how-the-tests-in-firefox-work.dark.svg">
@@ -325,7 +325,7 @@ It takes the Firefox of the computer, from where Firefox installs itself or from
 </picture>
 
 - **A proxy instead of a resolver.** Firefox has no `--host-resolver-rules`, so the profile sends every request through a proxy of the test, which tunnels `play.autodarts.com` and `api.autodarts.com` on port 443 to the fake server and refuses every other host. Firefox asks its own services too, such as for its settings; a refused request for any other host fails the test. Firefox reaches no other server, so it may pass the certificate of the fake (`acceptInsecureCerts`).
-- **The extension's pages from outside.** WebDriver BiDi sends no event of a `moz-extension://` page and lists no frame of one yet ([bug 1755014](https://bugzilla.mozilla.org/show_bug.cgi?id=1755014)), and opens one only with `--remote-allow-system-access`. The profile names the uuid of the add-on, so the popup has a fixed address; the tests ask the popup what it shows again and again until it is there, instead of waiting for its events, and switch in the switcher of the page with <kbd>Enter</kbd>, on its first tile, which has the focus.
+- **The extension's pages from outside.** WebDriver BiDi sends no event of a `moz-extension://` page and lists no frame of one yet ([bug 1755014](https://bugzilla.mozilla.org/show_bug.cgi?id=1755014)), and opens one only with system access, which `MOZ_REMOTE_ALLOW_SYSTEM_ACCESS=1` gives it. The profile names the uuid of the add-on, so the popup has a fixed address; the tests ask the popup what it shows again and again until it is there, instead of waiting for its events, and switch in the switcher of the page with <kbd>Enter</kbd>, on its first tile, which has the focus.
 - **What they can't see.** The console of the background and the storage of the add-on are out of reach of BiDi, so those checks stay with the Chromium tests and the unit tests.
 
 | File | What it checks |

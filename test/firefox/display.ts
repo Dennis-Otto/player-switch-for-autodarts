@@ -349,8 +349,9 @@ export async function withFirefox(
     acceptInsecureCerts: true,
     defaultViewport: { width: 1280, height: 800 },
     // WebDriver BiDi navigates a tab to an extension page, moz-extension://, only
-    // with system access, as the popup and the switcher are opened here.
-    args: ["--remote-allow-system-access"],
+    // with system access, as the popup is opened here. Firefox 159 takes it from this
+    // variable alone; older ones, such as ESR 140 and 153, also had a flag for it.
+    env: { ...process.env, MOZ_REMOTE_ALLOW_SYSTEM_ACCESS: "1" },
     extraPrefsFirefox: {
       "extensions.webextensions.uuids": JSON.stringify({ [ADDON_ID]: UUID }),
       "intl.locale.requested": "en-US",

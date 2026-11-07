@@ -43,7 +43,7 @@ Option 2.
   api.autodarts.com to the fake server and refuses every other host. The tests save two
   accounts and switch between them from the popup, and from the switcher in the page
   with the keyboard. The profile names the uuid of the add-on, so the popup has a fixed
-  address, and Firefox runs with `--remote-allow-system-access`, without which BiDi
+  address, and Firefox runs with `MOZ_REMOTE_ALLOW_SYSTEM_ACCESS=1`, without which BiDi
   opens no `moz-extension://` page.
 - The job `firefox` of the workflow E2E runs them beside the Chromium tests, and the
   required check `e2e` waits for both.
@@ -51,8 +51,8 @@ Option 2.
 ## Consequences
 
 - The docs name Firefox 140 and newer as supported, not as a preview. The tests run in
-  the newest Firefox of the runner image; Firefox ESR 140, the oldest that the manifest
-  allows, passed them when they were written.
+  the newest Firefox of the runner image; Firefox 140 ESR, the oldest that the manifest
+  allows, 153 ESR and 159 passed them when they were written.
 - The tests in Firefox can't read the console of the background or the storage of the
   add-on, and can't look into the switcher's frame, until BiDi reaches extension
   pages. What only those show stays with the Chromium tests and the unit tests.
