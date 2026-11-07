@@ -2,7 +2,9 @@ name: E2E
 
 # The end-to-end tests: the built extension in Playwright's Chromium, loaded as
 # chrome://extensions loads it unpacked, against a fake Autodarts on the runner
-# (test/e2e/). Every push to main, every night and every manual run tests
+# (test/e2e/), and in the Firefox of the runner, installed as a temporary add-on, as
+# about:debugging installs it (test/firefox/). Every push to main, every night and
+# every manual run tests
 # everything. A pull request runs the tests only when it changes what they run: the
 # extension, its code in src/, the tests, the packages or this workflow; one that
 # changes only the documentation skips them. Either way the job "e2e" reports the
@@ -82,10 +84,10 @@ jobs:
           CHANGED: ${{ github.event.pull_request.changed_files }}
         run: |
           # What the tests run: the extension and its code in src/, which the build
-          # turns into extension/lib/, the tests with the fake Autodarts, the
-          # configurations of the build and of Playwright, the locked packages, and
-          # this workflow.
-          tested='^(extension/|src/|test/e2e/|playwright\.config\.ts$|tsconfig(\.build)?\.json$|package(-lock)?\.json$|\.nvmrc$|\.github/workflows/e2e\.yml$)'
+          # turns into extension/lib/, the tests with the fake Autodarts, those in
+          # Firefox, the configurations of the build and of Playwright, the locked
+          # packages, and this workflow.
+          tested='^(extension/|src/|test/e2e/|test/firefox/|playwright\.config\.ts$|tsconfig(\.build)?\.json$|package(-lock)?\.json$|\.nvmrc$|\.github/workflows/e2e\.yml$)'
           # When in doubt, the tests run.
           run=true
           if [[ "$EVENT" != pull_request ]]; then
@@ -221,6 +223,94 @@ jobs:
           CHECK: browser
         run: python3 .github/blueprint.py coach explain "$CHECK"
 
+  # The extension in a real Firefox, the one of the runner image, driven by Puppeteer
+  # over WebDriver BiDi, which installs it as a temporary add-on. Playwright loads no
+  # add-on into Firefox, so these tests cover what differs there: the background as an
+  # event page, the moz-extension:// address of the pages, the content script and
+  # the switcher in the page (test/firefox/).
+  firefox:
+    name: firefox
+    needs: changes
+    if: needs.changes.outputs.run == 'true'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    steps:
+      # GitHub for the checkout, and for Node.js should the runner image lack its
+      # version, and npm for the packages. Firefox comes with the runner image. The
+      # tests themselves reach no host: Firefox sends every request through the proxy
+      # of the test, which tunnels the two hosts of Autodarts to the fake on the runner
+      # and refuses every other one.
+      - name: Block every host that the job doesn't need
+        uses: step-security/harden-runner@46b06cea07f9e64621fdf066ba77ac6915163d43 # v2.22.3
+        with:
+          egress-policy: block
+          disable-sudo-and-containers: true
+          allowed-endpoints: >
+            api.github.com:443
+            github.com:443
+            objects.githubusercontent.com:443
+            release-assets.githubusercontent.com:443
+            registry.npmjs.org:443
+      - name: Wait until Harden-Runner lets the hosts through
+        # The runner may have asked for an address past Harden-Runner, which then blocks
+        # that address for as long as systemd-resolved keeps it, up to a minute.
+        timeout-minutes: 4
+        env:
+          HOSTS: >
+            api.github.com:443
+            github.com:443
+            objects.githubusercontent.com:443
+            release-assets.githubusercontent.com:443
+            registry.npmjs.org:443
+        run: |
+          deadline=$(($(date +%s) + 120))
+          for endpoint in $HOSTS; do
+            host="${endpoint%:*}"
+            # A wildcard names no host to ask.
+            [[ "$host" == '*.'* ]] && continue
+            until curl --silent --head --connect-timeout 3 --max-time 5 --output /dev/null "https://$host/"; do
+              if (($(date +%s) >= deadline)); then
+                echo "::warning::Harden-Runner still blocks $host after two minutes; a step that needs it will fail, and the job can run again."
+                break
+              fi
+              echo "Harden-Runner still blocks $host, waiting 3 s."
+              sleep 3
+            done
+          done
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - name: Install the locked packages
+        run: npm ci --ignore-scripts
+      - name: Run the tests in Firefox
+        run: |
+          firefox --version | tee -a "$GITHUB_STEP_SUMMARY"
+          npm run e2e:firefox
+      # The PR coach: what failed, why it matters and how to fix it, in the summary
+      # of the check and as its annotation, from .github/checks.project.toml.
+      - name: Explain the failure
+        if: failure()
+        env:
+          CHECK: firefox
+        run: python3 .github/blueprint.py coach explain "$CHECK"
+      # Without sudo and Docker, Harden-Runner removes Docker with apt-get while the
+      # job runs. A job that ends first hangs in "Cleaning up orphan processes" until
+      # its timeout, so it waits for apt-get, also after a failure.
+      - name: Wait until Harden-Runner has removed Docker
+        if: always()
+        run: |
+          for _ in {1..120}; do
+            pgrep -x 'apt-get|dpkg' >/dev/null || exit 0
+            sleep 1
+          done
+          echo "::warning::Harden-Runner still removes Docker after two minutes; the job may hang until its timeout."
+
   # The one check of the end-to-end tests that main requires. A skipped job reports
   # nothing that a required check could wait for, so this job always runs: it passes
   # when the tests passed, or when the pull request had nothing for them to test, and
@@ -228,7 +318,7 @@ jobs:
   gate:
     name: e2e
     if: always()
-    needs: [changes, browser]
+    needs: [changes, browser, firefox]
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     permissions:
@@ -270,15 +360,19 @@ jobs:
           WANTED: ${{ needs.changes.outputs.run }}
           CHANGES: ${{ needs.changes.result }}
           BROWSER: ${{ needs.browser.result }}
+          FIREFOX: ${{ needs.firefox.result }}
         run: |
           {
             echo "- changes: $CHANGES"
             echo "- browser: $BROWSER"
+            echo "- firefox: $FIREFOX"
           } | tee -a "$GITHUB_STEP_SUMMARY"
           # Skipped tests pass only when the job "changes" decided that they had
           # nothing to do.
-          if [[ "$CHANGES" != success ]] ||
-            ! [[ "$BROWSER" == success || ("$WANTED" != true && "$BROWSER" == skipped) ]]; then
+          passed() {
+            [[ "$1" == success || ("$WANTED" != true && "$1" == skipped) ]]
+          }
+          if [[ "$CHANGES" != success ]] || ! passed "$BROWSER" || ! passed "$FIREFOX"; then
             echo "::error::The end-to-end tests had to run and didn't pass; the jobs above show why."
             exit 1
           fi

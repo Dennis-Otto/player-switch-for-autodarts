@@ -1,11 +1,11 @@
-// The self-test of scripts/check-firefox.mjs, with made-up results of addons-linter.
+// The self-test of scripts/check-firefox.mjs, with made-up results of `web-ext lint`.
 // scripts/check-project.sh runs it with `node --test` before the check itself.
 import assert from "node:assert/strict";
 import { test } from "node:test";
 
 import { ACCEPTED, judge, shipped } from "./check-firefox.mjs";
 
-/** The warning that the extension accepts, as addons-linter reports it. */
+/** The warning that the extension accepts, as `web-ext lint` reports it. */
 const IGNORED = {
   code: "BACKGROUND_SERVICE_WORKER_IGNORED",
   message: "Unsupported manifest property ignored by Firefox.",
@@ -65,7 +65,7 @@ test("a warning that the list doesn't accept fails", () => {
   ]);
 });
 
-test("an accepted warning that addons-linter no longer reports fails, so the list stays true", () => {
+test("an accepted warning that web-ext lint no longer reports fails, so the list stays true", () => {
   const problems = judge({});
   assert.equal(problems.length, Object.keys(ACCEPTED).length);
   assert.match(

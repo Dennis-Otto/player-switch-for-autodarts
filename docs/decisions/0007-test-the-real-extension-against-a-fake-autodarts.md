@@ -1,6 +1,6 @@
 # Test the real extension in Chromium against a fake Autodarts
 
-- Status: accepted, extended by [0009](0009-watch-autodarts-and-the-next-chrome-before-the-players-do.md)
+- Status: accepted, extended by [0009](0009-watch-autodarts-and-the-next-chrome-before-the-players-do.md) and by [0015](0015-lint-with-web-ext-and-test-in-a-real-firefox.md), which runs the tests in Firefox as well
 - Date: 2026-10-25
 
 ## Context
