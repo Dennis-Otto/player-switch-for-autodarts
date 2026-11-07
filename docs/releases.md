@@ -232,7 +232,7 @@ GitHub means `api.github.com`, `github.com` and the hosts of its downloads, for 
 
 ## Edge and Firefox {#edge-and-firefox}
 
-The package of the Chrome Web Store is the package of every browser: one manifest names what Chrome and Edge run and what Firefox runs, as [decision 0012](decisions/0012-run-one-package-in-chrome-edge-and-firefox.md) records, and `scripts/check-project.sh` lints it with addons-linter, the linter of addons.mozilla.org. Until it is listed there, a player loads it in Firefox as a temporary add-on, and in Edge from the Chrome Web Store, as [the README](https://github.com/Dennis-Otto/player-switch-for-autodarts#install) says.
+The package of the Chrome Web Store is the package of every browser: one manifest names what Chrome and Edge run and what Firefox runs, as [decision 0012](decisions/0012-run-one-package-in-chrome-edge-and-firefox.md) records, `scripts/check-project.sh` lints it with `web-ext lint`, the lint of addons.mozilla.org, and the workflow E2E tests it in Chromium and in Firefox. It isn't listed there, so a player loads it in Firefox as a temporary add-on, and in Edge from the Chrome Web Store, as [the README](https://github.com/Dennis-Otto/player-switch-for-autodarts#install) says.
 
 The listings in the two other stores are new accounts and new secrets, so they wait for Dennis:
 

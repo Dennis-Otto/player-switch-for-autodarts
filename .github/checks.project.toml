@@ -53,7 +53,7 @@ for a permission, a host or a web-accessible page that `store/permissions.json` 
 allow, opens the extension wider in another way, doesn't fit the store, or no longer
 runs the same `background.js` in Firefox, under the id and from the versions of Firefox
 that it names, with the data that `store/permissions.json` declares
-(`scripts/check-extension.mjs`), addons-linter, the linter of addons.mozilla.org, found an
+(`scripts/check-extension.mjs`), `web-ext lint`, the lint of addons.mozilla.org, found an
 error in the extension or a warning that `scripts/check-firefox.mjs` doesn't accept
 with its reason, `extension/` holds a file of no kind that the package knows, two builds
 of the zip of one commit differ, or the test of the popup in a browser,
@@ -68,7 +68,7 @@ drops the name of a player. Chrome disables an installed extension after an upda
 asks for a new permission or host, until someone accepts the new warning in
 `chrome://extensions`, and a board display in kiosk mode then stops switching without
 a word; and every permission is one more way to the saved sessions and passwords.
-Firefox refuses an add-on with an error of addons-linter, and addons.mozilla.org
+Firefox refuses an add-on with an error of `web-ext lint`, and addons.mozilla.org
 reviews it with the same rules. The zip of a release goes to the store and handles
 passwords, so anybody has to be able to check it against the source of its tag, and only
 what the extension loads may reach its users. The
@@ -81,7 +81,7 @@ otherwise. A permission, host or
 web-accessible page that the extension really needs goes into `store/permissions.json`
 with its reason, with a line that justifies it in every store listing,
 `store/listing.<code>.md`, and a note in the changelog that the update asks for it;
-otherwise take it out of the manifest again. A finding of addons-linter names its file,
+otherwise take it out of the manifest again. A finding of `web-ext lint` names its file,
 line and code: fix it, or, for a warning that has to stay, add its code with the reason
 to `ACCEPTED` in `scripts/check-firefox.mjs`. A folder of `extension/_locales/` is
 named with a code that Chrome knows, such as `nl` or `pt_BR`, and holds a complete
@@ -137,21 +137,45 @@ docs = "docs/development.md#end-to-end-tests"
 autofix = """A test in a browser that fails needs a person who knows what the extension
 should do there; no command can make it pass."""
 
+[check."firefox"]
+title = "The tests in Firefox"
+problem = """A test of the built extension in a real Firefox, installed as a temporary
+add-on against the fake Autodarts of `test/e2e/fake/`, failed: the summary of the check
+names the test and the step that Firefox didn't get to, such as "the popup shows Alice
+with Alice playing". A test fails as well when a refresh token reached the fake sign-in
+service a second time, when a request went to a host other than Autodarts and Firefox's
+own services, or when Firefox installed the add-on under another id than the manifest
+names. A step before the tests fails with `ECONNREFUSED` when Harden-Runner blocks a
+host of the job; the step *Wait until Harden-Runner lets the hosts through* warns of it."""
+why = """Firefox runs the same package as Chrome, but differently: the background as an
+event page instead of a service worker, the pages from `moz-extension://<uuid>/`, and a
+storage that the content script can reach. The tests in Chromium can't show a break
+there, and neither can `web-ext lint`, which reads the package but runs nothing."""
+fix = """Run the tests on your machine with a Firefox 140 or newer: they find it where
+Firefox installs itself, or in `E2E_FIREFOX_PATH`. `E2E_HEADED=1` shows the window. A
+step that Firefox didn't get to names what the test waited for; a difference between
+the browsers belongs in the code, with a unit test for both, as
+docs/development.md#firefox-and-edge lists them. Then push:"""
+commands = ["npm ci", "npm run e2e:firefox"]
+docs = "docs/development.md#tests-in-firefox"
+autofix = """A test in a browser that fails needs a person who knows what the extension
+should do there; no command can make it pass."""
+
 [check."e2e"]
 title = "The end-to-end tests"
 problem = """The end-to-end tests had to run for this pull request, because it changes
 the extension, `src/`, the tests, the packages or `.github/workflows/e2e.yml`, and
-they didn't pass: the job *browser* of the workflow E2E failed, was cancelled or
-didn't run. Its summary names the test that failed. A job that ran out of time with
+they didn't pass: the job *browser* or *firefox* of the workflow E2E failed, was
+cancelled or didn't run. Its summary names the test that failed. A job that ran out of time with
 every step passed hung at its end, in *Cleaning up orphan processes*, which no change of
 the code causes."""
 why = """This is the check that `main` requires for the end-to-end tests. They run the
-extension as Chrome runs it, against a fake Autodarts, so a broken manifest, import,
+extension as Chrome and Firefox run it, against a fake Autodarts, so a broken manifest, import,
 message or popup, or a refresh token sent twice, never reaches the Chrome Web Store."""
-fix = """Fix the failure that the job *browser* explains, run the tests on your machine
+fix = """Fix the failure that the job *browser* or *firefox* explains, run the tests on your machine
 and push; a run that was cancelled or didn't run gets a new one with
 *Re-run all jobs* in the workflow E2E:"""
-commands = ["npm run e2e"]
+commands = ["npm run e2e", "npm run e2e:firefox"]
 docs = "docs/development.md#end-to-end-tests"
 autofix = """A test in a browser that fails needs a person who knows what the extension
 should do there; no command can make it pass."""

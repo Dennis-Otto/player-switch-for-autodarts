@@ -1,6 +1,7 @@
 # Run one package in Chrome, Edge and Firefox
 
-- Status: accepted
+- Status: accepted; the lint with addons-linter alone and the check by hand replaced by
+  [0015](0015-lint-with-web-ext-and-test-in-a-real-firefox.md)
 - Date: 2026-10-25
 
 ## Context
