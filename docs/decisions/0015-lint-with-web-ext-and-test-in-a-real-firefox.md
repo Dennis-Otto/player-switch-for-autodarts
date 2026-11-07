@@ -36,7 +36,10 @@ Option 2.
 
 - `scripts/check-firefox.mjs` runs the lint of web-ext, `cmd.lint` of its API, which
   `web-ext lint` runs, with the file filter of the package. web-ext 10.8.0 is pinned
-  exactly, and its addons-linter with it; it fails on the same findings as before.
+  exactly, and its addons-linter with it: 10.14.0, one release behind the 10.15.0 that
+  was pinned before, with the compat data of MDN 8.1.4 in place of 8.1.6. That release
+  changed only dependencies, and the next web-ext from Renovate brings the linter
+  forward.
 - `test/firefox/` installs `extension/` into the Firefox of the runner with
   `browser.installExtension` of Puppeteer 25, pinned exactly. Firefox sends every
   request through a proxy of the test, which tunnels play.autodarts.com and
@@ -47,6 +50,11 @@ Option 2.
   opens no `moz-extension://` page.
 - The job `firefox` of the workflow E2E runs them beside the Chromium tests, and the
   required check `e2e` waits for both.
+- As [0007](0007-test-the-real-extension-against-a-fake-autodarts.md) does for Chrome,
+  the fake Autodarts takes the place of the check by hand against the real Autodarts
+  that issue #83 asked for. The steps of `docs/development.md#firefox-and-edge` stay as
+  an optional check with two test accounts; a change of the real sign-in that the fake
+  doesn't know yet passes these tests, as it passes the Chromium ones.
 
 ## Consequences
 
