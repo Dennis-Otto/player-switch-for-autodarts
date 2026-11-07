@@ -8,10 +8,9 @@ the next release, or lists the pull requests when there is none.
 
 ## [1.3.0](https://github.com/Dennis-Otto/player-switch-for-autodarts/compare/v1.2.1...v1.3.0) (2026-11-07)
 
-
 ### Features
 
-* the extension runs in Firefox and Edge, checked by web-ext lint ([#156](https://github.com/Dennis-Otto/player-switch-for-autodarts/issues/156)) ([72d7940](https://github.com/Dennis-Otto/player-switch-for-autodarts/commit/72d79404c38734cdb079090cacebe2104edd706d))
+- Firefox 140 and newer is supported, no longer a preview: every change of the extension is checked with `web-ext lint`, Mozilla's lint for add-ons, and tested in a real Firefox, where the tests install the add-on, save two accounts and switch between them from the popup and from the players on the page. Edge runs the same package as before.
 
 ## [1.2.1](https://github.com/Dennis-Otto/player-switch-for-autodarts/compare/v1.2.0...v1.2.1) (2026-11-04)
 
