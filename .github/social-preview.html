@@ -7,7 +7,9 @@
      shows for links to the repository. The right side is the real popup of the extension,
      docs/images/lobby.dark.png, which scripts/screenshots.sh renders from the extension's
      own page before it renders this one: large, below a drawn piece of a browser's
-     toolbar with the icon that opens it. -->
+     toolbar with the icon that opens it. The layout toolbar of test/harness/stage.css
+     draws the same toolbar for docs/images/popup.&lt;lang&gt;.dark.png, of which the German
+     card of the website shows popup.de.dark.png: change both together. -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=block">
 <style>
@@ -87,7 +89,7 @@ li::before { content: ""; position: absolute; left: 0; top: 11px; width: 12px; h
   </ul>
 </div>
 <div class="toolbar">
-  <div class="address">play.autodarts.io</div>
+  <div class="address">play.autodarts.com</div>
   <div class="button pressed"><img src="../extension/icons/icon-48.png" alt=""></div>
   <div class="button"><svg viewBox="0 0 24 24"><path d="M5.25 7.75h3a2.5 2.5 0 1 1 5 0h3v3a2.5 2.5 0 1 1 0 5v3h-11Z"/></svg></div>
   <div class="button"><svg viewBox="0 0 24 24"><circle cx="12" cy="5.5" r="0.9"/><circle cx="12" cy="12" r="0.9"/><circle cx="12" cy="18.5" r="0.9"/></svg></div>

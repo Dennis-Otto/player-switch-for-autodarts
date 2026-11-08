@@ -43,6 +43,18 @@ OVERFLOWS = """() => [document, ...[...document.querySelectorAll("iframe")].map(
         return root.scrollHeight > root.clientHeight || root.scrollWidth > root.clientWidth
             || (panel !== null && panel.scrollHeight > panel.clientHeight);
     })"""
+# Whether the popup that hangs from its icon in the toolbar is cut off where it must not
+# be: at its left edge, which grows to the left, or above the bottom of its third tile,
+# where the window cuts it off on purpose.
+CUT_OFF = """() => {
+    const hanging = document.querySelector(".hanging");
+    if (hanging === null) return false;
+    const frame = hanging.querySelector("iframe");
+    const third = frame.contentDocument.querySelectorAll(".tile")[2];
+    return hanging.getBoundingClientRect().left < 0 || third === undefined
+        || frame.getBoundingClientRect().top + third.getBoundingClientRect().bottom
+            > innerHeight;
+}"""
 # The ring around a control that a picture of the browser points at, in the amber of the
 # steps for a person in the diagrams.
 MARK = """(control) => {
@@ -67,12 +79,15 @@ class Shot:
     fit: bool = False
 
 
-def variants(name: str, suffix: str) -> list[tuple[str, str, bool]]:
+def variants(
+    name: str, suffix: str, schemes: tuple[bool, ...] = (False, True)
+) -> list[tuple[str, str, bool]]:
     """The language, the path and the scheme of each picture of the documentation:
-    NAME.png, NAME.dark.png, NAME.de.png and NAME.de.dark.png, as the diagrams."""
+    NAME.png, NAME.dark.png, NAME.de.png and NAME.de.dark.png, as the diagrams, or only
+    the dark ones for SCHEMES (True,)."""
     found = []
     for lang in DOCUMENTATION_LANGUAGES:
-        for dark in (False, True):
+        for dark in schemes:
             parts = (
                 [name] + ([lang] if lang != "en" else []) + (["dark"] if dark else [])
             )
@@ -132,6 +147,12 @@ def shots() -> list[Shot]:
         )
     for lang, path, dark in variants("switcher", "png"):
         found.append(Shot(path, f"layout=board&lang={lang}", 960, 600, 1.5, dark))
+    # The popup as it opens from its icon in the toolbar, for the card of the website
+    # in each language after the first, which dennis-otto.github.io draws from it: dark,
+    # as the cards are, and no wider than the popup and the address above it, so that
+    # the card shows the popup as large as the height of its picture lets it be.
+    for lang, path, dark in variants("popup", "png", schemes=(True,)):
+        found.append(Shot(path, f"layout=toolbar&lang={lang}", 440, 468, 2, dark))
     for lang in store_languages():
         for slide in (1, 2, 3):
             # 1280x800, the size that the Chrome Web Store asks for.
@@ -208,7 +229,7 @@ def open_stage(
 def picture(page: Page, fit: bool) -> Image.Image:
     """The stage as it stands, or its window, which must hold all of the stage: a
     picture of an exact size, such as one of the store, never cuts anything off."""
-    if not fit and page.evaluate(OVERFLOWS):
+    if not fit and (page.evaluate(OVERFLOWS) or page.evaluate(CUT_OFF)):
         size = page.viewport_size or {}
         raise SystemExit(
             f"{page.url} needs more than {size.get('width')}x{size.get('height')}: "

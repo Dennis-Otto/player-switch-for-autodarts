@@ -7,6 +7,9 @@
 //   layout=store   a 1280×800 picture of the store listing, slide=1, 2 or 3
 //   layout=promo   the small promo tile of the store
 //   layout=marquee the large promo tile of the store
+//   layout=toolbar the popup on a lobby, as view=lobby shows it, hanging from its icon
+//                  at the right end of a browser's toolbar, cut off below its third
+//                  tile: the picture of the card of the website, in its dark theme
 //   lang=en        the language of the extension and of the text around it: a folder of
 //                  extension/_locales, with that text in store/pictures.<lang>.json
 //
@@ -22,6 +25,7 @@ const shot = document.querySelector("#shot");
 document.documentElement.lang = lang.replace("_", "-");
 
 const ICON = "/extension/icons/icon-128.png";
+const SVG = "http://www.w3.org/2000/svg";
 
 // The texts around the extension, read once from the folder of the listing, as
 // chrome-stub.js reads the extension's own texts from its _locales.
@@ -126,6 +130,48 @@ function copy(slide, numbered) {
   );
 }
 
+/** A glyph of the browser, drawn in strokes on a grid of 24, such as a menu. */
+function glyph(...shapes) {
+  const svg = document.createElementNS(SVG, "svg");
+  svg.setAttribute("viewBox", "0 0 24 24");
+  svg.setAttribute("aria-hidden", "true");
+  for (const [tag, attributes] of shapes) {
+    const shape = document.createElementNS(SVG, tag);
+    for (const [name, value] of Object.entries(attributes)) {
+      shape.setAttribute(name, value);
+    }
+    svg.append(shape);
+  }
+  return svg;
+}
+
+/**
+ * The right end of a browser's toolbar, as .github/social-preview.html draws it: the
+ * address of Autodarts, the icon of the extension, pressed as while its popup is open,
+ * the menu of the extensions and the menu of the browser.
+ */
+function toolbar() {
+  const pinned = document.createElement("img");
+  pinned.src = "/extension/icons/icon-48.png";
+  pinned.alt = "";
+  const dot = (cy) => ["circle", { cx: "12", cy, r: "0.9" }];
+  return make(
+    "div",
+    "bar",
+    make("div", "address", "play.autodarts.com"),
+    make("div", "button pressed", pinned),
+    make(
+      "div",
+      "button",
+      glyph([
+        "path",
+        { d: "M5.25 7.75h3a2.5 2.5 0 1 1 5 0h3v3a2.5 2.5 0 1 1 0 5v3h-11Z" },
+      ]),
+    ),
+    make("div", "button", glyph(dot("5.5"), dot("12"), dot("18.5"))),
+  );
+}
+
 function icon() {
   const image = document.createElement("img");
   image.src = ICON;
@@ -212,6 +258,14 @@ switch (layout) {
       popup(2),
       make("p", "note", TEXTS.note),
     );
+    break;
+  case "toolbar":
+    shot.className = "toolbar";
+    shot.append(
+      toolbar(),
+      make("div", "hanging", popup(3, "&lobby=1"), make("div", "notch")),
+    );
+    joinLobby();
     break;
   default: {
     const view = setup.get("view");

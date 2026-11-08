@@ -17,6 +17,10 @@
 #   and the popup's "Manage accounts" (manage.png), the popup on a lobby after a
 #   parked player joined it (lobby.png) and the switcher on a board display
 #   (switcher.png), each also .dark and in German (.de, .de.dark);
+# - docs/images/popup.dark.png and popup.de.dark.png, that popup on a lobby as it
+#   opens from its icon in the toolbar, cut off below its third tile: the website
+#   draws the card of the project in German from popup.de.dark.png, as the English
+#   card shows the social preview;
 # - docs/images/load-unpacked.png, what the install from a release asks for on the page
 #   chrome://extensions of the browser itself, in the same four forms;
 # - store/images/, the screenshots (1280×800) and the promo tiles (440×280 and
