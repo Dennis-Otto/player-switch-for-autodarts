@@ -5,7 +5,8 @@
  * - https://play.autodarts.com serves the fake page, play.html with play.js, at
  *   every address, so a match page such as /matches/<id> is one too.
  * - https://api.autodarts.com/auth/v1 is the fake sign-in service of autodarts.ts,
- *   with the CORS headers that the page needs to reach it.
+ *   with the CORS headers that the page needs to reach it, and
+ *   https://api.autodarts.com/gs/v0 its game service with the lobbies.
  *
  * The browser finds the server through --host-resolver-rules and trusts its
  * throwaway certificate (certificate.ts). Everything else that reaches it is
@@ -23,6 +24,7 @@ import { makeCertificate } from "./certificate.ts";
 export const PLAY_HOST = "play.autodarts.com";
 export const AUTH_HOST = "api.autodarts.com";
 const AUTH_PATH = "/auth/v1/";
+const GAME_PATH = "/gs/v0/";
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const PLAY_HTML = readFileSync(path.join(HERE, "play.html"));
@@ -101,6 +103,34 @@ export async function startFakeServer(
     response.end(answer.body === null ? "" : JSON.stringify(answer.body));
   }
 
+  async function answerGame(
+    request: IncomingMessage,
+    response: ServerResponse,
+    address: URL,
+  ): Promise<void> {
+    const cors = {
+      "access-control-allow-origin": request.headers.origin ?? "*",
+      "access-control-allow-methods": "GET, POST",
+      "access-control-allow-headers": "authorization, content-type",
+    };
+    if (request.method === "OPTIONS") {
+      response.writeHead(204, cors);
+      response.end();
+      return;
+    }
+    const answer = autodarts.answerGame(
+      request.method ?? "GET",
+      address.pathname.slice(GAME_PATH.length),
+      request.headers.authorization,
+      parse(await readBody(request)),
+    );
+    response.writeHead(answer.status, {
+      ...cors,
+      "content-type": "application/json",
+    });
+    response.end(JSON.stringify(answer.body));
+  }
+
   async function route(
     request: IncomingMessage,
     response: ServerResponse,
@@ -109,6 +139,8 @@ export async function startFakeServer(
     const address = new URL(request.url ?? "/", `https://${host}`);
     if (host === AUTH_HOST && address.pathname.startsWith(AUTH_PATH)) {
       await answerAuth(request, response, address);
+    } else if (host === AUTH_HOST && address.pathname.startsWith(GAME_PATH)) {
+      await answerGame(request, response, address);
     } else if (
       host === PLAY_HOST &&
       request.method === "GET" &&

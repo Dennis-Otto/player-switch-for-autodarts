@@ -21,3 +21,4 @@ Copy [the template](0000-template.md) to the next free number and describe the d
 | [0013](0013-send-the-store-the-zip-that-the-release-attests.md) | Send the store the zip that the release attests | accepted, the hook replaced by 0014 |
 | [0014](0014-take-the-chrome-extension-kind-of-the-blueprint.md) | Take the Chrome extension kind of the blueprint | accepted |
 | [0015](0015-lint-with-web-ext-and-test-in-a-real-firefox.md) | Lint with web-ext and test the add-on in a real Firefox | accepted |
+| [0016](0016-join-a-lobby-with-a-parked-session.md) | Join a lobby with a parked session, in the service worker | accepted |

@@ -12,9 +12,13 @@
  *   pass unnoticed.
  * - A wrong password is refused with 401, a token that it doesn't know with 400.
  *
- * It knows no browser and no network: `answer` takes the path and the body of a
- * request and gives the status and the body of the answer, which the fake HTTPS server
- * of server.ts sends back to the browser.
+ * Its game service, at https://api.autodarts.com/gs/v0, keeps the lobbies that a test
+ * opens and seats a player in one as the real one does for the page `/join/<lobby>`:
+ * only with the access token of that player, and only at the board of the host.
+ *
+ * It knows no browser and no network: `answer` and `answerGame` take a request and give
+ * the status and the body of the answer, which the fake HTTPS server of server.ts sends
+ * back to the browser.
  */
 
 /** An account of the fake Autodarts, made up for the tests. */
@@ -62,6 +66,13 @@ interface Session {
   token: string;
 }
 
+/** A lobby of the game service: its host, the board where the host plays, and who sits in it. */
+interface Lobby {
+  readonly host: Account;
+  readonly board: string;
+  readonly seated: string[];
+}
+
 function base64url(text: string): string {
   return Buffer.from(text, "utf8").toString("base64url");
 }
@@ -100,6 +111,7 @@ export class FakeAutodarts {
   private readonly accounts: readonly Account[];
   private readonly live = new Map<string, Session>();
   private readonly spent = new Map<string, Session>();
+  private readonly lobbies = new Map<string, Lobby>();
   private issued = 0;
 
   constructor(accounts: readonly Account[] = [ALICE, BOB, CAROL]) {
@@ -119,6 +131,70 @@ export class FakeAutodarts {
         this.sent.push({ path, account: null });
         return { status: 404, body: { error: "not_found" } };
     }
+  }
+
+  /**
+   * Answers a request to `/gs/v0/<path>`: `lobbies/<id>` reads a lobby, and a POST to
+   * `lobbies/<id>/players` takes a seat in it. Each needs the access token of an
+   * account, or it is refused with 401; a lobby that it doesn't know answers 404. A
+   * seat is only for the account of the token (403), at the board of the host (400).
+   */
+  answerGame(
+    method: string,
+    path: string,
+    authorization: string | undefined,
+    body: unknown,
+  ): Answer {
+    const [, id = "", seat] = /^lobbies\/([^/]+)(\/players)?$/.exec(path) ?? [];
+    const kind = seat === undefined ? "lobby" : "seat";
+    const account = this.accounts.find(
+      (candidate) => authorization === `Bearer ${accessTokenOf(candidate)}`,
+    );
+    this.sent.push({ path: kind, account: account?.id ?? null });
+    const lobby = this.lobbies.get(id);
+    if (account === undefined) {
+      return { status: 401, body: { error: "unauthorized" } };
+    }
+    if (
+      lobby === undefined ||
+      method !== (seat === undefined ? "GET" : "POST")
+    ) {
+      return { status: 404, body: { error: "not_found" } };
+    }
+    if (seat === undefined) {
+      return {
+        status: 200,
+        body: {
+          id,
+          host: { id: lobby.host.id, name: lobby.host.username },
+          players: lobby.seated.map((userId) => ({
+            userId,
+            name: this.accounts.find((one) => one.id === userId)?.username,
+            boardId: lobby.board,
+          })),
+        },
+      };
+    }
+    if (field(body, "userId") !== account.id) {
+      return { status: 403, body: { error: "forbidden" } };
+    }
+    if (field(body, "boardId") !== lobby.board) {
+      return { status: 400, body: { error: "unknown board" } };
+    }
+    lobby.seated.push(account.id);
+    return { status: 201, body: { userId: account.id, boardId: lobby.board } };
+  }
+
+  /** Opens a lobby whose host plays at a board of its own, and answers with its id. */
+  openLobby(host: Account, board = `board-of-${host.username}`): string {
+    const id = `0b5a1c2d-0000-4000-8000-${String(this.lobbies.size + 1).padStart(12, "0")}`;
+    this.lobbies.set(id, { host, board, seated: [host.id] });
+    return id;
+  }
+
+  /** The accounts that sit in a lobby, in the order in which they took their seats. */
+  seatsOf(lobby: string): readonly string[] {
+    return this.lobbies.get(lobby)?.seated ?? [];
   }
 
   /** Ends every session of an account, as an expiry or a sign-out elsewhere does. */

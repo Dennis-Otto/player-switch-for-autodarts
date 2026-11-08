@@ -52,9 +52,10 @@ es aber könnte und die Tokens und Passwörter dort nur verschlüsselt fände
 ## Wohin Daten gehen
 
 Die Erweiterung spricht nur mit Autodarts (`api.autodarts.com` und
-`play.autodarts.com`), über HTTPS, um anzumelden, eine Sitzung zu erneuern und die
-Sitzung zwischen Konten zu verschieben — dieselben Anfragen, die die Autodarts-Website
-selbst stellt. Das Popup und der Umschalter zeigen auch das Bild jedes Spielers von der
+`play.autodarts.com`), über HTTPS, um anzumelden, eine Sitzung zu erneuern, die
+Sitzung zwischen Konten zu verschieben und einen gespeicherten Spieler in die Lobby zu
+setzen, die der Bildschirm zeigt — dieselben Anfragen, die die Autodarts-Website selbst
+stellt. Das Popup und der Umschalter zeigen auch das Bild jedes Spielers von der
 Adresse, die Autodarts dafür angibt, wie die Autodarts-Website. Sie öffnet keine
 andere Verbindung, spricht mit keinem Dienst für Statistiken oder Tracking, und der
 Entwickler bekommt keine Daten von ihr. Ihre Content Security Policy lässt sie nur mit
@@ -63,12 +64,15 @@ Entwickler bekommt keine Daten von ihr. Ihre Content Security Policy lässt sie 
 Firefox zeigt bei der Installation, dass das Add-on *Authentifizierungsdaten*
 sendet: Das sind die Sitzungstokens und, bei einem Konto, dessen Passwort du dir
 merken lässt, Benutzername und Passwort, die wie hier beschrieben an den
-Anmeldedienst von Autodarts gehen, und nirgendwohin sonst. Der Chrome Web Store
-führt dasselbe unter seinen Datenschutzpraktiken.
+Anmeldedienst von Autodarts gehen, und nirgendwohin sonst. Tritt ein gespeicherter
+Spieler der Lobby auf dem Bildschirm bei, geht ein frischer Zugangstoken dieses Kontos
+an den Spieldienst von Autodarts auf demselben Host, mit dem Benutzernamen und der ID
+des Kontos, die Autodarts ohnehin kennt. Der Chrome Web Store führt dasselbe unter
+seinen Datenschutzpraktiken.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="images/diagrams/data-flow.de.dark.svg">
-  <img src="images/diagrams/data-flow.de.svg" alt="Wohin die Daten gehen: Alles bleibt im Browser auf diesem Computer. Das Popup und der Umschalter fragen den Service Worker, der in chrome.storage.local einen Token pro Konto behält, ein Passwort nur, wenn eines gemerkt ist, die Einstellungen des Knopfs, die Zeit der letzten Erneuerung, ob Autodarts dabei jedes Konto abgewiesen hat, und bis wann ein neues Konto hinzugefügt wird. Er bringt eine Sitzung in die Autodarts-Seite und liest die ausgehende nur über content.js aus ihr, das einzige Skript, das die Sitzung im localStorage der Seite liest oder schreibt. Um einen Token zu erneuern, mit einem Passwort anzumelden oder eine Sitzung zu beenden, spricht er über HTTPS mit api.autodarts.com, demselben Dienst, den die Autodarts-Seite selbst nutzt. Das Popup und der Umschalter zeigen das Bild jedes Spielers von der Adresse, die Autodarts dafür angibt. Sonst geht nichts irgendwohin: kein Server des Entwicklers, keine Statistiken; Hilfe und Problem melden öffnen nur eine Seite in einem neuen Tab.">
+  <img src="images/diagrams/data-flow.de.svg" alt="Wohin die Daten gehen: Alles bleibt im Browser auf diesem Computer. Das Popup und der Umschalter fragen den Service Worker, der in chrome.storage.local einen Token pro Konto behält, ein Passwort nur, wenn eines gemerkt ist, die Einstellungen des Knopfs, die Zeit der letzten Erneuerung, ob Autodarts dabei jedes Konto abgewiesen hat, und bis wann ein neues Konto hinzugefügt wird. Er bringt eine Sitzung in die Autodarts-Seite und liest die ausgehende nur über content.js aus ihr, das einzige Skript, das die Sitzung im localStorage der Seite liest oder schreibt. Um einen Token zu erneuern, mit einem Passwort anzumelden, eine Sitzung zu beenden oder einen gespeicherten Spieler in die Lobby auf dem Bildschirm zu setzen, mit einem frischen Token, dem Benutzernamen und der Konto-ID dieses Spielers, spricht er über HTTPS mit api.autodarts.com, demselben Dienst, den die Autodarts-Seite selbst nutzt. Das Popup und der Umschalter zeigen das Bild jedes Spielers von der Adresse, die Autodarts dafür angibt. Sonst geht nichts irgendwohin: kein Server des Entwicklers, keine Statistiken; Hilfe und Problem melden öffnen nur eine Seite in einem neuen Tab.">
 </picture>
 
 „Hilfe“ und „Problem melden“ im Popup und auf der Willkommensseite und der Link

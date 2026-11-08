@@ -7,6 +7,7 @@ import {
   initialOf,
   isMatchPage,
   isPlayPage,
+  lobbyOf,
   mustConfirm,
   openShortcuts,
   PLAY_ORIGINS,
@@ -149,6 +150,39 @@ test("isMatchPage knows a match that runs", () => {
   );
   assert.ok(isMatchPage("https://play.autodarts.com/matches/abc/"));
   assert.ok(isMatchPage("https://play.autodarts.com/matches/abc?board=1#x"));
+});
+
+const LOBBY = "0b5a1c2d-0000-4000-8000-0000000000a1";
+
+test("lobbyOf reads the lobby that an address of Autodarts Play shows", () => {
+  assert.equal(lobbyOf(`https://play.autodarts.com/lobbies/${LOBBY}`), LOBBY);
+  assert.equal(lobbyOf(`https://play.autodarts.com/lobbies/${LOBBY}/`), LOBBY);
+  assert.equal(
+    lobbyOf(`https://play.autodarts.com/lobbies/${LOBBY}?board=1#seats`),
+    LOBBY,
+  );
+  const upper = LOBBY.toUpperCase();
+  assert.equal(lobbyOf(`https://play.autodarts.com/lobbies/${upper}`), upper);
+});
+
+test("lobbyOf finds no lobby in any other address", () => {
+  for (const url of [
+    "https://play.autodarts.com/",
+    "https://play.autodarts.com/lobbies",
+    "https://play.autodarts.com/lobbies/",
+    "https://play.autodarts.com/lobbies/abc",
+    `https://play.autodarts.com/lobbies/${LOBBY}/players`,
+    `https://play.autodarts.com/lobbies/${LOBBY}x`,
+    `https://play.autodarts.com/matches/${LOBBY}`,
+    `https://play.autodarts.com/join/${LOBBY}`,
+    `https://example.org/lobbies/${LOBBY}`,
+    `http://play.autodarts.com/lobbies/${LOBBY}`,
+    "not a url",
+    "",
+    undefined,
+  ]) {
+    assert.equal(lobbyOf(url), null, String(url));
+  }
 });
 
 test("isMatchPage leaves every other page alone", () => {

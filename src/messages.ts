@@ -30,6 +30,11 @@ export type PlayersAction =
   | { readonly action: "view" }
   /** Brings an account onto the page. */
   | { readonly action: "switch"; readonly id: string }
+  /**
+   * Seats a parked account in the lobby that the Autodarts tab in front shows, at the
+   * board of the display, while the page stays with the account that plays there.
+   */
+  | { readonly action: "join"; readonly id: string }
   /** Saves the session on the page as an account. */
   | { readonly action: "adopt" }
   /** Signs the page out for a new account, which is saved as it signs in. */
@@ -160,6 +165,8 @@ export type Outcome =
       readonly saved?: string;
       /** After a removal: whether Autodarts ended the sessions, or couldn't be reached. */
       readonly ended?: boolean;
+      /** After a join: the name of the account that sits in the lobby now. */
+      readonly joined?: string;
     }
   /** A match runs in the page: the worker spent no token yet and waits for a yes. */
   | { readonly ok: false; readonly reason: "match" }
@@ -169,6 +176,11 @@ export type Outcome =
       readonly reason: "signin" | "unreachable";
       readonly page: true;
     }
+  /**
+   * A join found no lobby in the Autodarts tab in front, the account plays on the page
+   * already, or Autodarts refused the seat: the lobby is gone, full or started.
+   */
+  | { readonly ok: false; readonly reason: "noLobby" | "playing" | "refused" }
   | Refusal;
 
 /** What a page of the extension can't get past, and the popup says. */
@@ -242,6 +254,7 @@ const PLAYERS_FIELDS: Readonly<
 > = {
   view: {},
   switch: { id: isString },
+  join: { id: isString },
   adopt: {},
   signout: {},
   openPage: {},

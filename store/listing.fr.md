@@ -80,7 +80,8 @@ Non affilié à Autodarts.
   et que les autres se rechargent. L'extension ne peut lire ni l'adresse ni le
   titre des autres onglets.
 • Accès à l'hôte `https://api.autodarts.com/*` — pour se connecter, renouveler une session et
-  y mettre fin, les mêmes requêtes que celles du site Autodarts. L'extension ne se
+  y mettre fin, et pour ajouter un joueur enregistré au lobby affiché à l'écran, les
+  mêmes requêtes que celles du site Autodarts. L'extension ne se
   connecte à aucun autre serveur, et sa politique de sécurité du contenu
   l'impose.
 

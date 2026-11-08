@@ -28,11 +28,16 @@
  * so that no copy of its token, such as in a backup of the browser profile, keeps
  * working; "Forget all accounts" does so for every account and then deletes what else
  * the extension keeps.
+ *
+ * Joining a lobby seats a parked account at the board of the display with the session
+ * that the extension keeps for it, while the page stays with the account that plays
+ * there (decision 0016).
  */
 import {
   type AuthError,
   type Fetch,
   type Identity,
+  joinLobby,
   readIdentity,
   refreshSession,
   revokeSession,
@@ -454,6 +459,101 @@ async function signOut(deps: Deps, waitForNew: boolean): Promise<SwitchResult> {
         : stopAdding(signedOut),
     ),
     ok: true,
+  };
+}
+
+/**
+ * Why a parked account took no seat in a lobby: it plays on the page, it has to sign
+ * in again, Autodarts couldn't be reached, or Autodarts refused the seat, because the
+ * lobby is gone, full or started, or has no board.
+ */
+export type JoinFailure = "playing" | "signin" | "unreachable" | "refused";
+
+/**
+ * How a join ended: the account that sits in the lobby now, or had a seat already, or
+ * null for an account that the extension doesn't know (any more); or why it didn't.
+ */
+export type JoinResult =
+  | { state: State; ok: true; seated: Identity | null }
+  | { state: State; ok: false; reason: JoinFailure };
+
+/**
+ * Seats a parked account in a lobby at the board of the display, the one where the
+ * account that plays on the page sits (or else the board of the host), as if the player had
+ * joined from their phone, so the match counts for their own account too. The page
+ * stays as it is: the account that plays there keeps playing, and the session of the
+ * joined account stays parked. No token reaches the page.
+ *
+ * The renewal takes its turn in the queue, as every renewal does, and keeps the rotated
+ * refresh token before anything else. The join needs only the access token of that
+ * renewal and changes no account, so it runs after the turn, and a slow lobby doesn't
+ * hold up a tap.
+ *
+ * The account that plays on the page has no parked session: its token belongs to the
+ * page, which the extension never renews behind the page's back, so it isn't seated
+ * this way.
+ */
+export async function joinLobbyAs(
+  deps: Deps,
+  id: string,
+  lobbyId: string,
+): Promise<JoinResult> {
+  const turn = await deps.queue(() => sessionToJoin(deps, id));
+  if (!("session" in turn)) {
+    return turn;
+  }
+  const player = readIdentity(turn.session.accessToken);
+  try {
+    await joinLobby(
+      deps.fetcher,
+      turn.session.accessToken,
+      lobbyId,
+      player,
+      turn.state.activeId,
+    );
+  } catch (error) {
+    // joinLobby throws nothing but AuthError.
+    return {
+      state: turn.state,
+      ok: false,
+      reason:
+        (error as AuthError).kind === "rejected" ? "refused" : "unreachable",
+    };
+  }
+  return { state: turn.state, ok: true, seated: player };
+}
+
+/** A fresh session of a parked account, which is saved first, or why there is none. */
+async function sessionToJoin(
+  deps: Deps,
+  id: string,
+): Promise<JoinResult | { state: State; session: Session }> {
+  const state = await deps.store.load();
+  const profile = find(state, id);
+  if (profile === undefined) {
+    return { state, ok: true, seated: null };
+  }
+  if (state.activeId === id) {
+    return { state, ok: false, reason: "playing" };
+  }
+  const renewal = await renew(deps, profile);
+  if (renewal.kind === "unreachable") {
+    return { state, ok: false, reason: "unreachable" };
+  }
+  if (renewal.kind === "rejected") {
+    return {
+      state: await commit(deps, endSession(state, id)),
+      ok: false,
+      reason: "signin",
+    };
+  }
+  // The old token is spent now: keep the fresh one before the join can fail.
+  return {
+    state: await commit(
+      deps,
+      stash(state, id, renewal.session.refreshToken, deps.now()),
+    ),
+    session: renewal.session,
   };
 }
 

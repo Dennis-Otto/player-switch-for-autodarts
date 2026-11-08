@@ -6,8 +6,14 @@ import { X509Certificate } from "node:crypto";
 import { test } from "node:test";
 import { createSecureContext } from "node:tls";
 
-import { readIdentity } from "../src/autodarts.ts";
-import { ALICE, BOB, FakeAutodarts } from "./e2e/fake/autodarts.ts";
+import { parseLobby, readIdentity } from "../src/autodarts.ts";
+import {
+  ALICE,
+  accessTokenOf,
+  BOB,
+  CAROL,
+  FakeAutodarts,
+} from "./e2e/fake/autodarts.ts";
 import { makeCertificate } from "./e2e/fake/certificate.ts";
 
 /** The refresh token of a session answer. */
@@ -157,6 +163,65 @@ test("a path that the service doesn't have answers 404", () => {
   const autodarts = new FakeAutodarts();
   assert.equal(autodarts.answer("token", {}).status, 404);
   assert.deepEqual(autodarts.sent, [{ path: "token", account: null }]);
+});
+
+const bearerOf = (account: typeof ALICE) => `Bearer ${accessTokenOf(account)}`;
+
+test("the game service shows a lobby to an account, with the board of its host", () => {
+  const autodarts = new FakeAutodarts();
+  const lobby = autodarts.openLobby(ALICE);
+  const answer = autodarts.answerGame(
+    "GET",
+    `lobbies/${lobby}`,
+    bearerOf(BOB),
+    null,
+  );
+  assert.equal(answer.status, 200);
+  assert.deepEqual(parseLobby(answer.body), {
+    board: "board-of-alice",
+    seated: [ALICE.id],
+  });
+  assert.deepEqual(autodarts.sent, [{ path: "lobby", account: BOB.id }]);
+});
+
+test("the game service seats the account of the token at the board of the host, and nobody else", () => {
+  const autodarts = new FakeAutodarts();
+  const lobby = autodarts.openLobby(ALICE, "board-1");
+  const seat = (bearer: string | undefined, body: unknown) =>
+    autodarts.answerGame("POST", `lobbies/${lobby}/players`, bearer, body)
+      .status;
+
+  const bob = { name: BOB.username, userId: BOB.id, boardId: "board-1" };
+  assert.equal(seat(undefined, bob), 401);
+  assert.equal(seat("Bearer made-up", bob), 401);
+  assert.equal(seat(bearerOf(CAROL), bob), 403);
+  assert.equal(seat(bearerOf(BOB), { ...bob, boardId: "board-2" }), 400);
+  assert.deepEqual(autodarts.seatsOf(lobby), [ALICE.id]);
+
+  assert.equal(seat(bearerOf(BOB), bob), 201);
+  assert.deepEqual(autodarts.seatsOf(lobby), [ALICE.id, BOB.id]);
+  assert.equal(
+    autodarts.sent.filter((request) => request.path === "seat").length,
+    5,
+  );
+});
+
+test("the game service answers 404 for a lobby that it doesn't have", () => {
+  const autodarts = new FakeAutodarts();
+  const lobby = autodarts.openLobby(ALICE);
+  for (const [method, path] of [
+    ["GET", "lobbies/0b5a1c2d-0000-4000-8000-00000000dead"],
+    ["POST", `lobbies/${lobby}`],
+    ["GET", `lobbies/${lobby}/players`],
+    ["GET", "boards"],
+  ] as const) {
+    const answer = autodarts.answerGame(method, path, bearerOf(BOB), null);
+    assert.equal(answer.status, 404, `${method} ${path}`);
+  }
+  assert.deepEqual(
+    autodarts.seatsOf("0b5a1c2d-0000-4000-8000-00000000dead"),
+    [],
+  );
 });
 
 test("the certificate is one that a TLS server can serve, for exactly the hosts it names", () => {

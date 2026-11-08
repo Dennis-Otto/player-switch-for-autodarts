@@ -8,10 +8,12 @@ import { fileURLToPath } from "node:url";
 import {
   CONTRACT,
   checkForward,
+  checkLobby,
   checkLogin,
   checkLogout,
   checkPage,
   checkRefresh,
+  checkSeat,
   escapeData,
   type Finding,
   locate,
@@ -27,6 +29,7 @@ import {
   AUTH_BASE,
   CLIENT_ID,
   type Fetch,
+  GAME_BASE,
   PLAY_ORIGIN,
   SESSION_KEY,
 } from "../src/autodarts.ts";
@@ -60,6 +63,18 @@ const json = (status: number, body: unknown): Response =>
 const text = (body: string, status = 200): Response =>
   new Response(body, { status });
 
+/** What the game service answers to a token that is no access token. */
+const UNAUTHORIZED = (): Response =>
+  json(401, {
+    statusCode: 401,
+    error: {
+      status: 401,
+      code: "unauthorized",
+      message:
+        "token is malformed: token contains an invalid number of segments",
+    },
+  });
+
 /** The answers of the real Autodarts on 2026-10-25, for the made-up data of the checks. */
 const ANSWERS: Record<string, Answer> = {
   [`${PLAY_ORIGIN}/`]: () => text(PAGE),
@@ -77,6 +92,9 @@ const ANSWERS: Record<string, Answer> = {
   [`${AUTH_BASE}/login`]: () =>
     json(401, { error: { status: 401, code: "invalid_credentials" } }),
   [`${AUTH_BASE}/logout`]: () => json(200, { success: true }),
+  // The answers of 2026-11-08 to the made-up lobby, for a token that is no JWT.
+  [`${GAME_BASE}/lobbies/${MADE_UP.lobby}`]: () => UNAUTHORIZED(),
+  [`${GAME_BASE}/lobbies/${MADE_UP.lobby}/players`]: () => UNAUTHORIZED(),
 };
 
 interface FakeAutodarts {
@@ -141,11 +159,11 @@ test("Autodarts as it is passes every check, with a handful of requests and made
     assert.match(report, /Autodarts works the way the extension relies on\./);
     assert.match(
       report,
-      /8 requests reached Autodarts, with made-up data only/,
+      /10 requests reached Autodarts, with made-up data only/,
     );
     assert.doesNotMatch(report, /\*\*changed\*\*/);
   });
-  assert.equal(lines.length, 7);
+  assert.equal(lines.length, 9);
   assert.ok(lines.every((line) => !line.startsWith("::error")));
   // The search stops at the script that has everything; the page has one more.
   assert.deepEqual(fake.requests, [
@@ -157,6 +175,8 @@ test("Autodarts as it is passes every check, with a handful of requests and made
     `POST ${AUTH_BASE}/refresh`,
     `POST ${AUTH_BASE}/login`,
     `POST ${AUTH_BASE}/logout`,
+    `GET ${GAME_BASE}/lobbies/${MADE_UP.lobby}`,
+    `POST ${GAME_BASE}/lobbies/${MADE_UP.lobby}/players`,
   ]);
   // Only made-up data reaches Autodarts, through the functions of the extension.
   assert.deepEqual(fake.bodies.get("/auth/v1/refresh"), {
@@ -171,6 +191,10 @@ test("Autodarts as it is passes every check, with a handful of requests and made
   assert.deepEqual(fake.bodies.get("/auth/v1/logout"), {
     refresh_token: MADE_UP.token,
   });
+  assert.deepEqual(
+    fake.bodies.get(`/gs/v0/lobbies/${MADE_UP.lobby}/players`),
+    MADE_UP.seat,
+  );
 });
 
 test("a renamed key of the session fails the check and names every place that relies on it", async () => {
@@ -395,6 +419,44 @@ test("the sign-in service has to refuse a made-up token and a made-up account wi
   }
 });
 
+test("the lobby and a seat in it have to ask a made-up token for a real one with 401", async () => {
+  const cases: [Answer | Error, boolean, string][] = [
+    [UNAUTHORIZED, true, "refused with 401"],
+    [
+      () => text("404 page not found", 404),
+      false,
+      "answered 404: the address may be gone, and a player can't join a lobby then",
+    ],
+    [() => json(403, {}), false, "answered 403, where a made-up token got 401"],
+    [() => text("", 503), false, "answered 503, where a made-up token got 401"],
+    [new Error("reset"), false, "no answer: Autodarts could not be reached"],
+  ];
+  const lobby = `${GAME_BASE}/lobbies/${MADE_UP.lobby}`;
+  for (const check of [checkLobby, checkSeat]) {
+    for (const [answer, ok, found] of cases) {
+      const fake = autodarts({ [lobby]: answer, [`${lobby}/players`]: answer });
+      const finding = await check(requestsOf(fake), CONTRACT);
+      assert.equal(finding.ok, ok, found);
+      assert.equal(finding.found, found);
+    }
+  }
+});
+
+test("an answer of the game service for a made-up token fails the check", async () => {
+  const lobby = `${GAME_BASE}/lobbies/${MADE_UP.lobby}`;
+  const fake = autodarts({
+    [lobby]: () => json(200, { host: { id: "x" }, players: [] }),
+    [`${lobby}/players`]: () => json(201, {}),
+  });
+  for (const check of [checkLobby, checkSeat]) {
+    const finding = await check(requestsOf(fake), CONTRACT);
+    assert.deepEqual(
+      [finding.ok, finding.found],
+      [false, "an answer, for a made-up token"],
+    );
+  }
+});
+
 test("the end of a session has to answer at its address", async () => {
   const cases: [Answer | Error, boolean, string][] = [
     [() => json(200, { success: true }), true, "answered 200"],
@@ -442,7 +504,7 @@ test("the report escapes its table and counts in words", () => {
   const report = summary([finding], 1);
   assert.match(report, /\| A \\\| B \| x \| y \| \*\*changed\*\* \|/);
   assert.match(report, /^1 request reached Autodarts/m);
-  assert.match(report, /relies on it in `src\/autodarts\.ts:13`\./);
+  assert.match(report, /relies on it in `src\/autodarts\.ts:14`\./);
 });
 
 test("locate finds every line with the text, or names the file alone", () => {
@@ -452,7 +514,7 @@ test("locate finds every line with the text, or names the file alone", () => {
       { file: "src/autodarts.ts", text: "no such text in the file" },
       { file: "no/such/file.ts", text: "anything" },
     ]),
-    ["src/autodarts.ts:13", "src/autodarts.ts", "no/such/file.ts"],
+    ["src/autodarts.ts:14", "src/autodarts.ts", "no/such/file.ts"],
   );
 });
 
