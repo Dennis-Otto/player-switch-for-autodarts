@@ -276,7 +276,7 @@ Jedes Browserprofil auf jedem Computer behält seine eigenen Konten, und nichts 
 
 ### In welchen Browsern geht es?
 
-Die Erweiterung ist für Google Chrome 140 oder neuer gemacht, unter Windows, macOS, Linux und ChromeOS. Browser, die auf Chromium aufbauen, installieren sie ebenso aus dem Chrome Web Store, etwa Chromium auf einem Raspberry Pi, Microsoft Edge, Brave, Opera oder Vivaldi. Nutze ein normales Fenster eines Browserprofils: Chrome führt in einem Gastfenster keine Erweiterung aus, und in einem Inkognitofenster nur, wenn du es erlaubst.
+Die Erweiterung ist für Google Chrome 140 oder neuer gemacht, unter Windows, macOS, Linux und ChromeOS, und kommt aus [dem Chrome Web Store](https://chromewebstore.google.com/detail/player-switch-for-autodar/gbijblgchbbbkjeibpjaodflfgbgefam?hl=de), der jedes Update von selbst bringt. Browser, die auf Chromium aufbauen, installieren sie ebenso von dort, etwa Chromium auf einem Raspberry Pi, Brave, Opera oder Vivaldi, und Microsoft Edge, sobald unter `edge://extensions` **Erweiterungen aus anderen Stores zulassen** eingeschaltet ist. Firefox 140 oder neuer führt sie auch aus, als temporäres Add-on aus einem Release geladen, denn auf addons.mozilla.org ist sie nicht gelistet: [Welche Browser](index.md#browsers) sagt, wie. Nutze ein normales Fenster eines Browserprofils: Chrome führt in einem Gastfenster keine Erweiterung aus, und in einem Inkognitofenster nur, wenn du es erlaubst.
 
 ### Alles entfernen
 

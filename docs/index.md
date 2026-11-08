@@ -12,7 +12,7 @@ hide:
 
 The display in the hallway, the club or the pub is shared, but everyone plays under their own Autodarts account. The extension keeps the sign-in of every saved account on that computer and swaps between them with a single tap: no password, no sign-in page, and the account that steps aside is ready again the moment someone taps it.
 
-[:material-download: Install](https://github.com/Dennis-Otto/player-switch-for-autodarts#quick-start){ .md-button .md-button--primary } [:material-monitor-dashboard: Set up a display](shared-display.md){ .md-button } [:material-lifebuoy: Help](help.md){ .md-button } [:material-shield-check: Security design](security.md){ .md-button } [:material-file-document-outline: Privacy](privacy.md){ .md-button }
+[:material-google-chrome: Add to Chrome](https://chromewebstore.google.com/detail/player-switch-for-autodar/gbijblgchbbbkjeibpjaodflfgbgefam){ .md-button .md-button--primary } [:material-download: Install without the store](#install-from-a-release){ .md-button } [:material-monitor-dashboard: Set up a display](shared-display.md){ .md-button } [:material-lifebuoy: Help](help.md){ .md-button } [:material-shield-check: Security design](security.md){ .md-button } [:material-file-document-outline: Privacy](privacy.md){ .md-button }
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="images/switch.dark.gif">
@@ -133,8 +133,8 @@ Over days and weeks, a saved account moves between these states:
 
 ## Which browsers {#browsers}
 
-- **Google Chrome 140 or newer**, and other browsers built on Chromium 140 or newer, such as Brave, Opera and Vivaldi, from the Chrome Web Store once the listing is live, or [from a release](#install-from-a-release).
-- **Microsoft Edge 140 or newer** runs the same package: turn on **Allow extensions from other stores** under `edge://extensions` and install it from the Chrome Web Store, or load it [from a release](#install-from-a-release). A listing in Edge Add-ons follows.
+- **Google Chrome 140 or newer**, and other browsers built on Chromium 140 or newer, such as Brave, Opera and Vivaldi, from [the Chrome Web Store](https://chromewebstore.google.com/detail/player-switch-for-autodar/gbijblgchbbbkjeibpjaodflfgbgefam), which brings every update on its own, or [from a release](#install-from-a-release).
+- **Microsoft Edge 140 or newer** runs the same package: turn on **Allow extensions from other stores** under `edge://extensions` and install it from [the Chrome Web Store](https://chromewebstore.google.com/detail/player-switch-for-autodar/gbijblgchbbbkjeibpjaodflfgbgefam), or load it [from a release](#install-from-a-release). A listing in Edge Add-ons follows.
 - **Firefox 140 or newer** runs the same package, linted with `web-ext lint` and tested in a real Firefox with every change. It isn't listed on addons.mozilla.org: unzip [a release](#install-from-a-release) and load its `manifest.json` as a temporary add-on in `about:debugging`, which Firefox removes when it closes. The add-on's page in `about:addons` lists that the add-on sends authentication information, which goes to the sign-in service of Autodarts alone. Firefox can't keep the extension's storage from its script in the Autodarts page, so a display in a club or a pub runs Chrome or Edge: [the security design](security.md#firefox) says why. Firefox for Android is not tested.
 
 ## Install without the store {#install-from-a-release}
@@ -150,7 +150,7 @@ Every release carries the extension ready to load, the very file that goes to th
   <img src="images/load-unpacked.png" alt="The top of the page chrome://extensions: the switch Developer mode at the top right is on, and Load unpacked, the first of three buttons below the title Extensions, appears with it. Both are marked.">
 </picture>
 
-A copy loaded this way gets no update by itself. For a new version, replace the contents of the folder with those of the new zip and choose the reload arrow of Player Switch on that page. Leave the folder where it is: the browser ties the saved accounts to its path, so a copy in another folder starts without them. The zip is the very file that goes to the Chrome Web Store, and [the release guide](releases.md#the-package-of-a-release) says how to check that a release built it.
+A copy loaded this way gets no update by itself, so a display does better with the store. For a new version, replace the contents of the folder with those of the new zip and choose the reload arrow of Player Switch on that page. Leave the folder where it is: the browser ties the saved accounts to its path, so a copy in another folder starts without them. The zip is the very file that goes to the Chrome Web Store, and [the release guide](releases.md#the-package-of-a-release) says how to check that a release built it. To move a display to the store, first remove this copy under `chrome://extensions`, then add Player Switch from the store and save the players again: the store copy has an id of its own and doesn't see the accounts of this one, and two copies at once would both keep the same sign-ins fresh.
 
 ## Good to know
 

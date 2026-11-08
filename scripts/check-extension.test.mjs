@@ -595,6 +595,52 @@ test("each language of the extension has a store listing, and each listing a lan
   );
 });
 
+test("a listing names the pictures of its own language, never those of another", () => {
+  const locales = {
+    en: {
+      extName: { message: "Player Switch" },
+      extDescription: { message: "Switch." },
+    },
+    nl: {
+      extName: { message: "Player Switch" },
+      extDescription: { message: "Wissel." },
+    },
+  };
+  const naming = (code) =>
+    `${LISTING}\n## Images\n\nThe \`.${code}\` files in images/.\n`;
+  assert.deepEqual(
+    check({
+      locales,
+      listings: {
+        "store/listing.en.md": naming("en"),
+        "store/listing.nl.md": naming("nl"),
+      },
+    }),
+    [],
+  );
+  // The listings in Dutch, French and Spanish named the English pictures long after
+  // their own were there.
+  findsOne(
+    check({
+      locales,
+      listings: {
+        "store/listing.en.md": naming("en"),
+        "store/listing.nl.md": naming("en"),
+      },
+    }),
+    /store\/listing\.nl\.md names the pictures of en, the `\.en` files; it shows those of its own language, the `\.nl` files of store\/images\//,
+  );
+  // A name in backticks that is no language of the extension is no picture of one.
+  assert.deepEqual(
+    check({
+      listings: {
+        "store/listing.en.md": `${LISTING}\nThe \`.png\` and \`.it\` files.\n`,
+      },
+    }),
+    [],
+  );
+});
+
 test("each language of the extension has the texts of its pictures, and each of them a language", () => {
   const locales = {
     en: {

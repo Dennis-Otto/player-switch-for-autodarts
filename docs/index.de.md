@@ -12,7 +12,7 @@ hide:
 
 Das Display im Flur, im Verein oder in der Kneipe teilen sich alle, aber jede Person spielt unter ihrem eigenen Autodarts-Konto. Die Erweiterung behält die Anmeldung jedes gespeicherten Kontos auf diesem Computer und wechselt mit einem einzigen Tipp: kein Passwort, keine Anmeldeseite, und das Konto, das Platz macht, ist sofort wieder da, sobald es jemand antippt.
 
-[:material-download: Installieren](https://github.com/Dennis-Otto/player-switch-for-autodarts#quick-start){ .md-button .md-button--primary } [:material-monitor-dashboard: Display einrichten](shared-display.md){ .md-button } [:material-lifebuoy: Hilfe](help.md){ .md-button } [:material-shield-check: Sicherheitsdesign](security.md){ .md-button } [:material-file-document-outline: Datenschutz](privacy.md){ .md-button }
+[:material-google-chrome: Zu Chrome hinzufügen](https://chromewebstore.google.com/detail/player-switch-for-autodar/gbijblgchbbbkjeibpjaodflfgbgefam?hl=de){ .md-button .md-button--primary } [:material-download: Ohne den Store installieren](#install-from-a-release){ .md-button } [:material-monitor-dashboard: Display einrichten](shared-display.md){ .md-button } [:material-lifebuoy: Hilfe](help.md){ .md-button } [:material-shield-check: Sicherheitsdesign](security.md){ .md-button } [:material-file-document-outline: Datenschutz](privacy.md){ .md-button }
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="images/switch.de.dark.gif">
@@ -133,8 +133,8 @@ Autodarts Play speichert die Anmeldung als einen einzigen Wert im Browser, einen
 
 ## Welche Browser {#browsers}
 
-- **Google Chrome 140 oder neuer**, und andere Browser auf Basis von Chromium 140 oder neuer, etwa Brave, Opera und Vivaldi, aus dem Chrome Web Store, sobald der Eintrag online ist, oder [aus einem Release](#install-from-a-release).
-- **Microsoft Edge 140 oder neuer** führt dasselbe Paket aus: unter `edge://extensions` **Erweiterungen aus anderen Stores zulassen** einschalten und sie aus dem Chrome Web Store installieren, oder sie [aus einem Release](#install-from-a-release) laden. Ein Eintrag bei Edge Add-ons folgt.
+- **Google Chrome 140 oder neuer**, und andere Browser auf Basis von Chromium 140 oder neuer, etwa Brave, Opera und Vivaldi, aus [dem Chrome Web Store](https://chromewebstore.google.com/detail/player-switch-for-autodar/gbijblgchbbbkjeibpjaodflfgbgefam?hl=de), der jedes Update von selbst bringt, oder [aus einem Release](#install-from-a-release).
+- **Microsoft Edge 140 oder neuer** führt dasselbe Paket aus: unter `edge://extensions` **Erweiterungen aus anderen Stores zulassen** einschalten und sie aus [dem Chrome Web Store](https://chromewebstore.google.com/detail/player-switch-for-autodar/gbijblgchbbbkjeibpjaodflfgbgefam?hl=de) installieren, oder sie [aus einem Release](#install-from-a-release) laden. Ein Eintrag bei Edge Add-ons folgt.
 - **Firefox 140 oder neuer** führt dasselbe Paket aus, mit jeder Änderung von `web-ext lint` geprüft und in einem echten Firefox getestet. Auf addons.mozilla.org ist es nicht gelistet: Du entpackst [ein Release](#install-from-a-release) und lädst seine `manifest.json` in `about:debugging` als temporäres Add-on, das Firefox beim Schließen wieder entfernt. Die Seite des Add-ons in `about:addons` zeigt, dass das Add-on Authentifizierungsdaten sendet, die nur an den Anmeldedienst von Autodarts gehen. Firefox kann den Speicher der Erweiterung nicht vor ihrem Skript in der Autodarts-Seite verbergen, darum läuft ein Display in einem Verein oder einer Kneipe mit Chrome oder Edge: [das Sicherheitsdesign](security.md#firefox) sagt, warum. Firefox für Android ist nicht getestet.
 
 ## Ohne den Store installieren {#install-from-a-release}
@@ -150,7 +150,7 @@ Jedes Release enthält die Erweiterung fertig zum Laden, genau die Datei, die au
   <img src="images/load-unpacked.de.png" alt="Der obere Teil der Seite chrome://extensions: Der Schalter Entwicklermodus oben rechts ist an, und mit ihm erscheint Entpackte Erweiterung laden, die erste von drei Schaltflächen unter dem Titel Erweiterungen. Beide sind markiert.">
 </picture>
 
-Eine so geladene Kopie aktualisiert sich nicht von selbst. Für eine neue Version ersetzt du den Inhalt des Ordners durch den des neuen Zip-Archivs und wählst auf derselben Seite den Pfeil zum Neuladen von Player Switch. Lass den Ordner, wo er ist: Der Browser bindet die gespeicherten Konten an seinen Pfad, eine Kopie in einem anderen Ordner beginnt ohne sie. Das Zip-Archiv ist genau die Datei, die in den Chrome Web Store geht, und [die Release-Anleitung](releases.md#the-package-of-a-release) sagt, wie du es prüfst.
+Eine so geladene Kopie aktualisiert sich nicht von selbst, darum ist ein Display mit dem Store besser bedient. Für eine neue Version ersetzt du den Inhalt des Ordners durch den des neuen Zip-Archivs und wählst auf derselben Seite den Pfeil zum Neuladen von Player Switch. Lass den Ordner, wo er ist: Der Browser bindet die gespeicherten Konten an seinen Pfad, eine Kopie in einem anderen Ordner beginnt ohne sie. Das Zip-Archiv ist genau die Datei, die in den Chrome Web Store geht, und [die Release-Anleitung](releases.md#the-package-of-a-release) sagt, wie du es prüfst. Um ein Display auf den Store umzustellen, entferne zuerst diese Kopie unter `chrome://extensions`, füge Player Switch dann aus dem Store hinzu und speichere die Spieler neu: Die Kopie aus dem Store hat eine eigene ID und sieht die Konten dieser Kopie nicht, und zwei Kopien zugleich würden beide dieselben Anmeldungen frisch halten.
 
 ## Gut zu wissen
 

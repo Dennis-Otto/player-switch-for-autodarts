@@ -276,7 +276,7 @@ Each browser profile on each computer keeps accounts of its own, and nothing is 
 
 ### Which browsers does it work in?
 
-It is made for Google Chrome 140 or newer, on Windows, macOS, Linux and ChromeOS. Browsers built on Chromium install it from the Chrome Web Store as well, such as Chromium on a Raspberry Pi, Microsoft Edge, Brave, Opera or Vivaldi. Use a normal window of a browser profile: Chrome runs no extension in a guest window, and one in an incognito window only when you allow it.
+It is made for Google Chrome 140 or newer, on Windows, macOS, Linux and ChromeOS, and installs from [the Chrome Web Store](https://chromewebstore.google.com/detail/player-switch-for-autodar/gbijblgchbbbkjeibpjaodflfgbgefam), which brings every update on its own. Browsers built on Chromium install it from there as well, such as Chromium on a Raspberry Pi, Brave, Opera or Vivaldi, and Microsoft Edge once **Allow extensions from other stores** under `edge://extensions` is on. Firefox 140 or newer runs it too, loaded from a release as a temporary add-on, since it isn't listed on addons.mozilla.org: [which browsers](index.md#browsers) says how. Use a normal window of a browser profile: Chrome runs no extension in a guest window, and one in an incognito window only when you allow it.
 
 ### Remove everything
 

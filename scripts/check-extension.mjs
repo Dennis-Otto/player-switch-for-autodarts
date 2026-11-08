@@ -23,8 +23,9 @@
 //   language of the extension;
 // - each language of the extension has the texts of the pictures of its listing,
 //   store/pictures.<code>.json, with the same texts as English, each picture of
-//   store/images/ belongs to a language of the extension, and the release guide lists
-//   the pictures of each language;
+//   store/images/ belongs to a language of the extension, the release guide lists
+//   the pictures of each language, and a listing names only those of its own, such as
+//   the `.nl` files in store/listing.nl.md;
 // - extension/ holds only the kinds of file that the package may hold (decision 0014).
 //
 // Run by scripts/check-project.sh; scripts/check-extension.test.mjs tests it. No dependencies.
@@ -446,6 +447,27 @@ function checkLanguageCount(problems, file, texts, locales) {
 }
 
 /**
+ * The pictures that a listing names, in backticks such as the `.nl` files: those of its
+ * own language alone, since the store shows each listing with the pictures of its
+ * language. A name that is no language of the extension, such as `.png`, is none.
+ */
+function checkListingPictures(problems, locales, listings) {
+  for (const [file, text] of Object.entries(listings)) {
+    const code = LISTING_PATH.exec(file)?.[1];
+    const named = new Set(
+      [...text.matchAll(/`\.([A-Za-z0-9_]+)`/g)].map((match) => match[1]),
+    );
+    for (const other of [...named].filter(
+      (name) => name !== code && Object.hasOwn(locales, name),
+    )) {
+      problems.push(
+        `${file} names the pictures of ${other}, the \`.${other}\` files; it shows those of its own language, the \`.${code}\` files of store/images/.`,
+      );
+    }
+  }
+}
+
+/**
  * The pictures of the listings: each language has their texts and the release guide
  * lists them, and each file of texts and each picture belongs to a language. A new
  * language may come without its pictures: the screenshot bot renders them after the
@@ -576,6 +598,7 @@ export function checkManifest({
   checkDetails(problems, manifest, locales, imageSize);
   checkListings(problems, manifest, listings);
   checkLanguages(problems, locales, listings);
+  checkListingPictures(problems, locales, listings);
   checkPictures(problems, locales, pictures, images, releaseGuide);
   return problems;
 }

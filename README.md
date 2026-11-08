@@ -8,6 +8,8 @@
 
 [![Documentation](https://img.shields.io/badge/docs-website-526CFE.svg?logo=materialformkdocs&logoColor=white)](https://dennis-otto.github.io/player-switch-for-autodarts/)
 [![Latest release](https://img.shields.io/github/v/release/Dennis-Otto/player-switch-for-autodarts?label=release)](https://github.com/Dennis-Otto/player-switch-for-autodarts/releases)
+[![Chrome Web Store](https://img.shields.io/chrome-web-store/v/gbijblgchbbbkjeibpjaodflfgbgefam?label=chrome%20web%20store&logo=googlechrome&logoColor=white)](https://chromewebstore.google.com/detail/player-switch-for-autodar/gbijblgchbbbkjeibpjaodflfgbgefam)
+[![Chrome Web Store users](https://img.shields.io/chrome-web-store/users/gbijblgchbbbkjeibpjaodflfgbgefam?label=users&logo=googlechrome&logoColor=white)](https://chromewebstore.google.com/detail/player-switch-for-autodar/gbijblgchbbbkjeibpjaodflfgbgefam)
 [![CI](https://github.com/Dennis-Otto/player-switch-for-autodarts/actions/workflows/ci.yml/badge.svg)](https://github.com/Dennis-Otto/player-switch-for-autodarts/actions/workflows/ci.yml)
 [![Coverage 100 %](https://img.shields.io/badge/coverage-100%25-brightgreen.svg)](https://github.com/Dennis-Otto/player-switch-for-autodarts/blob/main/CONTRIBUTING.md#tests)
 [![CodeQL](https://github.com/Dennis-Otto/player-switch-for-autodarts/actions/workflows/codeql.yml/badge.svg)](https://github.com/Dennis-Otto/player-switch-for-autodarts/actions/workflows/codeql.yml)
@@ -25,6 +27,8 @@
   <source media="(prefers-color-scheme: dark)" srcset="docs/images/switch.dark.gif">
   <img src="docs/images/switch.gif" alt="The popup of Player Switch: Mia Keller is playing; a tap on Jonas Berg shows “Switching to Jonas Berg…”, and then Jonas Berg is playing." width="396">
 </picture>
+
+**[Add to Chrome](https://chromewebstore.google.com/detail/player-switch-for-autodar/gbijblgchbbbkjeibpjaodflfgbgefam)**, free from the Chrome Web Store, and it updates by itself. Edge, Brave, Opera and Vivaldi install it from there too; [Firefox and the other ways](#install).
 
 </div>
 
@@ -77,9 +81,9 @@ Over days and weeks, a saved account moves between these states:
 
 ### Install
 
-**From the Chrome Web Store** — once the listing is live, install it in one click from its store page; updates then arrive on their own. The link goes here when it is. It needs Google Chrome 140 or newer, or a browser built on Chromium 140 or newer: Brave, Opera and Vivaldi install from the Chrome Web Store as well, some after they ask you to allow extensions from other stores.
+**From the Chrome Web Store, recommended** — open [Player Switch in the Chrome Web Store](https://chromewebstore.google.com/detail/player-switch-for-autodar/gbijblgchbbbkjeibpjaodflfgbgefam) and choose **Add to Chrome**. Every update then arrives on its own, also on a display that runs for weeks. It needs Google Chrome 140 or newer, or a browser built on Chromium 140 or newer: Brave, Opera and Vivaldi install it from the same page, some after they ask you to allow extensions from other stores.
 
-**In Microsoft Edge 140 or newer** — Edge runs the same package. Turn on **Allow extensions from other stores** under `edge://extensions` and install it from the Chrome Web Store, or load it unpacked as below. A listing in Edge Add-ons follows.
+**In Microsoft Edge 140 or newer** — Edge runs the same package. Turn on **Allow extensions from other stores** under `edge://extensions`, then install it from [the same page of the Chrome Web Store](https://chromewebstore.google.com/detail/player-switch-for-autodar/gbijblgchbbbkjeibpjaodflfgbgefam), or load it unpacked as below. A listing in Edge Add-ons follows.
 
 **In Firefox 140 or newer** — Firefox runs the same package too: every change is linted with `web-ext lint`, Mozilla's tool for add-ons, and tested in a real Firefox, where the tests install it and switch players. It isn't listed on addons.mozilla.org, so download and unzip the zip of a release as below, open `about:debugging#/runtime/this-firefox`, choose **Load Temporary Add-on…** and pick the `manifest.json` in that folder; Firefox removes it again when it closes. The add-on's page in `about:addons` lists that the add-on sends authentication information: the sessions and remembered passwords go to the sign-in service of Autodarts, and nowhere else. Firefox can't keep the extension's storage from its script in the Autodarts page, so set up a display in a club or a pub with Chrome or Edge; the [security design](docs/security.md#firefox) explains why. Firefox for Android is not tested.
 
@@ -94,7 +98,7 @@ Over days and weeks, a saved account moves between these states:
   <img src="docs/images/load-unpacked.png" alt="The top of the page chrome://extensions: the switch Developer mode at the top right is on, and Load unpacked, the first of three buttons below the title Extensions, appears with it. Both are marked.">
 </picture>
 
-A copy loaded this way gets no update by itself. For a new version, replace the contents of the folder with those of the new zip and choose the reload arrow of Player Switch on that page. Leave the folder where it is: the browser ties the saved accounts to its path, so a copy in another folder starts without them. The zip is the very file that goes to the Chrome Web Store, and [the release guide](docs/releases.md#the-package-of-a-release) says how to check that a release built it.
+A copy loaded this way gets no update by itself, so a display does better with the store. For a new version, replace the contents of the folder with those of the new zip and choose the reload arrow of Player Switch on that page. Leave the folder where it is: the browser ties the saved accounts to its path, so a copy in another folder starts without them. The zip is the very file that goes to the Chrome Web Store, and [the release guide](docs/releases.md#the-package-of-a-release) says how to check that a release built it. To move a display to the store, first remove this copy under `chrome://extensions`, then add Player Switch from the store and save the players again: the store copy has an id of its own and doesn't see the accounts of this one, and two copies at once would both keep the same sign-ins fresh.
 
 **From the source,** to change something:
 
