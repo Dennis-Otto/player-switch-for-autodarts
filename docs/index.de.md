@@ -180,5 +180,6 @@ Eine so geladene Kopie aktualisiert sich nicht von selbst, darum ist ein Display
 - Die gespeicherten Konten tragen die Version ihres Formats. Wer zu einer älteren Version der Erweiterung zurückgeht, verliert die Konten nicht, die eine neuere gespeichert hat: Die ältere lässt sie unverändert, behält eine Kopie, und das Popup bittet um ein Update.
 - Sie spricht Deutsch, Englisch, Niederländisch, Französisch und Spanisch, in der Sprache, in der Chrome läuft, und Englisch in jeder anderen. Die Hilfe und diese Website gibt es auf Deutsch und Englisch; **Hilfe** auf Niederländisch, Französisch oder Spanisch führt zur englischen Hilfe. [Eine Sprache hinzufügen](development.md#add-a-language) (auf Englisch) sagt, wie eine weitere dazukommt.
 - Sie fragt nur nach dem Zugriff auf die Autodarts-Seiten, auf ihren eigenen Speicher, auf einen Timer für die Erneuerung und auf das Recht, nach einem Update oder in einem Tab, in dem es nicht mehr antwortet, ihr eigenes Skript in den Autodarts-Tabs auszuführen. Adresse und Titel deiner anderen Tabs und deinen Browserverlauf kann sie nicht lesen.
+- Was in den nächsten zwölf Monaten kommt und was nicht, steht in der [Roadmap](roadmap.md).
 
 Nicht mit Autodarts verbunden.

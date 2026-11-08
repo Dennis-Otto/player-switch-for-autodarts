@@ -28,6 +28,18 @@ From a checkout, `bash scripts/package-extension.sh` builds the extension and wr
 
 The step *Extension* of `scripts/check.sh` runs `node scripts/check-manifest.mjs` of the blueprint, which fails on what the store would refuse or hold up, and builds this zip; `node scripts/check-extension.mjs` then holds the manifest to [what this project allows](development.md#what-the-extension-may-do). The CI loads `extension/` into Chrome for Testing, `node scripts/load-extension.mjs "$(bash scripts/chrome-for-testing.sh)"`, and fails when its service worker doesn't start.
 
+### Rebuild a release {#rebuild-a-release}
+
+The provenance says which workflow built a zip. A rebuild shows more: that the source of the tag makes exactly that zip, without trusting the build of the release. With Docker, in any folder:
+
+```sh
+gh release download vX.Y.Z --repo Dennis-Otto/player-switch-for-autodarts --pattern '*.zip'
+sha256sum player-switch-for-autodarts-X.Y.Z.zip
+docker run --rm node:24 bash -c 'git clone --quiet --depth 1 --branch vX.Y.Z -c advice.detachedHead=false https://github.com/Dennis-Otto/player-switch-for-autodarts /src && cd /src && npm ci --ignore-scripts --silent && sha256sum "$(bash scripts/package-extension.sh /tmp X.Y.Z)"'
+```
+
+Both lines show the same sha256, as they do for v1.3.0 and v1.4.0. The container clones the tag afresh, so no file beside those of Git goes in, builds with Node 24, which `.nvmrc` names, and the TypeScript of `package-lock.json`, and passes the version as the release does. Its Python compresses with the zlib of Debian, which makes the same bytes as the zlib of Ubuntu on the runner of the release. The Python of python.org for Windows compresses with zlib-ng since 3.14, which makes other bytes around the same files: on Windows, run the container, from Git Bash too, or compare what the two zips hold.
+
 ## The first listing
 
 The first listing is done by hand, once:

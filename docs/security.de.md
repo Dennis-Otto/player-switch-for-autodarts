@@ -225,6 +225,34 @@ kann.
   10.000 PINs mit 4 Ziffern in kurzer Zeit gegen einen Hash probieren. Längere PINs
   dauern länger, nicht ewig.
 
+## Die Verfahren {#algorithms}
+
+Die Erweiterung implementiert keine Kryptografie selbst. Sie ruft WebCrypto auf, die
+Kryptografie des Browsers, für zwei Aufgaben:
+
+| Aufgabe | Verfahren | Wo |
+| --- | --- | --- |
+| Jede Sitzung und jedes Passwort versiegeln | AES-GCM, ein Schlüssel von 256 Bit, der sich nicht exportieren lässt, eine zufällige Nonce von 12 Bytes für jede Versiegelung | `src/vault.ts` |
+| Eine PIN als Hash behalten | PBKDF2 mit SHA-256, 600.000 Runden, ein zufälliges Salt von 16 Bytes für jede PIN | `src/venue.ts` |
+
+Die Menschen am Display wählen kein Verfahren: Ein Display, das niemand einrichtet,
+behielte ein schwaches für immer. Wird eines schwächer, ersetzt es ein Release, und
+die gespeicherten Daten sind darauf vorbereitet:
+
+- **Die gespeicherten Konten tragen die Version ihres Formats,** 2, seit die
+  Sitzungen versiegelt sind. Ein Release, das mit einem anderen Verfahren versiegelt,
+  ist eine neue Version, mit einer Migration in `src/storage.ts`, die jedes Geheimnis
+  beim ersten Lesen nach dem Update mit dem alten Verfahren öffnet und mit dem neuen
+  versiegelt, so wie Version 2 den Klartext von Version 1 versiegelt hat. Der
+  Schlüsselspeicher kann einen zweiten Schlüssel neben dem ersten behalten, unter
+  einem eigenen Namen, bis jedes Geheimnis neu versiegelt ist
+  ([Entscheidung 0006](decisions/0006-seal-the-secrets-with-a-key-that-never-leaves-the-browser.md), auf Englisch).
+  Eine Version, die das neue Format nicht kennt, speichert nie darüber, wie
+  [oben](#versiegelte-tokens-und-passwörter).
+- **Jeder PIN-Hash trägt seine Runden.** Ein Release kann sie für jede danach
+  gesetzte PIN erhöhen, während eine vorher gesetzte PIN weiter mit den Runden ihres
+  eigenen Hashes geprüft wird.
+
 ## Bedrohungen und Gegenmaßnahmen
 
 | Bedrohung | Gegenmaßnahme |

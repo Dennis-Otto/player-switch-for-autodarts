@@ -180,5 +180,6 @@ A copy loaded this way gets no update by itself, so a display does better with t
 - The saved accounts carry the version of their format. Going back to an older version of the extension never wipes accounts that a newer one saved: the older one leaves them untouched, keeps a copy, and the popup asks you to update.
 - It speaks English, German, Dutch, French and Spanish, in the language that Chrome runs in, and English in any other. The help and this website are in English and German; **Help** in Dutch, French or Spanish leads to the English help. [Add a language](development.md#add-a-language) says how another one comes in.
 - It asks only for access to the Autodarts sites, its own storage, a timer for the renewal and the right to run its own script in the Autodarts tabs after an update, or in a tab where it stopped answering. It can't read the address or title of your other tabs, or your browsing history.
+- What comes in the next twelve months, and what won't, is in the [roadmap](roadmap.md).
 
 Not affiliated with Autodarts.
