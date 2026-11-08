@@ -338,3 +338,105 @@ h1 {
   font-size: 20px;
   font-weight: 700;
 }
+
+/* layout=toolbar: the popup as it opens from its icon, for the card of the website,
+   whose pictures are dark: the toolbar has the colors of .github/social-preview.html
+   at the size of a real one, which there is 1.4 times larger with the popup. The
+   bottom of the window of capture.py cuts the popup off below its third tile, as the
+   social preview does, where the rest would no longer read on a card. */
+.toolbar {
+  position: relative;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+  background:
+    radial-gradient(80% 70% at 70% 65%, var(--accent-soft) 0%, transparent 70%),
+    var(--stage);
+}
+
+/* The toolbar fades in from the left, as the rest of the browser goes on there. */
+.bar {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  left: 0;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  padding: 0 7px 0 16px;
+  border: 1px solid rgb(255 255 255 / 0.08);
+  border-radius: 12px;
+  background: #1a1f30;
+  mask-image: linear-gradient(to right, transparent 0, #000 64px);
+}
+
+.bar .address {
+  flex: 1;
+  height: 32px;
+  margin-right: 9px;
+  display: flex;
+  align-items: center;
+  padding-left: 46px;
+  border-radius: 16px;
+  background: #0e1220;
+  color: #aeb6c8;
+  font-size: 14.5px;
+  font-weight: 500;
+}
+
+.bar .button {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+}
+
+.bar svg {
+  width: 19px;
+  height: 19px;
+  fill: none;
+  stroke: #aeb6c8;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.bar .pressed {
+  background: rgb(142 162 255 / 0.22);
+  box-shadow: inset 0 0 0 1.2px rgb(142 162 255 / 0.6);
+}
+
+.bar .pressed img {
+  display: block;
+  width: 20px;
+  height: 20px;
+  border-radius: 4.5px;
+}
+
+/* The popup hangs from the icon, and the notch points at it. Its right edge keeps
+   its place, so the notch stays below the icon however wide the popup becomes: the
+   center of the pressed icon is 106 pixels from the right of the window: 12 to the
+   toolbar, 1 of its border, 7 of its padding, two buttons of 32 and two gaps of 3,
+   and half of its own 32. That is 92 from the right of the popup, and the notch is
+   13 wide. */
+.hanging {
+  position: absolute;
+  top: 68px;
+  right: 14px;
+}
+
+.notch {
+  position: absolute;
+  top: -6.5px;
+  right: 85.5px;
+  width: 13px;
+  height: 13px;
+  transform: rotate(45deg);
+  border-radius: 2px 0 0 0;
+  /* The background of the popup in its dark theme, --bg of extension/popup.css. */
+  background: #14161d;
+  box-shadow: -1px -1px 0 var(--edge);
+}

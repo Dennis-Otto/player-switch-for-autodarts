@@ -67,12 +67,15 @@ class Shot:
     fit: bool = False
 
 
-def variants(name: str, suffix: str) -> list[tuple[str, str, bool]]:
+def variants(
+    name: str, suffix: str, schemes: tuple[bool, ...] = (False, True)
+) -> list[tuple[str, str, bool]]:
     """The language, the path and the scheme of each picture of the documentation:
-    NAME.png, NAME.dark.png, NAME.de.png and NAME.de.dark.png, as the diagrams."""
+    NAME.png, NAME.dark.png, NAME.de.png and NAME.de.dark.png, as the diagrams, or only
+    the dark ones for SCHEMES (True,)."""
     found = []
     for lang in DOCUMENTATION_LANGUAGES:
-        for dark in (False, True):
+        for dark in schemes:
             parts = (
                 [name] + ([lang] if lang != "en" else []) + (["dark"] if dark else [])
             )
@@ -132,6 +135,12 @@ def shots() -> list[Shot]:
         )
     for lang, path, dark in variants("switcher", "png"):
         found.append(Shot(path, f"layout=board&lang={lang}", 960, 600, 1.5, dark))
+    # The popup as it opens from its icon in the toolbar, for the card of the website
+    # in each language after the first, which dennis-otto.github.io draws from it: dark,
+    # as the cards are, and no wider than the popup and the address above it, so that
+    # the card shows the popup as large as the height of its picture lets it be.
+    for lang, path, dark in variants("popup", "png", schemes=(True,)):
+        found.append(Shot(path, f"layout=toolbar&lang={lang}", 440, 468, 2, dark))
     for lang in store_languages():
         for slide in (1, 2, 3):
             # 1280x800, the size that the Chrome Web Store asks for.
