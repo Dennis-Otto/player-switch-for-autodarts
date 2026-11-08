@@ -1,0 +1,38 @@
+---
+config:
+  flowchart:
+    wrappingWidth: 400
+---
+flowchart TB
+    accTitle: How the tests in Firefox work
+    accDescr: npm run e2e:firefox, and the job firefox of the workflow E2E, builds extension/lib from src/ and starts the Firefox of the computer with a new profile for each test, through Puppeteer and WebDriver BiDi. BiDi installs the real extension from extension/ as a temporary add-on, as about:debugging does, under a fixed address of its pages. The test taps through the real popup and the Autodarts tab, and switches in the switcher of the page with the keyboard; the background and content.js do the rest. Firefox sends every request through the proxy of the test, which tunnels play.autodarts.com and api.autodarts.com to the fake Autodarts of the Chromium tests and refuses every other host. After each test, a token sent twice, a request that the fake has no answer for, or one to another host than Autodarts and Firefox's own services fails it.
+
+    start["npm run e2e:firefox, or the job firefox<br>of the workflow E2E"]
+    build["npm run build<br>extension/lib from src/"]
+    start --> build
+
+    subgraph browser ["Firefox, a new profile for each test"]
+        direction TB
+        install["WebDriver BiDi installs extension/<br>as a temporary add-on"]
+        test["The test taps like a player<br>test/firefox/*.spec.ts"]
+        pages["The real popup, the switcher in the page<br>and the Autodarts tab with content.js"]
+        background["The background as an event page,<br>lib/background.js from background.scripts"]
+        install --> test --> pages
+        pages <--> background
+    end
+    build --> install
+
+    proxy["The proxy of the test<br>tunnels play.autodarts.com and api.autodarts.com<br>to 127.0.0.1, refuses every other host"]
+    pages --> proxy
+    background --> proxy
+
+    fake["The fake Autodarts of test/e2e/fake/<br>the page and the sign-in service<br>of the Chromium tests"]
+    proxy --> fake
+
+    verdict["After each test: no token sent twice,<br>no request without an answer,<br>none to another host"]
+    fake --> verdict
+
+    classDef bot fill:#526cfe2e,stroke:#526cfe,stroke-width:2px
+    classDef done fill:#16a34a2e,stroke:#16a34a,stroke-width:2px
+    class start bot
+    class verdict done

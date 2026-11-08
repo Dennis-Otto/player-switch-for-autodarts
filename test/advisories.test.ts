@@ -7,10 +7,13 @@ import { after, before, describe, test } from "node:test";
 import { fileURLToPath } from "node:url";
 
 // The advisories of the tools that only the checks run. Two of them reach
-// scripts/check-firefox.mjs through addons-linter, which pins its dependencies exactly:
+// scripts/check-firefox.mjs through web-ext and its addons-linter, which pin their
+// dependencies exactly:
 //
-// - minimatch: package.json moves it to a fixed version with an override, so these tests
-//   show that the override holds and that the rules of addons-linter still run with it.
+// - minimatch: package.json moves the one of addons-linter to a fixed version with an
+//   override, so these tests show that the override holds and that the rules of
+//   addons-linter still run with it. The minimatch 3 of web-ext's multimatch is older
+//   than the versions that the advisory names.
 // - deepmerge: no fixed version exists, so osv-scanner.toml accepts the advisory. These
 //   tests keep its reason true, and fail on the update that ends it.
 const require = createRequire(import.meta.url);
@@ -29,15 +32,35 @@ const locked: Record<string, Locked> = JSON.parse(
 
 const DEEPMERGE_ADVISORY = "GHSA-gcqx-w48m-w2h4";
 
-test("no version of minimatch below the fix of its advisory is installed", () => {
+/**
+ * Whether a version of minimatch has GHSA-g3hv-75wg-m249, which names the versions
+ * from 7.0.0 up to 11.0.1, the fix.
+ */
+function vulnerableMinimatch(version: string): boolean {
+  const [major = 0, minor = 0, patch = 0] = version.split(".").map(Number);
+  const fixed = major > 11 || (major === 11 && (minor > 0 || patch >= 1));
+  return major >= 7 && !fixed;
+}
+
+test("the advisory of minimatch names the versions from 7.0.0 up to its fix", () => {
+  assert.ok(!vulnerableMinimatch("3.1.5"));
+  assert.ok(!vulnerableMinimatch("6.2.0"));
+  assert.ok(vulnerableMinimatch("7.0.0"));
+  assert.ok(vulnerableMinimatch("10.0.3"));
+  assert.ok(vulnerableMinimatch("11.0.0"));
+  assert.ok(!vulnerableMinimatch("11.0.1"));
+  assert.ok(!vulnerableMinimatch("11.1.0"));
+  assert.ok(!vulnerableMinimatch("12.0.0"));
+});
+
+test("no version of minimatch that the advisory names is installed", () => {
   const versions = Object.entries(locked)
     .filter(([path]) => path.endsWith("node_modules/minimatch"))
     .map(([, entry]) => entry.version);
   assert.notEqual(versions.length, 0);
   for (const version of versions) {
-    const [major = 0, minor = 0, patch = 0] = version.split(".").map(Number);
     assert.ok(
-      major > 11 || (major === 11 && (minor > 0 || patch >= 1)),
+      !vulnerableMinimatch(version),
       `minimatch ${version} has GHSA-g3hv-75wg-m249, which 11.0.1 fixes: see overrides in package.json.`,
     );
   }

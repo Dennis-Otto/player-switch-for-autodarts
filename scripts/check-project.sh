@@ -22,9 +22,10 @@ node scripts/check-pages.mjs
 node --test --test-reporter=dot scripts/check-extension.test.mjs
 node scripts/check-extension.mjs
 
-# Firefox and Edge run the same extension as Chrome. addons-linter, the linter of
-# addons.mozilla.org that `web-ext lint` runs, finds no error in it and only the
-# warnings that scripts/check-firefox.mjs accepts with their reason (decision 0012).
+# Firefox and Edge run the same extension as Chrome. `web-ext lint`, Mozilla's tool for
+# add-ons, which runs addons-linter, the linter of addons.mozilla.org, finds no error in
+# it and only the warnings that scripts/check-firefox.mjs accepts with their reason
+# (decisions 0012 and 0015).
 # The checker tests itself first, with made-up results of the linter.
 node --test --test-reporter=dot scripts/check-firefox.test.mjs
 node scripts/check-firefox.mjs
