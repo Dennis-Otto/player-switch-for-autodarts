@@ -86,6 +86,32 @@ Wer den Spieler entfernt, der gerade spielt, oder **Alle Konten vergessen** wäh
 
 **Weiterspielen** ändert auch hier nichts; **Trotzdem abmelden** macht weiter, und das Match endet auf diesem Display.
 
+### Der Lobby beitreten {#join-lobby}
+
+Solange der Autodarts-Tab eine Lobby zeigt, bietet die Kachel jedes geparkten Spielers **Der Lobby beitreten** an, im Popup und in den Spielern auf der Seite. Ein Tipp setzt diesen Spieler in die Lobby, und die Kachel zeigt danach:
+
+> In der Lobby
+
+[Zwei Spieler, jeder mit eigener Statistik](#two-players) erklärt, wie es funktioniert. Kann die Erweiterung den Spieler nicht in die Lobby setzen, sagt das Popup stattdessen eines davon:
+
+> Autodarts zeigt keine Lobby mehr. Die Lobby auf Autodarts öffnen, dann nochmal versuchen.
+
+**Was es bedeutet:** Der Autodarts-Tab hat die Lobby vor dem Tipp verlassen, etwa für das Match, das inzwischen begonnen hat, oder für eine andere Seite. Die Erweiterung setzt einen Spieler nur in die Lobby, die der Tab in diesem Moment zeigt.
+
+**Was du tust:** Öffne die Lobby auf Autodarts wieder und tippe auf **Der Lobby beitreten**. Ein Match, das schon begonnen hat, nimmt keinen neuen Spieler auf: Tritt dem nächsten bei.
+
+> Autodarts hat Bob keinen Platz gegeben: Die Lobby ist vielleicht voll, geschlossen oder schon gestartet.
+
+**Was es bedeutet:** Autodarts hat den Platz abgelehnt: Die Lobby hat so viele Spieler, wie sie aufnimmt, ihr Gastgeber hat sie geschlossen, oder ihr Match hat begonnen. Sonst hat sich nichts geändert, und Bobs Sitzung bleibt geparkt und bereit.
+
+**Was du tust:** Sieh dir die Lobby auf der Autodarts-Seite an. Mach in einer vollen Lobby Platz oder öffne eine neue, und tippe dann noch einmal auf **Der Lobby beitreten**.
+
+> Bob spielt schon auf der Seite: dort auf Autodarts der Lobby beitreten.
+
+**Was es bedeutet:** Bob ist gerade der Spieler auf der Seite. Seine Sitzung dort gehört der Seite, und die Erweiterung benutzt sie nie hinter deren Rücken, darum setzt sie nur geparkte Spieler in die Lobby; die Kachel des Spielers auf der Seite bietet keinen Beitritt an.
+
+**Was du tust:** Bob tritt der Lobby auf der Autodarts-Seite selbst bei, falls er noch nicht darin ist, etwa wenn die Lobby nach einem Wechsel auf dem Bildschirm geblieben ist.
+
 ### Player Switch wurde aktualisiert {#updated}
 
 > Player Switch wurde aktualisiert. Die Seite neu laden, um es zu nutzen? Ein laufendes Match endet auf diesem Bildschirm.
@@ -269,6 +295,22 @@ Autodarts zeigt ein Board nur dem Konto, dem es gehört, und den Konten, mit den
 **Was tun:** Der Besitzer des Boards meldet sich bei Autodarts an und teilt das Board mit diesem Spieler, über dessen genauen Autodarts-Benutzernamen, denn Autodarts schlägt keine Namen vor. In der englischen Ansicht von Autodarts heißt die Seite dafür **My Boards**. Wechsle danach noch einmal zu dem Spieler, oder lade die Autodarts-Seite neu, und das Board ist da. Ein Besitzer kann ein Board mit bis zu 10 weiteren Konten teilen, die es wie ihr eigenes nutzen, es aber nicht umbenennen, löschen oder neue Zugangsdaten dafür erzeugen können, so steht es in der Ankündigung [Board sharing](https://web.archive.org/web/20250430030721/https://autodarts.io/updates/board-sharing) von Autodarts vom 4. März 2025. Teile das Board einmal mit jedem gespeicherten Konto, am besten, während du die Spieler speicherst: Die Willkommensseite der Installation bittet darum als letzten Schritt.
 
 **Im Verein oder in der Kneipe** gehört das Board am besten einem Autodarts-Konto des Lokals, nicht dem Konto eines Mitglieds: Dann bleibt das Board, wenn ein Mitglied geht, und dieses Hauskonto teilt es mit den Stammspielern. Der [Modus für Verein und Kneipe](shared-display.md#venue-mode) bringt das Display nach einer Pause zu ihm zurück. Hat das Lokal mehr Stammspieler als die 10 Konten, die Autodarts erlaubt? Die anderen spielen unter dem Hauskonto.
+
+### Zwei Spieler, jeder mit eigener Statistik {#two-players}
+
+Autodarts zählt ein Match für jedes Konto, das in seiner Lobby sitzt, während die Seite nur unter einem Konto spielt. Ohne Player Switch tritt der zweite Spieler über sein eigenes Handy bei oder spielt als Gast, dessen Statistik für niemanden zählt. Mit Player Switch:
+
+1. Der Spieler auf der Seite öffnet bei Autodarts eine Lobby, am Board des Displays.
+2. Die Kachel jedes geparkten Spielers, der mitspielt, zeigt im Popup oder in den Spielern auf der Seite **Der Lobby beitreten**: Ein Tipp darauf setzt diesen Spieler in die Lobby. Im [Modus für Verein und Kneipe](shared-display.md#venue-mode) tippt ein Spieler mit PIN sie vorher ein.
+3. Seine Kachel zeigt **In der Lobby**. Nichts wechselt und nichts lädt neu: Die Seite bleibt beim Spieler, der dort spielt.
+4. Starte das Match wie gewohnt auf der Seite. Es zählt für das eigene Konto jedes Spielers.
+
+Die Erweiterung setzt den Spieler mit der Sitzung, die sie für ihn geparkt hält, an das Board des Displays, und diese Sitzung gelangt nie in die Seite. Eine Kachel, die **Neu anmelden** zeigt, bietet keinen Beitritt an, bis sich dieses Konto neu angemeldet hat. Die Kachel zeigt **In der Lobby**, bis der Browser schließt oder der Tab eine andere Lobby zeigt, auch wenn jemand den Spieler bei Autodarts aus der Lobby nimmt: Die Erweiterung beobachtet die Lobby nicht.
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="images/diagrams/join-a-lobby.de.dark.svg">
+  <img src="images/diagrams/join-a-lobby.de.svg" alt="Mit einem geparkten Spieler der Lobby beitreten: Ada spielt auf der Seite und öffnet bei Autodarts eine Lobby am Board des Displays. Auf dieser Seite bietet die Kachel jedes geparkten Spielers im Popup und im Wechsler Der Lobby beitreten an. Ein Tipp bei Bob erneuert seine geparkte Sitzung und speichert zuerst den neuen Token. Ist seine Sitzung abgelaufen oder Autodarts nicht erreichbar, sagt seine Kachel, warum, und sonst ändert sich nichts. Andernfalls setzt die Erweiterung Bob mit seinem eigenen Zugangstoken, der nie in die Seite gelangt, an das Board des Displays. Lehnt Autodarts den Platz ab, weil die Lobby voll, geschlossen oder gestartet ist, sagt das Popup das. Andernfalls zeigt seine Kachel In der Lobby, die Seite bleibt ohne Wechsel und ohne Neuladen bei Ada, und das Match zählt für beide Konten.">
+</picture>
 
 ### Wer kann unter meinem Konto spielen?
 

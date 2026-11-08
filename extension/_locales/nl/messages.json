@@ -158,6 +158,55 @@
       }
     }
   },
+  "joinLobby": {
+    "message": "Deelnemen aan de lobby"
+  },
+  "joinLobbyAs": {
+    "message": "Deelnemen aan de lobby als $NAME$",
+    "placeholders": {
+      "name": {
+        "content": "$1"
+      }
+    }
+  },
+  "joining": {
+    "message": "$NAME$ gaat naar de lobby…",
+    "placeholders": {
+      "name": {
+        "content": "$1"
+      }
+    }
+  },
+  "joinedLobby": {
+    "message": "$NAME$ zit nu in de lobby, en de wedstrijd telt voor het eigen account.",
+    "placeholders": {
+      "name": {
+        "content": "$1"
+      }
+    }
+  },
+  "inLobby": {
+    "message": "In de lobby"
+  },
+  "joinNoLobby": {
+    "message": "Autodarts toont geen lobby meer. Open de lobby op Autodarts en probeer het opnieuw."
+  },
+  "joinPlaying": {
+    "message": "$NAME$ speelt al op de pagina: neem daar, op Autodarts, deel aan de lobby.",
+    "placeholders": {
+      "name": {
+        "content": "$1"
+      }
+    }
+  },
+  "joinRefused": {
+    "message": "Autodarts liet $NAME$ niet toe: de lobby is misschien vol, gesloten of al begonnen.",
+    "placeholders": {
+      "name": {
+        "content": "$1"
+      }
+    }
+  },
   "unreachable": {
     "message": "Autodarts is nu niet bereikbaar. Probeer het zo opnieuw."
   },

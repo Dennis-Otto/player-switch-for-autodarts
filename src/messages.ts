@@ -137,6 +137,11 @@ export interface PlayersView extends View {
   venue: { manager: boolean };
   /** Whether to suggest an update of the extension. */
   updateHint: boolean;
+  /**
+   * The lobby that the Autodarts tab of the request shows, with the accounts that the
+   * extension seated there, or null on any other page: the tiles then offer no join.
+   */
+  lobby: { readonly seated: readonly string[] } | null;
 }
 
 /** Which PIN the worker waits for: the one of the account, or the manager PIN. */

@@ -118,6 +118,18 @@ def shots() -> list[Shot]:
                 fit=True,
             )
         )
+    for lang, path, dark in variants("lobby", "png"):
+        found.append(
+            Shot(
+                path,
+                f"layout=frame&view=lobby&lang={lang}",
+                480,
+                900,
+                2,
+                dark,
+                fit=True,
+            )
+        )
     for lang, path, dark in variants("switcher", "png"):
         found.append(Shot(path, f"layout=board&lang={lang}", 960, 600, 1.5, dark))
     for lang in store_languages():

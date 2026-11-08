@@ -38,6 +38,10 @@ es aber könnte und die Tokens und Passwörter dort nur verschlüsselt fände
   nach einer Pause an ist, auch die Zeit des letzten Tippens, Klicks oder Tastendrucks
   auf der Autodarts-Seite: nie wo oder was es war. Der Browser vergisst diese Zeit,
   und die Zahl der falschen PINs, wenn er schließt.
+- **Wer von diesem Display aus welcher Lobby beigetreten ist,** solange der Browser
+  läuft: die IDs der letzten Lobbys und der gespeicherten Konten, die die Erweiterung
+  in jede gesetzt hat, damit ihre Kacheln „In der Lobby“ zeigen. Kein Token und kein
+  Name; der Browser vergisst es, wenn er schließt.
 - **Die Zeit der letzten Erneuerung**, und ob Autodarts dabei alle Konten abgewiesen
   hat, damit die Erweiterung nachholen kann, was sie verpasst hat, während der
   Computer aus war, und dir sagen kann, wann sie vielleicht ein Update braucht.

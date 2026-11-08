@@ -20,6 +20,7 @@ import {
   test as base,
   chromium,
   expect,
+  type Frame,
   type Locator,
   type Page,
   type Worker,
@@ -277,6 +278,37 @@ export class Display {
       await popup.expectAccounts(accounts.slice(0, index + 1), account);
     }
     return popup;
+  }
+
+  /**
+   * Opens the switcher over an Autodarts page with a tap on the button in its bottom
+   * right corner, and answers with its frame once it shows the players. The button
+   * sits in a closed shadow root that no selector reaches, so the tap lands where it
+   * shows, as a finger does.
+   */
+  async openSwitcher(page: Page): Promise<Frame> {
+    const viewport = page.viewportSize() ?? { width: 0, height: 0 };
+    const corner = {
+      x: viewport.width - 16 - 28,
+      y: viewport.height - 16 - 28,
+    };
+    await expect
+      .poll(() =>
+        page.evaluate(
+          ({ x, y }) => document.elementFromPoint(x, y)?.localName,
+          corner,
+        ),
+      )
+      .toBe("player-switch-ui");
+    await page.mouse.click(corner.x, corner.y);
+    const isSwitcher = (frame: Frame) => frame.url().endsWith("/switcher.html");
+    await expect.poll(() => page.frames().some(isSwitcher)).toBe(true);
+    const switcher = page.frames().find(isSwitcher);
+    if (switcher === undefined) {
+      throw new Error("The switcher closed again");
+    }
+    await expect(switcher.locator("#profiles .tile").first()).toBeVisible();
+    return switcher;
   }
 
   /** What the extension keeps in chrome.storage.local, as the service worker reads it. */

@@ -44,6 +44,7 @@ const VIEW: PlayersView = {
   adding: false,
   venue: { manager: false },
   updateHint: false,
+  lobby: null,
 };
 
 test("the status line names each problem, and says nothing once a request went through", () => {
@@ -105,6 +106,41 @@ test("the status line names each problem, and says nothing once a request went t
 test("problemOf falls back to the hint of the account, and to a plain error without one", () => {
   assert.equal(problemOf("signin", "hint", t), "hint");
   assert.equal(problemOf("match", null, t), "error");
+});
+
+test("a join says who joined the lobby, or why the player took no seat", () => {
+  const view = { ...VIEW, lobby: { seated: ["a"] } };
+  const about = { action: "join", name: "Ada" };
+  assert.deepEqual(
+    statusAfter({ ok: true, joined: "Ada", view }, null, t, about),
+    { text: "joinedLobby: Ada", error: false },
+  );
+  // An account that is gone meanwhile: the tiles show it gone, and nothing more.
+  assert.deepEqual(statusAfter({ ok: true, view }, null, t, about), {
+    text: "",
+    error: false,
+  });
+  for (const [reason, text] of [
+    ["noLobby", "joinNoLobby"],
+    ["playing", "joinPlaying: Ada"],
+    ["refused", "joinRefused: Ada"],
+  ] as const) {
+    assert.deepEqual(
+      statusAfter({ ok: false, reason, view }, "switchSignIn: Ada", t, about),
+      { text, error: true },
+      reason,
+    );
+  }
+  // A dead session has to sign in again, as after a tap on the tile.
+  assert.deepEqual(
+    statusAfter(
+      { ok: false, reason: "signin", page: true, view },
+      "switchSignIn: Ada",
+      t,
+      about,
+    ),
+    { text: "switchSignIn: Ada", error: true },
+  );
 });
 
 test("an answer asks for a yes to end the match, or for a PIN, and nothing else", () => {
@@ -191,6 +227,7 @@ test("a tile shows the key of the first nine, the chip of the player and the hea
   assert.deepEqual(tileOf(ada, 0, options), {
     key: "1",
     chip: null,
+    join: false,
     renewed: null,
     failing: null,
     toggle: "rememberPassword",
@@ -222,6 +259,36 @@ test("a tile shows the key of the first nine, the chip of the player and the hea
   );
   assert.match(parked.renewed ?? "", /^renewed: .*2 hours ago$/);
   assert.match(parked.failing ?? "", /^renewalFailing: .+/);
+});
+
+test("on a page with a lobby, a parked player's tile offers the join, and says once it is seated", () => {
+  const options = { numbered: false, now: NOW, language: "en", t };
+  const lobby = { seated: ["b"] };
+  const bob = { ...ada, id: "b", name: "Bob" };
+
+  // A parked player who takes no seat yet joins with a tap.
+  assert.deepEqual(
+    [tileOf(ada, 0, { ...options, lobby }).join, tileOf(ada, 0, options).join],
+    [true, false],
+  );
+  assert.deepEqual(tileOf(ada, 0, { ...options, lobby: null }).chip, null);
+  // A player whom the extension seated says so, and offers no second join.
+  assert.deepEqual(tileOf(bob, 1, { ...options, lobby }), {
+    ...tileOf(bob, 1, options),
+    chip: { text: "inLobby", kind: "lobby" },
+    join: false,
+  });
+  // The player on the page sits in the lobby there, and a dead session can't join
+  // before it signs in again; each keeps its own chip.
+  for (const profile of [
+    { ...bob, active: true },
+    { ...ada, active: true },
+    { ...ada, needsSignIn: true },
+  ]) {
+    const tile = tileOf(profile, 0, { ...options, lobby });
+    assert.equal(tile.join, false, JSON.stringify(profile));
+    assert.notEqual(tile.chip?.kind, "lobby");
+  }
 });
 
 test("the popup says that there is no account only with nothing else to show or say", () => {

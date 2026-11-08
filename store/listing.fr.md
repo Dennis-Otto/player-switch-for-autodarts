@@ -33,6 +33,9 @@ Comment ça marche :
   touches 1 à 9 choisissent un joueur.
 • Sur la page d'un match en cours, un changement demande d'abord, pour qu'un match
   ne se termine jamais par surprise.
+• Deux joueurs sur une même cible, chacun avec ses propres statistiques : sur un
+  lobby d'Autodarts, « Rejoindre le lobby » sous la tuile d'un joueur en attente
+  l'ajoute aussi au lobby, sans changement, sans téléphone et sans reconnexion.
 • Pour un club ou un bar, en option et désactivé par défaut : un PIN du gérant
   protège « Gérer les comptes » et les paramètres, chaque joueur peut protéger son
   compte par son propre PIN, et après une pause l'écran revient de lui-même à un

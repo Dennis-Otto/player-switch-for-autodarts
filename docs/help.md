@@ -86,6 +86,32 @@ Removing the player who plays, or **Forget all accounts**, signs the page out, a
 
 **Keep playing** changes nothing here as well; **Sign out anyway** goes on, and the match ends on this display.
 
+### Join the lobby {#join-lobby}
+
+While the Autodarts tab shows a lobby, the tile of each parked player offers **Join the lobby**, in the popup and in the players on the page. A tap seats that player in the lobby, and the tile then says:
+
+> In the lobby
+
+[Two players, each with their own stats](#two-players) says how it works. When the extension can't seat the player, the popup says one of these instead:
+
+> Autodarts doesn't show a lobby any more. Open the lobby on Autodarts, then try again.
+
+**What it means:** the Autodarts tab left the lobby before the tap, such as for the match that started meanwhile, or for another page. The extension only seats a player in the lobby that the tab shows at that moment.
+
+**What to do:** open the lobby on Autodarts again, and tap **Join the lobby**. A match that has started takes no new player: join the next one.
+
+> Autodarts didn't seat Bob: the lobby may be full, closed or started already.
+
+**What it means:** Autodarts refused the seat: the lobby has all the players it takes, its host closed it, or its match began. Nothing else changed, and Bob's session stays parked and ready.
+
+**What to do:** look at the lobby on the Autodarts page. Make room in a full lobby, or open a new one, then tap **Join the lobby** again.
+
+> Bob plays on the page already: join the lobby there, on Autodarts.
+
+**What it means:** Bob is the player on the page right now. His session there belongs to the page, which the extension never uses behind its back, so it seats parked players only; the tile of the player on the page offers no join.
+
+**What to do:** Bob joins the lobby on the Autodarts page itself, if he isn't in it already, such as when the lobby stayed on the screen after a switch.
+
 ### Player Switch was updated {#updated}
 
 > Player Switch was updated. Reload the page to use it? A running match ends on this display.
@@ -269,6 +295,22 @@ Autodarts shows a board only to the account that owns it and to the accounts tha
 **What to do:** the owner of the board signs in on Autodarts, opens **My Boards** and shares the board with that player, by their exact Autodarts username, since Autodarts suggests no names. Switch to the player again, or reload the Autodarts page, and the board is there. An owner can share a board with up to 10 other accounts, which use it as if it were their own but can't rename or delete it or make new credentials for it, as Autodarts' post [Board sharing](https://web.archive.org/web/20250430030721/https://autodarts.io/updates/board-sharing) of 4 March 2025 says. Share the board with every saved account once, best while you save the players: the welcome page of the install asks for it as its last step.
 
 **In a club or a pub,** let an Autodarts account of the venue own the board, not the account of a member: the board then stays when a member leaves, and that house account shares it with the regular players. The [venue mode](shared-display.md#venue-mode) returns the display to it after a break. Has the venue more regular players than the 10 accounts that Autodarts allows? The others play under the house account.
+
+### Two players, each with their own stats {#two-players}
+
+Autodarts counts a match for each account that sits in its lobby, while the page plays under one account only. Without Player Switch, the second player joins from their own phone or plays as a guest, whose stats count for nobody. With it:
+
+1. The player on the page opens a lobby on Autodarts, at the board of the display.
+2. The tile of each parked player who plays along, in the popup or in the players on the page, shows **Join the lobby**: a tap on it seats that player. In the [venue mode](shared-display.md#venue-mode), a player with a PIN types it first.
+3. Their tile says **In the lobby**. Nothing switches and nothing reloads: the page stays with the player who plays there.
+4. Start the match on the page as usual. It counts for every player's own account.
+
+The extension seats the player with the session that it keeps parked for them, at the board of the display, and that session never reaches the page. A tile that says **Sign in again** offers no join until that account signs in again. The tile keeps saying **In the lobby** until the browser closes or the tab shows another lobby, also when someone takes the player out of the lobby on Autodarts: the extension doesn't watch the lobby.
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="images/diagrams/join-a-lobby.dark.svg">
+  <img src="images/diagrams/join-a-lobby.svg" alt="Join the lobby with a parked player: Ada plays on the page and opens a lobby on Autodarts at the board of the display. On that page, the tile of each parked player in the popup and in the switcher offers Join the lobby. A tap on Bob's renews his parked session and keeps the rotated token first. When his session is dead or Autodarts can't be reached, his tile says why and nothing else changes. Otherwise the extension seats Bob at the board of the display with his own access token, which never reaches the page. When Autodarts refuses the seat because the lobby is full, closed or started, the popup says so. Otherwise his tile says In the lobby, the page stays with Ada without a switch or a reload, and the match counts for both accounts.">
+</picture>
 
 ### Who can play under my account?
 

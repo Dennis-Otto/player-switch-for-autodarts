@@ -1,8 +1,8 @@
 // The accessibility of the popup, in a real browser: the popup.html of the extension
 // with chrome-stub.js in place of Chrome and its made-up accounts, as the pictures of
 // scripts/screenshots.sh show it (capture.py). axe-core checks the list, "Manage
-// accounts", the form of a remembered password, the question before a removal and an
-// error, in every language and both color schemes, the switcher in the Autodarts page
+// accounts", the form of a remembered password, the question before a removal, an
+// error and the join of a lobby, in every language and both color schemes, the switcher in the Autodarts page
 // and the welcome page of the install in every language; the page itself checks that
 // every control is a target of 44 by 44 pixels, that no text is smaller than 12 pixels
 // and that no button text breaks. A walk with the
@@ -109,6 +109,7 @@ async function open({
   accounts = 3,
   pins = false,
   manager = false,
+  lobby = false,
 } = {}) {
   const context = await browser.newContext({
     viewport: { width: page === "popup" ? 340 : 1024, height: 720 },
@@ -125,7 +126,7 @@ async function open({
   const errors = [];
   tab.on("pageerror", (error) => errors.push(error));
   await tab.goto(
-    `${ORIGIN}/extension/${page}.html?lang=${lang}&accounts=${accounts}${pins ? "&pins=1" : ""}${manager ? "&manager=1" : ""}`,
+    `${ORIGIN}/extension/${page}.html?lang=${lang}&accounts=${accounts}${pins ? "&pins=1" : ""}${manager ? "&manager=1" : ""}${lobby ? "&lobby=1" : ""}`,
   );
   // The options page draws its accounts also while a manager PIN keeps them hidden,
   // and the welcome page has its texts once its script has run, before the load.
@@ -333,6 +334,67 @@ suite("the popup in axe-core", { skip: browser === null }, () => {
     assert.equal(await page.getAttribute("#profiles", "aria-label"), "Konten");
     assert.equal(await page.getAttribute("html", "lang"), "de");
     assert.equal(await page.textContent("#manage"), "Konten verwalten");
+    await page.context().close();
+  });
+});
+
+suite("a lobby on the Autodarts page", { skip: browser === null }, () => {
+  for (const lang of LANGUAGES) {
+    test(`Join the lobby and In the lobby, in ${lang} and both color schemes`, async () => {
+      for (const scheme of ["light", "dark"]) {
+        const page = await open({ lang, scheme, lobby: true });
+        // The player on the page offers no join; each parked one does.
+        assert.equal(
+          await page.isVisible(control("miakeller", ".join")),
+          false,
+        );
+        assert.equal(await page.isVisible(control("jonasberg", ".join")), true);
+        await check(page, `a lobby, ${scheme}`);
+
+        await page.click(control("jonasberg", ".join"));
+        await settle(page);
+        assert.notEqual(await page.textContent("#status"), "");
+        assert.equal(
+          await page.isVisible(control("jonasberg", ".join")),
+          false,
+        );
+        assert.equal(
+          await page.isVisible(control("jonasberg", ".chip.lobby")),
+          true,
+        );
+        await check(page, `a seat in the lobby, ${scheme}`);
+        assert.deepEqual(page.errors, []);
+        await page.context().close();
+      }
+    });
+  }
+
+  test("the switcher offers the join in its large tiles", async () => {
+    for (const scheme of ["light", "dark"]) {
+      const page = await open({ page: "switcher", scheme, lobby: true });
+      await check(page, `the switcher on a lobby, ${scheme}`);
+      await page.context().close();
+    }
+  });
+
+  test("with the keyboard alone, a join leads back to the tile of its player", async () => {
+    const page = await open({ lobby: true });
+    await tabTo(page, control("jonasberg", ".join"));
+    // A screen reader hears whose seat it is; the words on the button come first.
+    assert.equal(
+      await page.getAttribute(control("jonasberg", ".join"), "aria-label"),
+      "Join the lobby as Jonas Berg",
+    );
+    await press(page, "Enter");
+    assert.equal(await focused(page), "demo-jonasberg .tile");
+    assert.equal(
+      await page.textContent("#status"),
+      "Jonas Berg is in the lobby now, and the match counts for their own account.",
+    );
+    // In "Manage accounts", the join steps aside with the tiles.
+    await tabTo(page, "#manage", true);
+    await press(page, "Enter");
+    assert.equal(await page.isVisible(control("lenavogt", ".join")), false);
     await page.context().close();
   });
 });

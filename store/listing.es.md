@@ -34,6 +34,9 @@ Cómo funciona:
   táctil. Las teclas del 1 al 9 eligen un jugador.
 • En la página de una partida en curso, un cambio pregunta primero, para que una
   partida nunca termine por sorpresa.
+• Dos jugadores en un mismo tablero, cada uno con sus propias estadísticas: en un
+  lobby de Autodarts, «Unirse al lobby» bajo la ficha de un jugador aparcado lo
+  sienta también en el lobby, sin cambio, sin móvil y sin volver a iniciar sesión.
 • Para un club o un bar, opcional y desactivado de serie: un PIN de gestión
   protege «Gestionar cuentas» y los ajustes, cada jugador puede proteger su cuenta
   con un PIN propio y, tras una pausa, la pantalla vuelve sola a una cuenta de la

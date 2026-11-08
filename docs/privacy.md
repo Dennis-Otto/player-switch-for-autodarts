@@ -34,6 +34,10 @@ would find the tokens and passwords there only encrypted
   after a break is on, also the time of the last tap, click or key on the Autodarts
   page: never where or what it was. The browser forgets that time, and the count of
   wrong PINs, as it closes.
+- **Who joined which lobby from this display,** while the browser runs: the ids of
+  the last few lobbies and of the saved accounts that the extension seated in each,
+  so that their tiles say "In the lobby". No token and no name; the browser forgets
+  it as it closes.
 - **The time of the last renewal**, and whether Autodarts turned every account
   away in it, so the extension can catch up after the computer was off and tell you
   when it may need an update.

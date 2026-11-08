@@ -24,7 +24,9 @@
  *
  * A join seats a parked account in the lobby that the Autodarts tab in front shows,
  * which the worker reads from the address of the tab, with the session that it keeps
- * for that account; the token never reaches the page (decision 0016).
+ * for that account; the token never reaches the page (decision 0016). It notes each
+ * seat in `chrome.storage.session` (`lobby.ts`), and the view of a lobby names the
+ * accounts seated there, so that their tiles say "In the lobby".
  *
  * The venue mode, which the options page turns on, comes from `venue.ts`: the worker
  * checks the PIN of every switch to an account that has one, and of its join, and of
@@ -41,6 +43,7 @@ import {
   recordRun,
   suggestsUpdate,
 } from "./health.ts";
+import { parseSeats, SEATS_KEY, seatsIn, withSeat } from "./lobby.ts";
 import {
   type Outcome,
   type PageButtonView,
@@ -477,6 +480,35 @@ export function startWorker(api: ChromeApi, platform: Platform): StartedWorker {
   // ones, each one at a time, so that two at once lose nothing and try no PIN twice as fast.
   const venueQueue = createQueue();
   const pinQueue = createQueue();
+  // The record of the seats in a lobby, one change at a time, so that two joins at once
+  // both stay in it.
+  const seatQueue = createQueue();
+
+  async function loadSeats() {
+    const stored = await api.storage.session.get([SEATS_KEY]);
+    return parseSeats(stored[SEATS_KEY]);
+  }
+
+  /** Notes that an account sits in a lobby now, for "In the lobby" on its tile. */
+  function noteSeat(lobby: string, id: string): Promise<void> {
+    return seatQueue(async () => {
+      const seats = withSeat(await loadSeats(), lobby, id);
+      await api.storage.session.set({ [SEATS_KEY]: seats });
+    });
+  }
+
+  /**
+   * The lobby that the Autodarts tab of a request shows, with the accounts that the
+   * extension seated there, or null when the tab shows none.
+   */
+  async function lobbyView(
+    tab: Promise<BrowserTab | undefined>,
+  ): Promise<PlayersView["lobby"]> {
+    const lobby = lobbyOf((await tab)?.url);
+    return lobby === null
+      ? null
+      : { seated: seatsIn(await loadSeats(), lobby) };
+  }
 
   /** Changes the venue settings: `change` gets the stored ones and answers the new ones. */
   function changeVenue(change: (venue: Venue) => Venue): Promise<Venue> {
@@ -640,9 +672,16 @@ export function startWorker(api: ChromeApi, platform: Platform): StartedWorker {
         }
         const result = await joinLobbyAs(deps, message.id, lobby);
         if (result.ok) {
-          return result.seated === null
-            ? { ok: true }
-            : { ok: true, joined: result.seated.name };
+          if (result.seated === null) {
+            return { ok: true };
+          }
+          // The tile says "In the lobby" from now on, in the popup and the switcher. The
+          // seat is taken all the same when the note fails: the tile then offers the
+          // join once more, which keeps the seat and sends no second one.
+          await noteSeat(lobby, message.id).catch(
+            logFailure("noting the seat in the lobby"),
+          );
+          return { ok: true, joined: result.seated.name };
         }
         return result.reason === "signin" || result.reason === "unreachable"
           ? { ok: false, reason: result.reason, page: true }
@@ -708,14 +747,18 @@ export function startWorker(api: ChromeApi, platform: Platform): StartedWorker {
     }
   }
 
-  /** The view of the popup, and whether it should suggest an update of the extension. */
+  /**
+   * The view of the popup: whether it should suggest an update of the extension, and
+   * the lobby that the tab shows, with the accounts seated there.
+   */
   async function popupView(
     tab: Promise<BrowserTab | undefined>,
   ): Promise<PlayersView> {
-    const [view, health, venue] = await Promise.all([
+    const [view, health, venue, lobby] = await Promise.all([
       readView({ ...shared, page: await pageFor(tab) }),
       loadHealth(),
       loadVenue(),
+      lobbyView(tab),
     ]);
     return {
       ...view,
@@ -723,6 +766,7 @@ export function startWorker(api: ChromeApi, platform: Platform): StartedWorker {
       profiles: withPins(view.profiles, venue),
       venue: { manager: venue.manager !== null },
       updateHint: suggestsUpdate(health, view.profiles),
+      lobby,
     };
   }
 
@@ -735,6 +779,7 @@ export function startWorker(api: ChromeApi, platform: Platform): StartedWorker {
       profiles: [],
       venue: { manager: false },
       updateHint: false,
+      lobby: null,
     }));
   }
 

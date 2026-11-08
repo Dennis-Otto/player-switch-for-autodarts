@@ -325,6 +325,47 @@ body.popup:not(:has(:focus-visible)) .key {
   color: var(--warn);
 }
 
+.chip.lobby {
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+/* "Join the lobby", below the tile of a parked player on a page with a lobby: a row of
+   its own across the card, a target as large as a finger needs. It steps aside while
+   the accounts are managed, as the tiles do. */
+.join {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-height: 44px;
+  padding: 8px 14px;
+  border: 0;
+  border-top: 1px solid var(--line);
+  background: transparent;
+  color: var(--accent);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.join:hover {
+  background: var(--accent-soft);
+}
+
+.join:focus-visible {
+  outline-offset: -3px;
+}
+
+.join[aria-disabled="true"]:hover {
+  background: transparent;
+}
+
+body.managing .join {
+  display: none;
+}
+
 .menu {
   border-top: 1px solid var(--line);
   padding: 10px 14px;

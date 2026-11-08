@@ -2,10 +2,12 @@
  * The players and their accounts, as the popup and the switcher in the Autodarts page
  * both show them: one module, so the two can't drift apart. It holds no account logic:
  * it asks the service worker for a view and sends it the person's taps. All the
- * thinking happens in the worker, and what the page decides is in `popup-model.ts`. In
- * the venue mode, the worker asks for a PIN before a switch or a change in "Manage
- * accounts"; this module then asks the person, with a number pad for a touch screen,
- * and sends the request again.
+ * thinking happens in the worker, and what the page decides is in `popup-model.ts`. On
+ * a page with a lobby, each parked player's tile offers "Join the lobby", which seats
+ * that player there while the page plays on (decision 0016). In the venue mode, the
+ * worker asks for a PIN before a switch, a join or a change in "Manage accounts"; this
+ * module then asks the person, with a number pad for a touch screen, and sends the
+ * request again.
  */
 import type {
   PlayersAction,
@@ -66,12 +68,13 @@ function pinMark(): HTMLSpanElement {
 
 // The controls that send a request to the service worker.
 const REQUEST_CONTROLS =
-  ".tile, .toggle-remember, .remove, .save-remember, #adopt, #add, #open-page, #stop-adding, #forget-all";
+  ".tile, .join, .toggle-remember, .remove, .save-remember, #adopt, #add, #open-page, #stop-adding, #forget-all";
 
 // The controls of a tile, so that the focus comes back to the same one when the tiles
 // are drawn anew after a request.
 const TILE_CONTROLS = [
   ".tile",
+  ".join",
   ".toggle-remember",
   ".remove",
   ".cred-username",
@@ -163,6 +166,8 @@ export function mountPlayers({
   let shown: PlayerView[] = [];
   // Whether a manager PIN guards "Manage accounts".
   let guarded = false;
+  // The lobby that the page shows, with the accounts seated there, or null.
+  let lobby: PlayersView["lobby"] = null;
 
   /** Shows a message, an error in the region that is read out at once; "" clears both. */
   function showStatus(text: string, isError = false): void {
@@ -288,6 +293,7 @@ export function mountPlayers({
     const before = focusBefore();
     shown = view.profiles;
     guarded = view.venue.manager;
+    lobby = view.lobby;
     profiles.replaceChildren();
     view.profiles.forEach((profile, index) => {
       profiles.append(tile(profile, index));
@@ -370,6 +376,7 @@ export function mountPlayers({
       now: Date.now(),
       language,
       t,
+      lobby,
     });
     node.classList.toggle("active", profile.active);
     node.dataset.id = profile.id;
@@ -404,6 +411,23 @@ export function mountPlayers({
       chip.classList.add(view.chip.kind);
       chip.hidden = false;
     }
+
+    // "Join the lobby" seats the player in the lobby that the page shows, and the page
+    // plays on with the player who plays there. Its name says whose seat it is, as
+    // the tiles show the same words for every player.
+    const join = find<HTMLButtonElement>(".join", node);
+    join.hidden = !view.join;
+    join.setAttribute("aria-label", t("joinLobbyAs", profile.name));
+    join.addEventListener("click", () => {
+      if (busy || manage.managing) {
+        return;
+      }
+      showStatus(t("joining", profile.name));
+      void send(
+        { action: "join", id: profile.id },
+        t("switchSignIn", profile.name),
+      );
+    });
 
     const menu = find(".menu", node);
     menu.hidden = !manage.managing;
