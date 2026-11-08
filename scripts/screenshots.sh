@@ -24,8 +24,8 @@
 #   .de, .nl, .fr and .es), with the texts around the extension from
 #   store/pictures.<code>.json.
 # - .github/social-preview.png, from .github/social-preview.html, the picture of links
-#   to the repository: the switcher on a board display (switcher.dark.png) beside the
-#   name of the extension and what it does.
+#   to the repository: the popup on a lobby (lobby.dark.png), as it opens from its icon
+#   in the toolbar, beside the name of the extension and what it does.
 #
 # It needs Docker, and Node for the code of the extension. The blueprint brought it
 # once; it belongs to this project.
@@ -59,5 +59,5 @@ else
   exit 1
 fi
 
-# Last, as it shows the switcher that the step above has just rendered.
+# Last, as it shows the popup that the step above has just rendered.
 bash scripts/social-preview.sh
