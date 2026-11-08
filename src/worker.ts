@@ -27,10 +27,10 @@
  * for that account; the token never reaches the page (decision 0016).
  *
  * The venue mode, which the options page turns on, comes from `venue.ts`: the worker
- * checks the PIN of every switch to an account that has one, and of its join, and of every change in
- * "Manage accounts" while a manager PIN is set, so neither the popup nor the switcher
- * can go around it, and it returns the display to the house account after a break that
- * the content script measures, never during a match.
+ * checks the PIN of every switch to an account that has one, and of its join, and of
+ * every change in "Manage accounts" while a manager PIN is set, so neither the popup
+ * nor the switcher can go around it, and it returns the display to the house account
+ * after a break that the content script measures, never during a match.
  */
 import {
   badge,
