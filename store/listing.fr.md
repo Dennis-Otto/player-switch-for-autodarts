@@ -101,4 +101,4 @@ Changer le compte Autodarts connecté sur un écran partagé sans se reconnecter
 
 ## Images
 
-Cette fiche montre les images anglaises, les fichiers `.en` de [`images/`](images/), rendus par `bash scripts/screenshots.sh` ; [le guide des versions](../docs/releases.md#the-images-of-the-store) indique quel emplacement du tableau de bord prend quel fichier.
+Les captures d'écran (1280×800) et les vignettes promotionnelles (440×280 et 1400×560) de cette fiche sont les fichiers `.fr` de [`images/`](images/), rendus par `bash scripts/screenshots.sh` ; [le guide des versions](../docs/releases.md#the-images-of-the-store) indique quel emplacement du tableau de bord prend quel fichier.

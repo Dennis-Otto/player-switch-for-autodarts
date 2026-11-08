@@ -102,4 +102,4 @@ sin volver a iniciar sesión.
 
 ## Imágenes
 
-Esta ficha muestra las imágenes en inglés, los archivos `.en` de [`images/`](images/), generados por `bash scripts/screenshots.sh`; [la guía de versiones](../docs/releases.md#the-images-of-the-store) dice qué hueco del panel lleva cada archivo.
+Las capturas de pantalla (1280×800) y los mosaicos promocionales (440×280 y 1400×560) de esta ficha son los archivos `.es` de [`images/`](images/), generados por `bash scripts/screenshots.sh`; [la guía de versiones](../docs/releases.md#the-images-of-the-store) dice qué hueco del panel lleva cada archivo.

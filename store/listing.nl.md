@@ -98,4 +98,4 @@ loggen.
 
 ## Afbeeldingen
 
-Deze vermelding toont de Engelse afbeeldingen, de `.en`-bestanden in [`images/`](images/), gerenderd door `bash scripts/screenshots.sh`; [de releasehandleiding](../docs/releases.md#the-images-of-the-store) zegt welke plek in het dashboard welk bestand krijgt.
+De screenshots (1280×800) en de promotegels (440×280 en 1400×560) van deze vermelding zijn de `.nl`-bestanden in [`images/`](images/), gerenderd door `bash scripts/screenshots.sh`; [de releasehandleiding](../docs/releases.md#the-images-of-the-store) zegt welke plek in het dashboard welk bestand krijgt.

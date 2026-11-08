@@ -15,7 +15,7 @@ A board display in the hallway, the club or the pub: a computer by the board, a 
 
 ## 1. Save the players {#save-the-players}
 
-Install the extension from the Chrome Web Store, or unpacked as the [quick start](https://github.com/Dennis-Otto/player-switch-for-autodarts#quick-start) shows. A welcome page opens with three steps: pin the icon, sign in the first player, and add the next ones. [Set it up](index.md#set-it-up) on the home page shows them.
+Install the extension from [the Chrome Web Store](https://chromewebstore.google.com/detail/player-switch-for-autodar/gbijblgchbbbkjeibpjaodflfgbgefam), which keeps it up to date on its own, or unpacked as the [quick start](https://github.com/Dennis-Otto/player-switch-for-autodarts#quick-start) shows. A welcome page opens with three steps: pin the icon, sign in the first player, and add the next ones. [Set it up](index.md#set-it-up) on the home page shows them.
 
 Each player signs in once: choose **Add account**, and the next sign-in on Autodarts is saved by itself. Save every player before you turn on kiosk mode, while the keyboard and the toolbar are at hand; **Add account** in the players on the Autodarts page works in kiosk mode too.
 

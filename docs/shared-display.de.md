@@ -15,7 +15,7 @@ Ein Board-Display im Flur, im Verein oder in der Kneipe: ein Computer am Board, 
 
 ## 1. Die Spieler speichern {#save-the-players}
 
-Installiere die Erweiterung aus dem Chrome Web Store, oder entpackt, wie es der [Schnellstart](https://github.com/Dennis-Otto/player-switch-for-autodarts#quick-start) zeigt. Eine Willkommensseite öffnet sich mit drei Schritten: das Symbol anheften, den ersten Spieler anmelden und die nächsten hinzufügen. [Einrichten](index.md#einrichten) auf der Startseite zeigt sie.
+Installiere die Erweiterung aus [dem Chrome Web Store](https://chromewebstore.google.com/detail/player-switch-for-autodar/gbijblgchbbbkjeibpjaodflfgbgefam?hl=de), der sie von selbst aktuell hält, oder entpackt, wie es der [Schnellstart](https://github.com/Dennis-Otto/player-switch-for-autodarts#quick-start) zeigt. Eine Willkommensseite öffnet sich mit drei Schritten: das Symbol anheften, den ersten Spieler anmelden und die nächsten hinzufügen. [Einrichten](index.md#einrichten) auf der Startseite zeigt sie.
 
 Jeder Spieler meldet sich einmal an: Wähle **Konto hinzufügen**, und die nächste Anmeldung auf Autodarts wird von selbst gespeichert. Speichere alle Spieler, bevor du den Kiosk-Modus einschaltest, solange Tastatur und Symbolleiste zur Hand sind; **Konto hinzufügen** bei den Spielern auf der Autodarts-Seite geht auch im Kiosk-Modus.
 
