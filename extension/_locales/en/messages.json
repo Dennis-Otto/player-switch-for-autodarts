@@ -244,7 +244,7 @@
     "message": "Welcome to Player Switch"
   },
   "welcomeLead": {
-    "message": "Set up the shared display in three steps. Afterwards, a tap on a tile switches players."
+    "message": "Set up the shared display in four steps. Afterwards, a tap on a tile switches players."
   },
   "welcomePinTitle": {
     "message": "Pin the icon"
@@ -277,6 +277,17 @@
   },
   "welcomePlusText": {
     "message": "A + on the icon means that someone is signed in who isn't saved yet: Save account in the popup saves them."
+  },
+  "welcomeShareTitle": {
+    "message": "Share the board"
+  },
+  "welcomeShareText": {
+    "message": "Autodarts shows a board only to its owner and to the accounts it is shared with. So the owner of the board shares it with every saved account, under My Boards in Autodarts, by the exact username: with up to 10 other accounts.",
+    "description": "Autodarts shows a board only to its owner and to the users that the owner shares it with, up to 10, by the exact username. My Boards is the page of Autodarts where that is done, as Autodarts names it in English; name it only as Autodarts does in this language, or describe the step without the name."
+  },
+  "welcomeShareHelp": {
+    "message": "A player sees no board after a switch",
+    "description": "The link to the entry of the help that explains what a player who sees no board after a switch does."
   },
   "welcomePrivacy": {
     "message": "Everything stays on this computer and goes only to Autodarts."

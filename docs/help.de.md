@@ -262,6 +262,14 @@ Die Erweiterung speichert eine Anmeldung nur in den zehn Minuten nach **Konto hi
 
 **Einstellungen** im Popup, oder **Details → Erweiterungsoptionen** unter `chrome://extensions` (`edge://extensions` in Edge, **Einstellungen** von Player Switch unter `about:addons` in Firefox), blendet den Knopf ein und wählt seine Ecke. Ist er an und fehlt trotzdem? Lade die Autodarts-Seite neu. Das Tastenkürzel <kbd>Alt</kbd>+<kbd>Umschalt</kbd>+<kbd>O</kbd> öffnet die Spieler auch ohne Knopf.
 
+### Nach einem Wechsel fehlt das Board {#board-not-shared}
+
+Autodarts zeigt ein Board nur dem Konto, dem es gehört, und den Konten, mit denen sein Besitzer es teilt. Nach einem Wechsel zu einem Spieler, mit dem das Board nicht geteilt ist, zeigt Autodarts diesem Spieler kein Board, und er kann darauf kein Spiel starten. Die Erweiterung kann daran nichts ändern: Wer ein Board sieht, entscheidet Autodarts, und der Wechsel selbst hat geklappt.
+
+**Was tun:** Der Besitzer des Boards meldet sich bei Autodarts an und teilt das Board mit diesem Spieler, über dessen genauen Autodarts-Benutzernamen, denn Autodarts schlägt keine Namen vor. In der englischen Ansicht von Autodarts heißt die Seite dafür **My Boards**. Wechsle danach noch einmal zu dem Spieler, oder lade die Autodarts-Seite neu, und das Board ist da. Ein Besitzer kann ein Board mit bis zu 10 weiteren Konten teilen, die es wie ihr eigenes nutzen, es aber nicht umbenennen, löschen oder neue Zugangsdaten dafür erzeugen können, so steht es in der Ankündigung [Board sharing](https://web.archive.org/web/20250430030721/https://autodarts.io/updates/board-sharing) von Autodarts vom 4. März 2025. Teile das Board einmal mit jedem gespeicherten Konto, am besten, während du die Spieler speicherst: Die Willkommensseite der Installation bittet darum als letzten Schritt.
+
+**Im Verein oder in der Kneipe** gehört das Board am besten einem Autodarts-Konto des Lokals, nicht dem Konto eines Mitglieds: Dann bleibt das Board, wenn ein Mitglied geht, und dieses Hauskonto teilt es mit den Stammspielern. Der [Modus für Verein und Kneipe](shared-display.md#venue-mode) bringt das Display nach einer Pause zu ihm zurück. Hat das Lokal mehr Stammspieler als die 10 Konten, die Autodarts erlaubt? Die anderen spielen unter dem Hauskonto.
+
 ### Wer kann unter meinem Konto spielen?
 
 Jede Person an diesem Display kann zu jedem dort gespeicherten Konto wechseln: Die Erweiterung ist für ein Display gemacht, das sich die Menschen eines Haushalts, eines Vereins oder eines Lokals teilen und dem sie vertrauen. In einem Verein oder einer Kneipe gibt der [Modus für Verein und Kneipe](shared-display.md#venue-mode) deinem Konto eine PIN, nach der das Display fragt, bevor jemand damit spielt. Du verlässt einen Verein oder spielst ab jetzt woanders? Entferne dein Konto vom Display, unter **Konten verwalten**. Das [Sicherheitsdesign](security.md) zählt auf, was gespeichert wird und welche Risiken bleiben.

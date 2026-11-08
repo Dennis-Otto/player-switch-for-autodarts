@@ -279,7 +279,7 @@
     "message": "Te damos la bienvenida a Player Switch"
   },
   "welcomeLead": {
-    "message": "Configura la pantalla compartida en tres pasos. Después, un toque en una tarjeta cambia de jugador."
+    "message": "Configura la pantalla compartida en cuatro pasos. Después, un toque en una tarjeta cambia de jugador."
   },
   "welcomePinTitle": {
     "message": "Fija el icono"
@@ -310,6 +310,15 @@
   },
   "welcomePlusText": {
     "message": "Un + en el icono significa que alguien tiene la sesión iniciada sin estar guardado aún: Guardar cuenta, en la ventana emergente, lo guarda."
+  },
+  "welcomeShareTitle": {
+    "message": "Comparte la diana"
+  },
+  "welcomeShareText": {
+    "message": "Autodarts solo muestra una diana a su propietario y a las cuentas con las que está compartida. Por eso, el propietario de la diana la comparte en Autodarts con cada cuenta guardada, por su nombre de usuario exacto: con hasta 10 cuentas más."
+  },
+  "welcomeShareHelp": {
+    "message": "Un jugador no ve ninguna diana tras un cambio"
   },
   "welcomePrivacy": {
     "message": "Todo se queda en este ordenador y solo va a Autodarts."

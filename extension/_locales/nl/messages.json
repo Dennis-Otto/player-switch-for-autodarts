@@ -279,7 +279,7 @@
     "message": "Welkom bij Player Switch"
   },
   "welcomeLead": {
-    "message": "Richt het gedeelde scherm in drie stappen in. Daarna wisselt een tik op een tegel van speler."
+    "message": "Richt het gedeelde scherm in vier stappen in. Daarna wisselt een tik op een tegel van speler."
   },
   "welcomePinTitle": {
     "message": "Maak het pictogram vast"
@@ -310,6 +310,15 @@
   },
   "welcomePlusText": {
     "message": "Een + op het pictogram betekent dat er iemand is ingelogd die nog niet is opgeslagen: met Account opslaan in de pop-up sla je die op."
+  },
+  "welcomeShareTitle": {
+    "message": "Deel het bord"
+  },
+  "welcomeShareText": {
+    "message": "Autodarts toont een bord alleen aan de eigenaar en aan de accounts waarmee het gedeeld is. Daarom deelt de eigenaar van het bord het in Autodarts met elk opgeslagen account, via de exacte gebruikersnaam: met maximaal 10 andere accounts."
+  },
+  "welcomeShareHelp": {
+    "message": "Een speler ziet na het wisselen geen bord"
   },
   "welcomePrivacy": {
     "message": "Alles blijft op deze computer en gaat alleen naar Autodarts."

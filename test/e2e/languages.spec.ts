@@ -1,4 +1,5 @@
-// The popup in the language and the color scheme of the browser.
+// The popup and the welcome page in the language, and the popup in the color scheme,
+// of the browser.
 import { ALICE, expect, test } from "./fixtures.ts";
 
 /** The relative luminance of a CSS color such as "rgb(20, 22, 29)", from 0 to 1. */
@@ -42,6 +43,33 @@ for (const language of ["en", "de"] as const) {
       await expect(popup.page.locator("#manage")).toHaveAttribute(
         "aria-pressed",
         "true",
+      );
+    });
+
+    test("the welcome page of the install shows its four steps, the last one shares the board", async ({
+      display,
+    }) => {
+      const welcome = await display.welcome();
+
+      await expect(welcome.locator("html")).toHaveAttribute("lang", language);
+      await expect(welcome.locator(".lead")).toHaveText(
+        display.t("welcomeLead"),
+      );
+      await expect(welcome.locator(".step h2")).toHaveText([
+        display.t("welcomePinTitle"),
+        display.t("welcomeFirstTitle"),
+        display.t("welcomeNextTitle"),
+        display.t("welcomeShareTitle"),
+      ]);
+      const share = welcome.locator("#share");
+      await expect(share).toContainText(display.t("welcomeShareText"));
+      // The link leads to the entry of the help that says why a player sees no board,
+      // in the help of the language of the extension.
+      const help = share.locator("a[data-link=help]");
+      await expect(help).toHaveText(display.t("welcomeShareHelp"));
+      await expect(help).toHaveAttribute(
+        "href",
+        `${display.t("helpUrl")}#board-not-shared`,
       );
     });
   });

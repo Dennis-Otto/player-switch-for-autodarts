@@ -240,7 +240,7 @@
     "message": "Willkommen bei Player Switch"
   },
   "welcomeLead": {
-    "message": "Richte das gemeinsame Display in drei Schritten ein. Danach wechselt ein Tipp auf eine Kachel den Spieler."
+    "message": "Richte das gemeinsame Display in vier Schritten ein. Danach wechselt ein Tipp auf eine Kachel den Spieler."
   },
   "welcomePinTitle": {
     "message": "Symbol anheften"
@@ -273,6 +273,15 @@
   },
   "welcomePlusText": {
     "message": "Ein + am Symbol heißt, dass jemand angemeldet ist, der noch nicht gespeichert ist: „Konto speichern“ im Popup speichert das Konto."
+  },
+  "welcomeShareTitle": {
+    "message": "Board teilen"
+  },
+  "welcomeShareText": {
+    "message": "Autodarts zeigt ein Board nur seinem Besitzer und den Konten, mit denen es geteilt ist. Deshalb teilt es sein Besitzer in Autodarts mit jedem gespeicherten Konto, über den genauen Benutzernamen: mit bis zu 10 weiteren Konten."
+  },
+  "welcomeShareHelp": {
+    "message": "Ein Spieler sieht nach dem Wechsel kein Board"
   },
   "welcomePrivacy": {
     "message": "Alles bleibt auf diesem Computer und geht nur an Autodarts."
