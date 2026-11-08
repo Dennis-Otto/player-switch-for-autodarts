@@ -4,20 +4,22 @@ Ein Board-Display im Flur, im Verein oder in der Kneipe: ein Computer am Board, 
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="images/diagrams/display-setup.de.dark.svg">
-  <img src="images/diagrams/display-setup.de.svg" alt="Ein gemeinsames Display einrichten: Installiere Player Switch und speichere dann jeden Spieler einmal: Jeder meldet sich nach Konto hinzufügen auf Autodarts an. An einem Display, das die Symbolleiste zeigt, hefte das Symbol an; im Vollbild oder Kiosk-Modus wechseln die Spieler mit dem Knopf auf der Autodarts-Seite oder dem Tastenkürzel. Lass den Computer Chrome von selbst im Kiosk-Modus starten, gib ihm eine Bildschirmtastatur für die Anmeldungen und lass den Browser laufen, damit die Erneuerung alle 12 Stunden jedes geparkte Konto bereit hält.">
+  <img src="images/diagrams/display-setup.de.svg" alt="Ein gemeinsames Display einrichten: Installiere Player Switch und speichere dann jeden Spieler einmal: Jeder meldet sich nach Konto hinzufügen auf Autodarts an. Der Besitzer des Boards teilt es in Autodarts mit jedem gespeicherten Konto, damit jeder Spieler es nach einem Wechsel sieht. An einem Display, das die Symbolleiste zeigt, hefte das Symbol an; im Vollbild oder Kiosk-Modus wechseln die Spieler mit dem Knopf auf der Autodarts-Seite oder dem Tastenkürzel. Lass den Computer Chrome von selbst im Kiosk-Modus starten, gib ihm eine Bildschirmtastatur für die Anmeldungen und lass den Browser laufen, damit die Erneuerung alle 12 Stunden jedes geparkte Konto bereit hält.">
 </picture>
 
 ## Was du brauchst
 
 - **Einen Computer am Board** mit Google Chrome unter Windows, macOS oder Linux, oder einen Raspberry Pi mit Raspberry Pi OS und seinem Chromium.
 - **Einen Bildschirm, an den die Spieler herankommen**, am besten einen Touchscreen; eine Maus oder eine kleine Funktastatur geht auch.
-- **Ein Autodarts-Konto für jeden Spieler** und ein Browserprofil für das Display: ein eigenes, nicht das persönliche Profil von jemandem. Die Erweiterung behält die Konten in diesem Profil.
+- **Ein Autodarts-Konto für jeden Spieler**, mit dem das Board geteilt ist, und ein Browserprofil für das Display: ein eigenes, nicht das persönliche Profil von jemandem. Die Erweiterung behält die Konten in diesem Profil.
 
 ## 1. Die Spieler speichern {#save-the-players}
 
-Installiere die Erweiterung aus [dem Chrome Web Store](https://chromewebstore.google.com/detail/player-switch-for-autodar/gbijblgchbbbkjeibpjaodflfgbgefam?hl=de), der sie von selbst aktuell hält, oder entpackt, wie es der [Schnellstart](https://github.com/Dennis-Otto/player-switch-for-autodarts#quick-start) zeigt. Eine Willkommensseite öffnet sich mit drei Schritten: das Symbol anheften, den ersten Spieler anmelden und die nächsten hinzufügen. [Einrichten](index.md#einrichten) auf der Startseite zeigt sie.
+Installiere die Erweiterung aus [dem Chrome Web Store](https://chromewebstore.google.com/detail/player-switch-for-autodar/gbijblgchbbbkjeibpjaodflfgbgefam?hl=de), der sie von selbst aktuell hält, oder entpackt, wie es der [Schnellstart](https://github.com/Dennis-Otto/player-switch-for-autodarts#quick-start) zeigt. Eine Willkommensseite öffnet sich mit vier Schritten: das Symbol anheften, den ersten Spieler anmelden, die nächsten hinzufügen und das Board teilen. [Einrichten](index.md#einrichten) auf der Startseite zeigt sie.
 
 Jeder Spieler meldet sich einmal an: Wähle **Konto hinzufügen**, und die nächste Anmeldung auf Autodarts wird von selbst gespeichert. Speichere alle Spieler, bevor du den Kiosk-Modus einschaltest, solange Tastatur und Symbolleiste zur Hand sind; **Konto hinzufügen** bei den Spielern auf der Autodarts-Seite geht auch im Kiosk-Modus.
+
+Teile dann das Board mit jedem gespeicherten Konto. Autodarts zeigt ein Board nur dem Konto, dem es gehört, und den Konten, mit denen sein Besitzer es teilt; ein Spieler, mit dem es nicht geteilt ist, sieht nach einem Wechsel kein Board. Der Besitzer meldet sich bei Autodarts an und fügt jeden Spieler über seinen genauen Benutzernamen hinzu, bis zu 10 Konten neben dem eigenen; in der englischen Ansicht von Autodarts heißt die Seite dafür **My Boards**. Im Verein oder in der Kneipe gehört das Board am besten einem Autodarts-Konto des Lokals, damit es bleibt, wenn ein Mitglied geht: [Nach einem Wechsel fehlt das Board](help.md#board-not-shared) sagt mehr.
 
 ## 2. Wählen, wie die Spieler wechseln {#how-players-switch}
 
@@ -112,6 +114,7 @@ Dann ist jede PIN weg, und das Display kehrt nach einer Pause nicht mehr zurück
 ## 8. Vor dem ersten Abend {#checklist}
 
 - [ ] Ein Tipp auf jede Kachel wechselt zu diesem Spieler, und **Konten verwalten** zeigt kein **Neu anmelden**.
+- [ ] Nach einem Tipp auf jede Kachel zeigt Autodarts das Board: Es ist mit jedem gespeicherten Konto geteilt.
 - [ ] Der Knopf auf der Autodarts-Seite sitzt in einer Ecke, in der er nichts verdeckt, was du brauchst.
 - [ ] Chrome speichert an diesem Display kein Passwort, und niemand ist darin noch bei Google oder Apple angemeldet.
 - [ ] Nach einem Neustart des Computers kommt Chrome von selbst wieder, im Kiosk-Modus auf Autodarts.

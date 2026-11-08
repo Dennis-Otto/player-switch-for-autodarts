@@ -2,9 +2,10 @@
 // with chrome-stub.js in place of Chrome and its made-up accounts, as the pictures of
 // scripts/screenshots.sh show it (capture.py). axe-core checks the list, "Manage
 // accounts", the form of a remembered password, the question before a removal and an
-// error, in every language and both color schemes, and the switcher in the Autodarts
-// page; the page itself checks that every control is a target of 44 by 44 pixels, that
-// no text is smaller than 12 pixels and that no button text breaks. A walk with the
+// error, in every language and both color schemes, the switcher in the Autodarts page
+// and the welcome page of the install in every language; the page itself checks that
+// every control is a target of 44 by 44 pixels, that no text is smaller than 12 pixels
+// and that no button text breaks. A walk with the
 // keyboard alone through every action checks where the focus lands, and the contrast
 // themes of the system and reduced motion get a look of their own.
 //
@@ -126,10 +127,13 @@ async function open({
   await tab.goto(
     `${ORIGIN}/extension/${page}.html?lang=${lang}&accounts=${accounts}${pins ? "&pins=1" : ""}${manager ? "&manager=1" : ""}`,
   );
-  // The options page draws its accounts also while a manager PIN keeps them hidden.
-  await (page === "options"
-    ? tab.waitForSelector("#player-pins li", { state: "attached" })
-    : tab.waitForSelector("#profiles .tile"));
+  // The options page draws its accounts also while a manager PIN keeps them hidden,
+  // and the welcome page has its texts once its script has run, before the load.
+  if (page === "options") {
+    await tab.waitForSelector("#player-pins li", { state: "attached" });
+  } else if (page !== "welcome") {
+    await tab.waitForSelector("#profiles .tile");
+  }
   await settle(tab);
   tab.errors = errors;
   return tab;
@@ -331,6 +335,31 @@ suite("the popup in axe-core", { skip: browser === null }, () => {
     assert.equal(await page.textContent("#manage"), "Konten verwalten");
     await page.context().close();
   });
+});
+
+suite("the welcome page in axe-core", { skip: browser === null }, () => {
+  for (const lang of LANGUAGES) {
+    test(`every step, in ${lang} and both color schemes`, async () => {
+      for (const scheme of ["light", "dark"]) {
+        const page = await open({ page: "welcome", lang, scheme });
+        assert.equal(
+          await page.getAttribute("html", "lang"),
+          lang.replace("_", "-"),
+          `the welcome page shows ${lang} in English: add it to LANGUAGES in test/harness/chrome-stub.js`,
+        );
+        // Four steps, the last one shares the board, and its link leads to the entry
+        // of the help that says why a player sees no board.
+        assert.equal(await page.locator(".step").count(), 4);
+        assert.match(
+          await page.getAttribute("#share a[data-link=help]", "href"),
+          /\/help\.html#board-not-shared$/,
+        );
+        await check(page, `the welcome page, ${lang}, ${scheme}`);
+        assert.deepEqual(page.errors, []);
+        await page.context().close();
+      }
+    });
+  }
 });
 
 suite("the question for a PIN of the venue mode", {

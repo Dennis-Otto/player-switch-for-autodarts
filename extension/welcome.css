@@ -242,12 +242,25 @@ footer p {
   gap: 20px;
 }
 
+/* Every link is a target of 44 by 44 pixels, for a finger on a touch display. */
 footer a {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 44px;
+  min-height: 44px;
   color: var(--muted);
 }
 
 footer a:hover {
   color: var(--accent);
+}
+
+.step .hint a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  color: var(--accent-strong);
 }
 
 @media (max-width: 480px) {

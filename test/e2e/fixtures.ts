@@ -232,6 +232,24 @@ export class Display {
     await expectPlayer(page, account);
   }
 
+  /** The welcome page that the install opened in a tab of its own, once it has loaded. */
+  async welcome(): Promise<Page> {
+    const address = `chrome-extension://${this.extensionId}/welcome.html`;
+    let opened: Page | undefined;
+    await expect
+      .poll(
+        () => {
+          opened = this.context.pages().find((page) => page.url() === address);
+          return opened !== undefined;
+        },
+        { message: "the welcome page that the install opened" },
+      )
+      .toBe(true);
+    const page = opened as Page;
+    await page.waitForLoadState();
+    return page;
+  }
+
   /** Opens the toolbar popup in a new tab. */
   async popup(): Promise<Popup> {
     const page = await this.context.newPage();

@@ -57,11 +57,12 @@ Das Display im Flur, im Verein oder in der Kneipe teilen sich alle, aber jede Pe
 
 ## Einrichten
 
-Nach der Installation öffnet sich eine Willkommensseite mit drei Schritten:
+Nach der Installation öffnet sich eine Willkommensseite mit vier Schritten:
 
 1. **Symbol anheften.** Chrome legt eine neue Erweiterung hinter das Puzzleteil neben der Adressleiste: darauf klicken und dann auf die Nadel neben Player Switch for Autodarts.
 2. **Den ersten Spieler anmelden**, auf [play.autodarts.com](https://play.autodarts.com). Das Konto wird von selbst gespeichert, und das Symbol zeigt kurz ✓.
 3. **Weitere Spieler hinzufügen:** im Popup, oder bei den Spielern auf der Seite von Autodarts, **Konto hinzufügen** wählen und als nächste Person anmelden. Auch dieses Konto wird von selbst gespeichert, ohne das Popup noch einmal zu öffnen.
+4. **Das Board teilen.** Autodarts zeigt ein Board nur seinem Besitzer und den Konten, mit denen es geteilt ist. Deshalb teilt sein Besitzer es auf Autodarts mit jedem gespeicherten Konto, über den genauen Benutzernamen, mit bis zu 10 weiteren Konten; in der englischen Ansicht von Autodarts heißt die Seite dafür **My Boards**. Sonst sieht ein Spieler nach einem Wechsel kein Board, wie [die Hilfe](help.md#board-not-shared) erklärt.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="images/diagrams/adding-a-player.de.dark.svg">

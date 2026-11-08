@@ -262,6 +262,14 @@ The extension saves a sign-in by itself only in the ten minutes after **Add acco
 
 **Settings** in the popup, or **Details → Extension options** under `chrome://extensions` (`edge://extensions` in Edge, **Options** of Player Switch under `about:addons` in Firefox), turns the button on and picks its corner. Is it on and still missing? Reload the Autodarts page. The keyboard shortcut <kbd>Alt</kbd>+<kbd>Shift</kbd>+<kbd>O</kbd> opens the players with the button off as well.
 
+### After a switch, the board is missing {#board-not-shared}
+
+Autodarts shows a board only to the account that owns it and to the accounts that its owner shares it with. After a switch to a player whom the board isn't shared with, Autodarts shows that player no board, and they can't start a game on it. The extension can't change that: who sees a board is up to Autodarts, and the switch itself worked.
+
+**What to do:** the owner of the board signs in on Autodarts, opens **My Boards** and shares the board with that player, by their exact Autodarts username, since Autodarts suggests no names. Switch to the player again, or reload the Autodarts page, and the board is there. An owner can share a board with up to 10 other accounts, which use it as if it were their own but can't rename or delete it or make new credentials for it, as Autodarts' post [Board sharing](https://web.archive.org/web/20250430030721/https://autodarts.io/updates/board-sharing) of 4 March 2025 says. Share the board with every saved account once, best while you save the players: the welcome page of the install asks for it as its last step.
+
+**In a club or a pub,** let an Autodarts account of the venue own the board, not the account of a member: the board then stays when a member leaves, and that house account shares it with the regular players. The [venue mode](shared-display.md#venue-mode) returns the display to it after a break. Has the venue more regular players than the 10 accounts that Autodarts allows? The others play under the house account.
+
 ### Who can play under my account?
 
 Anyone at that display can switch to any account saved on it: it is made for a display that the people of a household, a club or a venue share and trust. In a club or a pub, the [venue mode](shared-display.md#venue-mode) gives your account a PIN that the display asks for before anyone plays under it. Leave a club, or play elsewhere from now on? Remove your account from the display, under **Manage accounts**. The [security design](security.md) lists what is kept and which risks remain.

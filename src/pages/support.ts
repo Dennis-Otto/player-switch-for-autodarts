@@ -11,8 +11,9 @@ interface BrandedNavigator extends Navigator {
 
 /**
  * Points each link marked data-link="help" at the help page in the language of the
- * extension, and each one marked data-link="report" at the bug form, filled in with the
- * versions of the extension and the browser alone.
+ * extension, at the entry that its data-anchor names, if any, and each one marked
+ * data-link="report" at the bug form, filled in with the versions of the extension and
+ * the browser alone.
  */
 export function linkSupport(root: ParentNode): void {
   const browser = browserName(
@@ -23,7 +24,9 @@ export function linkSupport(root: ParentNode): void {
   for (const link of root.querySelectorAll<HTMLAnchorElement>(
     "[data-link=help]",
   )) {
-    link.href = t("helpUrl");
+    const anchor = link.dataset.anchor;
+    link.href =
+      anchor === undefined ? t("helpUrl") : `${t("helpUrl")}#${anchor}`;
   }
   for (const link of root.querySelectorAll<HTMLAnchorElement>(
     "[data-link=report]",

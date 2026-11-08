@@ -279,7 +279,7 @@
     "message": "Bienvenue dans Player Switch"
   },
   "welcomeLead": {
-    "message": "Configurez l'écran partagé en trois étapes. Ensuite, une pression sur une vignette change de joueur."
+    "message": "Configurez l'écran partagé en quatre étapes. Ensuite, une pression sur une vignette change de joueur."
   },
   "welcomePinTitle": {
     "message": "Épinglez l'icône"
@@ -310,6 +310,15 @@
   },
   "welcomePlusText": {
     "message": "Un + sur l'icône signifie qu'une personne connectée n'est pas encore enregistrée : Enregistrer le compte, dans la fenêtre pop-up, l'enregistre."
+  },
+  "welcomeShareTitle": {
+    "message": "Partagez la cible"
+  },
+  "welcomeShareText": {
+    "message": "Autodarts n'affiche une cible qu'à son propriétaire et aux comptes avec lesquels elle est partagée. Le propriétaire de la cible la partage donc dans Autodarts avec chaque compte enregistré, par son nom d'utilisateur exact : avec 10 autres comptes au plus."
+  },
+  "welcomeShareHelp": {
+    "message": "Un joueur ne voit aucune cible après un changement"
   },
   "welcomePrivacy": {
     "message": "Tout reste sur cet ordinateur et n'est envoyé qu'à Autodarts."

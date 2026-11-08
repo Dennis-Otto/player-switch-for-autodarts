@@ -4,20 +4,22 @@ A board display in the hallway, the club or the pub: a computer by the board, a 
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="images/diagrams/display-setup.dark.svg">
-  <img src="images/diagrams/display-setup.svg" alt="Set up a shared display: Install Player Switch, then save every player once: each signs in on Autodarts after Add account. On a display that shows the toolbar, pin the icon; in fullscreen or kiosk mode, players switch with the button on the Autodarts page or the keyboard shortcut. Let the computer start Chrome in kiosk mode by itself, give it an on-screen keyboard for the sign-ins, and keep the browser running, so that the renewal every 12 hours keeps every parked account ready.">
+  <img src="images/diagrams/display-setup.svg" alt="Set up a shared display: Install Player Switch, then save every player once: each signs in on Autodarts after Add account. The owner of the board shares it with every saved account in Autodarts, so that each player sees it after a switch. On a display that shows the toolbar, pin the icon; in fullscreen or kiosk mode, players switch with the button on the Autodarts page or the keyboard shortcut. Let the computer start Chrome in kiosk mode by itself, give it an on-screen keyboard for the sign-ins, and keep the browser running, so that the renewal every 12 hours keeps every parked account ready.">
 </picture>
 
 ## What you need
 
 - **A computer by the board** with Google Chrome on Windows, macOS or Linux, or a Raspberry Pi with Raspberry Pi OS and its Chromium.
 - **A screen in reach of the players**, best a touch screen; a mouse or a small wireless keyboard works too.
-- **An Autodarts account for every player**, and a browser profile for the display: one of its own, not anyone's personal one. The extension keeps the accounts in that profile.
+- **An Autodarts account for every player**, with the board shared with each of them, and a browser profile for the display: one of its own, not anyone's personal one. The extension keeps the accounts in that profile.
 
 ## 1. Save the players {#save-the-players}
 
-Install the extension from [the Chrome Web Store](https://chromewebstore.google.com/detail/player-switch-for-autodar/gbijblgchbbbkjeibpjaodflfgbgefam), which keeps it up to date on its own, or unpacked as the [quick start](https://github.com/Dennis-Otto/player-switch-for-autodarts#quick-start) shows. A welcome page opens with three steps: pin the icon, sign in the first player, and add the next ones. [Set it up](index.md#set-it-up) on the home page shows them.
+Install the extension from [the Chrome Web Store](https://chromewebstore.google.com/detail/player-switch-for-autodar/gbijblgchbbbkjeibpjaodflfgbgefam), which keeps it up to date on its own, or unpacked as the [quick start](https://github.com/Dennis-Otto/player-switch-for-autodarts#quick-start) shows. A welcome page opens with four steps: pin the icon, sign in the first player, add the next ones and share the board. [Set it up](index.md#set-it-up) on the home page shows them.
 
 Each player signs in once: choose **Add account**, and the next sign-in on Autodarts is saved by itself. Save every player before you turn on kiosk mode, while the keyboard and the toolbar are at hand; **Add account** in the players on the Autodarts page works in kiosk mode too.
+
+Then share the board with every saved account. Autodarts shows a board only to the account that owns it and to the accounts that its owner shares it with, so a player whom it isn't shared with sees no board after a switch. The owner signs in on Autodarts, opens **My Boards** and adds each player by their exact username, up to 10 accounts besides their own. In a club or a pub, an Autodarts account of the venue owns the board best, so that the board stays when a member leaves: [After a switch, the board is missing](help.md#board-not-shared) says more.
 
 ## 2. Choose how players switch {#how-players-switch}
 
@@ -112,6 +114,7 @@ Every PIN is gone then, and the display no longer returns after a break: set the
 ## 8. Before the first evening {#checklist}
 
 - [ ] A tap on each tile switches to that player, and **Manage accounts** shows no **Sign in again**.
+- [ ] After a tap on each tile, Autodarts shows the board: it is shared with every saved account.
 - [ ] The button on the Autodarts page sits in a corner where it covers nothing that you need.
 - [ ] Chrome saves no password on this display, and nobody is still signed in to Google or Apple in it.
 - [ ] After a restart of the computer, Chrome comes back by itself, in kiosk mode on Autodarts.
