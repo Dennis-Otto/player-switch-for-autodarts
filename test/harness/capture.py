@@ -43,6 +43,18 @@ OVERFLOWS = """() => [document, ...[...document.querySelectorAll("iframe")].map(
         return root.scrollHeight > root.clientHeight || root.scrollWidth > root.clientWidth
             || (panel !== null && panel.scrollHeight > panel.clientHeight);
     })"""
+# Whether the popup that hangs from its icon in the toolbar is cut off where it must not
+# be: at its left edge, which grows to the left, or above the bottom of its third tile,
+# where the window cuts it off on purpose.
+CUT_OFF = """() => {
+    const hanging = document.querySelector(".hanging");
+    if (hanging === null) return false;
+    const frame = hanging.querySelector("iframe");
+    const third = frame.contentDocument.querySelectorAll(".tile")[2];
+    return hanging.getBoundingClientRect().left < 0 || third === undefined
+        || frame.getBoundingClientRect().top + third.getBoundingClientRect().bottom
+            > innerHeight;
+}"""
 # The ring around a control that a picture of the browser points at, in the amber of the
 # steps for a person in the diagrams.
 MARK = """(control) => {
@@ -217,7 +229,7 @@ def open_stage(
 def picture(page: Page, fit: bool) -> Image.Image:
     """The stage as it stands, or its window, which must hold all of the stage: a
     picture of an exact size, such as one of the store, never cuts anything off."""
-    if not fit and page.evaluate(OVERFLOWS):
+    if not fit and (page.evaluate(OVERFLOWS) or page.evaluate(CUT_OFF)):
         size = page.viewport_size or {}
         raise SystemExit(
             f"{page.url} needs more than {size.get('width')}x{size.get('height')}: "
