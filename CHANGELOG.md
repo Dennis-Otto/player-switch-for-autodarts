@@ -8,12 +8,11 @@ the next release, or lists the pull requests when there is none.
 
 ## [1.4.0](https://github.com/Dennis-Otto/player-switch-for-autodarts/compare/v1.3.0...v1.4.0) (2026-11-08)
 
-
 ### Features
 
-* join the lobby with a parked player from the popup and the switcher ([#170](https://github.com/Dennis-Otto/player-switch-for-autodarts/issues/170)) ([e6f1047](https://github.com/Dennis-Otto/player-switch-for-autodarts/commit/e6f10471b06e6453e9dc6b6266654ba1213b623e))
-* Player Switch can seat a parked player in the lobby on the board ([#168](https://github.com/Dennis-Otto/player-switch-for-autodarts/issues/168)) ([bf11248](https://github.com/Dennis-Otto/player-switch-for-autodarts/commit/bf1124899e74ade39b71e788633a8ffcd708593a))
-* **welcome:** remind the board owner to share the board with every saved player ([#164](https://github.com/Dennis-Otto/player-switch-for-autodarts/issues/164)) ([7173de7](https://github.com/Dennis-Otto/player-switch-for-autodarts/commit/7173de77eb639175d24bca8d854cdb8cbe5906e8))
+- Player Switch can seat a saved player in the lobby that the display shows, at the board of the host, with the session that it keeps for that player: the match then counts for their own account too, without a phone and without a sign-in, while the player on the page plays on. In the venue mode it asks for the PIN of that player first. The extension needs no new permission for it.
+- **Join the lobby:** while the Autodarts page shows a lobby, the tile of each parked player in the popup and in the players on the page has a button *Join the lobby*. A tap seats that player in the lobby at the board of the display, and the tile then says *In the lobby*: the page stays with the player who plays there, nothing switches and nothing reloads, and the match counts for every player's own account. Its texts come in all five languages of the extension, and the help explains each message that a join can show.
+- The welcome page of the install has a fourth step, *Share the board*: Autodarts shows a board only to its owner and to the accounts it is shared with, so the owner shares it with every saved account, up to 10. The help explains what to do when a player sees no board after a switch, and the guide for a shared display and its checklist ask for the step as well.
 
 ## [1.3.0](https://github.com/Dennis-Otto/player-switch-for-autodarts/compare/v1.2.1...v1.3.0) (2026-11-07)
 
