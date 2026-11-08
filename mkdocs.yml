@@ -45,6 +45,7 @@ plugins:
           Privacy: Datenschutz
           Development: Entwicklung
           Releases: Releases
+          Roadmap: Roadmap
           Decisions: Entscheidungen
 
 # The menu. A tab in the header for each section.
@@ -56,6 +57,7 @@ nav:
   - Privacy: privacy.md
   - Development: development.md
   - Releases: releases.md
+  - Roadmap: roadmap.md
   - Decisions: decisions/README.md
 
 # The styles of this website alone, beside those of the blueprint.

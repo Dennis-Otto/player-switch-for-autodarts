@@ -212,6 +212,32 @@ someone who can use the computer.
   PINs of 4 digits against a hash in a short time. Longer PINs take longer, not
   forever.
 
+## The algorithms {#algorithms}
+
+The extension implements no cryptography of its own. It calls WebCrypto, the
+cryptography of the browser, for two jobs:
+
+| Job | Algorithm | Where |
+| --- | --- | --- |
+| Seal each session and password | AES-GCM, a key of 256 bits that can't be exported, a random nonce of 12 bytes for each sealing | `src/vault.ts` |
+| Keep a PIN as a hash | PBKDF2 with SHA-256, 600,000 rounds, a random salt of 16 bytes for each PIN | `src/venue.ts` |
+
+The people at a display don't choose an algorithm: a display that nobody configures
+would keep a weak one forever. Should one weaken, a release replaces it, and the
+stored data is ready for that:
+
+- **The saved accounts carry the version of their format,** 2 since the sessions are
+  sealed. A release that seals with another algorithm is a new version, with a
+  migration in `src/storage.ts` that opens each secret with the old one and seals it
+  with the new one at the first reading after the update, as version 2 sealed the
+  plain text of version 1. The key store can keep a second key beside the first,
+  under a name of its own, until every secret is sealed again
+  ([decision 0006](decisions/0006-seal-the-secrets-with-a-key-that-never-leaves-the-browser.md)).
+  A version that doesn't know the new format never saves over it, as
+  [above](#sealed-tokens-and-passwords).
+- **Each PIN hash carries its rounds.** A release can raise them for every PIN set
+  after it, while a PIN set before still checks with the rounds of its own hash.
+
 ## Threats and countermeasures
 
 | Threat | Countermeasure |
