@@ -13,7 +13,7 @@ Darüber hinaus geht es in diesem Jahr darum, dass sie funktioniert und sicher b
 
 - **Jede Änderung von Autodarts.** Wie die Erweiterung eine Sitzung behält, ist keine offizielle Schnittstelle von Autodarts. Der Workflow Upstream prüft diesen Vertrag jeden Morgen, und die End-to-End-Tests laufen jeden Tag im nächsten Chrome, sodass sich eine Änderung meist zeigt, bevor die Spieler sie sehen ([was Autodarts und das nächste Chrome ändern](development.md#what-autodarts-and-the-next-chrome-change), auf Englisch). Eine Änderung, die das Wechseln bricht, wird zuerst behoben, mit einem Test, der sie behoben hält.
 - **Jede neue Version von Chrome, Edge und Firefox,** ab Version 140, in einem Paket für alle.
-- **Fehler und Sicherheit.** Gemeldete Fehler und Sicherheitslücken kommen vor allem Neuen; [SECURITY.md](https://github.com/Dennis-Otto/player-switch-for-autodarts/blob/main/SECURITY.md) nennt die Fristen.
+- **Fehler und Sicherheit.** Gemeldete Fehler und Sicherheitslücken haben Vorrang vor allem Neuen; [SECURITY.md](https://github.com/Dennis-Otto/player-switch-for-autodarts/blob/main/SECURITY.md) nennt die Fristen.
 - **Aktuelle Abhängigkeiten und Werkzeuge,** durch die Update-Bots und den [Repository-Blueprint](https://github.com/Dennis-Otto/repo-blueprint).
 
 Feature-Wünsche mit den meisten Reaktionen kommen als Nächstes dran, in dieser Reihenfolge: zuerst alles, was für Spieler kaputtgeht, dann, was die gespeicherten Konten sicherer macht, dann der Rest.
