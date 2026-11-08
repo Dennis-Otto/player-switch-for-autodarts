@@ -8,9 +8,9 @@
 # looks the same its committed file back and lists the others. It needs Pillow:
 # `python3 -m pip install --require-hashes -r .github/screenshots-requirements.txt`.
 #
-# It renders the social preview, .github/social-preview.png, from
-# .github/social-preview.html, and the pictures of the extension from its real pages,
-# with made-up accounts (test/harness/, docs/development.md#pictures):
+# It renders the pictures of the extension from its real pages, with made-up accounts
+# (test/harness/, docs/development.md#pictures), and last the social preview, which
+# shows one of them:
 #
 # - docs/images/switch.gif, an animated tap that switches players, for the README, and
 #   switch.mp4 and switch.webp beside it, the video and its poster for the website,
@@ -23,13 +23,14 @@
 #   1400×560) of the Chrome Web Store, in every language of extension/_locales (.en,
 #   .de, .nl, .fr and .es), with the texts around the extension from
 #   store/pictures.<code>.json.
+# - .github/social-preview.png, from .github/social-preview.html, the picture of links
+#   to the repository: the switcher on a board display (switcher.dark.png) beside the
+#   name of the extension and what it does.
 #
 # It needs Docker, and Node for the code of the extension. The blueprint brought it
 # once; it belongs to this project.
 set -euo pipefail
 cd "$(dirname "${BASH_SOURCE[0]}")/.."
-
-bash scripts/social-preview.sh
 
 # The extension as it ships: its code in extension/lib/, compiled from src/.
 if [[ ! -x node_modules/.bin/tsc ]]; then
@@ -57,3 +58,6 @@ else
   echo "Rendering the pictures of the extension failed; the log above says why." >&2
   exit 1
 fi
+
+# Last, as it shows the switcher that the step above has just rendered.
+bash scripts/social-preview.sh
