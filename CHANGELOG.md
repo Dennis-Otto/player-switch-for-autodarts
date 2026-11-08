@@ -6,6 +6,15 @@ the next release, or lists the pull requests when there is none.
 
 ## Unreleased
 
+## [1.4.0](https://github.com/Dennis-Otto/player-switch-for-autodarts/compare/v1.3.0...v1.4.0) (2026-11-08)
+
+
+### Features
+
+* join the lobby with a parked player from the popup and the switcher ([#170](https://github.com/Dennis-Otto/player-switch-for-autodarts/issues/170)) ([e6f1047](https://github.com/Dennis-Otto/player-switch-for-autodarts/commit/e6f10471b06e6453e9dc6b6266654ba1213b623e))
+* Player Switch can seat a parked player in the lobby on the board ([#168](https://github.com/Dennis-Otto/player-switch-for-autodarts/issues/168)) ([bf11248](https://github.com/Dennis-Otto/player-switch-for-autodarts/commit/bf1124899e74ade39b71e788633a8ffcd708593a))
+* **welcome:** remind the board owner to share the board with every saved player ([#164](https://github.com/Dennis-Otto/player-switch-for-autodarts/issues/164)) ([7173de7](https://github.com/Dennis-Otto/player-switch-for-autodarts/commit/7173de77eb639175d24bca8d854cdb8cbe5906e8))
+
 ## [1.3.0](https://github.com/Dennis-Otto/player-switch-for-autodarts/compare/v1.2.1...v1.3.0) (2026-11-07)
 
 ### Features
