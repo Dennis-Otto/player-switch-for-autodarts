@@ -1502,6 +1502,25 @@ test("a seat that the record can't note is taken all the same", async () => {
   );
 });
 
+test("a record of the seats that can't be read still shows every account and offers the join", async () => {
+  const fake = browser();
+  await adaHostsALobby(fake);
+  fake.sessionArea.failing.get = true;
+
+  const reply = await popup(fake, { action: "view" });
+
+  assert.equal(reply.error, undefined);
+  assert.deepEqual(
+    reply.view.profiles.map((profile) => profile.id),
+    ["ada", "bob"],
+  );
+  assert.deepEqual(reply.view.lobby, { seated: [] });
+  assert.ok(
+    fake.logs.includes("Player Switch: reading the seats in the lobby failed."),
+    String(fake.logs),
+  );
+});
+
 test("a view after a failure offers no join", async () => {
   const fake = browser();
   await adaHostsALobby(fake);

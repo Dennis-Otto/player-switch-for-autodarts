@@ -505,9 +505,16 @@ export function startWorker(api: ChromeApi, platform: Platform): StartedWorker {
     tab: Promise<BrowserTab | undefined>,
   ): Promise<PlayersView["lobby"]> {
     const lobby = lobbyOf((await tab)?.url);
-    return lobby === null
-      ? null
-      : { seated: seatsIn(await loadSeats(), lobby) };
+    if (lobby === null) {
+      return null;
+    }
+    // A record that can't be read costs a tap at most: the tiles offer the join again,
+    // which keeps a seat that the account already has, and the view still lists them.
+    const seats = await loadSeats().catch((error: unknown) => {
+      logFailure("reading the seats in the lobby")(error);
+      return [];
+    });
+    return { seated: seatsIn(seats, lobby) };
   }
 
   /** Changes the venue settings: `change` gets the stored ones and answers the new ones. */
