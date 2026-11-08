@@ -52,9 +52,10 @@ es aber könnte und die Tokens und Passwörter dort nur verschlüsselt fände
 ## Wohin Daten gehen
 
 Die Erweiterung spricht nur mit Autodarts (`api.autodarts.com` und
-`play.autodarts.com`), über HTTPS, um anzumelden, eine Sitzung zu erneuern und die
-Sitzung zwischen Konten zu verschieben — dieselben Anfragen, die die Autodarts-Website
-selbst stellt. Das Popup und der Umschalter zeigen auch das Bild jedes Spielers von der
+`play.autodarts.com`), über HTTPS, um anzumelden, eine Sitzung zu erneuern, die
+Sitzung zwischen Konten zu verschieben und einen gespeicherten Spieler in die Lobby zu
+setzen, die der Bildschirm zeigt — dieselben Anfragen, die die Autodarts-Website selbst
+stellt. Das Popup und der Umschalter zeigen auch das Bild jedes Spielers von der
 Adresse, die Autodarts dafür angibt, wie die Autodarts-Website. Sie öffnet keine
 andere Verbindung, spricht mit keinem Dienst für Statistiken oder Tracking, und der
 Entwickler bekommt keine Daten von ihr. Ihre Content Security Policy lässt sie nur mit
@@ -63,8 +64,11 @@ Entwickler bekommt keine Daten von ihr. Ihre Content Security Policy lässt sie 
 Firefox zeigt bei der Installation, dass das Add-on *Authentifizierungsdaten*
 sendet: Das sind die Sitzungstokens und, bei einem Konto, dessen Passwort du dir
 merken lässt, Benutzername und Passwort, die wie hier beschrieben an den
-Anmeldedienst von Autodarts gehen, und nirgendwohin sonst. Der Chrome Web Store
-führt dasselbe unter seinen Datenschutzpraktiken.
+Anmeldedienst von Autodarts gehen, und nirgendwohin sonst. Tritt ein gespeicherter
+Spieler der Lobby auf dem Bildschirm bei, geht ein frischer Zugangstoken dieses Kontos
+an den Spieldienst von Autodarts auf demselben Host, mit dem Benutzernamen und der ID
+des Kontos, die Autodarts ohnehin kennt. Der Chrome Web Store führt dasselbe unter
+seinen Datenschutzpraktiken.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="images/diagrams/data-flow.de.dark.svg">

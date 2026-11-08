@@ -103,6 +103,7 @@ interface Reply {
   retryIn?: number;
   page?: boolean;
   saved?: string;
+  joined?: string;
   error?: string;
   view: PlayersView;
 }
@@ -1244,4 +1245,158 @@ test("a check mark that shows while the badge is read stays", async () => {
   await until(() => fake.badge.text === "✓", "the check mark");
   await settle();
   assert.equal(fake.badge.text, "✓");
+});
+
+/** The address of a lobby in Autodarts Play. */
+const lobbyPage = (lobby: string) => `${PLAY}lobbies/${lobby}`;
+
+/** Ada plays on the page and hosts a lobby that the tab in front shows; Bob is parked. */
+async function adaHostsALobby(fake: FakeBrowser): Promise<string> {
+  await twoPlayers(fake);
+  const lobby = fake.autodarts.openLobby("ada");
+  fake.addTab({ url: lobbyPage(lobby) });
+  await started(fake);
+  return lobby;
+}
+
+test("a join seats a parked player in the lobby of the tab in front, and the page plays on", async () => {
+  const fake = browser();
+  const lobby = await adaHostsALobby(fake);
+  const inPage = fake.pageToken;
+
+  const reply = await popup(fake, { action: "join", id: "bob" });
+
+  assert.deepEqual(
+    { ok: reply.ok, joined: reply.joined },
+    {
+      ok: true,
+      joined: "bob",
+    },
+  );
+  assert.deepEqual(fake.autodarts.lobbies.get(lobby)?.seated, ["ada", "bob"]);
+  assert.deepEqual(
+    fake.autodarts.seats.map(({ bearer, body }) => ({ bearer, body })),
+    [
+      {
+        bearer: "bob",
+        body: { name: "bob", userId: "bob", boardId: "board-of-ada" },
+      },
+    ],
+  );
+  // Ada plays on: the page kept its session and nothing reloaded.
+  assert.equal(fake.pageToken, inPage);
+  assert.deepEqual(fake.reloaded, []);
+  assert.ok(
+    !fake.told.some(({ message }) => message.action === "write"),
+    "no token reached the page",
+  );
+  const state = await accounts(fake);
+  assert.equal(state.activeId, "ada");
+  assert.equal(find(state, "bob")?.token, fake.autodarts.live.get("bob"));
+  assert.equal(fake.autodarts.reuses, 0);
+});
+
+test("a join from the switcher seats the player in the lobby of the switcher's own tab", async () => {
+  const fake = browser();
+  await twoPlayers(fake);
+  const lobby = fake.autodarts.openLobby("ada");
+  const tab = fake.addTab({ url: lobbyPage(lobby), active: false });
+  fake.addTab();
+  await started(fake);
+
+  const reply = await popup(
+    fake,
+    { action: "join", id: "bob" },
+    { id: EXTENSION_ID, url: SWITCHER, tab },
+  );
+
+  assert.equal(reply.joined, "bob");
+  assert.deepEqual(fake.autodarts.lobbies.get(lobby)?.seated, ["ada", "bob"]);
+});
+
+test("a join finds no lobby in a tab that shows none, and spends no token", async () => {
+  for (const tab of [undefined, PLAY, MATCH, `${PLAY}lobbies/not-a-lobby`]) {
+    const fake = browser();
+    await twoPlayers(fake);
+    if (tab !== undefined) {
+      fake.addTab({ url: tab });
+    }
+    await started(fake);
+    const before = fake.autodarts.refreshes.length;
+
+    const reply = await popup(fake, { action: "join", id: "bob" });
+
+    assert.deepEqual(
+      { ok: reply.ok, reason: reply.reason },
+      {
+        ok: false,
+        reason: "noLobby",
+      },
+    );
+    assert.equal(fake.autodarts.refreshes.length, before, String(tab));
+    assert.deepEqual(fake.autodarts.seats, []);
+  }
+});
+
+test("a join of an account with a PIN needs its PIN", async () => {
+  const fake = browser();
+  fake.local.data.set(VENUE_KEY, { players: { bob: await quickHash("1234") } });
+  const lobby = await adaHostsALobby(fake);
+  const before = fake.autodarts.refreshes.length;
+
+  const ask = await popup(fake, { action: "join", id: "bob" });
+  assert.deepEqual([ask.reason, ask.pin, ask.wrong], ["pin", "player", false]);
+  const wrong = await popup(fake, { action: "join", id: "bob", pin: "0000" });
+  assert.deepEqual([wrong.reason, wrong.wrong], ["pin", true]);
+  assert.equal(fake.autodarts.refreshes.length, before);
+
+  const right = await popup(fake, { action: "join", id: "bob", pin: "1234" });
+  assert.equal(right.joined, "bob");
+  assert.deepEqual(fake.autodarts.lobbies.get(lobby)?.seated, ["ada", "bob"]);
+});
+
+test("a join says why the player took no seat", async () => {
+  const fake = browser();
+  await adaHostsALobby(fake);
+
+  // Ada plays on the page, whose token the extension never renews behind its back.
+  const playing = await popup(fake, { action: "join", id: "ada" });
+  assert.deepEqual([playing.ok, playing.reason], [false, "playing"]);
+
+  // An account that is gone meanwhile: nothing to do, and the view shows it gone.
+  const gone = await popup(fake, { action: "join", id: "cy" });
+  assert.deepEqual([gone.ok, gone.joined], [true, undefined]);
+
+  // Autodarts can't be reached: the session stays parked for the next try.
+  fake.broken.add("fetch");
+  const offline = await popup(fake, { action: "join", id: "bob" });
+  assert.deepEqual(
+    [offline.ok, offline.reason, offline.page],
+    [false, "unreachable", true],
+  );
+  fake.broken.delete("fetch");
+
+  // Bob's session died: he has to sign in again, as after a switch.
+  fake.autodarts.live.delete("bob");
+  const dead = await popup(fake, { action: "join", id: "bob" });
+  assert.deepEqual([dead.ok, dead.reason, dead.page], [false, "signin", true]);
+  assert.equal(find(await accounts(fake), "bob")?.needsSignIn, true);
+  assert.deepEqual(fake.autodarts.seats, []);
+});
+
+test("a join that Autodarts refuses says so, and keeps the rotated token", async () => {
+  const fake = browser();
+  await twoPlayers(fake);
+  // The lobby of the tab is gone at Autodarts.
+  fake.addTab({ url: lobbyPage("0b5a1c2d-0000-4000-8000-00000000dead") });
+  await started(fake);
+
+  const reply = await popup(fake, { action: "join", id: "bob" });
+
+  assert.deepEqual([reply.ok, reply.reason], [false, "refused"]);
+  assert.equal(
+    find(await accounts(fake), "bob")?.token,
+    fake.autodarts.live.get("bob"),
+  );
+  assert.equal(fake.autodarts.reuses, 0);
 });

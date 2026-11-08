@@ -1,12 +1,13 @@
 // Checks that Autodarts still works the way the extension relies on: the key under
 // which Autodarts Play keeps its session, the sign-in service and the client that it
 // signs in as, the answer to a dead session and to a wrong password, the end of a
-// session, and the forwarding of play.autodarts.io. None of it is a public contract
-// of Autodarts, so this is how a change shows up before a player notices it.
+// session, the lobby of a board and a seat in it, and the forwarding of
+// play.autodarts.io. None of it is a public contract of Autodarts, so this is how a
+// change shows up before a player notices it.
 // .github/workflows/upstream.yml runs this file every day; test/upstream-contract.test.ts
 // tests it. No dependencies: the values come from src/autodarts.ts, and the requests
-// to the sign-in service go through the functions of the extension itself, so neither
-// can drift apart from what the extension does.
+// to the sign-in service and the game service go through the functions of the
+// extension itself, so neither can drift apart from what the extension does.
 //
 //   node scripts/upstream-contract.ts
 //
@@ -23,10 +24,13 @@ import {
   AuthError,
   CLIENT_ID,
   type Fetch,
+  GAME_BASE,
   PLAY_ORIGIN,
+  readLobby,
   refreshSession,
   revokeSession,
   SESSION_KEY,
+  seatPlayer,
   signIn,
 } from "../src/autodarts.ts";
 
@@ -40,11 +44,16 @@ export const OLD_PLAY_ORIGIN = "https://play.autodarts.io";
 /** The address whose forwarding the check follows; any address of the app would do. */
 export const FORWARDED_PATH = "/lobbies";
 
-/** What the requests to the sign-in service carry: made up, so Autodarts refuses them. */
+/** A made-up id of a lobby, an account and a board: no lobby, account or board has it. */
+const NOBODY = "00000000-0000-4000-8000-000000000000";
+
+/** What the requests to Autodarts carry: made up, so Autodarts refuses them. */
 export const MADE_UP = {
   token: "upstream-check-not-a-token",
   username: "upstream-check@example.invalid",
   password: "upstream-check-not-a-password",
+  lobby: NOBODY,
+  seat: { name: "upstream-check", userId: NOBODY, boardId: NOBODY },
 } as const;
 
 /** How long a request may take before it counts as unanswered. */
@@ -70,6 +79,7 @@ export interface Contract {
   readonly sessionKey: string;
   readonly authBase: string;
   readonly clientId: string;
+  readonly gameBase: string;
 }
 
 export const CONTRACT: Contract = {
@@ -78,6 +88,7 @@ export const CONTRACT: Contract = {
   sessionKey: SESSION_KEY,
   authBase: AUTH_BASE,
   clientId: CLIENT_ID,
+  gameBase: GAME_BASE,
 };
 
 /** The places that rely on each part of the contract, the fake Autodarts of the end-to-end tests among them. */
@@ -112,6 +123,17 @@ export const placesOf = (contract: Contract) => {
       { file: "test/e2e/fake/play.js", text: '"/login"' },
     ],
     logout: [{ file: "src/autodarts.ts", text: "/logout" }],
+    lobby: [
+      { file: "src/autodarts.ts", text: contract.gameBase },
+      {
+        file: "test/e2e/fake/server.ts",
+        text: `"${new URL(contract.gameBase).pathname}/"`,
+      },
+    ],
+    seat: [
+      { file: "src/autodarts.ts", text: "/players" },
+      { file: "test/e2e/fake/autodarts.ts", text: "/players" },
+    ],
   } satisfies Record<string, readonly Place[]>;
 };
 
@@ -406,6 +428,61 @@ export const checkLogout = async (
   };
 };
 
+/**
+ * What a request to the game service with a made-up token found: ok only for 401, the
+ * answer that asks for a real token, which shows that the address is still there and
+ * still takes the access token of a player.
+ */
+const unauthorized = async (
+  requests: Requests,
+  call: () => Promise<unknown>,
+): Promise<{ found: string; ok: boolean }> => {
+  try {
+    await call();
+    return { found: "an answer, for a made-up token", ok: false };
+  } catch (error) {
+    const status = requests.status;
+    if (status === 401) {
+      return { found: "refused with 401", ok: true };
+    }
+    let found: string;
+    if (status === undefined) {
+      found = `no answer: ${reason(error)}`;
+    } else if (GONE.includes(status)) {
+      found = `answered ${status}: the address may be gone, and a player can't join a lobby then`;
+    } else {
+      found = `answered ${status}, where a made-up token got 401`;
+    }
+    return { found, ok: false };
+  }
+};
+
+/** Reads a made-up lobby with a made-up token, as a join reads the lobby first: Autodarts must ask for a real token. */
+export const checkLobby = async (
+  requests: Requests,
+  contract: Contract,
+): Promise<Finding> => ({
+  what: "The lobby of a board",
+  expected: `${contract.gameBase}/lobbies/<id> refuses a made-up token with 401`,
+  ...(await unauthorized(requests, () =>
+    readLobby(requests.fetch, MADE_UP.token, MADE_UP.lobby),
+  )),
+  places: placesOf(contract).lobby,
+});
+
+/** Takes a seat in a made-up lobby with a made-up token, as a join does: Autodarts must ask for a real token. */
+export const checkSeat = async (
+  requests: Requests,
+  contract: Contract,
+): Promise<Finding> => ({
+  what: "A seat in a lobby",
+  expected: `${contract.gameBase}/lobbies/<id>/players refuses a made-up token with 401`,
+  ...(await unauthorized(requests, () =>
+    seatPlayer(requests.fetch, MADE_UP.token, MADE_UP.lobby, MADE_UP.seat),
+  )),
+  places: placesOf(contract).seat,
+});
+
 /** Every check, one after another, so that Autodarts gets one request at a time. */
 export const checkAll = async (
   requests: Requests,
@@ -416,6 +493,8 @@ export const checkAll = async (
   await checkRefresh(requests, contract),
   await checkLogin(requests, contract),
   await checkLogout(requests, contract),
+  await checkLobby(requests, contract),
+  await checkSeat(requests, contract),
 ];
 
 const cell = (text: string): string => text.replaceAll("|", "\\|");

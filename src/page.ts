@@ -140,6 +140,23 @@ export function isMatchPage(url: string | undefined): boolean {
   );
 }
 
+/** The address of a lobby in Autodarts Play: `/lobbies/<id>`, with a UUID as its id. */
+const LOBBY_PATH =
+  /^\/lobbies\/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})\/?$/i;
+
+/**
+ * The lobby that an address of Autodarts Play shows, or null for any other address.
+ * The service worker reads it from the address of the tab that the browser reports,
+ * never from a message of the page, so a player joins the lobby that the display shows.
+ */
+export function lobbyOf(url: string | undefined): string | null {
+  const parsed = parse(url);
+  if (parsed === null || !PLAY_ORIGINS.includes(parsed.origin)) {
+    return null;
+  }
+  return LOBBY_PATH.exec(parsed.pathname)?.[1] ?? null;
+}
+
 /**
  * A switch, or the sign-out that makes room for a new account, has to ask first: the
  * page shows a match that runs, and the person hasn't confirmed yet that it may end.

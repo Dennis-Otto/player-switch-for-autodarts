@@ -19,6 +19,7 @@ import {
   type Deps,
   edit,
   forgetAll,
+  joinLobbyAs,
   leaveDisplay,
   type Removal,
   readView,
@@ -1429,4 +1430,136 @@ test("a double tap on Remove ends the session once", async () => {
   assert.equal(board.autodarts.logouts.length, 1);
   assert.equal(board.autodarts.live.has("b"), false);
   assertEverySessionKept(board);
+});
+
+/** Ada plays on the page and hosts a lobby; Bob's session is parked. */
+function lobbyOfAda() {
+  const autodarts = new FakeAutodarts();
+  const store = new FakeStore(
+    park(setActive(EMPTY, ada), bob, autodarts.issue("b"), 0),
+  );
+  const page = new FakePage(autodarts.issue("a"));
+  const lobby = autodarts.openLobby("a");
+  return {
+    autodarts,
+    store,
+    page,
+    lobby,
+    board: deps(store, page, autodarts.fetch),
+  };
+}
+
+test("joinLobbyAs seats a parked account at the board of the host, and the page stays", async () => {
+  const { autodarts, store, page, lobby, board } = lobbyOfAda();
+  const inPage = page.token;
+  const result = await joinLobbyAs(board, "b", lobby);
+  assert.deepEqual(result.ok && result.seated?.id, "b");
+  assert.deepEqual(autodarts.lobbies.get(lobby)?.seated, ["a", "b"]);
+  assert.deepEqual(autodarts.seats, [
+    {
+      lobby,
+      bearer: "b",
+      body: { name: "b", userId: "b", boardId: "board-of-a" },
+    },
+  ]);
+  // Bob's rotated token is kept, and he stays parked; Ada plays on as before.
+  assert.equal(find(store.state, "b")?.token, autodarts.live.get("b"));
+  assert.equal(find(store.state, "b")?.refreshedAt, 1000);
+  assert.equal(store.state.activeId, "a");
+  assert.equal(page.token, inPage);
+  assert.deepEqual(page.writes, []);
+  assert.equal(autodarts.reuses, 0);
+});
+
+test("joinLobbyAs keeps the seat of an account that has one, with no second request", async () => {
+  const { autodarts, lobby, board } = lobbyOfAda();
+  assert.ok((await joinLobbyAs(board, "b", lobby)).ok);
+  const again = await joinLobbyAs(board, "b", lobby);
+  assert.deepEqual(again.ok && again.seated?.id, "b");
+  assert.equal(autodarts.seats.length, 1);
+  assert.deepEqual(autodarts.lobbies.get(lobby)?.seated, ["a", "b"]);
+});
+
+test("joinLobbyAs seats no account that the extension doesn't know, and spends nothing", async () => {
+  const { autodarts, store, lobby, board } = lobbyOfAda();
+  const result = await joinLobbyAs(board, "nobody", lobby);
+  assert.deepEqual(result.ok && result.seated, null);
+  assert.deepEqual(autodarts.refreshes, []);
+  assert.equal(store.saves, 0);
+});
+
+test("joinLobbyAs leaves the account that plays on the page alone: its token belongs to the page", async () => {
+  const { autodarts, store, lobby, board } = lobbyOfAda();
+  const result = await joinLobbyAs(board, "a", lobby);
+  assert.deepEqual(!result.ok && result.reason, "playing");
+  assert.deepEqual(autodarts.refreshes, []);
+  assert.equal(store.saves, 0);
+});
+
+test("joinLobbyAs marks an account whose session died, as a switch does", async () => {
+  const store = new FakeStore(park(EMPTY, bob, "dead", 0));
+  const result = await joinLobbyAs(
+    deps(store, new FakePage(null), router({ refresh: rejected })),
+    "b",
+    "lobby",
+  );
+  assert.deepEqual(!result.ok && result.reason, "signin");
+  assert.equal(find(store.state, "b")?.needsSignIn, true);
+});
+
+test("joinLobbyAs changes nothing while Autodarts can't renew the session", async () => {
+  const store = new FakeStore(park(EMPTY, bob, "tb", 0));
+  const result = await joinLobbyAs(
+    deps(store, new FakePage(null), router({ refresh: offline })),
+    "b",
+    "lobby",
+  );
+  assert.deepEqual(!result.ok && result.reason, "unreachable");
+  assert.equal(store.saves, 0);
+  assert.equal(find(store.state, "b")?.token, "tb");
+});
+
+test("joinLobbyAs keeps the rotated token when Autodarts refuses the seat", async () => {
+  const { autodarts, store, board } = lobbyOfAda();
+  const result = await joinLobbyAs(
+    board,
+    "b",
+    "0b5a1c2d-0000-4000-8000-00000000dead",
+  );
+  assert.deepEqual(!result.ok && result.reason, "refused");
+  assert.equal(find(store.state, "b")?.token, autodarts.live.get("b"));
+  assert.equal(autodarts.reuses, 0);
+});
+
+test("joinLobbyAs keeps the rotated token when the lobby can't be reached", async () => {
+  const store = new FakeStore(park(EMPTY, bob, "tb", 0));
+  const result = await joinLobbyAs(
+    deps(
+      store,
+      new FakePage(null),
+      router({
+        refresh: () => Promise.resolve(sessionResponse("b", "fresh")),
+        lobby: offline,
+      }),
+    ),
+    "b",
+    "lobby",
+  );
+  assert.deepEqual(!result.ok && result.reason, "unreachable");
+  assert.equal(find(store.state, "b")?.token, "fresh");
+});
+
+test("a join and a switch of the same account at once spend each token once", async () => {
+  const { autodarts, store, page, lobby, board } = lobbyOfAda();
+  const [joined, switched] = await Promise.all([
+    joinLobbyAs(board, "b", lobby),
+    switchTo(board, "b"),
+  ]);
+  assert.ok(joined.ok);
+  assert.ok(switched.ok);
+  assert.deepEqual(autodarts.lobbies.get(lobby)?.seated, ["a", "b"]);
+  assert.equal(store.state.activeId, "b");
+  assert.equal(page.token, autodarts.live.get("b"));
+  assert.equal(find(store.state, "a")?.token, autodarts.live.get("a"));
+  assert.equal(autodarts.reuses, 0);
 });

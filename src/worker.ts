@@ -22,8 +22,12 @@
  * `trust.ts` decides who may send which request, and keeps the storage out of the reach
  * of the content script.
  *
+ * A join seats a parked account in the lobby that the Autodarts tab in front shows,
+ * which the worker reads from the address of the tab, with the session that it keeps
+ * for that account; the token never reaches the page (decision 0016).
+ *
  * The venue mode, which the options page turns on, comes from `venue.ts`: the worker
- * checks the PIN of every switch to an account that has one and of every change in
+ * checks the PIN of every switch to an account that has one, and of its join, and of every change in
  * "Manage accounts" while a manager PIN is set, so neither the popup nor the switcher
  * can go around it, and it returns the display to the house account after a break that
  * the content script measures, never during a match.
@@ -55,6 +59,7 @@ import {
 import { welcomes } from "./onboarding.ts";
 import {
   isPlayPage,
+  lobbyOf,
   mustConfirm,
   PLAY_ORIGINS,
   SETTINGS_KEY,
@@ -80,6 +85,7 @@ import {
   type Deps,
   edit,
   forgetAll,
+  joinLobbyAs,
   leaveDisplay,
   type PagePort,
   type Removal,
@@ -616,6 +622,31 @@ export function startWorker(api: ChromeApi, platform: Platform): StartedWorker {
         return result.ok
           ? { ok: true, page: true }
           : { ok: false, reason: result.reason, page: true };
+      }
+      case "join": {
+        // The lobby that the display shows, from the address that the browser reports
+        // of the tab: a message of the page can't send a player to another lobby.
+        const lobby = lobbyOf((await tab)?.url);
+        if (lobby === null) {
+          return { ok: false, reason: "noLobby" };
+        }
+        // The PIN of the account, as for a switch: the join plays under that account.
+        const check = await guard(
+          pinOf(await loadVenue(), message.id),
+          message.pin,
+        );
+        if (check.kind !== "ok") {
+          return refusal(check, "player");
+        }
+        const result = await joinLobbyAs(deps, message.id, lobby);
+        if (result.ok) {
+          return result.seated === null
+            ? { ok: true }
+            : { ok: true, joined: result.seated.name };
+        }
+        return result.reason === "signin" || result.reason === "unreachable"
+          ? { ok: false, reason: result.reason, page: true }
+          : { ok: false, reason: result.reason };
       }
       case "adopt":
         await adoptCurrentSession(deps);

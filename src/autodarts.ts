@@ -1,6 +1,7 @@
 /**
  * What the extension knows of Autodarts Play: where it runs, where it keeps its
- * session, and the sign-in service that renews, creates and ends a session.
+ * session, the sign-in service that renews, creates and ends a session, and the game
+ * service whose lobbies a parked player can join (decision 0016).
  *
  * Everything here takes its `fetch` as an argument, so the logic runs in a test
  * without a browser and the extension passes the real `fetch`.
@@ -36,7 +37,8 @@ export type Fetch = (url: string, init: RequestInit) => Promise<Response>;
 
 /**
  * Why a request to Autodarts failed: "rejected" when it will keep failing (a dead
- * session, a wrong password), "unreachable" when it may work again later.
+ * session, a wrong password, a lobby that takes no seat), "unreachable" when it may
+ * work again later.
  */
 export class AuthError extends Error {
   readonly kind: "rejected" | "unreachable";
@@ -194,4 +196,156 @@ export function readIdentity(accessToken: string): Identity {
     name: text("name") || username,
     picture: picture.startsWith("https://") ? picture : null,
   };
+}
+
+/** The game service of Autodarts, which keeps the lobbies where a match is set up. */
+export const GAME_BASE = "https://api.autodarts.com/gs/v0";
+
+/** What a join needs to know of a lobby: the board of its host, and who has a seat. */
+export interface Lobby {
+  /** The board where the host plays, which a new player shares; null while there is none. */
+  readonly board: string | null;
+  /** The accounts that have a seat in the lobby already. */
+  readonly seated: readonly string[];
+}
+
+/** A seat that a player takes in a lobby: their account, the name it shows, and the board. */
+export interface Seat {
+  readonly name: string;
+  readonly userId: string;
+  readonly boardId: string;
+}
+
+/** How a join ended: the player took a seat just now, or had one already. */
+export type Join = "joined" | "seated";
+
+/**
+ * Sends a request to the game service, with the access token of the account that it is
+ * for, and answers with the answer when Autodarts took it. A refusal, any 4xx but a
+ * timeout or too many requests, won't pass by itself: the lobby is gone, full or
+ * started, or the token doesn't count. Anything else may pass.
+ */
+async function askGame(
+  fetcher: Fetch,
+  accessToken: string,
+  path: string,
+  body?: Seat,
+): Promise<Response> {
+  const authorization = { Authorization: `Bearer ${accessToken}` };
+  let response: Response;
+  try {
+    response = await fetcher(
+      `${GAME_BASE}${path}`,
+      body === undefined
+        ? { method: "GET", headers: authorization }
+        : {
+            method: "POST",
+            headers: { ...authorization, "Content-Type": "application/json" },
+            body: JSON.stringify(body),
+          },
+    );
+  } catch {
+    throw new AuthError("unreachable", "Autodarts could not be reached");
+  }
+  if (response.ok) {
+    return response;
+  }
+  const { status } = response;
+  if (status >= 400 && status < 500 && status !== 408 && status !== 429) {
+    throw new AuthError("rejected", `Autodarts refused the request: ${status}`);
+  }
+  throw new AuthError("unreachable", `Autodarts answered ${status}`);
+}
+
+/** The path of a lobby at the game service. */
+const lobbyPath = (lobbyId: string): string =>
+  `/lobbies/${encodeURIComponent(lobbyId)}`;
+
+/** A text field of an object from an answer, or null when it is missing or empty. */
+function textOf(value: unknown, key: string): string | null {
+  if (typeof value !== "object" || value === null) {
+    return null;
+  }
+  const field: unknown = (value as Record<string, unknown>)[key];
+  return typeof field === "string" && field !== "" ? field : null;
+}
+
+/**
+ * Reads a lobby from an answer of the game service. Its board is the one of the host:
+ * the board of the first seat that the host has, or that the host gave a guest, since a
+ * lobby on a display seats everyone at the board of that display.
+ */
+export function parseLobby(data: unknown): Lobby {
+  const players: unknown =
+    typeof data === "object" && data !== null
+      ? (data as Record<string, unknown>).players
+      : undefined;
+  if (!Array.isArray(players)) {
+    throw new AuthError("unreachable", "Autodarts answered without a lobby");
+  }
+  const host = textOf((data as Record<string, unknown>).host, "id");
+  const hosts = (seat: unknown): boolean =>
+    host !== null &&
+    (textOf(seat, "userId") === host || textOf(seat, "hostId") === host);
+  const board = players.find(
+    (seat) => hosts(seat) && textOf(seat, "boardId") !== null,
+  );
+  return {
+    board: board === undefined ? null : textOf(board, "boardId"),
+    seated: players.flatMap((seat) => textOf(seat, "userId") ?? []),
+  };
+}
+
+/** Reads a lobby, with the access token of the account that is to join it. */
+export async function readLobby(
+  fetcher: Fetch,
+  accessToken: string,
+  lobbyId: string,
+): Promise<Lobby> {
+  const response = await askGame(fetcher, accessToken, lobbyPath(lobbyId));
+  return parseLobby(await response.json().catch(() => null));
+}
+
+/**
+ * Takes a seat in a lobby, with the request that the page `/join/<lobby>` of Autodarts
+ * Play sends: the name, the account and the board, with the access token of that
+ * account, so Autodarts seats nobody but the owner of the token.
+ */
+export async function seatPlayer(
+  fetcher: Fetch,
+  accessToken: string,
+  lobbyId: string,
+  seat: Seat,
+): Promise<void> {
+  await askGame(fetcher, accessToken, `${lobbyPath(lobbyId)}/players`, seat);
+}
+
+/**
+ * Seats a player in a lobby at the board of its host, as if they had joined from their
+ * phone, so the match counts for their own account. A player who has a seat already
+ * keeps it, and Autodarts gets no second request. The name is the username, which
+ * Autodarts shows of every player anyway, never the full name of the account.
+ */
+export async function joinLobby(
+  fetcher: Fetch,
+  accessToken: string,
+  lobbyId: string,
+  player: Identity,
+): Promise<Join> {
+  const lobby = await readLobby(fetcher, accessToken, lobbyId);
+  if (lobby.seated.includes(player.id)) {
+    return "seated";
+  }
+  if (lobby.board === null) {
+    throw new AuthError(
+      "rejected",
+      "The lobby has no board to seat a player at",
+    );
+  }
+  await seatPlayer(fetcher, accessToken, lobbyId, {
+    name: player.username,
+    userId: player.id,
+    boardId: lobby.board,
+  });
+  return "joined";
 }

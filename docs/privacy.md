@@ -47,8 +47,9 @@ would find the tokens and passwords there only encrypted
 ## Where data is sent
 
 The extension talks to Autodarts (`api.autodarts.com` and
-`play.autodarts.com`), over HTTPS, to sign in, renew a session and move the session
-between accounts — the same requests the Autodarts website itself makes. The popup
+`play.autodarts.com`), over HTTPS, to sign in, renew a session, move the session
+between accounts and seat a saved player in the lobby that the display shows — the
+same requests the Autodarts website itself makes. The popup
 and the switcher also show each player's picture from the address Autodarts gives
 for it, as the Autodarts website does. The extension opens no other connection,
 contacts no analytics or tracking service, and the developer receives no data from it.
@@ -58,8 +59,10 @@ browser itself blocks any other connection.
 Firefox shows at the install that the add-on sends *authentication information*:
 that is the session tokens, and the username and password of an account whose
 password you remember, which go to the sign-in service of Autodarts as described
-here, and nowhere else. The Chrome Web Store lists the same under its privacy
-practices.
+here, and nowhere else. When a saved player joins the lobby on the display, a fresh
+access token of that account goes to the game service of Autodarts on the same host,
+with the username and the id of the account, which Autodarts knows already. The Chrome
+Web Store lists the same under its privacy practices.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="images/diagrams/data-flow.dark.svg">

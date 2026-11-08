@@ -1,5 +1,5 @@
 /** Shared fakes for the tests: no browser, no network, a clock that stands still. */
-import type { Fetch } from "../src/autodarts.ts";
+import { type Fetch, GAME_BASE, readIdentity } from "../src/autodarts.ts";
 import { EMPTY, type State } from "../src/state.ts";
 import type { PagePort, Store } from "../src/switch.ts";
 
@@ -104,16 +104,24 @@ export class FakeStore implements Store {
   }
 }
 
+/** The requests that `router` tells apart, by the end of their URL. */
+export type Route = "refresh" | "login" | "logout" | "lobby" | "seat";
+
+/** The route of a request to Autodarts: the sign-in service, a lobby, or a seat in one. */
+function routeOf(url: string): Route {
+  if (url.startsWith(`${GAME_BASE}/lobbies/`)) {
+    return url.endsWith("/players") ? "seat" : "lobby";
+  }
+  if (url.endsWith("/refresh")) {
+    return "refresh";
+  }
+  return url.endsWith("/login") ? "login" : "logout";
+}
+
 /** A fetch that answers by the request's URL and body, built from handlers. */
-export function router(
-  handlers: { refresh?: Fetch; login?: Fetch; logout?: Fetch } = {},
-): Fetch {
+export function router(handlers: Partial<Record<Route, Fetch>> = {}): Fetch {
   return (url, init) => {
-    const path = url.endsWith("/refresh")
-      ? "refresh"
-      : url.endsWith("/login")
-        ? "login"
-        : "logout";
+    const path = routeOf(url);
     const handler = handlers[path];
     if (handler === undefined) {
       throw new Error(`unexpected request to ${url}`);
@@ -123,11 +131,12 @@ export function router(
 }
 
 /**
- * Autodarts' sign-in service as far as a race needs it: it rotates the refresh token
+ * Autodarts as far as a race needs it. Its sign-in service rotates the refresh token
  * as the real one does, so each token works once, and a sign-out ends the session of
  * its token. A token sent again is refused, and, as a service that detects the reuse
  * of a token may do, it ends that account's session too. It answers only after other
- * work has had a turn, as a network does.
+ * work has had a turn, as a network does. Its game service keeps lobbies, where it
+ * seats the account of an access token at the board of the host.
  */
 export class FakeAutodarts {
   /** The refresh token that works now, by account. */
@@ -157,7 +166,70 @@ export class FakeAutodarts {
     });
   }
 
+  /** The lobbies of its game service, by id: the host, its board and who is seated. */
+  readonly lobbies = new Map<
+    string,
+    { host: string; board: string; seated: string[] }
+  >();
+  /** The seats that it was asked for, in order: the lobby, the account of the token, the body. */
+  readonly seats: { lobby: string; bearer: string; body: unknown }[] = [];
+  private opened = 0;
+
+  /** Opens a lobby whose host plays at a board, and answers with its id. */
+  openLobby(host: string, board = `board-of-${host}`): string {
+    this.opened += 1;
+    const id = `0b5a1c2d-0000-4000-8000-${String(this.opened).padStart(12, "0")}`;
+    this.lobbies.set(id, { host, board, seated: [host] });
+    return id;
+  }
+
+  /**
+   * The game service: it reads a lobby, and seats the account of the access token, and
+   * nobody else, at the board of the lobby's host. A token it can't read is refused
+   * with 401, a lobby it doesn't know with 404.
+   */
+  private game(url: string, init: RequestInit): Response {
+    const [, id = "", seat] = /\/lobbies\/([^/]+)(\/players)?$/.exec(url) ?? [];
+    const token = (
+      new Headers(init.headers).get("Authorization") ?? ""
+    ).replace(/^Bearer /, "");
+    let bearer: string;
+    try {
+      bearer = readIdentity(token).id;
+    } catch {
+      return jsonResponse({ error: "unauthorized" }, 401);
+    }
+    const lobby = this.lobbies.get(id);
+    if (lobby === undefined) {
+      return jsonResponse({ error: "not found" }, 404);
+    }
+    if (seat === undefined) {
+      return jsonResponse({
+        id,
+        host: { id: lobby.host },
+        players: lobby.seated.map((userId) => ({
+          userId,
+          boardId: lobby.board,
+        })),
+      });
+    }
+    const body: unknown = JSON.parse(String(init.body));
+    this.seats.push({ lobby: id, bearer, body });
+    const { userId, boardId } = body as { userId?: unknown; boardId?: unknown };
+    if (userId !== bearer) {
+      return jsonResponse({ error: "forbidden" }, 403);
+    }
+    if (boardId !== lobby.board) {
+      return jsonResponse({ error: "bad request" }, 400);
+    }
+    lobby.seated.push(bearer);
+    return jsonResponse({}, 201);
+  }
+
   readonly fetch: Fetch = async (url, init) => {
+    if (url.startsWith(`${GAME_BASE}/`)) {
+      return this.game(url, init);
+    }
     const { refresh_token: token } = JSON.parse(String(init.body)) as {
       refresh_token: string;
     };

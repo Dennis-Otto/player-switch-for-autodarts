@@ -76,7 +76,8 @@ Nicht mit Autodarts verbunden.
   zu finden, damit der Wechsel im vorderen wirkt und die anderen neu laden. Adresse
   und Titel anderer Tabs kann die Erweiterung nicht lesen.
 • Host-Zugriff auf `https://api.autodarts.com/*` — um anzumelden, eine Sitzung zu erneuern und
-  zu beenden, dieselben Anfragen wie die Autodarts-Website. Mit keinem anderen
+  zu beenden und einen gespeicherten Spieler in die Lobby zu setzen, die der Bildschirm
+  zeigt, dieselben Anfragen wie die Autodarts-Website. Mit keinem anderen
   Server verbindet sich die Erweiterung, und ihre Content Security Policy setzt das
   durch.
 
