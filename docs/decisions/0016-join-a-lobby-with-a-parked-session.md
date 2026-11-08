@@ -34,7 +34,7 @@ development, and no test reaches a real board.
    about which lobby it shows.
 3. **Join in the service worker, with the address of the tab.** The worker renews the
    parked session in its queue, keeps the rotated refresh token first, reads the lobby
-   with the access token of that renewal for the board of its host, and takes the seat.
+   with the access token of that renewal for the board of the display, and takes the seat.
    It reads the id of the lobby itself, from the address of the Autodarts tab that the
    browser reports (`/lobbies/<uuid>`), never from a message of the page.
 
@@ -51,9 +51,13 @@ seats nobody but the owner of the token. The trust boundary stays where it was:
 - **Which lobby.** The lobby that the display shows, from the address of its tab. A
   script of the page can change that address, but it can't learn a token, and it only
   picks the lobby on the screen in front of the players.
-- **Which board.** The board where the host of the lobby plays, read from the lobby: the
-  seat of the host, or of a guest that the host added. A lobby without such a board
-  seats nobody.
+- **Which board.** The board of the display, read from the lobby: the seat of the
+  account that plays on the page, or of a guest that this account added. That account
+  may have joined the lobby of someone else online, whose host throws at a board of
+  their own, so the board of the host would seat the player far away. Only while the
+  account on the page has no seat in the lobby, such as a lobby that stays on screen
+  after a switch, it is the board of the host, found the same way. A lobby without
+  such a board seats nobody.
 - **The page.** It stays as it is: the account that plays there plays on, and no token
   is written, so a join never ends a match. The account that plays on the page isn't
   seated this way, since its session belongs to the page, which the extension never

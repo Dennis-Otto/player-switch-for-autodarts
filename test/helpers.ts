@@ -169,7 +169,13 @@ export class FakeAutodarts {
   /** The lobbies of its game service, by id: the host, its board and who is seated. */
   readonly lobbies = new Map<
     string,
-    { host: string; board: string; seated: string[] }
+    {
+      host: string;
+      board: string;
+      seated: string[];
+      /** The board of a seat at another board than the host's, by account. */
+      boards: Map<string, string>;
+    }
   >();
   /** The seats that it was asked for, in order: the lobby, the account of the token, the body. */
   readonly seats: { lobby: string; bearer: string; body: unknown }[] = [];
@@ -179,13 +185,23 @@ export class FakeAutodarts {
   openLobby(host: string, board = `board-of-${host}`): string {
     this.opened += 1;
     const id = `0b5a1c2d-0000-4000-8000-${String(this.opened).padStart(12, "0")}`;
-    this.lobbies.set(id, { host, board, seated: [host] });
+    this.lobbies.set(id, { host, board, seated: [host], boards: new Map() });
     return id;
+  }
+
+  /** Seats an account in a lobby at a board of its own, as a player online does. */
+  sit(id: string, userId: string, board: string): void {
+    const lobby = this.lobbies.get(id);
+    if (lobby === undefined) {
+      throw new Error(`no lobby ${id}`);
+    }
+    lobby.seated.push(userId);
+    lobby.boards.set(userId, board);
   }
 
   /**
    * The game service: it reads a lobby, and seats the account of the access token, and
-   * nobody else, at the board of the lobby's host. A token it can't read is refused
+   * nobody else, at a board of the lobby. A token it can't read is refused
    * with 401, a lobby it doesn't know with 404.
    */
   private game(url: string, init: RequestInit): Response {
@@ -209,7 +225,7 @@ export class FakeAutodarts {
         host: { id: lobby.host },
         players: lobby.seated.map((userId) => ({
           userId,
-          boardId: lobby.board,
+          boardId: lobby.boards.get(userId) ?? lobby.board,
         })),
       });
     }
@@ -219,7 +235,10 @@ export class FakeAutodarts {
     if (userId !== bearer) {
       return jsonResponse({ error: "forbidden" }, 403);
     }
-    if (boardId !== lobby.board) {
+    if (
+      boardId !== lobby.board &&
+      ![...lobby.boards.values()].includes(String(boardId))
+    ) {
       return jsonResponse({ error: "bad request" }, 400);
     }
     lobby.seated.push(bearer);

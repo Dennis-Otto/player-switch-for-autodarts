@@ -478,7 +478,8 @@ export type JoinResult =
   | { state: State; ok: false; reason: JoinFailure };
 
 /**
- * Seats a parked account in a lobby at the board of its host, as if the player had
+ * Seats a parked account in a lobby at the board of the display, the one where the
+ * account that plays on the page sits (or else the board of the host), as if the player had
  * joined from their phone, so the match counts for their own account too. The page
  * stays as it is: the account that plays there keeps playing, and the session of the
  * joined account stays parked. No token reaches the page.
@@ -503,7 +504,13 @@ export async function joinLobbyAs(
   }
   const player = readIdentity(turn.session.accessToken);
   try {
-    await joinLobby(deps.fetcher, turn.session.accessToken, lobbyId, player);
+    await joinLobby(
+      deps.fetcher,
+      turn.session.accessToken,
+      lobbyId,
+      player,
+      turn.state.activeId,
+    );
   } catch (error) {
     // joinLobby throws nothing but AuthError.
     return {

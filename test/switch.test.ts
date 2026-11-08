@@ -1449,7 +1449,7 @@ function lobbyOfAda() {
   };
 }
 
-test("joinLobbyAs seats a parked account at the board of the host, and the page stays", async () => {
+test("joinLobbyAs seats a parked account at the board of Ada, who hosts and plays on the page, and the page stays", async () => {
   const { autodarts, store, page, lobby, board } = lobbyOfAda();
   const inPage = page.token;
   const result = await joinLobbyAs(board, "b", lobby);
@@ -1469,6 +1469,23 @@ test("joinLobbyAs seats a parked account at the board of the host, and the page 
   assert.equal(page.token, inPage);
   assert.deepEqual(page.writes, []);
   assert.equal(autodarts.reuses, 0);
+});
+
+test("joinLobbyAs seats a parked account at the board of the display, in a lobby that another account hosts", async () => {
+  const { autodarts, lobby: own, board } = lobbyOfAda();
+  // Ada, on the page, joined Zoe's lobby online: Zoe throws at her own board.
+  const lobby = autodarts.openLobby("z");
+  autodarts.sit(lobby, "a", "board-of-a");
+  assert.ok(own !== lobby);
+  const result = await joinLobbyAs(board, "b", lobby);
+  assert.deepEqual(result.ok && result.seated?.id, "b");
+  assert.deepEqual(autodarts.seats, [
+    {
+      lobby,
+      bearer: "b",
+      body: { name: "b", userId: "b", boardId: "board-of-a" },
+    },
+  ]);
 });
 
 test("joinLobbyAs keeps the seat of an account that has one, with no second request", async () => {

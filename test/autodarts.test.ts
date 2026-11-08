@@ -291,6 +291,54 @@ test("parseLobby finds no board while neither the host nor a guest of it sits at
   }
 });
 
+test("parseLobby takes the board of the display, in a lobby that another account hosts", () => {
+  const data = {
+    host: { id: "ada-id" },
+    players: [
+      { userId: "ada-id", boardId: "board-of-ada" },
+      { userId: "cy-id", boardId: "board-of-cy" },
+    ],
+  };
+  // Cy plays on the display: a player of the display throws at Cy's board, not Ada's.
+  assert.equal(parseLobby(data, "cy-id").board, "board-of-cy");
+  assert.equal(parseLobby(data, "ada-id").board, "board-of-ada");
+});
+
+test("parseLobby takes the board of a guest that the display added", () => {
+  assert.equal(
+    parseLobby(
+      {
+        host: { id: "ada-id" },
+        players: [
+          { userId: "ada-id", boardId: "board-of-ada" },
+          { userId: "cy-id", boardId: "" },
+          {
+            name: "Guest",
+            userId: null,
+            hostId: "cy-id",
+            boardId: "board-of-cy",
+          },
+        ],
+      },
+      "cy-id",
+    ).board,
+    "board-of-cy",
+  );
+});
+
+test("parseLobby falls back to the board of the host while the display has no seat", () => {
+  assert.equal(
+    parseLobby(
+      {
+        host: { id: "ada-id" },
+        players: [{ userId: "ada-id", boardId: "board-of-ada" }],
+      },
+      "cy-id",
+    ).board,
+    "board-of-ada",
+  );
+});
+
 test("parseLobby takes an answer without seats for a change of Autodarts", () => {
   for (const data of [null, "lobby", 7, {}, { players: "ada" }]) {
     assert.throws(
@@ -399,6 +447,29 @@ test("joinLobby seats the player at the board of the host, under the username", 
       url: `${GAME_BASE}/lobbies/${LOBBY}/players`,
       body: { name: "bob", userId: "bob-id", boardId: "board-1" },
     },
+  ]);
+});
+
+test("joinLobby seats the player at the board of the display, not of a host online", async () => {
+  const seats: unknown[] = [];
+  const fetcher: Fetch = (_url, init) => {
+    if (init.method === "POST") {
+      seats.push(JSON.parse(String(init.body)));
+      return Promise.resolve(jsonResponse({}, 201));
+    }
+    return Promise.resolve(
+      lobbyAnswer("ada-id", [
+        { userId: "ada-id", boardId: "board-of-ada" },
+        { userId: "cy-id", boardId: "board-of-cy" },
+      ]),
+    );
+  };
+  assert.equal(
+    await joinLobby(fetcher, "access", LOBBY, bob, "cy-id"),
+    "joined",
+  );
+  assert.deepEqual(seats, [
+    { name: "bob", userId: "bob-id", boardId: "board-of-cy" },
   ]);
 });
 

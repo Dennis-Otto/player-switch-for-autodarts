@@ -32,7 +32,7 @@ export type PlayersAction =
   | { readonly action: "switch"; readonly id: string }
   /**
    * Seats a parked account in the lobby that the Autodarts tab in front shows, at the
-   * board of its host, while the page stays with the account that plays there.
+   * board of the display, while the page stays with the account that plays there.
    */
   | { readonly action: "join"; readonly id: string }
   /** Saves the session on the page as an account. */

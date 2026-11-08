@@ -201,9 +201,9 @@ export function readIdentity(accessToken: string): Identity {
 /** The game service of Autodarts, which keeps the lobbies where a match is set up. */
 export const GAME_BASE = "https://api.autodarts.com/gs/v0";
 
-/** What a join needs to know of a lobby: the board of its host, and who has a seat. */
+/** What a join needs to know of a lobby: the board of the display, and who has a seat. */
 export interface Lobby {
-  /** The board where the host plays, which a new player shares; null while there is none. */
+  /** The board that a new player shares; null while there is none. */
   readonly board: string | null;
   /** The accounts that have a seat in the lobby already. */
   readonly seated: readonly string[];
@@ -271,11 +271,17 @@ function textOf(value: unknown, key: string): string | null {
 }
 
 /**
- * Reads a lobby from an answer of the game service. Its board is the one of the host:
- * the board of the first seat that the host has, or that the host gave a guest, since a
- * lobby on a display seats everyone at the board of that display.
+ * Reads a lobby from an answer of the game service. Its board is the one of the display:
+ * the board of the first seat that the account on the display (`display`) has, or that
+ * it gave a guest, since a lobby seats a player of the display at the board of that
+ * display, also when the lobby is another account's online. Only while that account
+ * has no such seat, such as a lobby that stays on screen after a switch, it is the board
+ * of the host, found the same way.
  */
-export function parseLobby(data: unknown): Lobby {
+export function parseLobby(
+  data: unknown,
+  display: string | null = null,
+): Lobby {
   const players: unknown =
     typeof data === "object" && data !== null
       ? (data as Record<string, unknown>).players
@@ -284,26 +290,34 @@ export function parseLobby(data: unknown): Lobby {
     throw new AuthError("unreachable", "Autodarts answered without a lobby");
   }
   const host = textOf((data as Record<string, unknown>).host, "id");
-  const hosts = (seat: unknown): boolean =>
-    host !== null &&
-    (textOf(seat, "userId") === host || textOf(seat, "hostId") === host);
-  const board = players.find(
-    (seat) => hosts(seat) && textOf(seat, "boardId") !== null,
-  );
+  const boardOf = (owner: string | null): string | null => {
+    const seat = players.find(
+      (candidate) =>
+        owner !== null &&
+        (textOf(candidate, "userId") === owner ||
+          textOf(candidate, "hostId") === owner) &&
+        textOf(candidate, "boardId") !== null,
+    );
+    return seat === undefined ? null : textOf(seat, "boardId");
+  };
   return {
-    board: board === undefined ? null : textOf(board, "boardId"),
+    board: boardOf(display) ?? boardOf(host),
     seated: players.flatMap((seat) => textOf(seat, "userId") ?? []),
   };
 }
 
-/** Reads a lobby, with the access token of the account that is to join it. */
+/**
+ * Reads a lobby, with the access token of the account that is to join it, for the
+ * display where `display` plays (see `parseLobby`).
+ */
 export async function readLobby(
   fetcher: Fetch,
   accessToken: string,
   lobbyId: string,
+  display: string | null = null,
 ): Promise<Lobby> {
   const response = await askGame(fetcher, accessToken, lobbyPath(lobbyId));
-  return parseLobby(await response.json().catch(() => null));
+  return parseLobby(await response.json().catch(() => null), display);
 }
 
 /**
@@ -321,8 +335,9 @@ export async function seatPlayer(
 }
 
 /**
- * Seats a player in a lobby at the board of its host, as if they had joined from their
- * phone, so the match counts for their own account. A player who has a seat already
+ * Seats a player in a lobby at the board of the display, where the account `display`
+ * plays (or else at the board of the host, see `parseLobby`), as if they had joined
+ * from their phone, so the match counts for their own account. A player who has a seat already
  * keeps it, and Autodarts gets no second request. The name is the username, which
  * Autodarts shows of every player anyway, never the full name of the account.
  */
@@ -331,8 +346,9 @@ export async function joinLobby(
   accessToken: string,
   lobbyId: string,
   player: Identity,
+  display: string | null = null,
 ): Promise<Join> {
-  const lobby = await readLobby(fetcher, accessToken, lobbyId);
+  const lobby = await readLobby(fetcher, accessToken, lobbyId, display);
   if (lobby.seated.includes(player.id)) {
     return "seated";
   }
