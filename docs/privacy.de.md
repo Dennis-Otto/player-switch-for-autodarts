@@ -71,8 +71,9 @@ führt dasselbe unter seinen Datenschutzpraktiken.
   <img src="images/diagrams/data-flow.de.svg" alt="Wohin die Daten gehen: Alles bleibt im Browser auf diesem Computer. Das Popup und der Umschalter fragen den Service Worker, der in chrome.storage.local einen Token pro Konto behält, ein Passwort nur, wenn eines gemerkt ist, die Einstellungen des Knopfs, die Zeit der letzten Erneuerung, ob Autodarts dabei jedes Konto abgewiesen hat, und bis wann ein neues Konto hinzugefügt wird. Er bringt eine Sitzung in die Autodarts-Seite und liest die ausgehende nur über content.js aus ihr, das einzige Skript, das die Sitzung im localStorage der Seite liest oder schreibt. Um einen Token zu erneuern, mit einem Passwort anzumelden oder eine Sitzung zu beenden, spricht er über HTTPS mit api.autodarts.com, demselben Dienst, den die Autodarts-Seite selbst nutzt. Das Popup und der Umschalter zeigen das Bild jedes Spielers von der Adresse, die Autodarts dafür angibt. Sonst geht nichts irgendwohin: kein Server des Entwicklers, keine Statistiken; Hilfe und Problem melden öffnen nur eine Seite in einem neuen Tab.">
 </picture>
 
-„Hilfe“ und „Problem melden“ im Popup und auf der Willkommensseite öffnen die
-Website der Erweiterung und ihr Fehlerformular auf GitHub in einem neuen Tab. In das
+„Hilfe“ und „Problem melden“ im Popup und auf der Willkommensseite und der Link
+zur Hilfe im letzten Schritt der Willkommensseite öffnen die Website der Erweiterung
+und ihr Fehlerformular auf GitHub in einem neuen Tab. In das
 Fehlerformular trägt sie die Version der Erweiterung und den Namen und die
 Hauptversion des Browsers ein, und sonst nichts; GitHub bekommt es erst, wenn du das
 Formular selbst abschickst.
