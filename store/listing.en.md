@@ -28,6 +28,9 @@ How it works:
   and kiosk mode, in large tiles for a touch screen. The keys 1 to 9 pick a player.
 • On the page of a running match, a switch asks first, so a match never ends by
   surprise.
+• Two players at one board, each with their own stats: on a lobby of Autodarts,
+  "Join the lobby" below a parked player's tile seats that player in the lobby too,
+  without a switch, a phone or a new sign-in.
 • For a club or pub, optional and off by default: a manager PIN guards "Manage
   accounts" and the settings, each player can protect their account with a PIN of
   their own, and after a break the display returns to a house account by itself,

@@ -32,6 +32,10 @@ verlässt ihn nie, außer an Autodarts selbst:
   Kneipe](#venue-mode)). In `chrome.storage.session`, das der Browser beim Schließen
   leert: die Zahl der falschen PINs in Folge und die Zeit der letzten Eingabe auf der
   Autodarts-Seite, die nur sagt, dass es eine gab.
+- **Wer von diesem Display aus welcher Lobby beigetreten ist,** in
+  `chrome.storage.session`: die IDs der letzten acht Lobbys und der Konten, die die
+  Erweiterung in jede gesetzt hat, für „In der Lobby“ auf ihren Kacheln. Das enthält
+  keinen Token und keinen Namen.
 - **Wann die Erneuerung zuletzt lief,** und ob Autodarts dabei jedes geparkte Konto
   abgewiesen hat, damit die Erweiterung eine Erneuerung nachholt, die sie verpasst hat,
   während der Computer aus war, und ein Update von sich selbst vorschlagen kann. Das

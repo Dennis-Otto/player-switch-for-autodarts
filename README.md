@@ -149,6 +149,24 @@ The [guide for a shared display](https://dennis-otto.github.io/player-switch-for
   <img src="docs/images/diagrams/switch-from-the-page.svg" alt="Switch players from the Autodarts page: In fullscreen or kiosk mode, a tap on the round button in a corner of the Autodarts page, or the keyboard shortcut, opens the switcher over the page. It is a page of the extension in a frame, so the page can't read the accounts. A tap on a player, or the keys 1 to 9, switches; on a match page the switcher asks first, before any token is spent, and the page reloads as the chosen player.">
 </picture>
 
+### Two players at one board, each with their own stats
+
+Autodarts counts a match for each account that sits in its lobby, while the page plays under one account only. So the player on the page opens a lobby on Autodarts, at the board of the display, and the tile of every parked player, in the popup and in the players on the page, shows **Join the lobby**. A tap seats that player in the lobby with the session that the extension keeps for them, and the tile then says **In the lobby**. Nothing switches and nothing reloads: the page stays with the player who plays there, and the match counts for every player's own account, without a phone or a new sign-in.
+
+- **Only on a lobby:** the tiles offer it only while the Autodarts tab shows a lobby; on any other page, a running match among them, they don't, so a match is never touched.
+- **Private:** the extension takes the lobby from the address of the tab, never from a message of the page, and the session of a parked player never reaches the page ([decision 0016](docs/decisions/0016-join-a-lobby-with-a-parked-session.md)).
+- **Venue mode:** a player with a PIN types it first, as for a switch.
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/images/lobby.dark.png">
+  <img src="docs/images/lobby.png" alt="The popup on a lobby of Autodarts: Mia Keller is playing; Jonas Berg says In the lobby after a tap on Join the lobby, and the popup says “Jonas Berg is in the lobby now, and the match counts for their own account.”; Lena Vogt still offers Join the lobby." width="396">
+</picture>
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/images/diagrams/join-a-lobby.dark.svg">
+  <img src="docs/images/diagrams/join-a-lobby.svg" alt="Join the lobby with a parked player: Ada plays on the page and opens a lobby on Autodarts at the board of the display. On that page, the tile of each parked player in the popup and in the switcher offers Join the lobby. A tap on Bob's renews his parked session and keeps the rotated token first. When his session is dead or Autodarts can't be reached, his tile says why and nothing else changes. Otherwise the extension seats Bob at the board of the display with his own access token, which never reaches the page. When Autodarts refuses the seat because the lobby is full, closed or started, the popup says so. Otherwise his tile says In the lobby, the page stays with Ada without a switch or a reload, and the match counts for both accounts.">
+</picture>
+
 ### Remember a password (optional)
 
 Under **Manage accounts**, choose **Remember password** for an account, and the extension signs it back in on its own if its session ever stops working. The password stays on that computer, encrypted like every saved session, and is sent only to Autodarts; [SECURITY.md](SECURITY.md) and the [privacy policy](docs/privacy.md) say exactly what is stored.

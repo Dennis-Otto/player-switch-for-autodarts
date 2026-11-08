@@ -158,6 +158,55 @@
       }
     }
   },
+  "joinLobby": {
+    "message": "Unirse al lobby"
+  },
+  "joinLobbyAs": {
+    "message": "Unirse al lobby como $NAME$",
+    "placeholders": {
+      "name": {
+        "content": "$1"
+      }
+    }
+  },
+  "joining": {
+    "message": "Añadiendo a $NAME$ al lobby…",
+    "placeholders": {
+      "name": {
+        "content": "$1"
+      }
+    }
+  },
+  "joinedLobby": {
+    "message": "$NAME$ ya está en el lobby, y la partida cuenta para su propia cuenta.",
+    "placeholders": {
+      "name": {
+        "content": "$1"
+      }
+    }
+  },
+  "inLobby": {
+    "message": "En el lobby"
+  },
+  "joinNoLobby": {
+    "message": "Autodarts ya no muestra ningún lobby. Abre el lobby en Autodarts y vuelve a intentarlo."
+  },
+  "joinPlaying": {
+    "message": "$NAME$ ya juega en la página: únete al lobby allí, en Autodarts.",
+    "placeholders": {
+      "name": {
+        "content": "$1"
+      }
+    }
+  },
+  "joinRefused": {
+    "message": "Autodarts no dejó entrar a $NAME$: puede que el lobby esté lleno, cerrado o que ya haya empezado.",
+    "placeholders": {
+      "name": {
+        "content": "$1"
+      }
+    }
+  },
   "unreachable": {
     "message": "No se puede acceder a Autodarts ahora mismo. Inténtalo de nuevo en un momento."
   },

@@ -1,7 +1,8 @@
 // Builds the stage of a picture from the address of stage.html, and gives the driver,
 // test/harness/capture.py, `window.stage` to wait for it and to play a switch:
 //
-//   layout=frame   the popup alone (view=manage opens "Manage accounts")
+//   layout=frame   the popup alone (view=manage opens "Manage accounts", view=lobby
+//                  shows a lobby on the page, which the second player has joined)
 //   layout=board   the switcher over a match on a board display
 //   layout=store   a 1280×800 picture of the store listing, slide=1, 2 or 3
 //   layout=promo   the small promo tile of the store
@@ -43,11 +44,14 @@ function make(tag, className, ...children) {
 
 const frames = [];
 
-/** A page of the extension in a frame, with the setup of chrome-stub.js. */
-function extensionPage(page, accounts) {
+/**
+ * A page of the extension in a frame, with the setup of chrome-stub.js; `extra` adds to
+ * it, such as "&lobby=1".
+ */
+function extensionPage(page, accounts, extra = "") {
   const iframe = document.createElement("iframe");
   iframe.title = page;
-  iframe.src = `/extension/${page}.html?lang=${lang}&accounts=${accounts}`;
+  iframe.src = `/extension/${page}.html?lang=${lang}&accounts=${accounts}${extra}`;
   const loaded = new Promise((resolve) =>
     iframe.addEventListener("load", resolve, { once: true }),
   );
@@ -56,8 +60,8 @@ function extensionPage(page, accounts) {
 }
 
 /** The popup in its window, as large as its page, as Chrome sizes a popup. */
-function popup(accounts) {
-  const iframe = extensionPage("popup", accounts);
+function popup(accounts, extra = "") {
+  const iframe = extensionPage("popup", accounts, extra);
   iframe.addEventListener("load", () => {
     const body = iframe.contentDocument.body;
     const fit = () => {
@@ -139,6 +143,14 @@ function openManage() {
   };
 }
 
+/** Seats the second player in the lobby, with a tap on the first "Join the lobby". */
+function joinLobby() {
+  prepare = async () => {
+    stage.click(".join:not([hidden])");
+    await stage.settled();
+  };
+}
+
 switch (layout) {
   case "board":
     shot.append(board(4));
@@ -201,12 +213,16 @@ switch (layout) {
       make("p", "note", TEXTS.note),
     );
     break;
-  default:
+  default: {
+    const view = setup.get("view");
     shot.className = "frame";
-    shot.append(popup(3));
-    if (setup.get("view") === "manage") {
+    shot.append(popup(3, view === "lobby" ? "&lobby=1" : ""));
+    if (view === "manage") {
       openManage();
+    } else if (view === "lobby") {
+      joinLobby();
     }
+  }
 }
 
 const nextFrame = () =>

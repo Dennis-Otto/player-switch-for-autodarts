@@ -131,31 +131,7 @@ test("the switcher in the page switches players on a display without a toolbar",
   const popup = await display.saveAccounts(page, [ALICE, BOB]);
   await popup.page.close();
 
-  // The button sits in the bottom right corner, in a closed shadow root that no
-  // selector reaches, so the test taps where it shows, as a finger does.
-  const viewport = page.viewportSize() ?? { width: 0, height: 0 };
-  const corner = { x: viewport.width - 16 - 28, y: viewport.height - 16 - 28 };
-  await expect
-    .poll(() =>
-      page.evaluate(
-        ({ x, y }) => document.elementFromPoint(x, y)?.localName,
-        corner,
-      ),
-    )
-    .toBe("player-switch-ui");
-  await page.mouse.click(corner.x, corner.y);
-
-  await expect
-    .poll(() =>
-      page.frames().some((frame) => frame.url().endsWith("/switcher.html")),
-    )
-    .toBe(true);
-  const switcher = page
-    .frames()
-    .find((frame) => frame.url().endsWith("/switcher.html"));
-  if (switcher === undefined) {
-    throw new Error("The switcher closed again");
-  }
+  const switcher = await display.openSwitcher(page);
   await expect(switcher.locator("#profiles .profile.active .name")).toHaveText(
     BOB.name,
   );

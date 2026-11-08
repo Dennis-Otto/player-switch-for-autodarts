@@ -31,6 +31,9 @@ So funktioniert es:
   1 bis 9 wählen einen Spieler.
 • Auf der Seite eines laufenden Matches fragt ein Wechsel vorher, damit ein Match
   nie aus Versehen endet.
+• Zwei Spieler an einem Board, jeder mit eigener Statistik: Auf einer Lobby von
+  Autodarts setzt „Der Lobby beitreten“ unter der Kachel eines geparkten Spielers
+  diesen Spieler mit in die Lobby, ohne Wechsel, ohne Handy und ohne neue Anmeldung.
 • Für Verein und Kneipe, optional und von Haus aus aus: Eine Manager-PIN schützt
   „Konten verwalten“ und die Einstellungen, jeder Spieler kann sein Konto mit einer
   eigenen PIN schützen, und nach einer Pause kehrt das Display von selbst zu einem

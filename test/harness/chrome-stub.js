@@ -12,6 +12,7 @@
 // accounts  how many of the demo accounts are saved, 1 to 4 (3); the first one plays
 // pins      1 gives the second account a PIN, as the venue mode does (none)
 // manager   1 sets a manager PIN, which "Manage accounts" then asks for (none)
+// lobby     1 shows a lobby on the Autodarts page, which the parked players join (none)
 //
 // The accounts are made up and their pictures generated: no real people. The answers
 // are those of the service worker, worker.ts, for the requests that pages/players.ts
@@ -36,6 +37,9 @@
   // Whether the second account asks for a PIN, as in the venue mode.
   const pinned = setup.get("pins") === "1";
   const guarded = setup.get("manager") === "1";
+  // Whether the Autodarts page shows a lobby, and who joined it from here.
+  const lobby = setup.get("lobby") === "1";
+  const seated = [];
 
   // Made-up people. The pictures are drawn below; Lena has none, so her tile shows the
   // initial, as for an account without a picture at Autodarts.
@@ -112,6 +116,7 @@
       adding,
       venue: { manager: guarded },
       updateHint: false,
+      lobby: lobby ? { seated: [...seated] } : null,
     };
   }
 
@@ -123,6 +128,10 @@
         activeId = account.id;
         account.renewedAgo = null;
         break;
+      case "join":
+        // Autodarts seats the player in the lobby; the page stays as it is.
+        seated.push(account.id);
+        return { ok: true, joined: account.name, view: view() };
       case "remember":
         account.remembersPassword = username !== "";
         break;

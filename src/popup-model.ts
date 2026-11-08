@@ -1,8 +1,8 @@
 /**
  * What the popup and the switcher in the Autodarts page decide, apart from the page that
  * shows it: what the status line says after an answer of the service worker, which
- * question an answer asks of the person, what a tile shows, and when "Manage accounts"
- * opens. `pages/players.ts` draws it and sends the taps; the end-to-end tests check the
+ * question an answer asks of the person, what a tile shows, such as "Join the lobby" on
+ * a page with a lobby, and when "Manage accounts" opens. `pages/players.ts` draws it and sends the taps; the end-to-end tests check the
  * two together in the real extension.
  *
  * Every text comes from `t`, the texts of the extension, which a test passes in.
@@ -25,19 +25,33 @@ export interface Status {
   error: boolean;
 }
 
-/** What to say when a request failed: `signInHint` when the account has to sign in again. */
+/**
+ * What to say when a request failed: `signInHint` when the account has to sign in again.
+ * A join that took no seat names its account, `name`.
+ */
 export function problemOf(
   reason: string,
   signInHint: string | null,
   t: Translate,
+  name = "",
 ): string {
-  if (reason === "unreachable") {
-    return t("unreachable");
+  switch (reason) {
+    case "unreachable":
+      return t("unreachable");
+    case "locked":
+      return t("pinLocked");
+    // The Autodarts tab shows no lobby (any more), such as after the match began.
+    case "noLobby":
+      return t("joinNoLobby");
+    // The account plays on the page: Autodarts seats it there, without the extension.
+    case "playing":
+      return t("joinPlaying", name);
+    // Autodarts refused the seat: the lobby is full, started or closed.
+    case "refused":
+      return t("joinRefused", name);
+    default:
+      return signInHint ?? t("error");
   }
-  if (reason === "locked") {
-    return t("pinLocked");
-  }
-  return signInHint ?? t("error");
 }
 
 /** What a request was about, for the status line: its action and the name of its account. */
@@ -85,8 +99,8 @@ export function showsForgetAll(managing: boolean, accounts: number): boolean {
 
 /**
  * What the status line says once the service worker answered, or didn't (`undefined`):
- * a problem, the account that was saved by itself, how a removal ended, or nothing, as
- * the tiles show how it ended, so "Switching to …" goes. `about` names the request, and
+ * a problem, the account that was saved by itself, how a removal ended, who joined the
+ * lobby, or nothing, as the tiles show how it ended, so "Switching to …" goes. `about` names the request, and
  * its account as the tiles showed it before the removal.
  */
 export function statusAfter(
@@ -108,7 +122,10 @@ export function statusAfter(
     return { text: t("error"), error: true };
   }
   if (!reply.ok) {
-    return { text: problemOf(reply.reason, signInHint, t), error: true };
+    return {
+      text: problemOf(reply.reason, signInHint, t, about.name),
+      error: true,
+    };
   }
   if (typeof reply.saved === "string") {
     // A new account signed in before the page could tell; it was saved just now.
@@ -116,6 +133,9 @@ export function statusAfter(
   }
   if (typeof reply.ended === "boolean") {
     return { text: removalText(about, reply.ended, t), error: !reply.ended };
+  }
+  if (typeof reply.joined === "string") {
+    return { text: t("joinedLobby", reply.joined), error: false };
   }
   return { text: "", error: false };
 }
@@ -192,8 +212,16 @@ export function keptManagerPin(
 export interface Tile {
   /** The key that picks it, "1" to "9", or null. */
   key: string | null;
-  /** The chip of the player who plays, or of an account that has to sign in again. */
-  chip: { text: string; kind: "playing" | "warn" } | null;
+  /**
+   * The chip of the player who plays, of an account that has to sign in again, or of
+   * one that the extension seated in the lobby that the page shows.
+   */
+  chip: { text: string; kind: "playing" | "warn" | "lobby" } | null;
+  /**
+   * Whether the tile offers "Join the lobby": on a page with a lobby, for a parked
+   * account that takes no seat there yet.
+   */
+  join: boolean;
   /** In "Manage accounts": when the renewal of the parked session last worked. */
   renewed: string | null;
   /** In "Manage accounts": since when the renewal fails, while the extension keeps trying. */
@@ -202,22 +230,38 @@ export interface Tile {
   toggle: string;
 }
 
-/** What the tile of an account shows, the `index`-th of the list. */
+/**
+ * What the tile of an account shows, the `index`-th of the list. `lobby` is the lobby
+ * that the page shows, from the view, or null on any other page.
+ */
 export function tileOf(
   profile: PlayerView,
   index: number,
-  options: { numbered: boolean; now: number; language: string; t: Translate },
+  options: {
+    numbered: boolean;
+    now: number;
+    language: string;
+    t: Translate;
+    lobby?: PlayersView["lobby"];
+  },
 ): Tile {
-  const { t, language } = options;
+  const { t, language, lobby = null } = options;
   let chip: Tile["chip"] = null;
+  let join = false;
   if (profile.active) {
     chip = { text: t("playing"), kind: "playing" };
   } else if (profile.needsSignIn) {
+    // Without a parked session, the account can't take a seat until it signs in again.
     chip = { text: t("needsSignIn"), kind: "warn" };
+  } else if (lobby?.seated.includes(profile.id)) {
+    chip = { text: t("inLobby"), kind: "lobby" };
+  } else {
+    join = lobby !== null;
   }
   return {
     key: options.numbered && index < 9 ? String(index + 1) : null,
     chip,
+    join,
     renewed:
       profile.renewedAt === null
         ? null

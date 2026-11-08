@@ -30,6 +30,9 @@ and never leaves it except to Autodarts itself:
   `chrome.storage.session`, which the browser empties as it closes: the count of
   wrong PINs in a row, and the time of the last input on the Autodarts page, which
   says only that there was one.
+- **Who joined which lobby from this display,** in `chrome.storage.session`: the
+  ids of the last eight lobbies and of the accounts that the extension seated in
+  each, for "In the lobby" on their tiles. It holds no token and no name.
 - **When the renewal last ran,** and whether Autodarts turned every parked account
   away in it, so that the extension catches up on a renewal it missed while the
   computer was off and can suggest an update of itself. This holds no token and no

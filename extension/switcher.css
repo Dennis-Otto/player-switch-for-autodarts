@@ -137,6 +137,12 @@ h1 {
     monospace;
 }
 
+.join {
+  min-height: 52px;
+  font-size: 15px;
+  touch-action: manipulation;
+}
+
 .menu {
   padding: 12px 14px;
 }

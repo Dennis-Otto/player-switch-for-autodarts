@@ -125,6 +125,38 @@
     "message": "$NAME$ has to sign in again: use Add account to sign in once on Autodarts, or remember the password.",
     "placeholders": { "name": { "content": "$1" } }
   },
+  "joinLobby": {
+    "message": "Join the lobby",
+    "description": "The button below the tile of a parked player while Autodarts shows a lobby: it seats that player in the lobby, and the page stays with the player who plays there."
+  },
+  "joinLobbyAs": {
+    "message": "Join the lobby as $NAME$",
+    "description": "The name of the button 'Join the lobby' for a screen reader, with the player whose seat it is. Start it with the words of 'Join the lobby' where the language allows.",
+    "placeholders": { "name": { "content": "$1" } }
+  },
+  "joining": {
+    "message": "Seating $NAME$ in the lobby…",
+    "placeholders": { "name": { "content": "$1" } }
+  },
+  "joinedLobby": {
+    "message": "$NAME$ is in the lobby now, and the match counts for their own account.",
+    "placeholders": { "name": { "content": "$1" } }
+  },
+  "inLobby": {
+    "message": "In the lobby",
+    "description": "The chip on the tile of a player whom the extension seated in the lobby that Autodarts shows."
+  },
+  "joinNoLobby": {
+    "message": "Autodarts doesn't show a lobby any more. Open the lobby on Autodarts, then try again."
+  },
+  "joinPlaying": {
+    "message": "$NAME$ plays on the page already: join the lobby there, on Autodarts.",
+    "placeholders": { "name": { "content": "$1" } }
+  },
+  "joinRefused": {
+    "message": "Autodarts didn't seat $NAME$: the lobby may be full, closed or started already.",
+    "placeholders": { "name": { "content": "$1" } }
+  },
   "unreachable": {
     "message": "Autodarts can't be reached right now. Try again in a moment."
   },

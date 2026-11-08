@@ -32,6 +32,10 @@ Zo werkt het:
   en met 9 kiezen een speler.
 • Op de pagina van een lopende wedstrijd vraagt een wissel het eerst, zodat een
   wedstrijd nooit onverwacht eindigt.
+• Twee spelers aan één bord, elk met eigen statistieken: op een lobby van
+  Autodarts zet „Deelnemen aan de lobby” onder de tegel van een geparkeerde speler
+  die speler ook in de lobby, zonder wissel, zonder telefoon en zonder opnieuw in
+  te loggen.
 • Voor een club of café, optioneel en standaard uit: een beheerderspincode
   beschermt „Accounts beheren” en de instellingen, elke speler kan zijn account met
   een eigen pincode beveiligen, en na een pauze keert het scherm vanzelf terug naar

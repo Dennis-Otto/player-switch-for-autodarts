@@ -3,6 +3,7 @@ import { test } from "node:test";
 
 import type { Identity } from "../src/autodarts.ts";
 import { REFRESH_PERIOD_MINUTES, RETRY_MS } from "../src/health.ts";
+import { SEATS_KEY } from "../src/lobby.ts";
 import type { PlayersView, VenueAccount } from "../src/messages.ts";
 import { SETTINGS_KEY } from "../src/page.ts";
 import {
@@ -1399,4 +1400,134 @@ test("a join that Autodarts refuses says so, and keeps the rotated token", async
     fake.autodarts.live.get("bob"),
   );
   assert.equal(fake.autodarts.reuses, 0);
+});
+
+test("the view of a lobby offers the join, and names the players seated there", async () => {
+  const fake = browser();
+  const lobby = await adaHostsALobby(fake);
+
+  const before = await popup(fake, { action: "view" });
+  assert.deepEqual(before.view.lobby, { seated: [] });
+
+  const joined = await popup(fake, { action: "join", id: "bob" });
+  assert.deepEqual(joined.view.lobby, { seated: ["bob"] });
+  // The record keeps the ids of the lobby and the account, never a token, until the
+  // browser closes; the next view, of the popup or the switcher, still knows it.
+  assert.deepEqual(fake.sessionArea.data.get(SEATS_KEY), [
+    { lobby, accounts: ["bob"] },
+  ]);
+  const after = await popup(fake, { action: "view" });
+  assert.deepEqual(after.view.lobby, { seated: ["bob"] });
+
+  // On any other page of Autodarts, nobody joins anything.
+  fake.addTab({ url: MATCH });
+  const elsewhere = await popup(fake, { action: "view" });
+  assert.equal(elsewhere.view.lobby, null);
+});
+
+test("another lobby starts with nobody seated, and a join that took no seat notes none", async () => {
+  const fake = browser();
+  await twoPlayers(fake);
+  const first = fake.autodarts.openLobby("ada");
+  fake.addTab({ url: lobbyPage(first) });
+  await started(fake);
+  await popup(fake, { action: "join", id: "bob" });
+
+  // The next lobby on the display: Bob sits in the first one only.
+  const next = fake.autodarts.openLobby("ada");
+  fake.addTab({ url: lobbyPage(next) });
+  const view = await popup(fake, { action: "view" });
+  assert.deepEqual(view.view.lobby, { seated: [] });
+
+  // Ada plays on the page, and an account that is gone takes no seat either.
+  for (const id of ["ada", "cy"]) {
+    const reply = await popup(fake, { action: "join", id });
+    assert.deepEqual(reply.view.lobby, { seated: [] }, id);
+  }
+  // A lobby that Autodarts closed refuses the seat, and the record stays as it was.
+  fake.autodarts.lobbies.delete(next);
+  const refused = await popup(fake, { action: "join", id: "bob" });
+  assert.deepEqual(
+    [refused.reason, refused.view.lobby],
+    ["refused", { seated: [] }],
+  );
+  assert.deepEqual(fake.sessionArea.data.get(SEATS_KEY), [
+    { lobby: first, accounts: ["bob"] },
+  ]);
+});
+
+test("two joins at once both stay in the record", async () => {
+  const fake = browser();
+  fake.pageToken = fake.autodarts.issue("ada");
+  const cy: Identity = { id: "cy", username: "cy", name: "cy", picture: null };
+  const parked = park(
+    park(setActive(EMPTY, ada), bob, fake.autodarts.issue("bob"), fake.clock),
+    cy,
+    fake.autodarts.issue("cy"),
+    fake.clock,
+  );
+  await fake.seed(parked);
+  const lobby = fake.autodarts.openLobby("ada");
+  fake.addTab({ url: lobbyPage(lobby) });
+  await started(fake);
+
+  await Promise.all([
+    popup(fake, { action: "join", id: "bob" }),
+    popup(fake, { action: "join", id: "cy" }),
+  ]);
+
+  const view = await popup(fake, { action: "view" });
+  assert.deepEqual([...(view.view.lobby?.seated ?? [])].sort(), ["bob", "cy"]);
+  assert.deepEqual(
+    [...(fake.autodarts.lobbies.get(lobby)?.seated ?? [])].sort(),
+    ["ada", "bob", "cy"],
+  );
+  assert.equal(fake.autodarts.reuses, 0);
+});
+
+test("a seat that the record can't note is taken all the same", async () => {
+  const fake = browser();
+  const lobby = await adaHostsALobby(fake);
+  fake.sessionArea.failing.set = true;
+
+  const reply = await popup(fake, { action: "join", id: "bob" });
+
+  assert.deepEqual([reply.ok, reply.joined], [true, "bob"]);
+  assert.deepEqual(fake.autodarts.lobbies.get(lobby)?.seated, ["ada", "bob"]);
+  // The tile offers the join once more, which keeps the seat it has.
+  assert.deepEqual(reply.view.lobby, { seated: [] });
+  assert.ok(
+    fake.logs.includes("Player Switch: noting the seat in the lobby failed."),
+    String(fake.logs),
+  );
+});
+
+test("a record of the seats that can't be read still shows every account and offers the join", async () => {
+  const fake = browser();
+  await adaHostsALobby(fake);
+  fake.sessionArea.failing.get = true;
+
+  const reply = await popup(fake, { action: "view" });
+
+  assert.equal(reply.error, undefined);
+  assert.deepEqual(
+    reply.view.profiles.map((profile) => profile.id),
+    ["ada", "bob"],
+  );
+  assert.deepEqual(reply.view.lobby, { seated: [] });
+  assert.ok(
+    fake.logs.includes("Player Switch: reading the seats in the lobby failed."),
+    String(fake.logs),
+  );
+});
+
+test("a view after a failure offers no join", async () => {
+  const fake = browser();
+  await adaHostsALobby(fake);
+  fake.local.failing.get = true;
+
+  const reply = await popup(fake, { action: "view" });
+
+  assert.equal(reply.error, "error");
+  assert.equal(reply.view.lobby, null);
 });
