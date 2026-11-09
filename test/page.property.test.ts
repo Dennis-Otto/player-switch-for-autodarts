@@ -1,8 +1,8 @@
 /**
  * Properties of the switcher in the page, checked by fast-check on stored settings of
  * any shape, on any address and on any key: the settings always come out valid and
- * keep what is valid, only a match page asks before a switch, and a key picks a tile
- * that exists or none.
+ * keep what is valid, only a match page asks before a switch, every lobby comes out of
+ * its address, and a key picks a tile that exists or none.
  */
 import assert from "node:assert/strict";
 import { test } from "node:test";
@@ -14,6 +14,7 @@ import {
   initialOf,
   isMatchPage,
   isPlayPage,
+  lobbyOf,
   mustConfirm,
   PLAY_ORIGINS,
   parseSettings,
@@ -73,7 +74,7 @@ test("initialOf answers a letter of the name or the username, never nothing", ()
   );
 });
 
-test("a page outside Autodarts Play is neither a play page nor a match", () => {
+test("a page outside Autodarts Play is neither a play page, a match nor a lobby", () => {
   fc.assert(
     fc.property(
       fc.webUrl({ withQueryParameters: true, withFragments: true }),
@@ -81,6 +82,7 @@ test("a page outside Autodarts Play is neither a play page nor a match", () => {
         fc.pre(!PLAY_ORIGINS.includes(new URL(url).origin));
         assert.ok(!isPlayPage(url));
         assert.ok(!isMatchPage(url));
+        assert.equal(lobbyOf(url), null);
         assert.ok(!mustConfirm(url, undefined));
       },
     ),
@@ -99,6 +101,23 @@ test("every match of Autodarts Play is a play page that asks before a switch", (
         assert.ok(isPlayPage(url));
         assert.ok(isMatchPage(url));
         assert.equal(mustConfirm(url, confirmed), confirmed !== true);
+      },
+    ),
+  );
+});
+
+test("every lobby of Autodarts Play comes out of its address, and asks before no switch", () => {
+  fc.assert(
+    fc.property(
+      fc.constantFrom(...PLAY_ORIGINS),
+      fc.constantFrom("lobby", "lobbies"),
+      fc.uuid({ version: [1, 4, 7] }),
+      fc.constantFrom("", "/", "?board=1", "#seats", "/?board=1#seats"),
+      (origin, path, id, rest) => {
+        const url = `${origin}/${path}/${id}${rest}`;
+        assert.equal(lobbyOf(url), id);
+        assert.ok(isPlayPage(url));
+        assert.ok(!mustConfirm(url, undefined));
       },
     ),
   );

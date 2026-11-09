@@ -43,7 +43,7 @@ test("Join the lobby in the popup seats a parked player, and the host plays on",
   const popup = await display.saveAccounts(page, [ALICE, BOB, CAROL]);
   // Carol plays, and opens a lobby on the board of the display.
   const lobby = autodarts.openLobby(CAROL);
-  await page.goto(`${new URL(page.url()).origin}/lobbies/${lobby}`);
+  await page.goto(`${new URL(page.url()).origin}/lobby/${lobby}`);
   await expectPlayer(page, CAROL);
   await mark(page);
   await popup.reopen();
@@ -100,7 +100,7 @@ test("Join again keeps a seat that Autodarts still has, and seats a player whom 
   const page = await display.openAutodarts();
   const popup = await display.saveAccounts(page, [ALICE, CAROL]);
   const lobby = autodarts.openLobby(CAROL);
-  await page.goto(`${new URL(page.url()).origin}/lobbies/${lobby}`);
+  await page.goto(`${new URL(page.url()).origin}/lobby/${lobby}`);
   await expectPlayer(page, CAROL);
   await popup.reopen();
   await joinOf(popup.page, ALICE).click();
@@ -139,7 +139,7 @@ test("Join the lobby in the switcher on the page seats a parked player without a
   await popup.page.close();
   // Bob plays, and hosts a lobby on the board display.
   const lobby = autodarts.openLobby(BOB);
-  await page.goto(`${new URL(page.url()).origin}/lobbies/${lobby}`);
+  await page.goto(`${new URL(page.url()).origin}/lobby/${lobby}`);
   await expectPlayer(page, BOB);
   await mark(page);
 
