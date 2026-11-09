@@ -301,7 +301,10 @@ export class Display {
       )
       .toBe("player-switch-ui");
     await page.mouse.click(corner.x, corner.y);
-    const isSwitcher = (frame: Frame) => frame.url().endsWith("/switcher.html");
+    // A tap opens it as switcher.html?by=pointer, a key as switcher.html.
+    const isSwitcher = (frame: Frame) =>
+      URL.canParse(frame.url()) &&
+      new URL(frame.url()).pathname.endsWith("/switcher.html");
     await expect.poll(() => page.frames().some(isSwitcher)).toBe(true);
     const switcher = page.frames().find(isSwitcher);
     if (switcher === undefined) {

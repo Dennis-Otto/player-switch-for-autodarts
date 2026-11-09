@@ -115,6 +115,7 @@ Autodarts counts a match for each account that sits in its lobby, while the page
 ## With a keyboard, a screen reader or a finger {#accessibility}
 
 - **Keys in the popup too:** the keys <kbd>1</kbd> to <kbd>9</kbd> pick a player in the popup as they do on the page; their numbers show on the tiles once you use the keyboard.
+- **The focus shows when you use the keys:** the players on the page start with the focus on the first tile. Its ring shows at once when you open them with the keyboard, and after a tap once you press a key, so a tap leaves the player who plays with one frame.
 - **The focus keeps its place:** after a switch it stays on the player who plays now, after a removal it moves to the same action of the account in its place, and **Cancel** leads back to where you came from.
 - **Clear to a screen reader:** the tile of the player who plays is the current one, **Manage accounts** says whether it is on, the actions below a tile carry the name of its account, and an error is read out at once.
 - **Made for a finger:** every control is at least 44 by 44 pixels and no text is smaller than 12 pixels; a contrast theme of Windows keeps the player who plays and the chips apart, and with reduced motion in the system nothing moves.

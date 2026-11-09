@@ -115,6 +115,7 @@ Autodarts zählt ein Match für jedes Konto, das in seiner Lobby sitzt, während
 ## Mit Tastatur, Screenreader oder Finger {#accessibility}
 
 - **Tasten auch im Popup:** Die Tasten <kbd>1</kbd> bis <kbd>9</kbd> wählen im Popup einen Spieler wie auf der Seite; ihre Nummern erscheinen auf den Kacheln, sobald du die Tastatur nutzt.
+- **Der Fokus zeigt sich, wenn du die Tasten nutzt:** Die Spieler auf der Seite beginnen mit dem Fokus auf der ersten Kachel. Sein Rahmen erscheint sofort, wenn du sie mit der Tastatur öffnest, und nach einem Tippen, sobald du eine Taste drückst; so behält der Spieler, der spielt, nach einem Tippen einen einzigen Rahmen.
 - **Der Fokus bleibt an seinem Platz:** Nach einem Wechsel bleibt er auf dem Spieler, der jetzt spielt, nach dem Entfernen springt er zur selben Aktion des Kontos an dessen Stelle, und **Abbrechen** führt dorthin zurück, wo du herkamst.
 - **Klar für Screenreader:** Die Kachel des Spielers, der spielt, ist die aktuelle, **Konten verwalten** sagt, ob es an ist, die Aktionen unter einer Kachel tragen den Namen ihres Kontos, und ein Fehler wird sofort vorgelesen.
 - **Gemacht für den Finger:** Jedes Bedienelement ist mindestens 44 mal 44 Pixel groß und kein Text kleiner als 12 Pixel; ein Kontrastdesign von Windows hält den Spieler, der spielt, und die Hinweise auseinander, und mit reduzierter Bewegung im System bewegt sich nichts.
