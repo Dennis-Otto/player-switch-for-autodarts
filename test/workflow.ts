@@ -7,8 +7,12 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 
-/** A step of a job: its condition, its time limit, its environment and its script. */
+/**
+ * A step of a job: its id, its condition, its time limit, its environment and its
+ * script.
+ */
 export interface Step {
+  readonly id: string | undefined;
   readonly if: string | undefined;
   readonly timeoutMinutes: string | undefined;
   readonly env: string;
@@ -64,6 +68,7 @@ export const readWorkflow = (file: string): Workflow => {
       return after.slice(0, stop === -1 ? undefined : stop);
     };
     return {
+      id: value("id"),
       if: value("if"),
       timeoutMinutes: value("timeout-minutes"),
       env: block("env").join("\n"),
