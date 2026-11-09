@@ -294,7 +294,11 @@ Die Erweiterung speichert eine Anmeldung nur in den zehn Minuten nach **Konto hi
 
 ### Der Knopf auf der Autodarts-Seite fehlt
 
-**Einstellungen** im Popup, oder **Details → Erweiterungsoptionen** unter `chrome://extensions` (`edge://extensions` in Edge, **Einstellungen** von Player Switch unter `about:addons` in Firefox), blendet den Knopf ein und wählt seine Ecke. Ist er an und fehlt trotzdem? Lade die Autodarts-Seite neu. Das Tastenkürzel <kbd>Alt</kbd>+<kbd>Umschalt</kbd>+<kbd>O</kbd> öffnet die Spieler auch ohne Knopf.
+**Einstellungen** im Popup, oder **Details → Erweiterungsoptionen** unter `chrome://extensions` (`edge://extensions` in Edge, **Einstellungen** von Player Switch unter `about:addons` in Firefox), blendet den Knopf ein und wählt seine Ecke. Ist er an und fehlt trotzdem? Lade die Autodarts-Seite neu. Das Tastenkürzel <kbd>Alt</kbd>+<kbd>Umschalt</kbd>+<kbd>O</kbd> öffnet die Spieler auch ohne Knopf. In Firefox prüfe auch [den Zugriff auf die Autodarts-Seiten](#firefox-site-access).
+
+### In Firefox fehlt der Knopf, und keine Anmeldung wird gespeichert {#firefox-site-access}
+
+Das Add-on braucht seinen Zugriff auf die beiden Autodarts-Seiten: auf die Seite für den Knopf, die Wechsel und die Anmeldungen, und auf den Anmeldedienst für die Sitzungen. Firefox gibt ihn dem Add-on schon beim Laden, du musst nichts erlauben, und zeigt ihn auf der Seite des Add-ons als zwei Schalter, die sich ausschalten lassen. Öffne `about:addons`, wähle Player Switch for Autodarts, dann **Berechtigungen und Daten**, und schalte **Auf Ihre Daten für https://play.autodarts.com zugreifen** und **Auf Ihre Daten für https://api.autodarts.com zugreifen** beide ein. Lade dann die Autodarts-Seite neu.
 
 ### Nach einem Wechsel fehlt das Board {#board-not-shared}
 
