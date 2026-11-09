@@ -298,7 +298,7 @@ The extension saves a sign-in by itself only in the ten minutes after **Add acco
 
 ### In Firefox, the button is missing and no sign-in is saved {#firefox-site-access}
 
-The add-on needs its access to the two Autodarts sites: to the page for the button, the switches and the sign-ins, and to the sign-in service for the sessions. Firefox grants it as it loads the add-on, with nothing to allow, and lists it on the add-on's page as two switches, which can be turned off. Open `about:addons`, choose Player Switch for Autodarts, then **Permissions and data**, and turn on both **Access your data for <https://play.autodarts.com>** and **Access your data for <https://api.autodarts.com>**. Then reload the Autodarts page.
+The add-on needs its access to the two Autodarts sites: to the page for the button, the switches and the sign-ins, and to the sign-in service for the sessions. Firefox grants it as it loads the add-on, with nothing to allow, and lists it on the add-on's page as two switches, which can be turned off. Open `about:addons`, choose Player Switch for Autodarts, then **Permissions and data**, and turn on both **Access your data for `https://play.autodarts.com`** and **Access your data for `https://api.autodarts.com`**. Then reload the Autodarts page.
 
 ### After a switch, the board is missing {#board-not-shared}
 
