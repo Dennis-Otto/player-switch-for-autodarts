@@ -153,30 +153,51 @@ test("isMatchPage knows a match that runs", () => {
 });
 
 const LOBBY = "0b5a1c2d-0000-4000-8000-0000000000a1";
+/** A made-up id of the kind that Autodarts gives a lobby today: a UUID of version 7. */
+const LOBBY_V7 = "019a6b2e-7c41-7d3b-9a2e-4c6b8d0e1f23";
 
-test("lobbyOf reads the lobby that an address of Autodarts Play shows", () => {
-  assert.equal(lobbyOf(`https://play.autodarts.com/lobbies/${LOBBY}`), LOBBY);
-  assert.equal(lobbyOf(`https://play.autodarts.com/lobbies/${LOBBY}/`), LOBBY);
-  assert.equal(
-    lobbyOf(`https://play.autodarts.com/lobbies/${LOBBY}?board=1#seats`),
-    LOBBY,
-  );
-  const upper = LOBBY.toUpperCase();
-  assert.equal(lobbyOf(`https://play.autodarts.com/lobbies/${upper}`), upper);
+test("lobbyOf reads the lobby from the address that Autodarts Play shows, /lobby/<id>", () => {
+  for (const origin of PLAY_ORIGINS) {
+    for (const id of [LOBBY, LOBBY_V7, LOBBY_V7.toUpperCase()]) {
+      assert.equal(lobbyOf(`${origin}/lobby/${id}`), id);
+      assert.equal(lobbyOf(`${origin}/lobby/${id}/`), id);
+      assert.equal(lobbyOf(`${origin}/lobby/${id}?board=1`), id);
+      assert.equal(lobbyOf(`${origin}/lobby/${id}#seats`), id);
+      assert.equal(lobbyOf(`${origin}/lobby/${id}/?board=1#seats`), id);
+    }
+  }
+});
+
+test("lobbyOf still reads the older address /lobbies/<id> that links of the community use", () => {
+  for (const origin of PLAY_ORIGINS) {
+    assert.equal(lobbyOf(`${origin}/lobbies/${LOBBY_V7}`), LOBBY_V7);
+    assert.equal(lobbyOf(`${origin}/lobbies/${LOBBY_V7}/?board=1#x`), LOBBY_V7);
+  }
 });
 
 test("lobbyOf finds no lobby in any other address", () => {
   for (const url of [
     "https://play.autodarts.com/",
+    "https://play.autodarts.com/lobby",
+    "https://play.autodarts.com/lobby/",
+    "https://play.autodarts.com/lobby/abc",
+    `https://play.autodarts.com/lobby/${LOBBY}/players`,
+    `https://play.autodarts.com/lobby/${LOBBY}x`,
+    `https://play.autodarts.com/lobby/x${LOBBY}`,
+    `https://play.autodarts.com/lobby/${LOBBY}/${LOBBY}`,
+    `https://play.autodarts.com/lobbys/${LOBBY}`,
+    // The list of the open lobbies, and the pages that set up a new one.
     "https://play.autodarts.com/lobbies",
     "https://play.autodarts.com/lobbies/",
-    "https://play.autodarts.com/lobbies/abc",
+    "https://play.autodarts.com/lobbies/new/x01",
     `https://play.autodarts.com/lobbies/${LOBBY}/players`,
-    `https://play.autodarts.com/lobbies/${LOBBY}x`,
     `https://play.autodarts.com/matches/${LOBBY}`,
     `https://play.autodarts.com/join/${LOBBY}`,
-    `https://example.org/lobbies/${LOBBY}`,
-    `http://play.autodarts.com/lobbies/${LOBBY}`,
+    `https://play.autodarts.com/history/lobby/${LOBBY}`,
+    `https://play.autodarts.com/boards?next=/lobby/${LOBBY}`,
+    `https://example.org/lobby/${LOBBY}`,
+    `http://play.autodarts.com/lobby/${LOBBY}`,
+    `https://play.autodarts.io/lobby/${LOBBY}`,
     "not a url",
     "",
     undefined,
@@ -190,7 +211,7 @@ test("isMatchPage leaves every other page alone", () => {
     "https://play.autodarts.com/",
     "https://play.autodarts.com/matches",
     "https://play.autodarts.com/matches/",
-    "https://play.autodarts.com/lobbies/abc",
+    "https://play.autodarts.com/lobby/abc",
     "https://play.autodarts.com/history/matches/abc",
     "https://play.autodarts.com/boards?next=/matches/abc",
     "https://example.org/matches/abc",

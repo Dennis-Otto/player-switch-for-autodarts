@@ -1250,7 +1250,7 @@ test("a check mark that shows while the badge is read stays", async () => {
 });
 
 /** The address of a lobby in Autodarts Play. */
-const lobbyPage = (lobby: string) => `${PLAY}lobbies/${lobby}`;
+const lobbyPage = (lobby: string) => `${PLAY}lobby/${lobby}`;
 
 /** Ada plays on the page and hosts a lobby that the tab in front shows; Bob is parked. */
 async function adaHostsALobby(fake: FakeBrowser): Promise<string> {
@@ -1317,7 +1317,13 @@ test("a join from the switcher seats the player in the lobby of the switcher's o
 });
 
 test("a join finds no lobby in a tab that shows none, and spends no token", async () => {
-  for (const tab of [undefined, PLAY, MATCH, `${PLAY}lobbies/not-a-lobby`]) {
+  for (const tab of [
+    undefined,
+    PLAY,
+    MATCH,
+    `${PLAY}lobby/not-a-lobby`,
+    `${PLAY}lobbies`,
+  ]) {
     const fake = browser();
     await twoPlayers(fake);
     if (tab !== undefined) {

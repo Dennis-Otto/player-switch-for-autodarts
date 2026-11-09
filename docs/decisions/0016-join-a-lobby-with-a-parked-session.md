@@ -36,7 +36,7 @@ development, and no test reaches a real board.
    parked session in its queue, keeps the rotated refresh token first, reads the lobby
    with the access token of that renewal for the board of the display, and takes the seat.
    It reads the id of the lobby itself, from the address of the Autodarts tab that the
-   browser reports (`/lobbies/<uuid>`), never from a message of the page.
+   browser reports (`/lobby/<uuid>`), never from a message of the page.
 
 ## Decision
 
@@ -94,3 +94,12 @@ seats and expects 401, so a change of the game service shows before a player not
   second seat while Autodarts still lists them; the popup then says that the seat was
   kept. A tap costs one renewal of the parked session at most, and the trust boundary
   above stays as it is.
+- **Note of 2026-11-09, the address of a lobby:** the first version read the lobby
+  only from `/lobbies/<uuid>`, which older links of the community use, so 1.4.0 and
+  1.5.0 never offered the join. Autodarts Play shows a lobby at `/lobby/<uuid>`:
+  Dennis sent such an address from his board, and the invitation that
+  tools-for-autodarts copies has the same form. `lobbyOf` of `src/page.ts` reads
+  both; `/lobbies` alone is the list of the open lobbies and `/lobbies/new/<game>` the
+  settings of a new one, neither a lobby yet. The game service keeps its own address,
+  `api.autodarts.com/gs/v0/lobbies/<id>`, which the daily check watches. The tests
+  and the fake Autodarts of the end-to-end tests open the lobby at `/lobby/<uuid>`.

@@ -88,7 +88,7 @@ Wer den Spieler entfernt, der gerade spielt, oder **Alle Konten vergessen** wäh
 
 ### Der Lobby beitreten {#join-lobby}
 
-Solange der Autodarts-Tab eine Lobby zeigt, bietet die Kachel jedes geparkten Spielers **Der Lobby beitreten** an, im Popup und in den Spielern auf der Seite. Ein Tipp setzt diesen Spieler in die Lobby, und die Kachel zeigt danach:
+Solange der Autodarts-Tab eine Lobby zeigt, die Seite unter `play.autodarts.com/lobby/` mit der ID der Lobby, bietet die Kachel jedes geparkten Spielers **Der Lobby beitreten** an, im Popup und in den Spielern auf der Seite. Ein Tipp setzt diesen Spieler in die Lobby, und die Kachel zeigt danach:
 
 > In der Lobby
 
@@ -308,7 +308,7 @@ Autodarts zeigt ein Board nur dem Konto, dem es gehört, und den Konten, mit den
 
 Autodarts zählt ein Match für jedes Konto, das in seiner Lobby sitzt, während die Seite nur unter einem Konto spielt. Ohne Player Switch tritt der zweite Spieler über sein eigenes Handy bei oder spielt als Gast, dessen Statistik für niemanden zählt. Mit Player Switch:
 
-1. Der Spieler auf der Seite öffnet bei Autodarts eine Lobby, am Board des Displays.
+1. Der Spieler auf der Seite öffnet bei Autodarts eine Lobby, am Board des Displays. Die Kacheln bieten den Beitritt an, sobald der Tab die Lobby selbst zeigt, unter `play.autodarts.com/lobby/…`, noch nicht, solange er die Liste der offenen Lobbys oder die Einstellungen einer neuen zeigt.
 2. Die Kachel jedes geparkten Spielers, der mitspielt, zeigt im Popup oder in den Spielern auf der Seite **Der Lobby beitreten**: Ein Tipp darauf setzt diesen Spieler in die Lobby. Im [Modus für Verein und Kneipe](shared-display.md#venue-mode) tippt ein Spieler mit PIN sie vorher ein.
 3. Seine Kachel zeigt **In der Lobby**. Nichts wechselt und nichts lädt neu: Die Seite bleibt beim Spieler, der dort spielt.
 4. Starte das Match wie gewohnt auf der Seite. Es zählt für das eigene Konto jedes Spielers.
