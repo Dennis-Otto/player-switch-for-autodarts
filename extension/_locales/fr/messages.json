@@ -256,6 +256,14 @@
   "keysHint": {
     "message": "Les touches 1 à 9 choisissent un joueur, Échap ferme."
   },
+  "version": {
+    "message": "Player Switch $VERSION$",
+    "placeholders": {
+      "version": {
+        "content": "$1"
+      }
+    }
+  },
   "switchButton": {
     "message": "Changer de joueur"
   },

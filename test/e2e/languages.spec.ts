@@ -1,6 +1,17 @@
 // The popup and the welcome page in the language, and the popup in the color scheme,
-// of the browser.
+// of the browser, and the version that the popup and the switcher in the page show.
+import { readFileSync } from "node:fs";
 import { ALICE, expect, test } from "./fixtures.ts";
+
+/** The version in the manifest of the extension, which a release writes there. */
+const VERSION = (
+  JSON.parse(
+    readFileSync(
+      new URL("../../extension/manifest.json", import.meta.url),
+      "utf8",
+    ),
+  ) as { version: string }
+).version;
 
 /** The relative luminance of a CSS color such as "rgb(20, 22, 29)", from 0 to 1. */
 function luminance(color: string): number {
@@ -44,6 +55,21 @@ for (const language of ["en", "de"] as const) {
         "aria-pressed",
         "true",
       );
+    });
+
+    test("the popup and the switcher in the page show which version of Player Switch runs", async ({
+      display,
+    }) => {
+      const page = await display.openAutodarts();
+      const popup = await display.saveAccounts(page, [ALICE]);
+      const shown = display.t("version", VERSION);
+
+      await expect(popup.page.locator("footer #version")).toHaveText(shown);
+      await popup.page.close();
+
+      const switcher = await display.openSwitcher(page);
+      await expect(switcher.locator(".foot #version")).toBeVisible();
+      await expect(switcher.locator(".foot #version")).toHaveText(shown);
     });
 
     test("the welcome page of the install shows its four steps, the last one shares the board", async ({

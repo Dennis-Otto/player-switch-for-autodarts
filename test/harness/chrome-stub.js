@@ -47,6 +47,9 @@
   const long = setup.get("long") === "1";
   // Whether an account has lost its session and the renewal of another one fails.
   const trouble = setup.get("trouble") === "1";
+  // The version that the pages show as the one that runs: a fixed one, so that a
+  // release, which writes its own version into the manifest, changes no picture.
+  const VERSION = "1.6.0";
 
   // Made-up people. The pictures are drawn below; Lena has none, so her tile shows the
   // initial, as for an account without a picture at Autodarts.
@@ -318,7 +321,10 @@
       openOptionsPage: async () => {},
       getURL: (path) =>
         new URL(path, new URL("/extension/", location.href)).href,
-      getManifest: () => extensionFile("manifest.json"),
+      getManifest: () => ({
+        ...extensionFile("manifest.json"),
+        version: VERSION,
+      }),
       onMessage: noListeners,
     },
     storage: {

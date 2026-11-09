@@ -3,10 +3,11 @@
  * page: the players and their accounts from `players.ts`, as in the popup, in large
  * tiles for a touch screen. The keys 1 to 9 pick a player; Esc, the close button or a
  * tap beside the panel close it again. A switch reloads the page, which closes it as
- * well.
+ * well. Its foot shows which version of Player Switch runs, also on a touch screen,
+ * which hides the hint of the keys.
  */
 import type { WorkerRequest } from "../messages.ts";
-import { find } from "./dom.ts";
+import { find, showVersion } from "./dom.ts";
 import { mountPlayers } from "./players.ts";
 
 /** Asks the content script of this tab, through the service worker, to close the frame. */
@@ -49,6 +50,8 @@ mountPlayers({
     start.focus();
   },
 });
+
+showVersion(document);
 
 find("#close").addEventListener("click", close);
 

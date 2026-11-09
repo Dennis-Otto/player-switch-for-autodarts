@@ -20,15 +20,16 @@ import {
   withFirefox,
 } from "./display.ts";
 
+/** The manifest of the extension: its version and the Autodarts sites that it asks for. */
+const MANIFEST = JSON.parse(
+  readFileSync(
+    new URL("../../extension/manifest.json", import.meta.url),
+    "utf8",
+  ),
+) as { version: string; host_permissions: string[] };
+
 /** The Autodarts sites that the manifest asks access to: the page and its API. */
-const SITES = (
-  JSON.parse(
-    readFileSync(
-      new URL("../../extension/manifest.json", import.meta.url),
-      "utf8",
-    ),
-  ) as { host_permissions: string[] }
-).host_permissions;
+const SITES = MANIFEST.host_permissions;
 
 const firefox = findFirefox();
 const skip =
@@ -81,6 +82,20 @@ test(
       chrome.permissions.getAll(),
     );
     assert.deepEqual([...(granted.origins ?? [])].sort(), [...SITES].sort());
+  }),
+);
+
+test(
+  "the popup shows which version runs, from the manifest as Firefox reads it",
+  { skip },
+  inFirefox(async (display) => {
+    // The switcher in the page shows it the same way, from the same code; its frame
+    // is out of WebDriver BiDi's reach in Firefox (display.ts).
+    const popup = await display.popup();
+    const shown = await popup.page.evaluate(
+      () => document.querySelector("footer #version")?.textContent,
+    );
+    assert.equal(shown, `Player Switch ${MANIFEST.version}`);
   }),
 );
 

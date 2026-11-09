@@ -183,7 +183,14 @@ input {
   font-size: 15px;
 }
 
-#keys {
+/* The foot of the panel: the hint of the keys and, quiet beside it, the version of
+   Player Switch that runs, on a line of its own where the two don't fit side by side.
+   A touch screen hides the hint and keeps the version. */
+.foot {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 4px 16px;
   margin-top: 16px;
   text-align: center;
 }

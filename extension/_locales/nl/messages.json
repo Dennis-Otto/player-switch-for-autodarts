@@ -256,6 +256,14 @@
   "keysHint": {
     "message": "Toetsen 1 tot en met 9 kiezen een speler, Esc sluit."
   },
+  "version": {
+    "message": "Player Switch $VERSION$",
+    "placeholders": {
+      "version": {
+        "content": "$1"
+      }
+    }
+  },
   "switchButton": {
     "message": "Van speler wisselen"
   },

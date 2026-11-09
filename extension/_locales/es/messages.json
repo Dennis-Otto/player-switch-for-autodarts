@@ -256,6 +256,14 @@
   "keysHint": {
     "message": "Las teclas del 1 al 9 eligen un jugador; Esc cierra."
   },
+  "version": {
+    "message": "Player Switch $VERSION$",
+    "placeholders": {
+      "version": {
+        "content": "$1"
+      }
+    }
+  },
   "switchButton": {
     "message": "Cambiar de jugador"
   },

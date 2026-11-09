@@ -194,6 +194,11 @@
   "keysHint": {
     "message": "Die Tasten 1 bis 9 wählen einen Spieler, Esc schließt."
   },
+  "version": {
+    "message": "Player Switch $VERSION$",
+    "description": "The footer of the popup and of the switcher in the Autodarts page: the name of the extension and the version that runs, such as 'Player Switch 1.6.0'. $VERSION$ is the number of the version, from the manifest.",
+    "placeholders": { "version": { "content": "$1" } }
+  },
   "switchButton": {
     "message": "Spieler wechseln"
   },

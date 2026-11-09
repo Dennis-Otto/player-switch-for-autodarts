@@ -551,6 +551,7 @@ input:focus-visible {
 /* The settings, the help and a bug report, below the players. */
 footer {
   display: flex;
+  flex-wrap: wrap;
   align-items: baseline;
   justify-content: center;
   gap: 8px;
@@ -580,6 +581,13 @@ footer a:hover,
 footer .link:hover {
   color: var(--accent);
   text-decoration: underline;
+}
+
+/* The version of Player Switch that runs, quiet on a line of its own below the links,
+   in the muted gray of a hint. */
+footer #version {
+  flex-basis: 100%;
+  text-align: center;
 }
 
 /* While a request runs, the controls that send one take no tap. They fade only when

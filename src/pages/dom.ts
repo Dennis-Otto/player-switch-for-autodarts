@@ -26,6 +26,20 @@ export function find<E extends Element = HTMLElement>(
 }
 
 /**
+ * Writes which version of the extension runs, such as "Player Switch 1.6.0", into each
+ * element of the page marked data-version. The number comes from the manifest of the
+ * copy that runs, never from one written down here: Chrome fetches the update of an
+ * extension only every few hours, so the store may offer a newer version than the
+ * one at the board, and the help says how to fetch it at once.
+ */
+export function showVersion(root: ParentNode): void {
+  const text = t("version", chrome.runtime.getManifest().version);
+  for (const element of root.querySelectorAll<HTMLElement>("[data-version]")) {
+    element.textContent = text;
+  }
+}
+
+/**
  * Fills every element that carries a data-i18n key with its translated text, the
  * <title> of the page as well, and gives every one with a data-i18n-label key its
  * translated name for screen readers.
