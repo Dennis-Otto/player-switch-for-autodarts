@@ -8,11 +8,10 @@ the next release, or lists the pull requests when there is none.
 
 ## [1.5.2](https://github.com/Dennis-Otto/player-switch-for-autodarts/compare/v1.5.1...v1.5.2) (2026-11-09)
 
-
 ### Bug fixes
 
-* **ci:** the own blocking jobs check that Harden-Runner blocks ([#204](https://github.com/Dennis-Otto/player-switch-for-autodarts/issues/204)) ([b80257b](https://github.com/Dennis-Otto/player-switch-for-autodarts/commit/b80257bf52824519d3f95dc04043f8b56b933f42))
-* **overlay:** the active player has one frame that follows the whole tile ([#210](https://github.com/Dennis-Otto/player-switch-for-autodarts/issues/210)) ([4797fb7](https://github.com/Dennis-Otto/player-switch-for-autodarts/commit/4797fb7d01dfc0bce6e848f0a7625715afe8ae8b))
+- The player who plays has one frame again in the large overlay, around their whole tile, also on the page of a lobby, where the tile beside it is taller by *Join the lobby*. A second, shorter frame showed inside it after a tap on the button: the ring of the keyboard focus, which now shows only once you press a key, or at once when you open the overlay with the keyboard.
+- The end-to-end tests, and the morning checks of what Player Switch relies on at Autodarts and in the next Chrome, no longer run without their network block when Harden-Runner can't start it, as in GitHub's outage of 8 November 2026. Such a job now stops, with the annotation *Harden-Runner doesn't block* that names the cause, instead of reaching every host; running it again is all it takes.
 
 ## [1.5.1](https://github.com/Dennis-Otto/player-switch-for-autodarts/compare/v1.5.0...v1.5.1) (2026-11-09)
 
