@@ -1,8 +1,10 @@
-// The extension in a real Firefox: installed as a temporary add-on, it saves two
-// accounts and switches between them, from the popup and from the switcher in the
-// page, against the fake Autodarts of the end-to-end tests (display.ts). It skips
-// without a Firefox on this computer, other than in the CI.
+// The extension in a real Firefox: installed as a temporary add-on, it has its access
+// to the Autodarts sites, saves two accounts and switches between them, from the popup
+// and from the switcher in the page, against the fake Autodarts of the end-to-end
+// tests (display.ts). It skips without a Firefox on this computer, other than in the
+// CI.
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 import { test } from "node:test";
 import type { Page } from "puppeteer-core";
 import {
@@ -17,6 +19,16 @@ import {
   findFirefox,
   withFirefox,
 } from "./display.ts";
+
+/** The Autodarts sites that the manifest asks access to: the page and its API. */
+const SITES = (
+  JSON.parse(
+    readFileSync(
+      new URL("../../extension/manifest.json", import.meta.url),
+      "utf8",
+    ),
+  ) as { host_permissions: string[] }
+).host_permissions;
 
 const firefox = findFirefox();
 const skip =
@@ -55,6 +67,22 @@ async function switchWithEnter(page: Page, account: Account): Promise<void> {
     }
   }
 }
+
+test(
+  "the install grants the access to the Autodarts sites, with nothing to allow",
+  { skip },
+  inFirefox(async (display) => {
+    // Firefox lists this access on the add-on's page in about:addons, under
+    // Permissions and data, as switches that a person can turn off; without it, the
+    // page gets no button and no sign-in is saved. As about:debugging loads the
+    // add-on, Firefox turns them on by itself, as the README says.
+    const popup = await display.popup();
+    const granted = await popup.page.evaluate(() =>
+      chrome.permissions.getAll(),
+    );
+    assert.deepEqual([...(granted.origins ?? [])].sort(), [...SITES].sort());
+  }),
+);
 
 test(
   "a tap in the popup switches A to B and back, with the session of each kept fresh",

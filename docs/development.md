@@ -154,7 +154,7 @@ Four things work differently, and the code allows for each:
 
 The [tests in Firefox](#tests-in-firefox) install the package in a real Firefox on every change and switch players in it, from the popup and from the switcher in the page. To try a build by hand, with test accounts of Autodarts, never the real one of a player:
 
-1. `npm ci --ignore-scripts && npm run build`, then load `extension/manifest.json` as a temporary add-on, as above. Its page in `about:addons` lists the access to the Autodarts sites, which has to be allowed, and the data that the add-on sends.
+1. `npm ci --ignore-scripts && npm run build`, then load `extension/manifest.json` as a temporary add-on, as above. Its page in `about:addons` lists, under **Permissions and data**, the access to the two Autodarts sites as switches that Firefox turned on as it loaded the add-on, and the data that the add-on sends.
 2. Open [play.autodarts.com](https://play.autodarts.com) and sign in as the first test account: the icon shows ✓ and the popup lists it.
 3. **Add account**, sign in as the second test account, then tap the first one in the popup, and once more in the players on the page (<kbd>Alt</kbd>+<kbd>Shift</kbd>+<kbd>O</kbd>): the page shows the player that was tapped, without a sign-in.
 4. **Inspect** next to the add-on in `about:debugging` opens the console of the background: it shows the line about the storage and no other error.
@@ -320,7 +320,7 @@ Harden-Runner goes on without its agent, and so without any block, when it can't
 
 ### Tests in Firefox {#tests-in-firefox}
 
-Playwright loads no add-on into Firefox, so the tests of `test/firefox/` drive Firefox with [Puppeteer](https://pptr.dev/) over WebDriver BiDi, which installs `extension/` as a temporary add-on, as `about:debugging` does ([decision 0015](decisions/0015-lint-with-web-ext-and-test-in-a-real-firefox.md)). They run against the same fake Autodarts as the Chromium tests and save two accounts, then switch from the popup, with each token sent once, and from the switcher in the page:
+Playwright loads no add-on into Firefox, so the tests of `test/firefox/` drive Firefox with [Puppeteer](https://pptr.dev/) over WebDriver BiDi, which installs `extension/` as a temporary add-on, as `about:debugging` does ([decision 0015](decisions/0015-lint-with-web-ext-and-test-in-a-real-firefox.md)). They run against the same fake Autodarts as the Chromium tests, check that the install granted the access to the Autodarts sites of the manifest without a question, as the README promises, and save two accounts, then switch from the popup, with each token sent once, and from the switcher in the page:
 
 ```sh
 npm run e2e:firefox
@@ -339,7 +339,7 @@ It takes the Firefox of the computer, from where Firefox installs itself or from
 
 | File | What it checks |
 | --- | --- |
-| `switching.spec.ts` | The install, the first account saved by itself and the second with **Add account**; a switch from A to B and back in the popup, with each token sent once; the switcher in the page switches as well. |
+| `switching.spec.ts` | The install, with the access to the Autodarts sites granted, the first account saved by itself and the second with **Add account**; a switch from A to B and back in the popup, with each token sent once; the switcher in the page switches as well. |
 | `display.ts` | The Firefox of the test, the proxy, the popup and the checks after each test. |
 
 ## What Autodarts and the next Chrome change
