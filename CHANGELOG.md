@@ -6,6 +6,20 @@ the next release, or lists the pull requests when there is none.
 
 ## Unreleased
 
+## [1.5.2](https://github.com/Dennis-Otto/player-switch-for-autodarts/compare/v1.5.1...v1.5.2) (2026-11-09)
+
+### Bug fixes
+
+- The player who plays has one frame again in the large overlay, around their whole tile, also on the page of a lobby, where the tile beside it is taller by *Join the lobby*. A second, shorter frame showed inside it after a tap on the button: the ring of the keyboard focus, which now shows only once you press a key, or at once when you open the overlay with the keyboard.
+- The end-to-end tests, and the morning checks of what Player Switch relies on at Autodarts and in the next Chrome, no longer run without their network block when Harden-Runner can't start it, as in GitHub's outage of 8 November 2026. Such a job now stops, with the annotation *Harden-Runner doesn't block* that names the cause, instead of reaching every host; running it again is all it takes.
+
+## [1.5.1](https://github.com/Dennis-Otto/player-switch-for-autodarts/compare/v1.5.0...v1.5.1) (2026-11-09)
+
+### Bug fixes
+
+- On a monitor standing upright, the texts of the accounts in the players on the page were cut off, such as *Passwort nicht mehr me…* for *Passwort nicht mehr merken* in German. Every text of a tile is whole now, on any screen, at any zoom and in every language: a few players share the width of the panel, and a text that needs more room wraps onto the next line. A long name or user name, and the form of a remembered password, no longer run out of their tile either, in the players on the page and in the popup.
+- **Join the lobby** now shows on the page of a lobby. It never did, because Autodarts names the address of a lobby `/lobby/` and not `/lobbies/`.
+
 ## [1.5.0](https://github.com/Dennis-Otto/player-switch-for-autodarts/compare/v1.4.0...v1.5.0) (2026-11-09)
 
 ### Features

@@ -6,4 +6,4 @@
 #   uv pip compile --generate-hashes --python-version=3.12.3 --output-file=requirements.txt requirements.in
 playwright==1.64.1
 pillow==13.0.0
-imageio-ffmpeg==0.7.0
+imageio-ffmpeg==0.8.0

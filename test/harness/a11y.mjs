@@ -5,7 +5,8 @@
 // error and the join of a lobby, in every language and both color schemes, the switcher in the Autodarts page
 // and the welcome page of the install in every language; the page itself checks that
 // every control is a target of 44 by 44 pixels, that no text is smaller than 12 pixels
-// and that no button text breaks. A walk with the
+// and that no button text breaks, and that no text of a tile is cut off, in the
+// switcher on monitors upright and across at every zoom too. A walk with the
 // keyboard alone through every action checks where the focus lands, and the contrast
 // themes of the system and reduced motion get a look of their own.
 //
@@ -110,9 +111,16 @@ async function open({
   pins = false,
   manager = false,
   lobby = false,
+  long = false,
+  trouble = false,
+  pointer = false,
+  zoom = 1,
 } = {}) {
   const context = await browser.newContext({
     viewport: { width: page === "popup" ? 340 : 1024, height: 720 },
+    // The zoom of the page, or the scale of the screen: so many pixels of the screen
+    // for each pixel of CSS.
+    deviceScaleFactor: zoom,
     colorScheme: scheme,
     forcedColors,
     reducedMotion: "reduce",
@@ -126,7 +134,7 @@ async function open({
   const errors = [];
   tab.on("pageerror", (error) => errors.push(error));
   await tab.goto(
-    `${ORIGIN}/extension/${page}.html?lang=${lang}&accounts=${accounts}${pins ? "&pins=1" : ""}${manager ? "&manager=1" : ""}${lobby ? "&lobby=1" : ""}`,
+    `${ORIGIN}/extension/${page}.html?lang=${lang}&accounts=${accounts}${pins ? "&pins=1" : ""}${manager ? "&manager=1" : ""}${lobby ? "&lobby=1" : ""}${long ? "&long=1" : ""}${trouble ? "&trouble=1" : ""}${pointer ? "&by=pointer" : ""}`,
   );
   // The options page draws its accounts also while a manager PIN keeps them hidden,
   // and the welcome page has its texts once its script has run, before the load.
@@ -204,6 +212,62 @@ function measure(page) {
     }
     return found;
   });
+}
+
+/**
+ * The texts that the page cuts off: each piece of text that shows reaches beyond its
+ * own element, or beyond an element around it that clips or scrolls what overflows it,
+ * such as the card of an account, the panel of the switcher or the page itself, which
+ * then scrolls sideways. One line for each, with the box that cuts it.
+ */
+function cut(page) {
+  return page.evaluate(() => {
+    const name = (element) =>
+      `${element.tagName.toLowerCase()}${element.id ? `#${element.id}` : ""}${[...element.classList].map((kind) => `.${kind}`).join("")}`;
+    const found = new Set();
+    const texts = document.createTreeWalker(
+      document.body,
+      NodeFilter.SHOW_TEXT,
+    );
+    for (let node = texts.nextNode(); node !== null; node = texts.nextNode()) {
+      const element = node.parentElement;
+      if (node.textContent.trim() === "" || !element.checkVisibility()) {
+        continue;
+      }
+      const range = document.createRange();
+      range.selectNodeContents(node);
+      const text = range.getBoundingClientRect();
+      const words = node.textContent.trim().slice(0, 40);
+      for (let box = element; box !== null; box = box.parentElement) {
+        const clips =
+          getComputedStyle(box).overflowX !== "visible" ||
+          box === element ||
+          box === document.documentElement;
+        const edges =
+          box === document.documentElement
+            ? { left: 0, right: box.clientWidth }
+            : box.getBoundingClientRect();
+        if (
+          clips &&
+          (text.left < edges.left - 0.5 || text.right > edges.right + 0.5)
+        ) {
+          found.add(`"${words}" runs out of ${name(box)}`);
+          break;
+        }
+        // A pixel for the rounding of scrollWidth, which counts whole pixels.
+        if (clips && box !== element && box.scrollWidth > box.clientWidth + 1) {
+          found.add(`"${words}" is in ${name(box)}, which overflows sideways`);
+          break;
+        }
+      }
+    }
+    return [...found];
+  });
+}
+
+/** Checks that the page cuts no text off in a view. */
+async function whole(page, view) {
+  assert.deepEqual(await cut(page), [], `${view} cuts texts off`);
 }
 
 /** Checks a view with axe-core and with the measures of the page. */
@@ -409,6 +473,301 @@ suite("a lobby on the Autodarts page", { skip: browser === null }, () => {
     assert.equal(await page.isVisible(control("lenavogt", ".join")), false);
     await page.context().close();
   });
+});
+
+/**
+ * How the page marks the player who plays: the gaps between the tile of their card and
+ * the frame around it, the border of the card, and each element inside the card that
+ * draws a frame of its own, with an outline, a shadow or a border in the color of the
+ * frame. One line for each.
+ */
+function frame(page) {
+  return page.evaluate(() => {
+    const name = (element) =>
+      `${element.tagName.toLowerCase()}${[...element.classList].map((kind) => `.${kind}`).join("")}`;
+    const card = document.querySelector(".profile.active");
+    const tile = card.querySelector(".tile");
+    const style = getComputedStyle(card);
+    const box = card.getBoundingClientRect();
+    const own = tile.getBoundingClientRect();
+    const sides = ["Top", "Right", "Bottom", "Left"];
+    const inward = { Top: 1, Right: -1, Bottom: -1, Left: 1 };
+    const gaps = [];
+    for (const side of sides) {
+      const edge = side.toLowerCase();
+      const inside =
+        box[edge] +
+        inward[side] * Number.parseFloat(style[`border${side}Width`]);
+      if (Math.abs(own[edge] - inside) > 0.5) {
+        gaps.push(
+          `the tile ends at ${Math.round(own[edge])} px on the ${edge}, its frame at ${Math.round(inside)} px`,
+        );
+      }
+    }
+    const color = style.borderTopColor;
+    const seconds = [];
+    if (
+      style.outlineStyle !== "none" &&
+      Number.parseFloat(style.outlineWidth) > 0
+    ) {
+      seconds.push(`${name(card)} draws an outline around its frame`);
+    }
+    for (const element of card.querySelectorAll("*")) {
+      if (!element.checkVisibility()) {
+        continue;
+      }
+      const look = getComputedStyle(element);
+      if (
+        look.outlineStyle !== "none" &&
+        Number.parseFloat(look.outlineWidth) > 0
+      ) {
+        seconds.push(`${name(element)} draws an outline`);
+      }
+      if (look.boxShadow !== "none") {
+        seconds.push(`${name(element)} draws a shadow`);
+      }
+      if (
+        sides.some(
+          (side) =>
+            look[`border${side}Style`] !== "none" &&
+            Number.parseFloat(look[`border${side}Width`]) > 0 &&
+            look[`border${side}Color`] === color,
+        )
+      ) {
+        seconds.push(
+          `${name(element)} draws a border in the color of the frame`,
+        );
+      }
+    }
+    return [...gaps, ...seconds];
+  });
+}
+
+/**
+ * The ring of the focus on the tile of the player who plays, once a key shows it: it
+ * must show, and lie inside their frame with a gap, so that it stays apart from it.
+ */
+async function ring(page, view) {
+  const look = await page.evaluate(() => {
+    const tile = document.querySelector(".profile.active .tile");
+    const style = getComputedStyle(tile);
+    return {
+      focused: document.activeElement === tile,
+      visible: tile.matches(":focus-visible"),
+      style: style.outlineStyle,
+      width: Number.parseFloat(style.outlineWidth),
+      offset: Number.parseFloat(style.outlineOffset),
+    };
+  });
+  assert.equal(
+    look.focused,
+    true,
+    `the player who plays has the focus, ${view}`,
+  );
+  assert.equal(look.visible, true, `the focus shows, ${view}`);
+  assert.equal(look.style, "solid", `the ring of the focus shows, ${view}`);
+  assert.ok(look.width >= 2, `the ring of the focus is 2 px wide, ${view}`);
+  assert.ok(
+    -look.offset > look.width,
+    `the ring of the focus lies inside the frame with a gap, ${view}`,
+  );
+}
+
+// The tile of the player who plays had two frames in the switcher on the page of a
+// lobby: the border of its card, stretched to the height of the card beside it with
+// "Join the lobby", and the ring of the focus that the switcher gives the first tile,
+// as high as the tile alone. The player who plays has one frame, around the whole tile,
+// and the ring of the focus shows only for a keyboard, inside it.
+suite("the player who plays has one frame", { skip: browser === null }, () => {
+  for (const scheme of ["light", "dark"]) {
+    test(`in the switcher opened with a tap on the page of a lobby, in ${scheme}`, async () => {
+      const page = await open({
+        page: "switcher",
+        scheme,
+        accounts: 2,
+        lobby: true,
+        pointer: true,
+      });
+      // A monitor upright, as at the board of the photo, and a screen across.
+      for (const size of [
+        { width: 1080, height: 1920 },
+        { width: 1024, height: 720 },
+      ]) {
+        await page.setViewportSize(size);
+        await settle(page);
+        const view = `at ${size.width}x${size.height}, ${scheme}`;
+        // The card beside has "Join the lobby" below its tile and is the taller one,
+        // so the row stretches the card of the player who plays.
+        assert.equal(await page.isVisible(control("jonasberg", ".join")), true);
+        const heights = await page.$$eval("#profiles .profile", (cards) =>
+          cards.map((card) => Math.round(card.getBoundingClientRect().height)),
+        );
+        assert.equal(
+          new Set(heights).size,
+          1,
+          `the cards of the row are as high, ${view}`,
+        );
+        assert.deepEqual(
+          await frame(page),
+          [],
+          `the player who plays has one frame, ${view}`,
+        );
+      }
+      // The first key shows the ring of the focus, which the switcher gave the tile.
+      await press(page, "Shift");
+      await ring(page, `after a key, ${scheme}`);
+      assert.deepEqual(page.errors, []);
+      await page.context().close();
+    });
+
+    test(`in the switcher opened with a key, in ${scheme}`, async () => {
+      const page = await open({
+        page: "switcher",
+        scheme,
+        accounts: 2,
+        lobby: true,
+      });
+      await ring(page, `at once, ${scheme}`);
+      assert.deepEqual(page.errors, []);
+      await page.context().close();
+    });
+
+    test(`in the popup on the page of a lobby, in ${scheme}`, async () => {
+      const page = await open({ scheme, accounts: 2, lobby: true });
+      assert.deepEqual(await frame(page), [], `the popup, ${scheme}`);
+      await tabTo(page, tile("miakeller"));
+      await ring(page, `the popup, ${scheme}`);
+      assert.deepEqual(page.errors, []);
+      await page.context().close();
+    });
+  }
+
+  // In "Manage accounts" the frame wraps the tile and its menu, so a tile keeps its own
+  // height: the menu of a card stays below its tile when the form of a remembered
+  // password opens in the card beside it and stretches the row.
+  test("in the switcher, the menus stay below their tiles in Manage accounts", async () => {
+    const page = await open({ page: "switcher", accounts: 2 });
+    await page.setViewportSize({ width: 1080, height: 1920 });
+    await settle(page);
+    await page.click("#manage");
+    await settle(page);
+    const top = () =>
+      page.$eval(
+        '[data-id="demo-jonasberg"] .menu',
+        (menu) =>
+          menu.getBoundingClientRect().top -
+          menu.closest(".profile").getBoundingClientRect().top,
+      );
+    const before = await top();
+    await page.click(control("miakeller", ".toggle-remember"));
+    await settle(page);
+    assert.equal(await page.isVisible(control("miakeller", ".remember")), true);
+    assert.equal(
+      await top(),
+      before,
+      "the menu beside stays right below its tile",
+    );
+    assert.deepEqual(page.errors, []);
+    await page.context().close();
+  });
+});
+
+// A tile cut "Passwort nicht mehr merken" off at "Passwort nicht mehr me" in the
+// switcher on a monitor standing upright, at the width of four tiles in a row: every
+// text of the tiles is whole on every screen, at every zoom and in every language.
+// Physical pixels of a monitor upright and across; a zoom of the page or a scale of the
+// screen leaves the page fewer pixels of CSS.
+const MONITORS = [
+  [1080, 1920],
+  [1440, 2560],
+  [1920, 1080],
+];
+const ZOOMS = [1, 1.25, 1.5];
+// A window as narrow as a phone, and a tablet upright.
+const WINDOWS = [
+  [390, 844],
+  [768, 1024],
+];
+
+suite("the texts of the tiles are whole", { skip: browser === null }, () => {
+  /**
+   * Shows the tiles of every kind one after the other: the player who plays, one who
+   * has to sign in again and has a PIN, one in the lobby whose renewal fails and one
+   * with a long name, with an error above them; then "Manage accounts", with the
+   * longest texts of the actions, and the form of a remembered password. `look` sees
+   * each view.
+   */
+  async function everyView(page, look) {
+    await page.click(control("lenavogt", ".join"));
+    await settle(page);
+    await page.evaluate(() =>
+      window.harness.refuse({ ok: false, reason: "unreachable" }),
+    );
+    await page.click(tile("samortiz"));
+    await settle(page);
+    assert.notEqual(await page.textContent("#problem"), "");
+    await look("the list");
+    await page.click("#manage");
+    await settle(page);
+    assert.equal(
+      await page.isVisible(control("jonasberg", ".toggle-remember")),
+      true,
+    );
+    await look('"Manage accounts"');
+    await page.click(control("lenavogt", ".toggle-remember"));
+    await settle(page);
+    await look("the form of a remembered password");
+  }
+
+  for (const lang of LANGUAGES) {
+    test(`in the switcher, in ${lang}, on monitors upright and across at every zoom, and in a narrow window`, async () => {
+      for (const zoom of ZOOMS) {
+        const page = await open({
+          page: "switcher",
+          lang,
+          accounts: 4,
+          pins: true,
+          lobby: true,
+          long: true,
+          trouble: true,
+          zoom,
+        });
+        const sizes = MONITORS.map(([width, height]) => ({
+          width: Math.round(width / zoom),
+          height: Math.round(height / zoom),
+        }));
+        if (zoom === 1) {
+          sizes.push(...WINDOWS.map(([width, height]) => ({ width, height })));
+        }
+        await everyView(page, async (view) => {
+          for (const size of sizes) {
+            await page.setViewportSize(size);
+            await settle(page);
+            await whole(
+              page,
+              `the switcher, ${view}, at ${size.width}x${size.height} and ${zoom * 100} %`,
+            );
+          }
+        });
+        assert.deepEqual(page.errors, []);
+        await page.context().close();
+      }
+    });
+
+    test(`in the popup, in ${lang}`, async () => {
+      const page = await open({
+        lang,
+        accounts: 4,
+        pins: true,
+        lobby: true,
+        long: true,
+        trouble: true,
+      });
+      await everyView(page, (view) => whole(page, `the popup, ${view}`));
+      assert.deepEqual(page.errors, []);
+      await page.context().close();
+    });
+  }
 });
 
 suite("the welcome page in axe-core", { skip: browser === null }, () => {

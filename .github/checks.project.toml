@@ -115,7 +115,10 @@ after a wrong path in the manifest or a page, or a permission missing from the
 manifest. A step before the tests, such as the checkout or *Download the browser*, fails
 with `ECONNREFUSED` when Harden-Runner blocks a host of the job, a new one or an address
 that it doesn't know yet; the step *Wait until Harden-Runner lets the hosts through*
-warns of it."""
+warns of it.
+When the step *Make sure that Harden-Runner blocks* stopped the job, Harden-Runner
+had no agent that blocks, mostly because an outage of GitHub kept it from downloading
+it: that is no problem of the change, and the check passes when it runs again."""
 why = """These tests run what Chrome runs and the unit tests don't: the manifest, the
 service worker and the content script built into `lib/`, the Autodarts page,
 the popup and the switcher. A release with such a failure would break on every
@@ -146,7 +149,10 @@ with Alice playing". A test fails as well when a refresh token reached the fake 
 service a second time, when a request went to a host other than Autodarts and Firefox's
 own services, or when Firefox installed the add-on under another id than the manifest
 names. A step before the tests fails with `ECONNREFUSED` when Harden-Runner blocks a
-host of the job; the step *Wait until Harden-Runner lets the hosts through* warns of it."""
+host of the job; the step *Wait until Harden-Runner lets the hosts through* warns of it.
+When the step *Make sure that Harden-Runner blocks* stopped the job, Harden-Runner
+had no agent that blocks, mostly because an outage of GitHub kept it from downloading
+it: that is no problem of the change, and the check passes when it runs again."""
 why = """Firefox runs the same package as Chrome, but differently: the background as an
 event page instead of a service worker, the pages from `moz-extension://<uuid>/`, and a
 storage that the content script can reach. The tests in Chromium can't show a break
@@ -168,7 +174,10 @@ the extension, `src/`, the tests, the packages or `.github/workflows/e2e.yml`, a
 they didn't pass: the job *browser* or *firefox* of the workflow E2E failed, was
 cancelled or didn't run. Its summary names the test that failed. A job that ran out of time with
 every step passed hung at its end, in *Cleaning up orphan processes*, which no change of
-the code causes."""
+the code causes.
+When the step *Make sure that Harden-Runner blocks* stopped the job, Harden-Runner
+had no agent that blocks, mostly because an outage of GitHub kept it from downloading
+it: that is no problem of the change, and the check passes when it runs again."""
 why = """This is the check that `main` requires for the end-to-end tests. They run the
 extension as Chrome and Firefox run it, against a fake Autodarts, so a broken manifest, import,
 message or popup, or a refresh token sent twice, never reaches the Chrome Web Store."""
@@ -192,7 +201,10 @@ the end of a session; and the forward of play.autodarts.io to play.autodarts.com
 `scripts/upstream-contract.ts` takes the expected values from `src/autodarts.ts`. A
 part that got no answer at all may be an outage of Autodarts, which the next run
 shows. A job that ran out of time with every step passed hung at its end, in *Cleaning
-up orphan processes*, which no change of Autodarts causes."""
+up orphan processes*, which no change of Autodarts causes.
+When the step *Make sure that Harden-Runner blocks* stopped the job, Harden-Runner
+had no agent that blocks, mostly because an outage of GitHub kept it from downloading
+it: that is no problem of the change, and the check passes when it runs again."""
 why = """None of this is a public contract of Autodarts. When the key or the address
 changes, every switch fails on every display, and a sign-in service that answers 404
 counts for the extension as an outage, so it keeps retrying and never falls back to a
@@ -217,7 +229,10 @@ the check names the version and the test that failed, and the artifact
 `chrome-beta-<attempt>` has its trace. The same tests pass in Playwright's Chromium of
 the workflow E2E, unless that one failed too. A job that ran out of time with every step
 passed hung at its end, in *Cleaning up orphan processes*, which no change of Chrome
-causes."""
+causes.
+When the step *Make sure that Harden-Runner blocks* stopped the job, Harden-Runner
+had no agent that blocks, mostly because an outage of GitHub kept it from downloading
+it: that is no problem of the change, and the check passes when it runs again."""
 why = """A version of Chrome that breaks the extension reaches every display by itself.
 These four weeks are the time to fix the extension, or to report the bug to Chrome,
 before a player notices; a fix needs days in the review of the Chrome Web Store as
