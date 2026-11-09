@@ -288,7 +288,7 @@
     "message": "Symbol anheften"
   },
   "welcomePinText": {
-    "message": "Chrome legt neue Erweiterungen hinter das Puzzleteil neben der Adressleiste. Klicke darauf und dann auf die Nadel neben Player Switch for Autodarts, dann bleibt das Symbol in der Symbolleiste."
+    "message": "Chrome legt neue Erweiterungen hinter das Puzzleteil neben der Adressleiste. Klicke darauf und dann auf die Nadel neben Player Switch for Autodarts, dann bleibt das Symbol in der Symbolleiste. Edge und Firefox haben dasselbe Puzzleteil: In Edge klicke statt auf die Nadel auf das Auge, in Firefox auf das Zahnrad und dann auf „An Symbolleiste anheften“."
   },
   "pinPictureTitle": {
     "message": "So heftest du das Symbol an"

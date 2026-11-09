@@ -65,14 +65,14 @@ andere Verbindung, spricht mit keinem Dienst für Statistiken oder Tracking, und
 Entwickler bekommt keine Daten von ihr. Ihre Content Security Policy lässt sie nur mit
 `api.autodarts.com` verbinden, darum sperrt der Browser selbst jede andere Verbindung.
 
-Firefox zeigt bei der Installation, dass das Add-on *Authentifizierungsdaten*
-sendet: Das sind die Sitzungstokens und, bei einem Konto, dessen Passwort du dir
-merken lässt, Benutzername und Passwort, die wie hier beschrieben an den
-Anmeldedienst von Autodarts gehen, und nirgendwohin sonst. Tritt ein gespeicherter
-Spieler der Lobby auf dem Bildschirm bei, geht ein frischer Zugangstoken dieses Kontos
-an den Spieldienst von Autodarts auf demselben Host, mit dem Benutzernamen und der ID
-des Kontos, die Autodarts ohnehin kennt. Der Chrome Web Store führt dasselbe unter
-seinen Datenschutzpraktiken.
+Firefox zeigt auf der Seite des Add-ons in `about:addons`, dass es
+*Authentifizierungsdaten* sendet: Das sind die Sitzungstokens und, bei einem Konto,
+dessen Passwort du dir merken lässt, Benutzername und Passwort, die wie hier
+beschrieben an den Anmeldedienst von Autodarts gehen, und nirgendwohin sonst. Tritt
+ein gespeicherter Spieler der Lobby auf dem Bildschirm bei, geht ein frischer
+Zugangstoken dieses Kontos an den Spieldienst von Autodarts auf demselben Host, mit
+dem Benutzernamen und der ID des Kontos, die Autodarts ohnehin kennt. Der Chrome Web
+Store führt dasselbe unter seinen Datenschutzpraktiken.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="images/diagrams/data-flow.de.dark.svg">

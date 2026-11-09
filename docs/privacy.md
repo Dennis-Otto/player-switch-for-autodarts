@@ -60,10 +60,10 @@ contacts no analytics or tracking service, and the developer receives no data fr
 Its content security policy lets it connect to `api.autodarts.com` alone, so the
 browser itself blocks any other connection.
 
-Firefox shows at the install that the add-on sends *authentication information*:
-that is the session tokens, and the username and password of an account whose
-password you remember, which go to the sign-in service of Autodarts as described
-here, and nowhere else. When a saved player joins the lobby on the display, a fresh
+Firefox lists on the add-on's page in `about:addons` that it sends *authentication
+information*: that is the session tokens, and the username and password of an
+account whose password you remember, which go to the sign-in service of Autodarts
+as described here, and nowhere else. When a saved player joins the lobby on the display, a fresh
 access token of that account goes to the game service of Autodarts on the same host,
 with the username and the id of the account, which Autodarts knows already. The Chrome
 Web Store lists the same under its privacy practices.

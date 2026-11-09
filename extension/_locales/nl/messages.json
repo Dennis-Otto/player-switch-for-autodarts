@@ -353,7 +353,7 @@
     "message": "Maak het pictogram vast"
   },
   "welcomePinText": {
-    "message": "Chrome zet nieuwe extensies achter het puzzelstukje naast de adresbalk. Klik erop en daarna op de punaise naast Player Switch for Autodarts, dan blijft het pictogram in de werkbalk."
+    "message": "Chrome zet nieuwe extensies achter het puzzelstukje naast de adresbalk. Klik erop en daarna op de punaise naast Player Switch for Autodarts, dan blijft het pictogram in de werkbalk. Edge en Firefox hebben hetzelfde puzzelstukje: klik in Edge op het oog in plaats van de punaise, en in Firefox op het tandwiel en daarna op Aan werkbalk vastzetten."
   },
   "pinPictureTitle": {
     "message": "Zo maak je het pictogram vast"
