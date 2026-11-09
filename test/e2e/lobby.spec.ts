@@ -145,6 +145,22 @@ test("Join the lobby in the switcher on the page seats a parked player without a
 
   const switcher = await display.openSwitcher(page);
   await expect(joinOf(switcher, BOB)).toBeHidden();
+  // The player who plays has one frame, the border of their card, around the whole
+  // tile, though the card with the join beside it is the taller one; and after a tap,
+  // the focus that the switcher gives the first tile shows no ring, which would be a
+  // second frame on the tile of the player who plays.
+  expect(
+    await profileOf(switcher, BOB).evaluate(
+      (card) =>
+        card.clientHeight -
+        (card.querySelector(".tile") as HTMLElement).offsetHeight,
+    ),
+  ).toBe(0);
+  const first = switcher.locator("#profiles .tile").first();
+  await expect
+    .poll(() => first.evaluate((tile) => tile === document.activeElement))
+    .toBe(true);
+  await expect(first).toHaveCSS("outline-style", "none");
   await joinOf(switcher, ALICE).click();
 
   await expect(switcher.locator("#status")).toHaveText(

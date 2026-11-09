@@ -81,10 +81,12 @@ h1 {
   border-radius: 18px;
 }
 
+/* The picture and the names of every tile of a row line up at the top, whatever is
+   below them: the chip of the player who plays, or "Join the lobby". */
 .tile {
   position: relative;
   flex-direction: column;
-  justify-content: center;
+  justify-content: flex-start;
   gap: 10px;
   min-height: 190px;
   padding: 22px 14px 18px;
@@ -184,6 +186,13 @@ input {
 #keys {
   margin-top: 16px;
   text-align: center;
+}
+
+/* Opened with a tap or a click, the focus that the switcher gives the first tile shows
+   no ring until a key is pressed (pages/switcher.ts): on the tile of the player who
+   plays, it would be a second frame inside theirs. */
+body.by-pointer .tile:focus-visible {
+  outline: none;
 }
 
 /* A low screen, such as a tablet across: smaller tiles, so more of them fit. */

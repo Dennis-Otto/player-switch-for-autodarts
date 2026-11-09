@@ -30,6 +30,8 @@
   type PageRequest = import("./messages.ts").PageRequest;
   type PageButtonView = import("./messages.ts").PageButtonView;
   type ButtonPlayer = import("./page.ts").ButtonPlayer;
+  /** What opened the switcher: a tap or a click, or a key. */
+  type OpenedBy = "pointer" | "keyboard";
 
   /** The parts of the switcher in the page, made on first use. */
   interface Ui {
@@ -196,7 +198,11 @@
       button.hidden = true;
       button.setAttribute("aria-haspopup", "dialog");
       button.setAttribute("aria-expanded", "false");
-      button.addEventListener("click", toggleSwitcher);
+      // A click of a key, Enter or Space, has no count of clicks; one of a mouse or a
+      // finger has.
+      button.addEventListener("click", (event) =>
+        toggleSwitcher(event.detail > 0 ? "pointer" : "keyboard"),
+      );
       root.append(style, button);
       ui = { host, root, button, frame: null };
     }
@@ -303,7 +309,12 @@
     inerted = [];
   }
 
-  function openSwitcher(): void {
+  /**
+   * Opens the switcher. Opened with a tap or a click, it shows the ring of the focus that
+   * it sets itself only once a key is pressed (pages/switcher.ts), as a browser does after
+   * a click: the ring would be a second frame on the tile of the player who plays.
+   */
+  function openSwitcher(by: OpenedBy): void {
     const current = ensureUi();
     if (current.frame !== null || current.host.parentNode === null) {
       return;
@@ -312,7 +323,9 @@
     const frame = document.createElement("iframe");
     frame.className = "frame";
     frame.title = t("title");
-    frame.src = chrome.runtime.getURL("switcher.html");
+    frame.src = chrome.runtime.getURL(
+      by === "pointer" ? "switcher.html?by=pointer" : "switcher.html",
+    );
     // The keyboard and the screen reader go on inside the switcher.
     frame.addEventListener("load", () => frame.focus(), { once: true });
     current.root.append(frame);
@@ -375,7 +388,7 @@
     restorePage();
   }
 
-  function toggleSwitcher(): void {
+  function toggleSwitcher(by: OpenedBy): void {
     if (!alive()) {
       // The extension was updated and this tab didn't get the new script. Only a reload
       // brings it, and on a match page that ends the match, so it asks first there.
@@ -391,7 +404,7 @@
     if (ui !== null && ui.frame !== null) {
       closeSwitcher();
     } else {
-      openSwitcher();
+      openSwitcher(by);
     }
   }
 
@@ -455,7 +468,7 @@
         return;
       case "toggleSwitcher":
         // The keyboard shortcut, which works with the button hidden as well.
-        toggleSwitcher();
+        toggleSwitcher("keyboard");
         sendResponse({ ok: true });
         return;
       case "closeSwitcher":

@@ -202,7 +202,13 @@ ul {
   gap: 10px;
 }
 
+/* A card is a column, and its tile fills what "Join the lobby" or the menu below it
+   leave: when a row of the switcher stretches a card to the height of the tallest one,
+   the tile, its hover and its ring of the focus stretch with it, as far as the frame
+   of the player who plays, which is the border of the card. */
 .profile {
+  display: flex;
+  flex-direction: column;
   background: var(--card);
   border: 1px solid var(--line);
   border-radius: 14px;
@@ -218,6 +224,7 @@ ul {
 .tile {
   position: relative;
   display: flex;
+  flex-grow: 1;
   align-items: center;
   gap: 12px;
   width: 100%;

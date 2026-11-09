@@ -398,6 +398,42 @@ test("a tap on the button lays the switcher over the page, which then takes no t
   assert.equal(asleep.inert, true);
 });
 
+test("a tap or a click opens the switcher to show its focus only after a key, a key to show it at once", async () => {
+  const tab = page();
+  tab.chrome.button = VIEW;
+  tab.run();
+  await settle();
+  // A tap or a click counts its clicks; Enter or Space on the button counts none.
+  const click = (detail: number) =>
+    tab
+      .button()
+      .dispatchEvent(
+        new tab.window.MouseEvent("click", { bubbles: true, detail }),
+      );
+
+  click(1);
+  assert.equal(
+    tab.frame()?.src,
+    `chrome-extension://${EXTENSION_ID}/switcher.html?by=pointer`,
+  );
+  click(1);
+  assert.equal(tab.frame(), null);
+
+  click(0);
+  assert.equal(
+    tab.frame()?.src,
+    `chrome-extension://${EXTENSION_ID}/switcher.html`,
+  );
+  tab.tell({ type: "page", action: "closeSwitcher" });
+
+  // The keyboard shortcut is a key, too.
+  tab.tell({ type: "page", action: "toggleSwitcher" });
+  assert.equal(
+    tab.frame()?.src,
+    `chrome-extension://${EXTENSION_ID}/switcher.html`,
+  );
+});
+
 test("the focus goes back to where it was in the page, or else to the button", async () => {
   const tab = page();
   tab.chrome.button = VIEW;

@@ -17,6 +17,20 @@ function close(): void {
   });
 }
 
+// Opened with a tap or a click, the switcher shows no ring around the focus that it
+// sets itself until a key is pressed, as a browser does after a click: on the tile of
+// the player who plays, the ring would be a second frame inside the one that marks
+// them. The focus is there all the same, for a keyboard and a screen reader, and the
+// first key shows where it is. Opened with a key, the ring shows at once.
+if (new URLSearchParams(location.search).get("by") === "pointer") {
+  document.body.classList.add("by-pointer");
+  document.addEventListener(
+    "keydown",
+    () => document.body.classList.remove("by-pointer"),
+    { capture: true, once: true },
+  );
+}
+
 // Once the players are there, the first of them takes the focus: the content script
 // gives the frame the focus as it shows it, so a keyboard or a screen reader starts in
 // the list.
