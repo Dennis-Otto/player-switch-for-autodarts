@@ -40,6 +40,8 @@ jobs:
       pull-requests: read # the list of the files that a pull request changes
     outputs:
       run: ${{ steps.files.outputs.run }}
+      # Whether the job stopped because Harden-Runner didn't block, which the gate says.
+      stopped: ${{ steps.blocks.outcome == 'failure' }}
     steps:
       # The files of the pull request come from GitHub's API; no step needs sudo or
       # Docker.
@@ -161,6 +163,9 @@ jobs:
     timeout-minutes: 10
     permissions:
       contents: read
+    outputs:
+      # Whether the job stopped because Harden-Runner didn't block, which the gate says.
+      stopped: ${{ steps.blocks.outcome == 'failure' }}
     steps:
       # GitHub for the checkout, and for Node.js should the runner image lack its
       # version; npm for the packages; and, when the cache has no Chromium of this
@@ -304,6 +309,9 @@ jobs:
     timeout-minutes: 10
     permissions:
       contents: read
+    outputs:
+      # Whether the job stopped because Harden-Runner didn't block, which the gate says.
+      stopped: ${{ steps.blocks.outcome == 'failure' }}
     steps:
       # GitHub for the checkout, and for Node.js should the runner image lack its
       # version, and npm for the packages. Firefox comes with the runner image. The
@@ -497,6 +505,11 @@ jobs:
           CHANGES: ${{ needs.changes.result }}
           BROWSER: ${{ needs.browser.result }}
           FIREFOX: ${{ needs.firefox.result }}
+          # A job that failed still gives its outputs to the gate.
+          STOPPED: >-
+            ${{ needs.changes.outputs.stopped }}
+            ${{ needs.browser.outputs.stopped }}
+            ${{ needs.firefox.outputs.stopped }}
         run: |
           {
             echo "- changes: $CHANGES"
@@ -509,7 +522,14 @@ jobs:
             [[ "$1" == success || ("$WANTED" != true && "$1" == skipped) ]]
           }
           if [[ "$CHANGES" != success ]] || ! passed "$BROWSER" || ! passed "$FIREFOX"; then
-            echo "::error::The end-to-end tests had to run and didn't pass; the jobs above show why."
+            # A job that Harden-Runner's step stopped ran no test, and the gate says so in
+            # the words of that step: the flaky-test bot then counts no failed test here
+            # either (decision 0134 of the blueprint).
+            if [[ " $STOPPED " == *" true "* ]]; then
+              echo "::error title=Harden-Runner doesn't block::A job above stopped because Harden-Runner didn't block there, so that job would reach every host, and it stops here instead. That is no problem of the change: run the job again."
+            else
+              echo "::error::The end-to-end tests had to run and didn't pass; the jobs above show why."
+            fi
             exit 1
           fi
           if [[ "$WANTED" == true ]]; then

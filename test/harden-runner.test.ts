@@ -507,3 +507,109 @@ suite("the check that Harden-Runner blocks", { skip }, () => {
     });
   }
 });
+
+// The gate of E2E fails when a job that it needs stopped in the step BLOCKS, and says so
+// in the words of that step: the flaky-test bot of the blueprint skips a job whose
+// annotations say that it stopped, and the gate ran no test either (decision 0134).
+suite("the gate of E2E after a stop of Harden-Runner", () => {
+  const e2e = readWorkflow("e2e.yml");
+  const PASS = "Pass when the tests that had to run passed";
+  const needed = /^ {4}needs: \[(.+)\]$/
+    .exec(
+      e2e.jobLines("gate").find((line) => line.startsWith("    needs:")) ?? "",
+    )?.[1]
+    ?.split(",")
+    .map((job) => job.trim());
+
+  test("hears from every job that it needs whether that job stopped", () => {
+    assert.ok(needed && needed.length > 0, "the gate needs the other jobs");
+    const env = e2e.step("gate", PASS).env;
+    for (const job of needed) {
+      assert.ok(
+        e2e
+          .jobLines(job)
+          .includes(`      stopped: \${{ steps.blocks.outcome == 'failure' }}`),
+        `the job "${job}" says whether ${BLOCKS} stopped it`,
+      );
+      assert.ok(
+        env.includes(`\${{ needs.${job}.outputs.stopped }}`),
+        `the gate hears whether the job "${job}" stopped`,
+      );
+    }
+  });
+
+  /** Runs the gate's check with the results and the stops of the jobs that it needs. */
+  const runGate = (env: Record<string, string>) => {
+    const dir = mkdtempSync(join(tmpdir(), "gate-"));
+    try {
+      writeFileSync(join(dir, "step.sh"), e2e.step("gate", PASS).run);
+      return spawnSync(
+        "bash",
+        ["--noprofile", "--norc", "-eo", "pipefail", join(dir, "step.sh")],
+        {
+          encoding: "utf8",
+          env: {
+            PATH: process.env.PATH ?? "",
+            GITHUB_STEP_SUMMARY: join(dir, "summary").replaceAll("\\", "/"),
+            WANTED: "true",
+            CHANGES: "success",
+            BROWSER: "success",
+            FIREFOX: "success",
+            STOPPED: "false false false",
+            ...env,
+          },
+        },
+      );
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  };
+  /** The words of the step BLOCKS that the flaky-test bot looks for. */
+  const WORDS = "would reach every host, and it stops here instead";
+
+  test("passes when the tests passed", { skip }, () => {
+    const gate = runGate({});
+    assert.equal(gate.status, 0, gate.stdout);
+    assert.ok(!gate.stdout.includes("::error"), gate.stdout);
+  });
+
+  for (const [job, env] of [
+    [
+      "changes",
+      {
+        CHANGES: "failure",
+        BROWSER: "skipped",
+        FIREFOX: "skipped",
+        STOPPED: "true  ",
+      },
+    ],
+    ["browser", { BROWSER: "failure", STOPPED: "false true false" }],
+    ["firefox", { FIREFOX: "failure", STOPPED: "false false true" }],
+  ] as const) {
+    test(`fails with the words of the stop when ${job} stopped`, {
+      skip,
+    }, () => {
+      const gate = runGate(env);
+      assert.equal(gate.status, 1, gate.stdout);
+      assert.ok(
+        gate.stdout.includes("::error title=Harden-Runner doesn't block::") &&
+          gate.stdout.includes(WORDS),
+        gate.stdout,
+      );
+    });
+  }
+
+  test("fails without the words of the stop when a test failed", {
+    skip,
+  }, () => {
+    const gate = runGate({ BROWSER: "failure" });
+    assert.equal(gate.status, 1, gate.stdout);
+    assert.ok(
+      gate.stdout.includes(
+        "::error::The end-to-end tests had to run and didn't pass; the jobs above show why.",
+      ),
+      gate.stdout,
+    );
+    assert.ok(!gate.stdout.includes(WORDS), gate.stdout);
+  });
+});
