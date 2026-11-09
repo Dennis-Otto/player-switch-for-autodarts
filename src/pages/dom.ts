@@ -26,6 +26,16 @@ export function find<E extends Element = HTMLElement>(
 }
 
 /**
+ * The version of the copy that runs, as chrome://extensions shows it: a beta carries
+ * its full number, such as 1.6.0-beta.2, in version_name, because Chrome takes only
+ * numbers in version (scripts/package-extension.sh).
+ */
+export function runningVersion(): string {
+  const { version, version_name } = chrome.runtime.getManifest();
+  return version_name ?? version;
+}
+
+/**
  * Writes which version of the extension runs, such as "Player Switch 1.6.0", into each
  * element of the page marked data-version. The number comes from the manifest of the
  * copy that runs, never from one written down here: Chrome fetches the update of an
@@ -33,7 +43,7 @@ export function find<E extends Element = HTMLElement>(
  * one at the board, and the help says how to fetch it at once.
  */
 export function showVersion(root: ParentNode): void {
-  const text = t("version", chrome.runtime.getManifest().version);
+  const text = t("version", runningVersion());
   for (const element of root.querySelectorAll<HTMLElement>("[data-version]")) {
     element.textContent = text;
   }

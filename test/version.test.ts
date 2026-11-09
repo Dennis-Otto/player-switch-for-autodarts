@@ -57,11 +57,15 @@ function messagesOf(language: string) {
 }
 
 /** Puts a fake `chrome` in place: the texts of a language and a manifest of a version. */
-function runAs(language: string, version: string): void {
+function runAs(language: string, version: string, versionName?: string): void {
   (globalThis as { chrome?: unknown }).chrome = {
     i18n: { getMessage: messagesOf(language) },
     runtime: {
-      getManifest: () => ({ ...JSON.parse(read("manifest.json")), version }),
+      getManifest: () => ({
+        ...JSON.parse(read("manifest.json")),
+        version,
+        ...(versionName === undefined ? {} : { version_name: versionName }),
+      }),
     },
   };
 }
@@ -100,6 +104,21 @@ for (const page of ["switcher.html", "popup.html"]) {
     );
   });
 }
+
+test("a beta shows its full number from version_name, as chrome://extensions does", () => {
+  // scripts/package-extension.sh packages 1.6.0-beta.2 as version 1.6.0 with the
+  // full number in version_name; the board has to tell one beta from the next.
+  for (const page of ["switcher.html", "popup.html"]) {
+    runAs("en", "1.6.0", "1.6.0-beta.2");
+    const document = open(page);
+    showVersion(document);
+    assert.equal(
+      document.querySelector("#version")?.textContent,
+      "Player Switch 1.6.0-beta.2",
+      page,
+    );
+  }
+});
 
 test("the switcher shows the version beside the hint of the keys, not inside it", () => {
   // A touch screen hides the hint of the keys (switcher.css), and the board of a
