@@ -241,7 +241,11 @@ ul {
   background: var(--accent-soft);
 }
 
+/* In "Manage accounts" the frame wraps the tile and its menu together, so the tile
+   keeps its own height there: the menus of a row stay right below their tiles and
+   don't move when the form of a remembered password opens in another card. */
 body.managing .tile {
+  flex-grow: 0;
   cursor: default;
 }
 

@@ -641,6 +641,35 @@ suite("the player who plays has one frame", { skip: browser === null }, () => {
       await page.context().close();
     });
   }
+
+  // In "Manage accounts" the frame wraps the tile and its menu, so a tile keeps its own
+  // height: the menu of a card stays below its tile when the form of a remembered
+  // password opens in the card beside it and stretches the row.
+  test("in the switcher, the menus stay below their tiles in Manage accounts", async () => {
+    const page = await open({ page: "switcher", accounts: 2 });
+    await page.setViewportSize({ width: 1080, height: 1920 });
+    await settle(page);
+    await page.click("#manage");
+    await settle(page);
+    const top = () =>
+      page.$eval(
+        '[data-id="demo-jonasberg"] .menu',
+        (menu) =>
+          menu.getBoundingClientRect().top -
+          menu.closest(".profile").getBoundingClientRect().top,
+      );
+    const before = await top();
+    await page.click(control("miakeller", ".toggle-remember"));
+    await settle(page);
+    assert.equal(await page.isVisible(control("miakeller", ".remember")), true);
+    assert.equal(
+      await top(),
+      before,
+      "the menu beside stays right below its tile",
+    );
+    assert.deepEqual(page.errors, []);
+    await page.context().close();
+  });
 });
 
 // A tile cut "Passwort nicht mehr merken" off at "Passwort nicht mehr me" in the
