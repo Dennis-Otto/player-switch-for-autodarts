@@ -115,6 +115,11 @@ test("a join says who joined the lobby, or why the player took no seat", () => {
     statusAfter({ ok: true, joined: "Ada", view }, null, t, about),
     { text: "joinedLobby: Ada", error: false },
   );
+  // "Join again" for a player who still sits there: Autodarts kept the seat.
+  assert.deepEqual(
+    statusAfter({ ok: true, joined: "Ada", kept: true, view }, null, t, about),
+    { text: "joinKept: Ada", error: false },
+  );
   // An account that is gone meanwhile: the tiles show it gone, and nothing more.
   assert.deepEqual(statusAfter({ ok: true, view }, null, t, about), {
     text: "",
@@ -227,7 +232,7 @@ test("a tile shows the key of the first nine, the chip of the player and the hea
   assert.deepEqual(tileOf(ada, 0, options), {
     key: "1",
     chip: null,
-    join: false,
+    join: null,
     renewed: null,
     failing: null,
     toggle: "rememberPassword",
@@ -261,32 +266,36 @@ test("a tile shows the key of the first nine, the chip of the player and the hea
   assert.match(parked.failing ?? "", /^renewalFailing: .+/);
 });
 
-test("on a page with a lobby, a parked player's tile offers the join, and says once it is seated", () => {
+test("on a page with a lobby, a parked player's tile offers the join, says once it is seated, and offers to join again", () => {
   const options = { numbered: false, now: NOW, language: "en", t };
   const lobby = { seated: ["b"] };
   const bob = { ...ada, id: "b", name: "Bob" };
 
-  // A parked player who takes no seat yet joins with a tap.
-  assert.deepEqual(
-    [tileOf(ada, 0, { ...options, lobby }).join, tileOf(ada, 0, options).join],
-    [true, false],
-  );
+  // A parked player who takes no seat yet joins with a tap, named for a screen reader.
+  assert.deepEqual(tileOf(ada, 0, { ...options, lobby }).join, {
+    text: "joinLobby",
+    label: "joinLobbyAs: Ada",
+    again: false,
+  });
+  assert.equal(tileOf(ada, 0, options).join, null);
   assert.deepEqual(tileOf(ada, 0, { ...options, lobby: null }).chip, null);
-  // A player whom the extension seated says so, and offers no second join.
+  // A player whom the extension seated says so, and offers the quieter "Join again":
+  // the host or Autodarts may have taken them out since, which the record can't know.
   assert.deepEqual(tileOf(bob, 1, { ...options, lobby }), {
     ...tileOf(bob, 1, options),
     chip: { text: "inLobby", kind: "lobby" },
-    join: false,
+    join: { text: "joinAgain", label: "joinAgainAs: Bob", again: true },
   });
   // The player on the page sits in the lobby there, and a dead session can't join
-  // before it signs in again; each keeps its own chip.
+  // before it signs in again; each keeps its own chip, also when the record seats it.
   for (const profile of [
     { ...bob, active: true },
     { ...ada, active: true },
+    { ...bob, needsSignIn: true },
     { ...ada, needsSignIn: true },
   ]) {
     const tile = tileOf(profile, 0, { ...options, lobby });
-    assert.equal(tile.join, false, JSON.stringify(profile));
+    assert.equal(tile.join, null, JSON.stringify(profile));
     assert.notEqual(tile.chip?.kind, "lobby");
   }
 });

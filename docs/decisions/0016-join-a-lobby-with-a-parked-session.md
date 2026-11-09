@@ -83,3 +83,14 @@ seats and expects 401, so a change of the game service shows before a player not
 - Dennis confirms once, with his own account, which request a join by the QR code of a
   local board makes: the board of the host, or none. Until then the community's shape
   of the request and the daily contract check are the evidence.
+- **Note of 2026-11-09:** the buttons came with release 1.4.0: **Join the lobby** below
+  the tile of a parked player, and the chip **In the lobby** once the extension seated
+  them. The chip comes from a record of the seats that the extension took
+  (`src/lobby.ts`, in `chrome.storage.session`), not from what Autodarts shows, since
+  reading the lobby for every view would renew every parked session each time the
+  popup opens. A host who takes the player out of the lobby leaves the chip as it is,
+  so the seated tile also offers the quieter **Join again**. It sends the same join,
+  which reads the lobby with the player's fresh access token first and asks for no
+  second seat while Autodarts still lists them; the popup then says that the seat was
+  kept. A tap costs one renewal of the parked session at most, and the trust boundary
+  above stays as it is.

@@ -206,6 +206,26 @@ test("the game service seats the account of the token at the board of the host, 
   );
 });
 
+test("the host takes an account out of a lobby, which it can join again", () => {
+  const autodarts = new FakeAutodarts();
+  const lobby = autodarts.openLobby(ALICE, "board-1");
+  const bob = { name: BOB.username, userId: BOB.id, boardId: "board-1" };
+  const seat = () =>
+    autodarts.answerGame("POST", `lobbies/${lobby}/players`, bearerOf(BOB), bob)
+      .status;
+  assert.equal(seat(), 201);
+
+  autodarts.leave(lobby, BOB);
+  assert.deepEqual(autodarts.seatsOf(lobby), [ALICE.id]);
+  // Taking out an account that sits nowhere, or in no lobby, changes nothing.
+  autodarts.leave(lobby, CAROL);
+  autodarts.leave("0b5a1c2d-0000-4000-8000-00000000dead", BOB);
+  assert.deepEqual(autodarts.seatsOf(lobby), [ALICE.id]);
+
+  assert.equal(seat(), 201);
+  assert.deepEqual(autodarts.seatsOf(lobby), [ALICE.id, BOB.id]);
+});
+
 test("the game service answers 404 for a lobby that it doesn't have", () => {
   const autodarts = new FakeAutodarts();
   const lobby = autodarts.openLobby(ALICE);

@@ -172,6 +172,11 @@ export type Outcome =
       readonly ended?: boolean;
       /** After a join: the name of the account that sits in the lobby now. */
       readonly joined?: string;
+      /**
+       * After a join: the account sat in the lobby already, such as at "Join again"
+       * while the host kept it there, so Autodarts got no second seat.
+       */
+      readonly kept?: true;
     }
   /** A match runs in the page: the worker spent no token yet and waits for a yes. */
   | { readonly ok: false; readonly reason: "match" }

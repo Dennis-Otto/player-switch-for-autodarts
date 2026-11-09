@@ -146,6 +146,19 @@
     "message": "In the lobby",
     "description": "The chip on the tile of a player whom the extension seated in the lobby that Autodarts shows."
   },
+  "joinAgain": {
+    "message": "Join again",
+    "description": "The quieter button below the tile of a player whom the extension seated in the lobby that Autodarts shows: it seats that player once more, such as after the host took them out of the lobby."
+  },
+  "joinAgainAs": {
+    "message": "Join again as $NAME$",
+    "description": "The name of the button 'Join again' for a screen reader, with the player whose seat it is. Start it with the words of 'Join again' where the language allows.",
+    "placeholders": { "name": { "content": "$1" } }
+  },
+  "joinKept": {
+    "message": "$NAME$ is still in the lobby: Autodarts kept the seat, so nothing changed.",
+    "placeholders": { "name": { "content": "$1" } }
+  },
   "joinNoLobby": {
     "message": "Autodarts doesn't show a lobby any more. Open the lobby on Autodarts, then try again."
   },

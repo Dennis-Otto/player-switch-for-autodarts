@@ -98,16 +98,17 @@ Autodarts counts a match for each account that sits in its lobby, while the page
 
 - **No switch, no reload:** the page stays with the player who plays there, and the match counts for every player's own account, without a phone or a new sign-in.
 - **Only on a lobby:** the tiles offer it only while the Autodarts tab shows a lobby, so a running match is never touched.
+- **Join again:** the extension doesn't watch the lobby, so a tile goes on saying **In the lobby** after the host took that player out. **Join again** below it seats them once more, and changes nothing for a player who still sits there ([help](help.md#join-lobby)).
 - **Private:** the extension seats the player with the session that it keeps parked for them, which never reaches the page ([decision 0016](decisions/0016-join-a-lobby-with-a-parked-session.md)).
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="images/lobby.dark.png">
-  <img src="images/lobby.png" alt="The popup on a lobby of Autodarts: Mia Keller is playing; Jonas Berg says In the lobby after a tap on Join the lobby, and the popup says “Jonas Berg is in the lobby now, and the match counts for their own account.”; Lena Vogt still offers Join the lobby." width="396">
+  <img src="images/lobby.png" alt="The popup on a lobby of Autodarts: Mia Keller is playing; Jonas Berg says In the lobby after a tap on Join the lobby, with Join again below his tile, and the popup says “Jonas Berg is in the lobby now, and the match counts for their own account.”; Lena Vogt still offers Join the lobby." width="396">
 </picture>
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="images/diagrams/join-a-lobby.dark.svg">
-  <img src="images/diagrams/join-a-lobby.svg" alt="Join the lobby with a parked player: Ada plays on the page and opens a lobby on Autodarts at the board of the display. On that page, the tile of each parked player in the popup and in the switcher offers Join the lobby. A tap on Bob's renews his parked session and keeps the rotated token first. When his session is dead or Autodarts can't be reached, his tile says why and nothing else changes. Otherwise the extension seats Bob at the board of the display with his own access token, which never reaches the page. When Autodarts refuses the seat because the lobby is full, closed or started, the popup says so. Otherwise his tile says In the lobby, the page stays with Ada without a switch or a reload, and the match counts for both accounts.">
+  <img src="images/diagrams/join-a-lobby.svg" alt="Join the lobby with a parked player: Ada plays on the page and opens a lobby on Autodarts at the board of the display. On that page, the tile of each parked player in the popup and in the switcher offers Join the lobby. A tap on Bob's, or later on Join again below his tile, renews his parked session and keeps the rotated token first. When his session is dead or Autodarts can't be reached, his tile says why and nothing else changes. Otherwise the extension reads the lobby with his own access token, which never reaches the page. When Bob sits there already, the popup says so and Autodarts gets no second seat. Otherwise the extension seats Bob at the board of the display. When Autodarts refuses the seat because the lobby is full, closed or started, the popup says so. Otherwise his tile says In the lobby, with Join again below it for when the host takes him out, the page stays with Ada without a switch or a reload, and the match counts for both accounts.">
 </picture>
 
 ## With a keyboard, a screen reader or a finger {#accessibility}

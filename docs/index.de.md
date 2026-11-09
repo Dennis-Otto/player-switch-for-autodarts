@@ -98,16 +98,17 @@ Autodarts zählt ein Match für jedes Konto, das in seiner Lobby sitzt, während
 
 - **Kein Wechsel, kein Neuladen:** Die Seite bleibt beim Spieler, der dort spielt, und das Match zählt für das eigene Konto jedes Spielers, ohne Handy und ohne neue Anmeldung.
 - **Nur auf einer Lobby:** Die Kacheln bieten es nur an, solange der Autodarts-Tab eine Lobby zeigt, darum bleibt ein laufendes Match unberührt.
+- **Erneut beitreten:** Die Erweiterung beobachtet die Lobby nicht, darum zeigt eine Kachel weiter **In der Lobby**, nachdem der Gastgeber diesen Spieler herausgenommen hat. **Erneut beitreten** darunter setzt ihn noch einmal hinein und ändert nichts für einen Spieler, der noch dort sitzt ([Hilfe](help.md#join-lobby)).
 - **Privat:** Die Erweiterung setzt den Spieler mit der Sitzung in die Lobby, die sie für ihn geparkt hält, und diese gelangt nie in die Seite ([Entscheidung 0016](decisions/0016-join-a-lobby-with-a-parked-session.md)).
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="images/lobby.de.dark.png">
-  <img src="images/lobby.de.png" alt="Das Popup auf einer Lobby von Autodarts: Mia Keller spielt; Jonas Berg zeigt In der Lobby nach einem Tipp auf Der Lobby beitreten, und das Popup sagt „Jonas Berg ist jetzt in der Lobby, und das Spiel zählt für das eigene Konto.“; Lena Vogt bietet noch Der Lobby beitreten an." width="396">
+  <img src="images/lobby.de.png" alt="Das Popup auf einer Lobby von Autodarts: Mia Keller spielt; Jonas Berg zeigt In der Lobby nach einem Tipp auf Der Lobby beitreten, darunter Erneut beitreten, und das Popup sagt „Jonas Berg ist jetzt in der Lobby, und das Spiel zählt für das eigene Konto.“; Lena Vogt bietet noch Der Lobby beitreten an." width="396">
 </picture>
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="images/diagrams/join-a-lobby.de.dark.svg">
-  <img src="images/diagrams/join-a-lobby.de.svg" alt="Mit einem geparkten Spieler der Lobby beitreten: Ada spielt auf der Seite und öffnet bei Autodarts eine Lobby am Board des Displays. Auf dieser Seite bietet die Kachel jedes geparkten Spielers im Popup und im Wechsler Der Lobby beitreten an. Ein Tipp bei Bob erneuert seine geparkte Sitzung und speichert zuerst den neuen Token. Ist seine Sitzung abgelaufen oder Autodarts nicht erreichbar, sagt seine Kachel, warum, und sonst ändert sich nichts. Andernfalls setzt die Erweiterung Bob mit seinem eigenen Zugangstoken, der nie in die Seite gelangt, an das Board des Displays. Lehnt Autodarts den Platz ab, weil die Lobby voll, geschlossen oder gestartet ist, sagt das Popup das. Andernfalls zeigt seine Kachel In der Lobby, die Seite bleibt ohne Wechsel und ohne Neuladen bei Ada, und das Match zählt für beide Konten.">
+  <img src="images/diagrams/join-a-lobby.de.svg" alt="Mit einem geparkten Spieler der Lobby beitreten: Ada spielt auf der Seite und öffnet bei Autodarts eine Lobby am Board des Displays. Auf dieser Seite bietet die Kachel jedes geparkten Spielers im Popup und im Wechsler Der Lobby beitreten an. Ein Tipp bei Bob, oder später auf Erneut beitreten unter seiner Kachel, erneuert seine geparkte Sitzung und speichert zuerst den neuen Token. Ist seine Sitzung abgelaufen oder Autodarts nicht erreichbar, sagt seine Kachel, warum, und sonst ändert sich nichts. Andernfalls liest die Erweiterung die Lobby mit seinem eigenen Zugangstoken, der nie in die Seite gelangt. Sitzt Bob schon dort, sagt das Popup das, und Autodarts bekommt keinen zweiten Platz. Andernfalls setzt die Erweiterung Bob an das Board des Displays. Lehnt Autodarts den Platz ab, weil die Lobby voll, geschlossen oder gestartet ist, sagt das Popup das. Andernfalls zeigt seine Kachel In der Lobby, darunter Erneut beitreten für den Fall, dass der Gastgeber ihn herausnimmt, die Seite bleibt ohne Wechsel und ohne Neuladen bei Ada, und das Match zählt für beide Konten.">
 </picture>
 
 ## Mit Tastatur, Screenreader oder Finger {#accessibility}

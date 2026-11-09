@@ -1,8 +1,8 @@
 /**
  * What the popup and the switcher in the Autodarts page decide, apart from the page that
  * shows it: what the status line says after an answer of the service worker, which
- * question an answer asks of the person, what a tile shows, such as "Join the lobby" on
- * a page with a lobby, and when "Manage accounts" opens. `pages/players.ts` draws it and sends the taps; the end-to-end tests check the
+ * question an answer asks of the person, what a tile shows, such as "Join the lobby" or
+ * "Join again" on a page with a lobby, and when "Manage accounts" opens. `pages/players.ts` draws it and sends the taps; the end-to-end tests check the
  * two together in the real extension.
  *
  * Every text comes from `t`, the texts of the extension, which a test passes in.
@@ -135,7 +135,14 @@ export function statusAfter(
     return { text: removalText(about, reply.ended, t), error: !reply.ended };
   }
   if (typeof reply.joined === "string") {
-    return { text: t("joinedLobby", reply.joined), error: false };
+    // A player who still sat in the lobby kept that seat, and nothing changed there.
+    return {
+      text:
+        reply.kept === true
+          ? t("joinKept", reply.joined)
+          : t("joinedLobby", reply.joined),
+      error: false,
+    };
   }
   return { text: "", error: false };
 }
@@ -218,10 +225,13 @@ export interface Tile {
    */
   chip: { text: string; kind: "playing" | "warn" | "lobby" } | null;
   /**
-   * Whether the tile offers "Join the lobby": on a page with a lobby, for a parked
-   * account that takes no seat there yet.
+   * The button below the tile that seats the account in the lobby, on a page with a
+   * lobby, for a parked account, or null: "Join the lobby" for one that takes no seat
+   * there yet, and the quieter "Join again" (`again`) for one that the extension seated,
+   * since the host or Autodarts may have taken it out since. `label` is its name for a
+   * screen reader, with the name of the account.
    */
-  join: boolean;
+  join: { text: string; label: string; again: boolean } | null;
   /** In "Manage accounts": when the renewal of the parked session last worked. */
   renewed: string | null;
   /** In "Manage accounts": since when the renewal fails, while the extension keeps trying. */
@@ -247,16 +257,28 @@ export function tileOf(
 ): Tile {
   const { t, language, lobby = null } = options;
   let chip: Tile["chip"] = null;
-  let join = false;
+  let join: Tile["join"] = null;
   if (profile.active) {
     chip = { text: t("playing"), kind: "playing" };
   } else if (profile.needsSignIn) {
     // Without a parked session, the account can't take a seat until it signs in again.
     chip = { text: t("needsSignIn"), kind: "warn" };
   } else if (lobby?.seated.includes(profile.id)) {
+    // The chip says what the extension did, not what Autodarts shows now (`lobby.ts`):
+    // a host may have taken the player out since. A join again reads the lobby first
+    // and keeps a seat that the player still has.
     chip = { text: t("inLobby"), kind: "lobby" };
-  } else {
-    join = lobby !== null;
+    join = {
+      text: t("joinAgain"),
+      label: t("joinAgainAs", profile.name),
+      again: true,
+    };
+  } else if (lobby !== null) {
+    join = {
+      text: t("joinLobby"),
+      label: t("joinLobbyAs", profile.name),
+      again: false,
+    };
   }
   return {
     key: options.numbered && index < 9 ? String(index + 1) : null,

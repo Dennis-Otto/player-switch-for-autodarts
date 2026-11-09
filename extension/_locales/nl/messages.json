@@ -188,6 +188,25 @@
   "inLobby": {
     "message": "In de lobby"
   },
+  "joinAgain": {
+    "message": "Opnieuw deelnemen"
+  },
+  "joinAgainAs": {
+    "message": "Opnieuw deelnemen als $NAME$",
+    "placeholders": {
+      "name": {
+        "content": "$1"
+      }
+    }
+  },
+  "joinKept": {
+    "message": "$NAME$ zit nog in de lobby: Autodarts heeft de plaats bewaard, dus er is niets veranderd.",
+    "placeholders": {
+      "name": {
+        "content": "$1"
+      }
+    }
+  },
   "joinNoLobby": {
     "message": "Autodarts toont geen lobby meer. Open de lobby op Autodarts en probeer het opnieuw."
   },

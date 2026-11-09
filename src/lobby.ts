@@ -8,7 +8,9 @@
  * accounts and of the lobbies alone, never a token, and only for the last few lobbies.
  * It says what the extension did, not what Autodarts shows now: reading the lobby
  * again would need a fresh access token of each player, and so a renewal of every
- * parked session, each time the popup opens.
+ * parked session, each time the popup opens. So a seated tile offers "Join again" as
+ * well, for a player whom the host or Autodarts took out of the lobby since: that join
+ * reads the lobby first and asks for no second seat while the player still has one.
  */
 
 /** The key of the record, in `chrome.storage.session`. */

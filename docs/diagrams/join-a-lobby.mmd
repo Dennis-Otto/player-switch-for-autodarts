@@ -5,27 +5,31 @@ config:
 ---
 flowchart TB
     accTitle: Join the lobby with a parked player
-    accDescr: Ada plays on the page and opens a lobby on Autodarts at the board of the display. On that page, the tile of each parked player in the popup and in the switcher offers Join the lobby. A tap on Bob's renews his parked session and keeps the rotated token first. When his session is dead or Autodarts can't be reached, his tile says why and nothing else changes. Otherwise the extension seats Bob at the board of the display with his own access token, which never reaches the page. When Autodarts refuses the seat because the lobby is full, closed or started, the popup says so. Otherwise his tile says In the lobby, the page stays with Ada without a switch or a reload, and the match counts for both accounts.
+    accDescr: Ada plays on the page and opens a lobby on Autodarts at the board of the display. On that page, the tile of each parked player in the popup and in the switcher offers Join the lobby. A tap on Bob's, or later on Join again below his tile, renews his parked session and keeps the rotated token first. When his session is dead or Autodarts can't be reached, his tile says why and nothing else changes. Otherwise the extension reads the lobby with his own access token, which never reaches the page. When Bob sits there already, the popup says so and Autodarts gets no second seat. Otherwise the extension seats Bob at the board of the display. When Autodarts refuses the seat because the lobby is full, closed or started, the popup says so. Otherwise his tile says In the lobby, with Join again below it for when the host takes him out, the page stays with Ada without a switch or a reload, and the match counts for both accounts.
 
     lobby["Ada plays on the page<br>and opens a lobby at the board of the display"]
     tiles["The popup and the switcher:<br>Join the lobby on each parked player's tile"]
-    tap["A tap on Join the lobby<br>below Bob's tile"]
+    tap["A tap on Join the lobby below Bob's tile,<br>or later on Join again"]
     renew{"Renew Bob's parked session<br>and keep the rotated token"}
     why["Bob's tile says why:<br>sign in again, or try again later"]
-    seat{"Seat Bob at the board of the display,<br>with his own access token"}
+    read{"Read the lobby<br>with Bob's own access token"}
+    kept["The popup says Bob is still in the lobby;<br>Autodarts gets no second seat"]
+    seat{"Seat Bob at the board of the display"}
     refused["The popup says so:<br>the lobby is full, closed or started"]
-    seated["Bob's tile says In the lobby;<br>the page stays with Ada, no switch, no reload"]
+    seated["Bob's tile says In the lobby<br>and offers Join again below it;<br>the page stays with Ada, no switch, no reload"]
     stats["The match counts for Ada and for Bob"]
 
     lobby --> tiles --> tap --> renew
     renew -- "dead or unreachable" --> why
-    renew -- "fresh" --> seat
+    renew -- "fresh" --> read
+    read -- "Bob sits there already" --> kept
+    read -- "no seat yet" --> seat
     seat -- "refused" --> refused
     seat -- "seated" --> seated --> stats
 
     classDef bot fill:#526cfe2e,stroke:#526cfe,stroke-width:2px
     classDef person fill:#f59e0b2e,stroke:#f59e0b,stroke-width:2px
     classDef done fill:#16a34a2e,stroke:#16a34a,stroke-width:2px
-    class tiles,renew,seat bot
+    class tiles,renew,read,seat bot
     class lobby,tap person
-    class seated,stats done
+    class kept,seated,stats done

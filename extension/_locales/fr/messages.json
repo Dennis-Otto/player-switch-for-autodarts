@@ -188,6 +188,25 @@
   "inLobby": {
     "message": "Dans le lobby"
   },
+  "joinAgain": {
+    "message": "Rejoindre à nouveau"
+  },
+  "joinAgainAs": {
+    "message": "Rejoindre à nouveau en tant que $NAME$",
+    "placeholders": {
+      "name": {
+        "content": "$1"
+      }
+    }
+  },
+  "joinKept": {
+    "message": "$NAME$ est toujours dans le lobby : Autodarts a gardé sa place, donc rien n'a changé.",
+    "placeholders": {
+      "name": {
+        "content": "$1"
+      }
+    }
+  },
   "joinNoLobby": {
     "message": "Autodarts n'affiche plus de lobby. Ouvrez le lobby sur Autodarts, puis réessayez."
   },

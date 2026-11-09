@@ -4,7 +4,8 @@
  * it asks the service worker for a view and sends it the person's taps. All the
  * thinking happens in the worker, and what the page decides is in `popup-model.ts`. On
  * a page with a lobby, each parked player's tile offers "Join the lobby", which seats
- * that player there while the page plays on (decision 0016). In the venue mode, the
+ * that player there while the page plays on (decision 0016), and "Join again" once it
+ * says "In the lobby". In the venue mode, the
  * worker asks for a PIN before a switch, a join or a change in "Manage accounts"; this
  * module then asks the person, with a number pad for a touch screen, and sends the
  * request again.
@@ -413,11 +414,16 @@ export function mountPlayers({
     }
 
     // "Join the lobby" seats the player in the lobby that the page shows, and the page
-    // plays on with the player who plays there. Its name says whose seat it is, as
-    // the tiles show the same words for every player.
+    // plays on with the player who plays there; "Join again", below a tile that says
+    // "In the lobby", seats a player whom the host took out since. Its name says whose
+    // seat it is, as the tiles show the same words for every player.
     const join = find<HTMLButtonElement>(".join", node);
-    join.hidden = !view.join;
-    join.setAttribute("aria-label", t("joinLobbyAs", profile.name));
+    join.hidden = view.join === null;
+    if (view.join !== null) {
+      join.textContent = view.join.text;
+      join.setAttribute("aria-label", view.join.label);
+      join.classList.toggle("again", view.join.again);
+    }
     join.addEventListener("click", () => {
       if (busy || manage.managing) {
         return;
