@@ -13,6 +13,9 @@
 // pins      1 gives the second account a PIN, as the venue mode does (none)
 // manager   1 sets a manager PIN, which "Manage accounts" then asks for (none)
 // lobby     1 shows a lobby on the Autodarts page, which the parked players join (none)
+// long      1 gives the last account a long name and a long user name (none)
+// trouble   1 has the second account sign in again and the renewal of the third one
+//           fail, as the worker reports them (none)
 //
 // The accounts are made up and their pictures generated: no real people. The answers
 // are those of the service worker, worker.ts, for the requests that pages/players.ts
@@ -40,6 +43,10 @@
   // Whether the Autodarts page shows a lobby, and who joined it from here.
   const lobby = setup.get("lobby") === "1";
   const seated = [];
+  // Whether the last account has a name too long for one line of its tile.
+  const long = setup.get("long") === "1";
+  // Whether an account has lost its session and the renewal of another one fails.
+  const trouble = setup.get("trouble") === "1";
 
   // Made-up people. The pictures are drawn below; Lena has none, so her tile shows the
   // initial, as for an account without a picture at Autodarts.
@@ -89,11 +96,19 @@
     name: person.name,
     username: person.username,
     picture: picture(person.colors),
-    needsSignIn: false,
+    needsSignIn: trouble && index === 1,
     remembersPassword: REMEMBERS[index],
     renewedAgo: RENEWED[index],
+    failingAgo: trouble && index === 2 ? 3 * 60 * MINUTE : null,
     pin: pinned && index === 1,
   }));
+  if (long && count > 1) {
+    // Made up as well; its id stays, so that a driver finds the tile as without it.
+    Object.assign(accounts[count - 1], {
+      name: "Maximiliane Alexandra von Hohenstein-Lichtenberg",
+      username: "maximiliane.vonhohensteinlichtenberg@example.com",
+    });
+  }
   let activeId = accounts[0].id;
   // True after "Add account", until the next sign-in or "Cancel".
   let adding = false;
@@ -102,15 +117,18 @@
   function view() {
     const now = Date.now();
     return {
-      profiles: accounts.map(({ renewedAgo, ...account }) => ({
+      profiles: accounts.map(({ renewedAgo, failingAgo, ...account }) => ({
         ...account,
         active: account.id === activeId,
         renewedAt:
           account.id === activeId || renewedAgo === null
             ? null
             : now - renewedAgo,
-        // Every made-up account renews fine.
-        renewalFailingSince: null,
+        // Every made-up account renews fine, unless `trouble` says otherwise.
+        renewalFailingSince:
+          account.id === activeId || failingAgo === null
+            ? null
+            : now - failingAgo,
       })),
       unsaved: false,
       adding,

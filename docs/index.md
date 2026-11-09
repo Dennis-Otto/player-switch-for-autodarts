@@ -76,6 +76,7 @@ The extension saves a new sign-in by itself only in the ten minutes after **Add 
 A board display often runs in fullscreen or as a kiosk, where the toolbar and its popup are out of reach. So the Autodarts page itself carries a round button in a corner, with the picture of the player. A tap on it shows the players over the page in large tiles for a touch screen, with everything the popup has.
 
 - **Keyboard:** <kbd>Alt</kbd>+<kbd>Shift</kbd>+<kbd>O</kbd> opens and closes the players on the page, <kbd>Alt</kbd>+<kbd>Shift</kbd>+<kbd>P</kbd> the popup; the keys <kbd>1</kbd> to <kbd>9</kbd> pick a player and <kbd>Esc</kbd> closes. Change the shortcuts under `chrome://extensions/shortcuts`.
+- **Any screen:** the tiles fit a monitor upright or across, at any zoom of the page. A few players share the width of the panel, and a long name or a long text in your language wraps onto the next line; nothing is cut off.
 - **A match ends only on purpose:** on the page of a running match, a switch asks first, before it spends a token.
 - **Your corner:** **Settings** in the popup turns the button off or moves it to another corner.
 - **Private:** the players open in a page of the extension, in a frame of its own, so the scripts of the Autodarts page can't read the saved accounts.

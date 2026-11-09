@@ -70,8 +70,10 @@ h1 {
   font-size: 15px;
 }
 
+/* As many tiles in a row as fit; a row of fewer accounts than fit shares its width
+   among them, so the texts of a tile have the free width of the panel, too. */
 #profiles {
-  grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(190px, 100%), 1fr));
   gap: 14px;
 }
 
@@ -197,7 +199,7 @@ input {
   }
 
   #profiles {
-    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(min(160px, 100%), 1fr));
   }
 
   .tile {
