@@ -88,7 +88,7 @@ Removing the player who plays, or **Forget all accounts**, signs the page out, a
 
 ### Join the lobby {#join-lobby}
 
-While the Autodarts tab shows a lobby, the tile of each parked player offers **Join the lobby**, in the popup and in the players on the page. A tap seats that player in the lobby, and the tile then says:
+While the Autodarts tab shows a lobby, the page at `play.autodarts.com/lobby/` and the id of the lobby, the tile of each parked player offers **Join the lobby**, in the popup and in the players on the page. A tap seats that player in the lobby, and the tile then says:
 
 > In the lobby
 
@@ -308,7 +308,7 @@ Autodarts shows a board only to the account that owns it and to the accounts tha
 
 Autodarts counts a match for each account that sits in its lobby, while the page plays under one account only. Without Player Switch, the second player joins from their own phone or plays as a guest, whose stats count for nobody. With it:
 
-1. The player on the page opens a lobby on Autodarts, at the board of the display.
+1. The player on the page opens a lobby on Autodarts, at the board of the display. The tiles offer the join once the tab shows the lobby itself, at `play.autodarts.com/lobby/…`, not yet while it shows the list of the open lobbies or the settings of a new one.
 2. The tile of each parked player who plays along, in the popup or in the players on the page, shows **Join the lobby**: a tap on it seats that player. In the [venue mode](shared-display.md#venue-mode), a player with a PIN types it first.
 3. Their tile says **In the lobby**. Nothing switches and nothing reloads: the page stays with the player who plays there.
 4. Start the match on the page as usual. It counts for every player's own account.

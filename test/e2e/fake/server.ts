@@ -3,7 +3,8 @@
  * computer that answers for both of its hosts, by the Host header of a request.
  *
  * - https://play.autodarts.com serves the fake page, play.html with play.js, at
- *   every address, so a match page such as /matches/<id> is one too.
+ *   every address, so a match page such as /matches/<id> is one too, and so is a
+ *   lobby, /lobby/<id>.
  * - https://api.autodarts.com/auth/v1 is the fake sign-in service of autodarts.ts,
  *   with the CORS headers that the page needs to reach it, and
  *   https://api.autodarts.com/gs/v0 its game service with the lobbies.

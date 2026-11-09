@@ -140,9 +140,14 @@ export function isMatchPage(url: string | undefined): boolean {
   );
 }
 
-/** The address of a lobby in Autodarts Play: `/lobbies/<id>`, with a UUID as its id. */
+/**
+ * The address of a lobby in Autodarts Play, with a UUID as its id: `/lobby/<id>`, as
+ * the page shows it, and `/lobbies/<id>`, which older links of the community use.
+ * `/lobbies` alone is the list of the open lobbies, and `/lobbies/new/<game>` sets up
+ * a new one; neither is a lobby yet.
+ */
 const LOBBY_PATH =
-  /^\/lobbies\/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})\/?$/i;
+  /^\/lobb(?:y|ies)\/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})\/?$/i;
 
 /**
  * The lobby that an address of Autodarts Play shows, or null for any other address.
