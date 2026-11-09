@@ -50,7 +50,8 @@ CUT_OFF = """() => {
     const hanging = document.querySelector(".hanging");
     if (hanging === null) return false;
     const frame = hanging.querySelector("iframe");
-    const third = frame.contentDocument.querySelectorAll(".tile")[2];
+    // The third player's whole card, with the button below its tile.
+    const third = frame.contentDocument.querySelectorAll(".profile")[2];
     return hanging.getBoundingClientRect().left < 0 || third === undefined
         || frame.getBoundingClientRect().top + third.getBoundingClientRect().bottom
             > innerHeight;
@@ -152,7 +153,7 @@ def shots() -> list[Shot]:
     # as the cards are, and no wider than the popup and the address above it, so that
     # the card shows the popup as large as the height of its picture lets it be.
     for lang, path, dark in variants("popup", "png", schemes=(True,)):
-        found.append(Shot(path, f"layout=toolbar&lang={lang}", 440, 468, 2, dark))
+        found.append(Shot(path, f"layout=toolbar&lang={lang}", 440, 512, 2, dark))
     for lang in store_languages():
         for slide in (1, 2, 3):
             # 1280x800, the size that the Chrome Web Store asks for.

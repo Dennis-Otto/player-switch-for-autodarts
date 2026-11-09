@@ -8,8 +8,8 @@
 //   layout=promo   the small promo tile of the store
 //   layout=marquee the large promo tile of the store
 //   layout=toolbar the popup on a lobby, as view=lobby shows it, hanging from its icon
-//                  at the right end of a browser's toolbar, cut off below its third
-//                  tile: the picture of the card of the website, in its dark theme
+//                  at the right end of a browser's toolbar, cut off below the card of
+//                  its third player: the picture of the card of the website, dark
 //   lang=en        the language of the extension and of the text around it: a folder of
 //                  extension/_locales, with that text in store/pictures.<lang>.json
 //
