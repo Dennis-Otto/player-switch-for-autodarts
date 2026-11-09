@@ -89,6 +89,7 @@ const plain = [
   "settings",
   "close",
   "keysHint",
+  "version",
   "switchButton",
   "switchButtonPlaying",
   "matchConfirm",

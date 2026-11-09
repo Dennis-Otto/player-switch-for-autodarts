@@ -127,7 +127,7 @@ From then on, a tap on a tile switches accounts, and **Manage accounts** shows t
   <img src="docs/images/diagrams/adding-a-player.svg" alt="How a new player is saved by itself: After the install, which signs nobody out, or a tap on Add account, which signs the page out, the extension waits ten minutes for a new account. The new player signs in on Autodarts. Each time an Autodarts page has finished loading, the extension looks for the session. Within the ten minutes, it saves the account once, the icon shows a check mark, and the player plays on. After the ten minutes, or once a player was saved, a sign-in is never saved by itself; the icon shows a plus, and Save account in the popup saves it.">
 </picture>
 
-The popup links to **Help**, the [help page](https://dennis-otto.github.io/player-switch-for-autodarts/help.html) of the website in the language of the browser, and to **Report a problem**, the bug form, filled in with the versions of the extension and the browser alone.
+The popup links to **Help**, the [help page](https://dennis-otto.github.io/player-switch-for-autodarts/help.html) of the website in the language of the browser, and to **Report a problem**, the bug form, filled in with the versions of the extension and the browser alone. Below the links, and at the bottom of the players on the Autodarts page, stands which version runs on this display, such as *Player Switch 1.6.0*: Chrome fetches an update only every few hours, and [the help](https://dennis-otto.github.io/player-switch-for-autodarts/help.html#which-version) says how to fetch it at once.
 
 ### Switch from the Autodarts page, also in fullscreen and kiosk mode
 

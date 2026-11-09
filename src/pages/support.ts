@@ -1,6 +1,6 @@
 /** The links to the help and to a bug report, which the popup and the welcome page show. */
 import { browserName, reportUrl } from "../onboarding.ts";
-import { t } from "./dom.ts";
+import { runningVersion, t } from "./dom.ts";
 
 /** What Chrome tells a page of the browser it runs in, beside the user agent. */
 interface BrandedNavigator extends Navigator {
@@ -20,7 +20,7 @@ export function linkSupport(root: ParentNode): void {
     (navigator as BrandedNavigator).userAgentData?.brands,
     navigator.userAgent,
   );
-  const report = reportUrl(chrome.runtime.getManifest().version, browser);
+  const report = reportUrl(runningVersion(), browser);
   for (const link of root.querySelectorAll<HTMLAnchorElement>(
     "[data-link=help]",
   )) {
