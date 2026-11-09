@@ -353,7 +353,7 @@
     "message": "Fija el icono"
   },
   "welcomePinText": {
-    "message": "Chrome coloca las extensiones nuevas detrás de la pieza de puzle junto a la barra de direcciones. Haz clic en ella y luego en la chincheta junto a Player Switch for Autodarts, y el icono se queda en la barra de herramientas."
+    "message": "Chrome coloca las extensiones nuevas detrás de la pieza de puzle junto a la barra de direcciones. Haz clic en ella y luego en la chincheta junto a Player Switch for Autodarts, y el icono se queda en la barra de herramientas. Edge y Firefox tienen la misma pieza de puzle: en Edge, haz clic en el ojo en lugar de la chincheta, y en Firefox, en el engranaje y luego en Fijar a la barra de herramientas."
   },
   "pinPictureTitle": {
     "message": "Cómo fijar el icono"

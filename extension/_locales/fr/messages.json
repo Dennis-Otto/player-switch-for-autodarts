@@ -353,7 +353,7 @@
     "message": "Épinglez l'icône"
   },
   "welcomePinText": {
-    "message": "Chrome range les nouvelles extensions derrière la pièce de puzzle à côté de la barre d'adresse. Cliquez dessus, puis sur l'épingle à côté de Player Switch for Autodarts, et l'icône reste dans la barre d'outils."
+    "message": "Chrome range les nouvelles extensions derrière la pièce de puzzle à côté de la barre d'adresse. Cliquez dessus, puis sur l'épingle à côté de Player Switch for Autodarts, et l'icône reste dans la barre d'outils. Edge et Firefox ont la même pièce de puzzle : dans Edge, cliquez sur l'œil au lieu de l'épingle, et dans Firefox, sur la roue dentée puis sur Épingler à la barre d'outils."
   },
   "pinPictureTitle": {
     "message": "Comment épingler l'icône"
