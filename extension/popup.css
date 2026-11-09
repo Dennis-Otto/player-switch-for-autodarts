@@ -267,20 +267,30 @@ body.managing .tile:hover {
   flex: 1;
 }
 
+/* In the popup, a tile is a row: the picture, the names and the chips. When the chips
+   leave the names too little room, as "Volver a iniciar sesión" beside a PIN does, they
+   take a row of their own below, at its end, and the names keep the width of a name. */
+body.popup .tile {
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+body.popup .names {
+  flex-basis: 8em;
+}
+
+/* A long name wraps between its words, and a long user name, such as an email
+   address, wherever it has to: the whole of each shows, never an ellipsis. */
 .name {
   font-weight: 600;
   font-size: 15px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  overflow-wrap: anywhere;
 }
 
 .username {
   color: var(--muted);
   font-size: 12px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  overflow-wrap: anywhere;
 }
 
 .chip {
@@ -373,10 +383,13 @@ body.managing .join {
   display: none;
 }
 
+/* Its one column is as wide as the card and never wider, whatever its texts ask for:
+   a text that needs more room wraps, so the card cuts none off. */
 .menu {
   border-top: 1px solid var(--line);
   padding: 10px 14px;
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: 10px;
 }
 
@@ -393,7 +406,9 @@ body.managing .join {
 }
 
 /* The two actions of an account side by side, or one below the other when their texts
-   need the room, as in German; never a text that breaks. */
+   need the room, as in German. A text that is wider than the card on a line of its
+   own, as "Passwort nicht mehr merken" in a narrow tile of the switcher, wraps between
+   its words; it never runs out of the card, which would cut it off. */
 .actions {
   display: flex;
   flex-wrap: wrap;
@@ -403,7 +418,8 @@ body.managing .join {
 }
 
 .actions .link {
-  white-space: nowrap;
+  overflow-wrap: anywhere;
+  text-align: center;
 }
 
 .actions .remove {
@@ -428,7 +444,10 @@ label {
   color: var(--muted);
 }
 
+/* As wide as its card: the width of its own, some 20 letters, would push the form out
+   of a narrow tile of the switcher and cut it off. */
 input {
+  width: 100%;
   min-height: 44px;
   padding: 9px 10px;
   border: 1px solid var(--line);
