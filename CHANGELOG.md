@@ -8,10 +8,9 @@ the next release, or lists the pull requests when there is none.
 
 ## [1.5.0](https://github.com/Dennis-Otto/player-switch-for-autodarts/compare/v1.4.0...v1.5.0) (2026-11-09)
 
-
 ### Features
 
-* a tile that says In the lobby offers to join again ([#189](https://github.com/Dennis-Otto/player-switch-for-autodarts/issues/189)) ([1118cc3](https://github.com/Dennis-Otto/player-switch-for-autodarts/commit/1118cc39e007ca1b9df936f0f082b5a13f384d96))
+- **Join again:** a tile that says *In the lobby* now has a quieter button *Join again* below it, in the popup and in the players on the page. Player Switch doesn't watch the lobby, so the tile keeps saying *In the lobby* after the host or Autodarts took that player out; a tap seats them once more. For a player who still sits there, nothing changes, and the popup says that Autodarts kept the seat. Its texts come in all five languages of the extension, and the help explains it.
 
 ## [1.4.0](https://github.com/Dennis-Otto/player-switch-for-autodarts/compare/v1.3.0...v1.4.0) (2026-11-08)
 
