@@ -92,6 +92,14 @@ While the Autodarts tab shows a lobby, the tile of each parked player offers **J
 
 > In the lobby
 
+Below that tile, the quieter **Join again** seats the player once more. Tap it when the lobby on Autodarts no longer lists them, such as after its host took them out: the extension notes the seats that it takes and doesn't watch the lobby, so the tile keeps saying **In the lobby**. When the player still sits there, nothing changes, and the popup says:
+
+> Bob is still in the lobby: Autodarts kept the seat, so nothing changed.
+
+**What it means:** Autodarts lists Bob in the lobby already, so the extension asked for no second seat. It only renewed his parked session to read the lobby.
+
+**What to do:** nothing, Bob plays along. If the lobby on the page doesn't show him, reload the page, which then shows the lobby as Autodarts has it.
+
 [Two players, each with their own stats](#two-players) says how it works. When the extension can't seat the player, the popup says one of these instead:
 
 > Autodarts doesn't show a lobby any more. Open the lobby on Autodarts, then try again.
@@ -305,11 +313,11 @@ Autodarts counts a match for each account that sits in its lobby, while the page
 3. Their tile says **In the lobby**. Nothing switches and nothing reloads: the page stays with the player who plays there.
 4. Start the match on the page as usual. It counts for every player's own account.
 
-The extension seats the player with the session that it keeps parked for them, at the board of the display, and that session never reaches the page. A tile that says **Sign in again** offers no join until that account signs in again. The tile keeps saying **In the lobby** until the browser closes or the tab shows another lobby, also when someone takes the player out of the lobby on Autodarts: the extension doesn't watch the lobby.
+The extension seats the player with the session that it keeps parked for them, at the board of the display, and that session never reaches the page. A tile that says **Sign in again** offers no join until that account signs in again. The tile keeps saying **In the lobby** until the browser closes or the tab shows another lobby, also when someone takes the player out of the lobby on Autodarts: the extension doesn't watch the lobby. Then tap **Join again** below the tile: it seats the player once more, and changes nothing for a player who still sits there.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="images/diagrams/join-a-lobby.dark.svg">
-  <img src="images/diagrams/join-a-lobby.svg" alt="Join the lobby with a parked player: Ada plays on the page and opens a lobby on Autodarts at the board of the display. On that page, the tile of each parked player in the popup and in the switcher offers Join the lobby. A tap on Bob's renews his parked session and keeps the rotated token first. When his session is dead or Autodarts can't be reached, his tile says why and nothing else changes. Otherwise the extension seats Bob at the board of the display with his own access token, which never reaches the page. When Autodarts refuses the seat because the lobby is full, closed or started, the popup says so. Otherwise his tile says In the lobby, the page stays with Ada without a switch or a reload, and the match counts for both accounts.">
+  <img src="images/diagrams/join-a-lobby.svg" alt="Join the lobby with a parked player: Ada plays on the page and opens a lobby on Autodarts at the board of the display. On that page, the tile of each parked player in the popup and in the switcher offers Join the lobby. A tap on Bob's, or later on Join again below his tile, renews his parked session and keeps the rotated token first. When his session is dead or Autodarts can't be reached, his tile says why and nothing else changes. Otherwise the extension reads the lobby with his own access token, which never reaches the page. When Bob sits there already, the popup says so and Autodarts gets no second seat. Otherwise the extension seats Bob at the board of the display. When Autodarts refuses the seat because the lobby is full, closed or started, the popup says so. Otherwise his tile says In the lobby, with Join again below it for when the host takes him out, the page stays with Ada without a switch or a reload, and the match counts for both accounts.">
 </picture>
 
 ### Who can play under my account?

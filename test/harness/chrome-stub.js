@@ -129,7 +129,11 @@
         account.renewedAgo = null;
         break;
       case "join":
-        // Autodarts seats the player in the lobby; the page stays as it is.
+        // Autodarts seats the player in the lobby, or keeps the seat of one who sits
+        // there already, as at "Join again"; the page stays as it is.
+        if (seated.includes(account.id)) {
+          return { ok: true, joined: account.name, kept: true, view: view() };
+        }
         seated.push(account.id);
         return { ok: true, joined: account.name, view: view() };
       case "remember":

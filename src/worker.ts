@@ -26,7 +26,7 @@
  * which the worker reads from the address of the tab, with the session that it keeps
  * for that account; the token never reaches the page (decision 0016). It notes each
  * seat in `chrome.storage.session` (`lobby.ts`), and the view of a lobby names the
- * accounts seated there, so that their tiles say "In the lobby".
+ * accounts seated there, so that their tiles say "In the lobby" and offer "Join again".
  *
  * The venue mode, which the options page turns on, comes from `venue.ts`: the worker
  * checks the PIN of every switch to an account that has one, and of its join, and of
@@ -688,7 +688,9 @@ export function startWorker(api: ChromeApi, platform: Platform): StartedWorker {
           await noteSeat(lobby, message.id).catch(
             logFailure("noting the seat in the lobby"),
           );
-          return { ok: true, joined: result.seated.name };
+          return result.kept
+            ? { ok: true, joined: result.seated.name, kept: true }
+            : { ok: true, joined: result.seated.name };
         }
         return result.reason === "signin" || result.reason === "unreachable"
           ? { ok: false, reason: result.reason, page: true }

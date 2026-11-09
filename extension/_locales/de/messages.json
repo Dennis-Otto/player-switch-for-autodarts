@@ -141,6 +141,18 @@
   "inLobby": {
     "message": "In der Lobby"
   },
+  "joinAgain": {
+    "message": "Erneut beitreten",
+    "description": "Die leisere Schaltfläche unter der Kachel eines Spielers, den die Erweiterung in die Lobby gesetzt hat, die Autodarts zeigt: Sie setzt ihn noch einmal hinein, etwa nachdem der Gastgeber ihn aus der Lobby genommen hat."
+  },
+  "joinAgainAs": {
+    "message": "Als $NAME$ erneut beitreten",
+    "placeholders": { "name": { "content": "$1" } }
+  },
+  "joinKept": {
+    "message": "$NAME$ ist noch in der Lobby: Autodarts hat den Platz behalten, also hat sich nichts geändert.",
+    "placeholders": { "name": { "content": "$1" } }
+  },
   "joinNoLobby": {
     "message": "Autodarts zeigt keine Lobby mehr. Die Lobby auf Autodarts öffnen, dann nochmal versuchen."
   },

@@ -199,6 +199,16 @@ export class FakeAutodarts {
     lobby.boards.set(userId, board);
   }
 
+  /** Takes an account out of a lobby, as its host does on Autodarts. */
+  leave(id: string, userId: string): void {
+    const lobby = this.lobbies.get(id);
+    if (lobby === undefined) {
+      throw new Error(`no lobby ${id}`);
+    }
+    lobby.seated = lobby.seated.filter((seated) => seated !== userId);
+    lobby.boards.delete(userId);
+  }
+
   /**
    * The game service: it reads a lobby, and seats the account of the access token, and
    * nobody else, at a board of the lobby. A token it can't read is refused

@@ -105,6 +105,7 @@ interface Reply {
   page?: boolean;
   saved?: string;
   joined?: string;
+  kept?: boolean;
   error?: string;
   view: PlayersView;
 }
@@ -1500,6 +1501,35 @@ test("a seat that the record can't note is taken all the same", async () => {
     fake.logs.includes("Player Switch: noting the seat in the lobby failed."),
     String(fake.logs),
   );
+});
+
+test("Join again keeps a seat that the player still has, and seats one whom the host took out", async () => {
+  const fake = browser();
+  const lobby = await adaHostsALobby(fake);
+  await popup(fake, { action: "join", id: "bob" });
+
+  // Bob still sits there: Autodarts gets no second seat, and the answer says so.
+  const kept = await popup(fake, { action: "join", id: "bob" });
+  assert.deepEqual([kept.ok, kept.joined, kept.kept], [true, "bob", true]);
+  assert.equal(fake.autodarts.seats.length, 1);
+  assert.deepEqual(kept.view.lobby, { seated: ["bob"] });
+
+  // The host took Bob out on Autodarts, which the record can't know: his tile still
+  // says "In the lobby", and the join seats him once more.
+  fake.autodarts.leave(lobby, "bob");
+  const before = await popup(fake, { action: "view" });
+  assert.deepEqual(before.view.lobby, { seated: ["bob"] });
+  const again = await popup(fake, { action: "join", id: "bob" });
+  assert.deepEqual(
+    [again.ok, again.joined, again.kept],
+    [true, "bob", undefined],
+  );
+  assert.equal(fake.autodarts.seats.length, 2);
+  assert.deepEqual(fake.autodarts.lobbies.get(lobby)?.seated, ["ada", "bob"]);
+  assert.deepEqual(again.view.lobby, { seated: ["bob"] });
+  // Ada plays on, and every renewal kept its rotated token.
+  assert.equal((await accounts(fake)).activeId, "ada");
+  assert.equal(fake.autodarts.reuses, 0);
 });
 
 test("a record of the seats that can't be read still shows every account and offers the join", async () => {

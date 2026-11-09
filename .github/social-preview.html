@@ -63,12 +63,13 @@ li::before { content: ""; position: absolute; left: 0; top: 11px; width: 12px; h
   background: #14161d; border-radius: 3px 0 0 0;
   box-shadow: -1.5px -1.5px 0 rgba(255, 255, 255, 0.12);
 }
-/* The picture at 0.7 of its size: 1.4 times the popup, whose pixels it has twice. The
+/* The picture at 0.63 of its size: 1.26 times the popup, whose pixels it has twice. The
    margins take away the frame around the popup, 28 pixels of test/harness/stage.css at
    that scale of 2, so the box is the popup and keeps the popup's size. The bottom of the
-   preview cuts off what no longer reads at the size of a link card. */
+   preview cuts off what no longer reads at the size of a link card, below the third
+   player's card and its button. */
 .window {
-  zoom: 0.7; width: fit-content; overflow: hidden; border-radius: 28px;
+  zoom: 0.63; width: fit-content; overflow: hidden; border-radius: 28px;
   box-shadow:
     0 0 0 1.5px rgba(255, 255, 255, 0.12),
     0 40px 100px rgba(0, 0, 0, 0.6),

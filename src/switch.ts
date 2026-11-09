@@ -37,6 +37,7 @@ import {
   type AuthError,
   type Fetch,
   type Identity,
+  type Join,
   joinLobby,
   readIdentity,
   refreshSession,
@@ -470,11 +471,12 @@ async function signOut(deps: Deps, waitForNew: boolean): Promise<SwitchResult> {
 export type JoinFailure = "playing" | "signin" | "unreachable" | "refused";
 
 /**
- * How a join ended: the account that sits in the lobby now, or had a seat already, or
- * null for an account that the extension doesn't know (any more); or why it didn't.
+ * How a join ended: the account that sits in the lobby now, or null for an account
+ * that the extension doesn't know (any more), and whether it had that seat already,
+ * so that nothing was sent; or why it took none.
  */
 export type JoinResult =
-  | { state: State; ok: true; seated: Identity | null }
+  | { state: State; ok: true; seated: Identity | null; kept: boolean }
   | { state: State; ok: false; reason: JoinFailure };
 
 /**
@@ -503,8 +505,9 @@ export async function joinLobbyAs(
     return turn;
   }
   const player = readIdentity(turn.session.accessToken);
+  let join: Join;
   try {
-    await joinLobby(
+    join = await joinLobby(
       deps.fetcher,
       turn.session.accessToken,
       lobbyId,
@@ -520,7 +523,14 @@ export async function joinLobbyAs(
         (error as AuthError).kind === "rejected" ? "refused" : "unreachable",
     };
   }
-  return { state: turn.state, ok: true, seated: player };
+  // A player who still sits in the lobby, such as after a second tap, keeps that seat:
+  // the lobby was read first, and no second seat was asked for.
+  return {
+    state: turn.state,
+    ok: true,
+    seated: player,
+    kept: join === "seated",
+  };
 }
 
 /** A fresh session of a parked account, which is saved first, or why there is none. */
@@ -531,7 +541,7 @@ async function sessionToJoin(
   const state = await deps.store.load();
   const profile = find(state, id);
   if (profile === undefined) {
-    return { state, ok: true, seated: null };
+    return { state, ok: true, seated: null, kept: false };
   }
   if (state.activeId === id) {
     return { state, ok: false, reason: "playing" };

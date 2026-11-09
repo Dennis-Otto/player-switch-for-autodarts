@@ -354,6 +354,13 @@ body.popup:not(:has(:focus-visible)) .key {
   background: var(--accent-soft);
 }
 
+/* "Join again", below a tile that says "In the lobby": quieter than a first join, as
+   the player most likely still sits there, and as large a target. */
+.join.again {
+  color: var(--muted);
+  font-weight: 500;
+}
+
 .join:focus-visible {
   outline-offset: -3px;
 }

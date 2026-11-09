@@ -5,27 +5,31 @@ config:
 ---
 flowchart TB
     accTitle: Mit einem geparkten Spieler der Lobby beitreten
-    accDescr: Ada spielt auf der Seite und öffnet bei Autodarts eine Lobby am Board des Displays. Auf dieser Seite bietet die Kachel jedes geparkten Spielers im Popup und im Wechsler Der Lobby beitreten an. Ein Tipp bei Bob erneuert seine geparkte Sitzung und speichert zuerst den neuen Token. Ist seine Sitzung abgelaufen oder Autodarts nicht erreichbar, sagt seine Kachel, warum, und sonst ändert sich nichts. Andernfalls setzt die Erweiterung Bob mit seinem eigenen Zugangstoken, der nie in die Seite gelangt, an das Board des Displays. Lehnt Autodarts den Platz ab, weil die Lobby voll, geschlossen oder gestartet ist, sagt das Popup das. Andernfalls zeigt seine Kachel In der Lobby, die Seite bleibt ohne Wechsel und ohne Neuladen bei Ada, und das Match zählt für beide Konten.
+    accDescr: Ada spielt auf der Seite und öffnet bei Autodarts eine Lobby am Board des Displays. Auf dieser Seite bietet die Kachel jedes geparkten Spielers im Popup und im Wechsler Der Lobby beitreten an. Ein Tipp bei Bob, oder später auf Erneut beitreten unter seiner Kachel, erneuert seine geparkte Sitzung und speichert zuerst den neuen Token. Ist seine Sitzung abgelaufen oder Autodarts nicht erreichbar, sagt seine Kachel, warum, und sonst ändert sich nichts. Andernfalls liest die Erweiterung die Lobby mit seinem eigenen Zugangstoken, der nie in die Seite gelangt. Sitzt Bob schon dort, sagt das Popup das, und Autodarts bekommt keinen zweiten Platz. Andernfalls setzt die Erweiterung Bob an das Board des Displays. Lehnt Autodarts den Platz ab, weil die Lobby voll, geschlossen oder gestartet ist, sagt das Popup das. Andernfalls zeigt seine Kachel In der Lobby, darunter Erneut beitreten für den Fall, dass der Gastgeber ihn herausnimmt, die Seite bleibt ohne Wechsel und ohne Neuladen bei Ada, und das Match zählt für beide Konten.
 
     lobby["Ada spielt auf der Seite<br>und öffnet eine Lobby am Board des Displays"]
     tiles["Popup und Wechsler:<br>Der Lobby beitreten auf der Kachel jedes geparkten Spielers"]
-    tap["Ein Tipp auf Der Lobby beitreten<br>unter Bobs Kachel"]
+    tap["Ein Tipp auf Der Lobby beitreten unter Bobs Kachel,<br>oder später auf Erneut beitreten"]
     renew{"Bobs geparkte Sitzung erneuern<br>und den neuen Token speichern"}
     why["Bobs Kachel sagt, warum:<br>neu anmelden oder später nochmal"]
-    seat{"Bob mit seinem eigenen Zugangstoken<br>an das Board des Displays setzen"}
+    read{"Die Lobby mit Bobs<br>eigenem Zugangstoken lesen"}
+    kept["Das Popup sagt, Bob ist noch in der Lobby;<br>Autodarts bekommt keinen zweiten Platz"]
+    seat{"Bob an das Board des Displays setzen"}
     refused["Das Popup sagt es:<br>Die Lobby ist voll, geschlossen oder gestartet"]
-    seated["Bobs Kachel zeigt In der Lobby;<br>die Seite bleibt bei Ada, kein Wechsel, kein Neuladen"]
+    seated["Bobs Kachel zeigt In der Lobby,<br>darunter Erneut beitreten;<br>die Seite bleibt bei Ada, kein Wechsel, kein Neuladen"]
     stats["Das Match zählt für Ada und für Bob"]
 
     lobby --> tiles --> tap --> renew
     renew -- "abgelaufen oder nicht erreichbar" --> why
-    renew -- "frisch" --> seat
+    renew -- "frisch" --> read
+    read -- "Bob sitzt schon dort" --> kept
+    read -- "noch kein Platz" --> seat
     seat -- "abgelehnt" --> refused
     seat -- "Platz bekommen" --> seated --> stats
 
     classDef bot fill:#526cfe2e,stroke:#526cfe,stroke-width:2px
     classDef person fill:#f59e0b2e,stroke:#f59e0b,stroke-width:2px
     classDef done fill:#16a34a2e,stroke:#16a34a,stroke-width:2px
-    class tiles,renew,seat bot
+    class tiles,renew,read,seat bot
     class lobby,tap person
-    class seated,stats done
+    class kept,seated,stats done

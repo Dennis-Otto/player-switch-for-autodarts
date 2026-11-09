@@ -354,9 +354,10 @@ suite("a lobby on the Autodarts page", { skip: browser === null }, () => {
         await page.click(control("jonasberg", ".join"));
         await settle(page);
         assert.notEqual(await page.textContent("#status"), "");
+        // The tile says so, and the quieter "Join again" stays below it.
         assert.equal(
-          await page.isVisible(control("jonasberg", ".join")),
-          false,
+          await page.isVisible(control("jonasberg", ".join.again")),
+          true,
         );
         assert.equal(
           await page.isVisible(control("jonasberg", ".chip.lobby")),
@@ -377,7 +378,7 @@ suite("a lobby on the Autodarts page", { skip: browser === null }, () => {
     }
   });
 
-  test("with the keyboard alone, a join leads back to the tile of its player", async () => {
+  test("with the keyboard alone, a join keeps the focus on its button, which then offers to join again", async () => {
     const page = await open({ lobby: true });
     await tabTo(page, control("jonasberg", ".join"));
     // A screen reader hears whose seat it is; the words on the button come first.
@@ -386,10 +387,21 @@ suite("a lobby on the Autodarts page", { skip: browser === null }, () => {
       "Join the lobby as Jonas Berg",
     );
     await press(page, "Enter");
-    assert.equal(await focused(page), "demo-jonasberg .tile");
+    assert.equal(await focused(page), "demo-jonasberg .again");
     assert.equal(
       await page.textContent("#status"),
       "Jonas Berg is in the lobby now, and the match counts for their own account.",
+    );
+    // The same button now says "Join again", and keeps a seat that the player has.
+    assert.equal(
+      await page.getAttribute(control("jonasberg", ".join"), "aria-label"),
+      "Join again as Jonas Berg",
+    );
+    await press(page, "Enter");
+    assert.equal(await focused(page), "demo-jonasberg .again");
+    assert.equal(
+      await page.textContent("#status"),
+      "Jonas Berg is still in the lobby: Autodarts kept the seat, so nothing changed.",
     );
     // In "Manage accounts", the join steps aside with the tiles.
     await tabTo(page, "#manage", true);

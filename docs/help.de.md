@@ -92,6 +92,14 @@ Solange der Autodarts-Tab eine Lobby zeigt, bietet die Kachel jedes geparkten Sp
 
 > In der Lobby
 
+Unter dieser Kachel setzt das leisere **Erneut beitreten** den Spieler noch einmal in die Lobby. Tippe darauf, wenn die Lobby bei Autodarts ihn nicht mehr aufführt, etwa nachdem ihr Gastgeber ihn herausgenommen hat: Die Erweiterung merkt sich die Plätze, die sie einnimmt, und beobachtet die Lobby nicht, darum zeigt die Kachel weiter **In der Lobby**. Sitzt der Spieler noch dort, ändert sich nichts, und das Popup sagt:
+
+> Bob ist noch in der Lobby: Autodarts hat den Platz behalten, also hat sich nichts geändert.
+
+**Was es bedeutet:** Autodarts führt Bob schon in der Lobby, darum hat die Erweiterung keinen zweiten Platz verlangt. Sie hat nur seine geparkte Sitzung erneuert, um die Lobby zu lesen.
+
+**Was du tust:** nichts, Bob spielt mit. Zeigt die Lobby auf der Seite ihn nicht, lade die Seite neu, dann zeigt sie die Lobby so, wie Autodarts sie hat.
+
 [Zwei Spieler, jeder mit eigener Statistik](#two-players) erklärt, wie es funktioniert. Kann die Erweiterung den Spieler nicht in die Lobby setzen, sagt das Popup stattdessen eines davon:
 
 > Autodarts zeigt keine Lobby mehr. Die Lobby auf Autodarts öffnen, dann nochmal versuchen.
@@ -305,11 +313,11 @@ Autodarts zählt ein Match für jedes Konto, das in seiner Lobby sitzt, während
 3. Seine Kachel zeigt **In der Lobby**. Nichts wechselt und nichts lädt neu: Die Seite bleibt beim Spieler, der dort spielt.
 4. Starte das Match wie gewohnt auf der Seite. Es zählt für das eigene Konto jedes Spielers.
 
-Die Erweiterung setzt den Spieler mit der Sitzung, die sie für ihn geparkt hält, an das Board des Displays, und diese Sitzung gelangt nie in die Seite. Eine Kachel, die **Neu anmelden** zeigt, bietet keinen Beitritt an, bis sich dieses Konto neu angemeldet hat. Die Kachel zeigt **In der Lobby**, bis der Browser schließt oder der Tab eine andere Lobby zeigt, auch wenn jemand den Spieler bei Autodarts aus der Lobby nimmt: Die Erweiterung beobachtet die Lobby nicht.
+Die Erweiterung setzt den Spieler mit der Sitzung, die sie für ihn geparkt hält, an das Board des Displays, und diese Sitzung gelangt nie in die Seite. Eine Kachel, die **Neu anmelden** zeigt, bietet keinen Beitritt an, bis sich dieses Konto neu angemeldet hat. Die Kachel zeigt **In der Lobby**, bis der Browser schließt oder der Tab eine andere Lobby zeigt, auch wenn jemand den Spieler bei Autodarts aus der Lobby nimmt: Die Erweiterung beobachtet die Lobby nicht. Dann tippe auf **Erneut beitreten** unter der Kachel: Es setzt den Spieler noch einmal in die Lobby und ändert nichts für einen Spieler, der noch dort sitzt.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="images/diagrams/join-a-lobby.de.dark.svg">
-  <img src="images/diagrams/join-a-lobby.de.svg" alt="Mit einem geparkten Spieler der Lobby beitreten: Ada spielt auf der Seite und öffnet bei Autodarts eine Lobby am Board des Displays. Auf dieser Seite bietet die Kachel jedes geparkten Spielers im Popup und im Wechsler Der Lobby beitreten an. Ein Tipp bei Bob erneuert seine geparkte Sitzung und speichert zuerst den neuen Token. Ist seine Sitzung abgelaufen oder Autodarts nicht erreichbar, sagt seine Kachel, warum, und sonst ändert sich nichts. Andernfalls setzt die Erweiterung Bob mit seinem eigenen Zugangstoken, der nie in die Seite gelangt, an das Board des Displays. Lehnt Autodarts den Platz ab, weil die Lobby voll, geschlossen oder gestartet ist, sagt das Popup das. Andernfalls zeigt seine Kachel In der Lobby, die Seite bleibt ohne Wechsel und ohne Neuladen bei Ada, und das Match zählt für beide Konten.">
+  <img src="images/diagrams/join-a-lobby.de.svg" alt="Mit einem geparkten Spieler der Lobby beitreten: Ada spielt auf der Seite und öffnet bei Autodarts eine Lobby am Board des Displays. Auf dieser Seite bietet die Kachel jedes geparkten Spielers im Popup und im Wechsler Der Lobby beitreten an. Ein Tipp bei Bob, oder später auf Erneut beitreten unter seiner Kachel, erneuert seine geparkte Sitzung und speichert zuerst den neuen Token. Ist seine Sitzung abgelaufen oder Autodarts nicht erreichbar, sagt seine Kachel, warum, und sonst ändert sich nichts. Andernfalls liest die Erweiterung die Lobby mit seinem eigenen Zugangstoken, der nie in die Seite gelangt. Sitzt Bob schon dort, sagt das Popup das, und Autodarts bekommt keinen zweiten Platz. Andernfalls setzt die Erweiterung Bob an das Board des Displays. Lehnt Autodarts den Platz ab, weil die Lobby voll, geschlossen oder gestartet ist, sagt das Popup das. Andernfalls zeigt seine Kachel In der Lobby, darunter Erneut beitreten für den Fall, dass der Gastgeber ihn herausnimmt, die Seite bleibt ohne Wechsel und ohne Neuladen bei Ada, und das Match zählt für beide Konten.">
 </picture>
 
 ### Wer kann unter meinem Konto spielen?

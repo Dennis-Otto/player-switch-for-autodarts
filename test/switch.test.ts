@@ -1454,6 +1454,7 @@ test("joinLobbyAs seats a parked account at the board of Ada, who hosts and play
   const inPage = page.token;
   const result = await joinLobbyAs(board, "b", lobby);
   assert.deepEqual(result.ok && result.seated?.id, "b");
+  assert.equal(result.ok && result.kept, false);
   assert.deepEqual(autodarts.lobbies.get(lobby)?.seated, ["a", "b"]);
   assert.deepEqual(autodarts.seats, [
     {
@@ -1493,14 +1494,38 @@ test("joinLobbyAs keeps the seat of an account that has one, with no second requ
   assert.ok((await joinLobbyAs(board, "b", lobby)).ok);
   const again = await joinLobbyAs(board, "b", lobby);
   assert.deepEqual(again.ok && again.seated?.id, "b");
+  // It says that the seat was kept, so the popup can say that nothing changed.
+  assert.equal(again.ok && again.kept, true);
   assert.equal(autodarts.seats.length, 1);
   assert.deepEqual(autodarts.lobbies.get(lobby)?.seated, ["a", "b"]);
+});
+
+test("joinLobbyAs seats an account again once the host took it out of the lobby", async () => {
+  const { autodarts, store, lobby, board } = lobbyOfAda();
+  assert.ok((await joinLobbyAs(board, "b", lobby)).ok);
+  autodarts.leave(lobby, "b");
+  assert.deepEqual(autodarts.lobbies.get(lobby)?.seated, ["a"]);
+
+  const again = await joinLobbyAs(board, "b", lobby);
+  assert.deepEqual(again.ok && [again.seated?.id, again.kept], ["b", false]);
+  assert.deepEqual(autodarts.lobbies.get(lobby)?.seated, ["a", "b"]);
+  assert.deepEqual(
+    autodarts.seats.map(({ bearer, body }) => ({ bearer, body })),
+    [1, 2].map(() => ({
+      bearer: "b",
+      body: { name: "b", userId: "b", boardId: "board-of-a" },
+    })),
+  );
+  // Each join renewed Bob's parked session once, and kept the rotated token.
+  assert.equal(find(store.state, "b")?.token, autodarts.live.get("b"));
+  assert.equal(autodarts.reuses, 0);
 });
 
 test("joinLobbyAs seats no account that the extension doesn't know, and spends nothing", async () => {
   const { autodarts, store, lobby, board } = lobbyOfAda();
   const result = await joinLobbyAs(board, "nobody", lobby);
   assert.deepEqual(result.ok && result.seated, null);
+  assert.equal(result.ok && result.kept, false);
   assert.deepEqual(autodarts.refreshes, []);
   assert.equal(store.saves, 0);
 });

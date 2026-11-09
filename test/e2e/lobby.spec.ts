@@ -1,8 +1,10 @@
 // Joining a lobby: on a lobby of Autodarts, the tile of each parked player offers
 // "Join the lobby", in the popup and in the switcher on the page. A tap seats that
 // player in the lobby, with the session that the extension keeps for them, while the
-// page plays on with the host: no switch, no reload. Against the fake Autodarts of
-// fixtures.ts, which fails every test that sends a refresh token a second time.
+// page plays on with the host: no switch, no reload. The tile then says "In the
+// lobby", and "Join again" below it seats a player whom the host took out. Against the
+// fake Autodarts of fixtures.ts, which fails every test that sends a refresh token a
+// second time.
 import type { Frame, Page } from "@playwright/test";
 
 import { ALICE, BOB, CAROL, expect, expectPlayer, test } from "./fixtures.ts";
@@ -63,8 +65,12 @@ test("Join the lobby in the popup seats a parked player, and the host plays on",
   await expect(popup.tile(ALICE).locator(".chip")).toHaveText(
     display.t("inLobby"),
   );
-  await expect(joinOf(popup.page, ALICE)).toBeHidden();
-  await expect(joinOf(popup.page, BOB)).toBeVisible();
+  // Below her tile, the quieter "Join again" stays, for when the host takes her out.
+  await expect(joinOf(popup.page, ALICE)).toHaveText(display.t("joinAgain"));
+  await expect(joinOf(popup.page, ALICE)).toHaveAccessibleName(
+    display.t("joinAgainAs", ALICE.name),
+  );
+  await expect(joinOf(popup.page, BOB)).toHaveText(display.t("joinLobby"));
   expect(autodarts.seatsOf(lobby)).toEqual([CAROL.id, ALICE.id]);
   // One renewal of Alice's parked session made the access token of her seat.
   expect(autodarts.count("refresh", ALICE)).toBe(renewals + 1);
@@ -85,6 +91,43 @@ test("Join the lobby in the popup seats a parked player, and the host plays on",
   // and the fake fails any token that reaches it a second time.
   await popup.tap(ALICE);
   await expectPlayer(page, ALICE);
+});
+
+test("Join again keeps a seat that Autodarts still has, and seats a player whom the host took out", async ({
+  autodarts,
+  display,
+}) => {
+  const page = await display.openAutodarts();
+  const popup = await display.saveAccounts(page, [ALICE, CAROL]);
+  const lobby = autodarts.openLobby(CAROL);
+  await page.goto(`${new URL(page.url()).origin}/lobbies/${lobby}`);
+  await expectPlayer(page, CAROL);
+  await popup.reopen();
+  await joinOf(popup.page, ALICE).click();
+  await popup.ready();
+  await popup.expectStatus(display.t("joinedLobby", ALICE.name));
+
+  // Alice still sits there: the tap asks for no second seat, and the popup says so.
+  await joinOf(popup.page, ALICE).click();
+  await popup.ready();
+  await popup.expectStatus(display.t("joinKept", ALICE.name));
+  expect(autodarts.count("seat", ALICE)).toBe(1);
+  expect(autodarts.seatsOf(lobby)).toEqual([CAROL.id, ALICE.id]);
+
+  // Carol takes Alice out on Autodarts. The extension doesn't watch the lobby, so her
+  // tile still says "In the lobby", and "Join again" seats her once more.
+  autodarts.leave(lobby, ALICE);
+  await popup.reopen();
+  await expect(popup.tile(ALICE).locator(".chip")).toHaveText(
+    display.t("inLobby"),
+  );
+  await joinOf(popup.page, ALICE).click();
+  await popup.ready();
+  await popup.expectStatus(display.t("joinedLobby", ALICE.name));
+  expect(autodarts.seatsOf(lobby)).toEqual([CAROL.id, ALICE.id]);
+  expect(autodarts.count("seat", ALICE)).toBe(2);
+  // Carol plays on the page as before.
+  await expectPlayer(page, CAROL);
 });
 
 test("Join the lobby in the switcher on the page seats a parked player without a switch", async ({

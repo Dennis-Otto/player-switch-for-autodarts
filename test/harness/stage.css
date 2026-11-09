@@ -341,7 +341,7 @@ h1 {
 
 /* layout=toolbar: the popup as it opens from its icon, for the card of the website,
    whose pictures are dark: the toolbar has the colors of .github/social-preview.html
-   at the size of a real one, which there is 1.4 times larger with the popup. The
+   at the size of a real one, which there is 1.26 times larger with the popup. The
    bottom of the window of capture.py cuts the popup off below its third tile, as the
    social preview does, where the rest would no longer read on a card. */
 .toolbar {

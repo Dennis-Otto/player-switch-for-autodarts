@@ -197,6 +197,15 @@ export class FakeAutodarts {
     return this.lobbies.get(lobby)?.seated ?? [];
   }
 
+  /** Takes an account out of a lobby, as its host does on Autodarts. */
+  leave(lobby: string, account: Account): void {
+    const seated = this.lobbies.get(lobby)?.seated ?? [];
+    const at = seated.indexOf(account.id);
+    if (at >= 0) {
+      seated.splice(at, 1);
+    }
+  }
+
   /** Ends every session of an account, as an expiry or a sign-out elsewhere does. */
   end(account: Account): void {
     for (const session of this.live.values()) {
