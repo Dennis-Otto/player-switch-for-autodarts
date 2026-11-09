@@ -50,7 +50,7 @@ and the popup and the players on the Autodarts page say:
 
 **What it means:** the extension couldn't ask Autodarts for the session of this account, or, at a tap or **Add account**, whose session is in the page: the computer has no connection to the internet, or Autodarts has a problem. Nothing changed: the page stays as it was, and no session is lost.
 
-**What to do:** check that [play.autodarts.com](https://play.autodarts.com) loads, then tap again. The renewal in the background tries again by itself after 15 minutes.
+**What to do:** check that [play.autodarts.com](https://play.autodarts.com) loads, then tap again. In Firefox, check [the access to the Autodarts sites](#firefox-site-access) too. The renewal in the background tries again by itself after 15 minutes.
 
 ### Autodarts didn't answer in a tab {#no-page}
 
@@ -290,7 +290,7 @@ As long as Autodarts keeps its session valid, which is up to Autodarts. The exte
 
 ### A new sign-in wasn't saved by itself
 
-The extension saves a sign-in by itself only in the ten minutes after **Add account** or the install, only once, and only while no saved account plays. Any other sign-in shows a `+` on the icon, and **Save account** in the popup saves it. **Cancel** while it waits stops the waiting.
+The extension saves a sign-in by itself only in the ten minutes after **Add account** or the install, only once, and only while no saved account plays. Any other sign-in shows a `+` on the icon, and **Save account** in the popup saves it. **Cancel** while it waits stops the waiting. In Firefox, check [the access to the Autodarts sites](#firefox-site-access) too.
 
 ### The button on the Autodarts page is missing
 
@@ -298,7 +298,7 @@ The extension saves a sign-in by itself only in the ten minutes after **Add acco
 
 ### In Firefox, the button is missing and no sign-in is saved {#firefox-site-access}
 
-The add-on needs its access to the two Autodarts sites: to the page for the button, the switches and the sign-ins, and to the sign-in service for the sessions. Firefox grants it as it loads the add-on, with nothing to allow, and lists it on the add-on's page as two switches, which can be turned off. Open `about:addons`, choose Player Switch for Autodarts, then **Permissions and data**, and turn on both **Access your data for `https://play.autodarts.com`** and **Access your data for `https://api.autodarts.com`**. Then reload the Autodarts page.
+The add-on needs its access to the two Autodarts sites: to the page for the button, the switches and the sign-ins, and to the sign-in service for the sessions. Firefox grants it as it loads the add-on, with nothing to allow, and lists it on the add-on's page as two switches, which can be turned off. Without the access to the page, the button is missing and no sign-in is saved; without the access to the sign-in service, a switch or **Add account** may say [Autodarts can't be reached right now](#unreachable) although `play.autodarts.com` loads. Open `about:addons`, choose Player Switch for Autodarts, then **Permissions and data**, and turn on both **Access your data for `https://play.autodarts.com`** and **Access your data for `https://api.autodarts.com`**. Then reload the Autodarts page.
 
 ### After a switch, the board is missing {#board-not-shared}
 

@@ -50,7 +50,7 @@ und das Popup und die Spieler auf der Autodarts-Seite sagen:
 
 **Was es bedeutet:** Die Erweiterung konnte Autodarts nicht nach der Sitzung dieses Kontos fragen oder, bei einem Tipp oder **Konto hinzufügen**, wem die Sitzung in der Seite gehört: Der Computer hat keine Verbindung zum Internet, oder Autodarts hat ein Problem. Nichts hat sich geändert: Die Seite bleibt, wie sie war, und keine Sitzung geht verloren.
 
-**Was du tust:** Prüfe, ob [play.autodarts.com](https://play.autodarts.com) lädt, und tippe dann noch einmal. Die Erneuerung im Hintergrund versucht es nach 15 Minuten von selbst wieder.
+**Was du tust:** Prüfe, ob [play.autodarts.com](https://play.autodarts.com) lädt, und tippe dann noch einmal. In Firefox prüfe auch [den Zugriff auf die Autodarts-Seiten](#firefox-site-access). Die Erneuerung im Hintergrund versucht es nach 15 Minuten von selbst wieder.
 
 ### Autodarts hat in keinem Tab geantwortet {#no-page}
 
@@ -290,7 +290,7 @@ So lange, wie Autodarts seine Sitzung gelten lässt, und das bestimmt Autodarts.
 
 ### Eine neue Anmeldung wurde nicht von selbst gespeichert
 
-Die Erweiterung speichert eine Anmeldung nur in den zehn Minuten nach **Konto hinzufügen** oder der Installation von selbst, nur einmal und nur, solange kein gespeichertes Konto spielt. Jede andere Anmeldung zeigt ein `+` am Symbol, und **Konto speichern** im Popup speichert sie. **Abbrechen** beendet das Warten.
+Die Erweiterung speichert eine Anmeldung nur in den zehn Minuten nach **Konto hinzufügen** oder der Installation von selbst, nur einmal und nur, solange kein gespeichertes Konto spielt. Jede andere Anmeldung zeigt ein `+` am Symbol, und **Konto speichern** im Popup speichert sie. **Abbrechen** beendet das Warten. In Firefox prüfe auch [den Zugriff auf die Autodarts-Seiten](#firefox-site-access).
 
 ### Der Knopf auf der Autodarts-Seite fehlt
 
@@ -298,7 +298,7 @@ Die Erweiterung speichert eine Anmeldung nur in den zehn Minuten nach **Konto hi
 
 ### In Firefox fehlt der Knopf, und keine Anmeldung wird gespeichert {#firefox-site-access}
 
-Das Add-on braucht seinen Zugriff auf die beiden Autodarts-Seiten: auf die Seite für den Knopf, die Wechsel und die Anmeldungen, und auf den Anmeldedienst für die Sitzungen. Firefox gibt ihn dem Add-on schon beim Laden, du musst nichts erlauben, und zeigt ihn auf der Seite des Add-ons als zwei Schalter, die sich ausschalten lassen. Öffne `about:addons`, wähle Player Switch for Autodarts, dann **Berechtigungen und Daten**, und schalte **Auf Ihre Daten für `https://play.autodarts.com` zugreifen** und **Auf Ihre Daten für `https://api.autodarts.com` zugreifen** beide ein. Lade dann die Autodarts-Seite neu.
+Das Add-on braucht seinen Zugriff auf die beiden Autodarts-Seiten: auf die Seite für den Knopf, die Wechsel und die Anmeldungen, und auf den Anmeldedienst für die Sitzungen. Firefox gibt ihn dem Add-on schon beim Laden, du musst nichts erlauben, und zeigt ihn auf der Seite des Add-ons als zwei Schalter, die sich ausschalten lassen. Ohne den Zugriff auf die Seite fehlt der Knopf, und keine Anmeldung wird gespeichert; ohne den Zugriff auf den Anmeldedienst kann ein Wechsel oder **Konto hinzufügen** [Autodarts ist gerade nicht erreichbar](#unreachable) melden, obwohl `play.autodarts.com` lädt. Öffne `about:addons`, wähle Player Switch for Autodarts, dann **Berechtigungen und Daten**, und schalte **Auf Ihre Daten für `https://play.autodarts.com` zugreifen** und **Auf Ihre Daten für `https://api.autodarts.com` zugreifen** beide ein. Lade dann die Autodarts-Seite neu.
 
 ### Nach einem Wechsel fehlt das Board {#board-not-shared}
 
