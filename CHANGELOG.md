@@ -6,6 +6,13 @@ the next release, or lists the pull requests when there is none.
 
 ## Unreleased
 
+## [1.5.0](https://github.com/Dennis-Otto/player-switch-for-autodarts/compare/v1.4.0...v1.5.0) (2026-11-09)
+
+
+### Features
+
+* a tile that says In the lobby offers to join again ([#189](https://github.com/Dennis-Otto/player-switch-for-autodarts/issues/189)) ([1118cc3](https://github.com/Dennis-Otto/player-switch-for-autodarts/commit/1118cc39e007ca1b9df936f0f082b5a13f384d96))
+
 ## [1.4.0](https://github.com/Dennis-Otto/player-switch-for-autodarts/compare/v1.3.0...v1.4.0) (2026-11-08)
 
 ### Features
