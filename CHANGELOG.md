@@ -8,11 +8,10 @@ the next release, or lists the pull requests when there is none.
 
 ## [1.5.1](https://github.com/Dennis-Otto/player-switch-for-autodarts/compare/v1.5.0...v1.5.1) (2026-11-09)
 
-
 ### Bug fixes
 
-* Join the lobby shows on the real page of a lobby, /lobby/&lt;id&gt; ([#196](https://github.com/Dennis-Otto/player-switch-for-autodarts/issues/196)) ([addef6d](https://github.com/Dennis-Otto/player-switch-for-autodarts/commit/addef6d7c2b1a45ceaa4026fcfb5d16138a16df9))
-* **overlay:** the texts of the accounts are whole on a portrait monitor ([#198](https://github.com/Dennis-Otto/player-switch-for-autodarts/issues/198)) ([5d0146e](https://github.com/Dennis-Otto/player-switch-for-autodarts/commit/5d0146ead1dabe053e799eaa35db673a58d6e770))
+- On a monitor standing upright, the texts of the accounts in the players on the page were cut off, such as *Passwort nicht mehr me…* for *Passwort nicht mehr merken* in German. Every text of a tile is whole now, on any screen, at any zoom and in every language: a few players share the width of the panel, and a text that needs more room wraps onto the next line. A long name or user name, and the form of a remembered password, no longer run out of their tile either, in the players on the page and in the popup.
+- **Join the lobby** now shows on the page of a lobby. It never did, because Autodarts names the address of a lobby `/lobby/` and not `/lobbies/`.
 
 ## [1.5.0](https://github.com/Dennis-Otto/player-switch-for-autodarts/compare/v1.4.0...v1.5.0) (2026-11-09)
 
