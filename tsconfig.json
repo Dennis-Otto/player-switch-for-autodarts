@@ -4,7 +4,9 @@
     "lib": ["es2024", "dom"],
     "module": "nodenext",
     "moduleResolution": "nodenext",
-    "types": ["node", "chrome"],
+    // The types of every package in node_modules/@types: those of Node and of
+    // Chrome, and an extension without @types/chrome still compiles.
+    "types": ["*"],
     "strict": true,
     "exactOptionalPropertyTypes": true,
     "noUncheckedIndexedAccess": true,
