@@ -73,10 +73,8 @@ const ENTITIES: Readonly<Record<string, string>> = {
 /** The text of a piece of HTML: a line break for each <br>, no tags, no entities. */
 export const htmlText = (html: string): string =>
   html
-    .replaceAll(/<br\s*\/?>/gi, "\n")
-    .replaceAll(/<[^>]*>/g, "")
-    // A < that is left belongs to no tag, as the text of a page has it as &lt;.
-    .replaceAll("<", "")
+    // A < outside a tag goes too: the text of a page has each of its own as &lt;.
+    .replaceAll(/<[^>]*>|</g, (tag) => (/^<br\s*\/?>$/i.test(tag) ? "\n" : ""))
     .replaceAll(/&(#x[0-9a-f]+|#\d+|[a-z]+);/gi, (entity, name: string) => {
       if (name.startsWith("#")) {
         const hex = /^#x/i.test(name);
