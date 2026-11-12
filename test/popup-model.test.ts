@@ -43,7 +43,7 @@ const VIEW: PlayersView = {
   profiles: [],
   unsaved: false,
   adding: false,
-  venue: { manager: false, protectable: null },
+  venue: { manager: false, protectable: null, removable: null },
   updateHint: false,
   lobby: null,
 };
@@ -263,7 +263,7 @@ test("the question for a PIN names the account, or asks for the manager PIN, and
 test("at a display with a manager PIN, the player who plays protects their account, or removes it once it has a PIN", () => {
   const options = { numbered: false, now: NOW, language: "en", t };
   const playing = { ...ada, active: true };
-  const venue = { manager: true, protectable: ada.id };
+  const venue = { manager: true, protectable: ada.id, removable: null };
   assert.deepEqual(tileOf(playing, 0, { ...options, venue }).own, {
     text: "protectOwn",
     label: "protectOwn: Ada",
@@ -272,9 +272,17 @@ test("at a display with a manager PIN, the player who plays protects their accou
   assert.deepEqual(
     tileOf({ ...playing, pin: true }, 0, {
       ...options,
-      venue: { manager: true, protectable: null },
+      venue: { manager: true, protectable: null, removable: ada.id },
     }).own,
     { text: "removeOwn", label: "removeOwn: Ada", kind: "remove" },
+  );
+  // The house account with a PIN, which the view names as no account to remove.
+  assert.equal(
+    tileOf({ ...playing, pin: true }, 0, {
+      ...options,
+      venue: { manager: true, protectable: null, removable: null },
+    }).own,
+    null,
   );
   // Nothing for a parked player, for the house account without a PIN, which the view
   // names as no account to protect, and at a display without a manager PIN.
@@ -282,14 +290,14 @@ test("at a display with a manager PIN, the player who plays protects their accou
   assert.equal(
     tileOf(playing, 0, {
       ...options,
-      venue: { manager: true, protectable: null },
+      venue: { manager: true, protectable: null, removable: null },
     }).own,
     null,
   );
   assert.equal(
     tileOf({ ...playing, pin: true }, 0, {
       ...options,
-      venue: { manager: false, protectable: null },
+      venue: { manager: false, protectable: null, removable: ada.id },
     }).own,
     null,
   );

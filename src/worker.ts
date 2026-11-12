@@ -71,7 +71,7 @@ import {
   toButtonView,
 } from "./page.ts";
 import { createQueue } from "./queue.ts";
-import { EMPTY, forgetCredentials, toView } from "./state.ts";
+import { EMPTY, forgetCredentials, type State, toView } from "./state.ts";
 import {
   ACCOUNTS_KEY,
   accountsIn,
@@ -93,6 +93,7 @@ import {
   refreshParked,
   rememberPassword,
   removeAccount,
+  type Store,
   signOutForNewAccount,
   startAddingAccount,
   stopAddingAccount,
@@ -120,8 +121,10 @@ import {
 import { createVault, keyStoreIn } from "./vault.ts";
 import {
   ACTIVITY_KEY,
+  addGuests,
   checkPin,
   forgetAccount,
+  forgetGuest,
   hashPin,
   idleTick,
   isPin,
@@ -465,9 +468,31 @@ export function startWorker(api: ChromeApi, platform: Platform): StartedWorker {
     return createPage(tabs, (await tab)?.id);
   }
 
+  // The accounts as every change of them reads and saves them. An account saved while a
+  // manager PIN is set is a guest's (decision 0018): the changes run one at a time, each
+  // saving what it loaded, so an id that the last load didn't have is a new account.
+  let loaded: ReadonlySet<string> = new Set();
+  const ids = (state: State) => state.profiles.map((profile) => profile.id);
+  const accounts: Store = {
+    async load() {
+      const state = await store.load();
+      loaded = new Set(ids(state));
+      return state;
+    },
+    async save(state) {
+      await store.save(state);
+      const before = loaded;
+      loaded = new Set(ids(state));
+      const added = ids(state).filter((id) => !before.has(id));
+      if (added.length > 0) {
+        await changeVenue((venue) => addGuests(venue, added));
+      }
+    },
+  };
+
   // What every change of the accounts shares; each one adds the page of its tab.
   const shared: Omit<Deps, "page"> = {
-    store,
+    store: accounts,
     fetcher: (url, init) =>
       platform.fetch(url, {
         ...init,
@@ -816,6 +841,7 @@ export function startWorker(api: ChromeApi, platform: Platform): StartedWorker {
       loadVenue(),
       lobbyView(tab),
     ]);
+    const playingNow = view.profiles.find((profile) => profile.active);
     return {
       ...view,
       // Which accounts ask for a PIN, and whether "Manage accounts" does: never a hash.
@@ -823,10 +849,15 @@ export function startWorker(api: ChromeApi, platform: Platform): StartedWorker {
       venue: {
         manager: venue.manager !== null,
         protectable:
-          view.profiles.find(
-            (profile) =>
-              profile.active && protectsItself(venue, profile.id, profile.id),
-          )?.id ?? null,
+          playingNow !== undefined &&
+          protectsItself(venue, playingNow.id, playingNow.id)
+            ? playingNow.id
+            : null,
+        removable:
+          playingNow !== undefined &&
+          ownRemovalPin(venue, playingNow.id) !== null
+            ? playingNow.id
+            : null,
       },
       updateHint: suggestsUpdate(health, view.profiles),
       lobby,
@@ -840,7 +871,7 @@ export function startWorker(api: ChromeApi, platform: Platform): StartedWorker {
     return popupView(tab).catch(() => ({
       ...toView(EMPTY, false, 0),
       profiles: [],
-      venue: { manager: false, protectable: null },
+      venue: { manager: false, protectable: null, removable: null },
       updateHint: false,
       lobby: null,
     }));
@@ -940,7 +971,10 @@ export function startWorker(api: ChromeApi, platform: Platform): StartedWorker {
         ) {
           return { ok: false, reason: "invalid" };
         }
-        await changeVenue((venue) => setPlayerPin(venue, id, pin));
+        // The manager takes the account on: its player gives it no PIN by themselves now.
+        await changeVenue((venue) =>
+          forgetGuest(setPlayerPin(venue, id, pin), id),
+        );
         return { ok: true };
       }
       case "idle": {

@@ -181,7 +181,11 @@ export function mountPlayers({
   let shown: PlayerView[] = [];
   // Whether a manager PIN guards "Manage accounts", and the account whose player may
   // protect it with a PIN of their own.
-  let venue: PlayersView["venue"] = { manager: false, protectable: null };
+  let venue: PlayersView["venue"] = {
+    manager: false,
+    protectable: null,
+    removable: null,
+  };
   // The lobby that the page shows, with the accounts seated there, or null.
   let lobby: PlayersView["lobby"] = null;
 

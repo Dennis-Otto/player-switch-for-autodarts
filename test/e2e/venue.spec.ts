@@ -119,9 +119,11 @@ test("without the manager, the player who plays protects their account with a PI
   display,
 }) => {
   const page = await display.openAutodarts();
+  // The accounts are saved at the display while the manager PIN is set: guests' accounts.
+  const first = await display.popup();
+  await venue(first, { action: "managerPin", pin: "2468" });
+  await first.page.close();
   const popup = await display.saveAccounts(page, [ALICE, BOB]);
-  await venue(popup, { action: "managerPin", pin: "2468" });
-  await popup.reopen();
 
   // Bob plays and has no PIN: his tile offers one, and Alice's, parked, nothing.
   const own = popup.tile(BOB).locator(".own");

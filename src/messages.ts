@@ -147,12 +147,17 @@ export interface PlayerView extends ProfileView {
 export interface PlayersView extends View {
   profiles: PlayerView[];
   /**
-   * Whether a manager PIN guards "Manage accounts", and the account whose player may
-   * give it a PIN of their own without the manager, below its tile: the one that plays
-   * on the page and has no PIN yet, other than the house account. Null when there is
-   * none, or no manager PIN is set.
+   * Whether a manager PIN guards "Manage accounts"; the account whose player may give it
+   * a PIN of their own without the manager, below its tile: the one that plays on the
+   * page, if it is a guest's and has no PIN yet; and the account whose player may remove
+   * it with its own PIN: the one that plays, if it has a PIN and isn't the house account
+   * (decision 0018). Each is null when there is none, or no manager PIN is set.
    */
-  venue: { manager: boolean; protectable: string | null };
+  venue: {
+    manager: boolean;
+    protectable: string | null;
+    removable: string | null;
+  };
   /** Whether to suggest an update of the extension. */
   updateHint: boolean;
   /**

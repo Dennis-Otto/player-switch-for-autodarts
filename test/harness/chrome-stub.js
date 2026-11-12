@@ -136,11 +136,13 @@
       })),
       unsaved: false,
       adding,
-      // The player who plays protects an account without a PIN, as in worker.ts.
+      // The player who plays protects an account without a PIN, and removes one with a
+      // PIN, as in worker.ts; the made-up accounts are all guests, none the house account.
       venue: {
         manager: guarded,
         protectable:
           guarded && active !== undefined && !active.pin ? activeId : null,
+        removable: guarded && active?.pin ? activeId : null,
       },
       updateHint: false,
       lobby: lobby ? { seated: [...seated] } : null,

@@ -3,8 +3,10 @@ import { pbkdf2Sync } from "node:crypto";
 import { test } from "node:test";
 
 import {
+  addGuests,
   checkPin,
   forgetAccount,
+  forgetGuest,
   HASH_BYTES,
   hashPin,
   IDLE_MINUTES,
@@ -153,6 +155,7 @@ test("parseVenue is off for nothing or for a value it doesn't know", () => {
     players: {},
     idleMinutes: null,
     house: null,
+    guests: [],
   });
 });
 
@@ -164,11 +167,24 @@ test("parseVenue keeps what is valid and drops the rest", async () => {
       players: { a: pin, b: { salt: 1 }, c: null },
       idleMinutes: 15,
       house: "a",
+      guests: ["a", 5, null, "b"],
     }),
-    { manager: pin, players: { a: pin }, idleMinutes: 15, house: "a" },
+    {
+      manager: pin,
+      players: { a: pin },
+      idleMinutes: 15,
+      house: "a",
+      guests: ["a", "b"],
+    },
   );
   assert.deepEqual(
-    parseVenue({ manager: "1234", players: "a", idleMinutes: 7, house: "" }),
+    parseVenue({
+      manager: "1234",
+      players: "a",
+      idleMinutes: 7,
+      house: "",
+      guests: "a",
+    }),
     NO_VENUE,
   );
   assert.deepEqual(
@@ -186,6 +202,10 @@ test("the manager PIN and the PIN of each account are set and taken away", async
   const guarded = setManagerPin(NO_VENUE, pin);
   assert.equal(guarded.manager, pin);
   assert.equal(setManagerPin(guarded, null).manager, null);
+  // A new manager PIN keeps the guests; without one, nobody is a guest.
+  const withGuest = { ...guarded, guests: ["a"] };
+  assert.deepEqual(setManagerPin(withGuest, pin).guests, ["a"]);
+  assert.deepEqual(setManagerPin(withGuest, null).guests, []);
 
   const withA = setPlayerPin(NO_VENUE, "a", pin);
   assert.deepEqual(withA.players, { a: pin });
@@ -232,6 +252,20 @@ test("a removed account takes its PIN along and is no longer the house account",
   });
 });
 
+test("an account saved while a manager PIN is set is a guest's, until the manager takes it on", async () => {
+  const pin = await hash("1234");
+  const guarded: Venue = { ...NO_VENUE, manager: pin };
+  // Without a manager PIN, nobody is a guest.
+  assert.equal(addGuests(NO_VENUE, ["a"]), NO_VENUE);
+  const once = addGuests(guarded, ["a", "b"]);
+  assert.deepEqual(once.guests, ["a", "b"]);
+  assert.deepEqual(addGuests(once, ["b", "c"]).guests, ["a", "b", "c"]);
+  assert.equal(addGuests(once, ["a"]), once);
+  assert.deepEqual(forgetGuest(once, "a").guests, ["b"]);
+  assert.equal(forgetGuest(once, "c"), once);
+  assert.deepEqual(forgetAccount(once, "b").guests, ["a"]);
+});
+
 test("withPins marks the accounts that ask for a PIN, without the hash", async () => {
   const venue = setPlayerPin(NO_VENUE, "b", await hash("1234"));
   assert.deepEqual(withPins([{ id: "a" }, { id: "b" }], venue), [
@@ -255,8 +289,11 @@ test("pinOf finds the PIN of an account and of nothing else", async () => {
 
 test("the player who plays protects their own account only while a manager PIN is set and the account has no PIN", async () => {
   const pin = await hash("1234");
-  const venue: Venue = { ...NO_VENUE, manager: pin };
+  const venue: Venue = { ...NO_VENUE, manager: pin, guests: ["a", "b"] };
   assert.equal(protectsItself(venue, "a", "a"), true);
+  // An account that the manager keeps, such as one saved before the manager PIN: whoever
+  // plays under it now could remove it with a PIN of their choice.
+  assert.equal(protectsItself({ ...venue, guests: [] }, "a", "a"), false);
   // Another account than the one that plays, or none that plays.
   assert.equal(protectsItself(venue, "b", "a"), false);
   assert.equal(protectsItself(venue, "a", null), false);
@@ -275,6 +312,8 @@ test("a player removes their own account with its PIN while a manager PIN is set
   assert.equal(ownRemovalPin(venue, "a"), pin);
   assert.equal(ownRemovalPin(venue, "b"), null);
   assert.equal(ownRemovalPin({ ...venue, manager: null }, "a"), null);
+  // The house account is the manager's, whatever PIN it has.
+  assert.equal(ownRemovalPin({ ...venue, house: "a" }, "a"), null);
 });
 
 test("parseActivity reads a time and nothing else", () => {

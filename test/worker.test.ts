@@ -434,7 +434,11 @@ test("the view of the popup says when no Autodarts tab answers", async () => {
       ["bob", false, false],
     ],
   );
-  assert.deepEqual(reply.view.venue, { manager: false, protectable: null });
+  assert.deepEqual(reply.view.venue, {
+    manager: false,
+    protectable: null,
+    removable: null,
+  });
   assert.equal(reply.view.updateHint, false);
 });
 
@@ -816,8 +820,13 @@ test("while a manager PIN is set, Manage accounts and its changes need it", asyn
       ["pin", "manager"],
       JSON.stringify(message),
     );
-    // Ada plays and has no PIN yet: her player may protect her account.
-    assert.deepEqual(refused.view.venue, { manager: true, protectable: "ada" });
+    // Ada plays without a PIN, but her account was saved before the manager PIN: it is
+    // the manager's, so whoever plays under it now gets no PIN for it.
+    assert.deepEqual(refused.view.venue, {
+      manager: true,
+      protectable: null,
+      removable: null,
+    });
   }
   assert.equal((await accounts(fake)).profiles.length, 2);
   const open = await popup(fake, { action: "unlock", managerPin: "9999" });
@@ -827,14 +836,21 @@ test("while a manager PIN is set, Manage accounts and its changes need it", asyn
 test("the player who plays protects their account with a first PIN without the manager, and no other account", async () => {
   const fake = browser();
   await twoPlayers(fake);
-  fake.local.data.set(VENUE_KEY, { manager: await quickHash("9999") });
+  fake.local.data.set(VENUE_KEY, {
+    manager: await quickHash("9999"),
+    guests: ["ada", "bob"],
+  });
   await started(fake);
   const players = (): Record<string, object> =>
     (fake.local.data.get(VENUE_KEY) as { players?: Record<string, object> })
       .players ?? {};
 
   const view = await popup(fake, { action: "view" });
-  assert.deepEqual(view.view.venue, { manager: true, protectable: "ada" });
+  assert.deepEqual(view.view.venue, {
+    manager: true,
+    protectable: "ada",
+    removable: null,
+  });
 
   // Bob is parked: his account is the manager's to protect, and his PIN stays unset.
   const parked = await popup(fake, {
@@ -860,6 +876,7 @@ test("the player who plays protects their account with a first PIN without the m
   assert.deepEqual(protectedAda.view.venue, {
     manager: true,
     protectable: null,
+    removable: "ada",
   });
   assert.equal(
     protectedAda.view.profiles.find((profile) => profile.id === "ada")?.pin,
@@ -911,13 +928,101 @@ test("the house account and a display without a manager PIN offer no PIN of one'
     newPin: "1234",
   });
   assert.deepEqual([house.reason, house.pin], ["pin", "manager"]);
-  assert.deepEqual(house.view.venue, { manager: true, protectable: null });
+  assert.deepEqual(house.view.venue, {
+    manager: true,
+    protectable: null,
+    removable: null,
+  });
 
   const home = browser();
   await twoPlayers(home);
   await started(home);
   const view = await popup(home, { action: "view" });
-  assert.deepEqual(view.view.venue, { manager: false, protectable: null });
+  assert.deepEqual(view.view.venue, {
+    manager: false,
+    protectable: null,
+    removable: null,
+  });
+});
+
+test("an account that the manager keeps gets no PIN from whoever plays under it, and so can't be removed without the manager", async () => {
+  const fake = browser();
+  // Ada's account was saved before the manager PIN; anyone may switch to it, as it has no PIN.
+  await twoPlayers(fake);
+  fake.local.data.set(VENUE_KEY, { manager: await quickHash("9999") });
+  await started(fake);
+  const protect = await popup(fake, {
+    action: "protect",
+    id: "ada",
+    newPin: "1234",
+  });
+  assert.deepEqual([protect.reason, protect.pin], ["pin", "manager"]);
+  const remove = await popup(fake, {
+    action: "removeAccount",
+    id: "ada",
+    pin: "1234",
+  });
+  assert.deepEqual([remove.reason, remove.pin], ["pin", "manager"]);
+  assert.equal((await accounts(fake)).profiles.length, 2);
+  assert.deepEqual(
+    (fake.local.data.get(VENUE_KEY) as { players?: object }).players ?? {},
+    {},
+  );
+});
+
+test("an account saved at the display while a manager PIN is set is a guest's, until the manager takes it on", async () => {
+  const fake = browser();
+  fake.local.data.set(VENUE_KEY, { manager: await quickHash("9999") });
+  fake.addTab();
+  fake.pageToken = fake.autodarts.issue("ada");
+  await started(fake);
+  const saved = await popup(fake, { action: "adopt" });
+  assert.equal(saved.ok, true);
+  const guests = () =>
+    (fake.local.data.get(VENUE_KEY) as { guests: string[] }).guests;
+  assert.deepEqual(guests(), ["ada"]);
+  const view = await popup(fake, { action: "view" });
+  assert.deepEqual(view.view.venue, {
+    manager: true,
+    protectable: "ada",
+    removable: null,
+  });
+  // Saving the account again adds nothing.
+  await popup(fake, { action: "adopt" });
+  assert.deepEqual(guests(), ["ada"]);
+
+  // The manager sets a PIN for it, or clears its PIN, under "PINs of the players".
+  const kept = await venue(fake, {
+    action: "playerPin",
+    id: "ada",
+    pin: null,
+    managerPin: "9999",
+  });
+  assert.equal(kept.ok, true);
+  assert.deepEqual(guests(), []);
+  const after = await popup(fake, { action: "view" });
+  assert.equal(after.view.venue.protectable, null);
+});
+
+test("the house account is removed only with the manager PIN, whatever PIN it has", async () => {
+  const fake = browser();
+  await twoPlayers(fake);
+  fake.local.data.set(VENUE_KEY, {
+    manager: await quickHash("9999"),
+    players: { ada: await quickHash("1234") },
+    idleMinutes: 10,
+    house: "ada",
+  });
+  await started(fake);
+  const view = await popup(fake, { action: "view" });
+  assert.equal(view.view.venue.removable, null);
+  const own = await popup(fake, {
+    action: "removeAccount",
+    id: "ada",
+    pin: "1234",
+  });
+  assert.deepEqual([own.reason, own.pin], ["pin", "manager"]);
+  assert.equal((await accounts(fake)).profiles.length, 2);
 });
 
 test("a player removes their own account with its PIN, which opens no other account", async () => {

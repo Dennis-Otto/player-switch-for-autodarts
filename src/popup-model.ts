@@ -274,7 +274,7 @@ export interface Tile {
    * The button below the tile of the player who plays, at a display with a manager PIN,
    * with which that player looks after their own account (decision 0018): "Protect with
    * a PIN" for the account that the view names as `protectable`, and "Remove my account"
-   * for one with a PIN, which asks for that PIN. `label` is its name for a screen reader:
+   * for the one it names as `removable`, which asks for its PIN. `label` is its name for a screen reader:
    * its text and the name of the account, as the options page names its buttons. Null
    * for every other tile.
    */
@@ -299,7 +299,7 @@ function ownOf(
   let kind: "protect" | "remove";
   if (venue.protectable === profile.id) {
     kind = "protect";
-  } else if (profile.pin) {
+  } else if (venue.removable === profile.id) {
     kind = "remove";
   } else {
     return null;

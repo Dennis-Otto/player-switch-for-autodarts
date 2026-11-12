@@ -195,14 +195,16 @@ someone who can use the computer.
   can neither read the hashes nor send these requests.
 - **A player looks after their own account without the manager**
   ([decision 0018](decisions/0018-let-a-player-protect-and-remove-their-own-account.md)).
-  The service worker gives a first PIN without the manager PIN only to the account
-  that plays on the page, only while it has none, and never to the house account; it
-  removes an account without the manager PIN only with the PIN of that account, which
-  counts towards the wrong PINs like any other. A request that carries the manager PIN
-  is checked against the manager PIN alone. So a guest can't replace the PIN of
-  another or remove an account without its PIN. What remains: whoever plays under an
-  account without a PIN, such as one that a regular left unprotected, can give it a
-  PIN; the manager takes that PIN away under **PINs of the players**.
+  The service worker gives a first PIN without the manager PIN only to a guest's
+  account, one saved at the display while the manager PIN was set, while it plays on
+  the page, only while it has none, and never to the house account; it removes an
+  account without the manager PIN only with the PIN of that account, never the house
+  account, and the PIN counts towards the wrong PINs like any other. A request that
+  carries the manager PIN is checked against the manager PIN alone. So a guest can't
+  replace the PIN of another, and the account of a regular, saved before the manager
+  PIN or taken on by the manager, gets no PIN and so no removal from whoever plays
+  under it. What remains: whoever plays under a guest's account that is still without
+  a PIN can give it one, and with that PIN remove it and sign it out at Autodarts.
 - **Five wrong PINs in a row lock every PIN for a minute.** All PINs of the display
   share one count, and a right PIN doesn't clear it: the row ends only when a minute
   passes without a wrong PIN. So a guest can't reset the count between guesses by
