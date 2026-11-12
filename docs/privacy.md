@@ -68,7 +68,11 @@ whose password you remember, which go to the sign-in service of Autodarts as
 described here, and nowhere else. When a saved player joins the lobby on the display,
 a fresh access token of that account goes to the game service of Autodarts on the
 same host, with the username and the id of the account, which Autodarts knows
-already. The Chrome Web Store lists the same under its privacy practices.
+already. The developer declares the same data to the Chrome Web Store, as
+*Authentication information* in the privacy practices of the extension, and certifies
+there that it is not sold, not used for anything but switching the players and not
+used for credit or lending; the store shows this under *Privacy* on the page of the
+extension.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="images/diagrams/data-flow.dark.svg">

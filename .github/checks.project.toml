@@ -52,8 +52,9 @@ doesn't quote a message that tells a player about a problem, the manifest asks
 for a permission, a host or a web-accessible page that `store/permissions.json` doesn't
 allow, opens the extension wider in another way, doesn't fit the store, or no longer
 runs the same `background.js` in Firefox, under the id and from the versions of Firefox
-that it names, with the data that `store/permissions.json` declares
-(`scripts/check-extension.mjs`), `web-ext lint`, the lint of addons.mozilla.org, found an
+that it names, with the data that `store/permissions.json` declares, which the step
+*Privacy practices* of `docs/releases.md` and the privacy policy in every language name
+in the words of the Chrome Web Store (`scripts/check-extension.mjs`), `web-ext lint`, the lint of addons.mozilla.org, found an
 error in the extension or a warning that `scripts/check-firefox.mjs` doesn't accept
 with its reason, `extension/` holds a file of no kind that the package knows, two builds
 of the zip of one commit differ, or the test of the popup in a browser,
@@ -68,6 +69,9 @@ drops the name of a player. Chrome disables an installed extension after an upda
 asks for a new permission or host, until someone accepts the new warning in
 `chrome://extensions`, and a board display in kiosk mode then stops switching without
 a word; and every permission is one more way to the saved sessions and passwords.
+The page of the store says that the extension collects no data unless the privacy
+practices declare it, which contradicts the privacy policy, and a declaration that the
+review of Google finds incomplete can bring a warning or the removal of the item.
 Firefox refuses an add-on with an error of `web-ext lint`, and addons.mozilla.org
 reviews it with the same rules. The zip of a release goes to the store and handles
 passwords, so anybody has to be able to check it against the source of its tag, and only

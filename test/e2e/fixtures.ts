@@ -168,6 +168,127 @@ export class Popup {
   }
 }
 
+/**
+ * The options page, opened in a tab of its own: options.html as Chrome opens it from
+ * the menu of the extension. It talks to the service worker of the extension, which
+ * keeps the venue mode, and saves the settings of the button to chrome.storage.
+ */
+export class OptionsPage {
+  readonly page: Page;
+  private readonly t: Translate;
+
+  constructor(page: Page, t: Translate) {
+    this.page = page;
+    this.t = t;
+  }
+
+  /**
+   * Waits until the page has its answer from the service worker: it shows the
+   * settings, or that a manager PIN locks them.
+   */
+  async ready(): Promise<void> {
+    await expect(
+      this.page.locator("#settings, #locked").filter({ visible: true }),
+    ).toHaveCount(1);
+  }
+
+  /** Expects the settings to be open, or locked by the manager PIN. */
+  async expectOpen(open: boolean): Promise<void> {
+    const [shown, hidden] = open
+      ? (["#settings", "#locked"] as const)
+      : (["#locked", "#settings"] as const);
+    await expect(this.page.locator(shown)).toBeVisible();
+    await expect(this.page.locator(hidden)).toBeHidden();
+  }
+
+  /** The open PIN dialog of the page. */
+  pinDialog(): Locator {
+    return this.page.locator("dialog.pin[open]");
+  }
+
+  /**
+   * Expects the PIN dialog with this title, and the problem it reads out, such as a
+   * wrong PIN, then types the PIN on its number pad, as a finger does, and taps OK.
+   */
+  async enterPin(title: string, pin: string, problem = ""): Promise<void> {
+    const dialog = this.pinDialog();
+    await expect(dialog.locator("h2")).toHaveText(title);
+    await expect(dialog.locator(".pin-problem")).toHaveText(problem);
+    for (const digit of pin) {
+      await dialog.locator(".pad-key", { hasText: digit }).click();
+    }
+    await expect(dialog.locator(".pin-input")).toHaveValue(pin);
+    await dialog.locator(".pad-ok").click();
+  }
+
+  /** Chooses a new PIN, as the page asks for it: once, and again to repeat it. */
+  async choosePin(title: string, pin: string, repeat = pin): Promise<void> {
+    await this.enterPin(title, pin);
+    await this.enterPin(this.t("repeatPinTitle"), repeat);
+  }
+
+  /** The row of an account in the list of the PINs of the players. */
+  pinRow(account: Account): Locator {
+    return this.page.locator("#player-pins .player").filter({
+      has: this.page.locator(".name", {
+        hasText: new RegExp(`^${account.name}$`),
+      }),
+    });
+  }
+
+  /** Expects the page to say this in its status line, such as that it saved a change. */
+  async expectStatus(text: string): Promise<void> {
+    await expect(this.page.locator("#saved")).toHaveText(text);
+  }
+
+  /** Opens the page anew, as a person who comes back to it later. */
+  async reopen(): Promise<void> {
+    await this.page.reload();
+    await this.ready();
+  }
+}
+
+/** The corners where the button of the switcher can sit, as the options page names them. */
+export type Corner = "top-left" | "top-right" | "bottom-left" | "bottom-right";
+
+const CORNERS: readonly Corner[] = [
+  "top-left",
+  "top-right",
+  "bottom-left",
+  "bottom-right",
+];
+
+/**
+ * The middle of the button of the switcher in this corner of the page: 56 pixels
+ * wide, 16 pixels from both edges.
+ */
+function cornerPoint(page: Page, corner: Corner): { x: number; y: number } {
+  const viewport = page.viewportSize() ?? { width: 0, height: 0 };
+  const inset = 16 + 28;
+  return {
+    x: corner.endsWith("left") ? inset : viewport.width - inset,
+    y: corner.startsWith("top") ? inset : viewport.height - inset,
+  };
+}
+
+/**
+ * The corner of an Autodarts page where the button of the switcher shows, or null
+ * when it shows in none. The button sits in a closed shadow root that no selector
+ * reaches, so this asks what a finger would tap in each corner.
+ */
+export async function buttonCorner(page: Page): Promise<Corner | null> {
+  for (const corner of CORNERS) {
+    const tapped = await page.evaluate(
+      ({ x, y }) => document.elementFromPoint(x, y)?.localName,
+      cornerPoint(page, corner),
+    );
+    if (tapped === "player-switch-ui") {
+      return corner;
+    }
+  }
+  return null;
+}
+
 /** The display: the browser with the extension, its Autodarts tabs and its popup. */
 export class Display {
   readonly context: BrowserContext;
@@ -260,6 +381,15 @@ export class Display {
     return popup;
   }
 
+  /** Opens the options page of the extension in a new tab. */
+  async options(): Promise<OptionsPage> {
+    const page = await this.context.newPage();
+    await page.goto(`chrome-extension://${this.extensionId}/options.html`);
+    const options = new OptionsPage(page, this.t);
+    await options.ready();
+    return options;
+  }
+
   /**
    * Saves the accounts on the display, one after another, the way a new display
    * does it: the first one by itself after the install, every other one with
@@ -287,19 +417,8 @@ export class Display {
    * shows, as a finger does.
    */
   async openSwitcher(page: Page): Promise<Frame> {
-    const viewport = page.viewportSize() ?? { width: 0, height: 0 };
-    const corner = {
-      x: viewport.width - 16 - 28,
-      y: viewport.height - 16 - 28,
-    };
-    await expect
-      .poll(() =>
-        page.evaluate(
-          ({ x, y }) => document.elementFromPoint(x, y)?.localName,
-          corner,
-        ),
-      )
-      .toBe("player-switch-ui");
+    await expect.poll(() => buttonCorner(page)).toBe("bottom-right");
+    const corner = cornerPoint(page, "bottom-right");
     await page.mouse.click(corner.x, corner.y);
     // A tap opens it as switcher.html?by=pointer, a key as switcher.html.
     const isSwitcher = (frame: Frame) =>

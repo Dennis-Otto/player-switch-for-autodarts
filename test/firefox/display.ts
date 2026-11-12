@@ -17,7 +17,7 @@ import { type AddressInfo, connect, type Socket } from "node:net";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import puppeteer, { type Browser, type Page } from "puppeteer-core";
-import type { Account, FakeAutodarts } from "../e2e/fake/autodarts.ts";
+import { type Account, FakeAutodarts } from "../e2e/fake/autodarts.ts";
 import {
   AUTH_HOST,
   type FakeServer,
@@ -42,6 +42,7 @@ const ADDON_ID = (
  */
 const UUID = "3f1c2b7a-5d4e-4a6b-9c8d-7e6f5a4b3c2d";
 const POPUP = `moz-extension://${UUID}/popup.html`;
+const OPTIONS = `moz-extension://${UUID}/options.html`;
 
 /** How long a step may take before the test fails. */
 const TIMEOUT = 15_000;
@@ -128,13 +129,39 @@ async function startProxy(server: FakeServer): Promise<Proxy> {
   };
 }
 
+/** The size of every page of the tests, which decides where the button of the page sits. */
+const VIEWPORT = { width: 1280, height: 800 };
+
+/**
+ * The middle of the button of the switcher in the bottom right corner of a page: 16
+ * pixels from the edges, 56 wide (src/content.ts).
+ */
+export const buttonCorner = {
+  x: VIEWPORT.width - 16 - 28,
+  y: VIEWPORT.height - 16 - 28,
+};
+
+/**
+ * Whether the button of the switcher shows in the bottom right corner of the page.
+ * It sits in a closed shadow root that no selector reaches, so this asks what a
+ * finger would tap there.
+ */
+export function buttonShows(page: Page): Promise<boolean> {
+  return page.evaluate(
+    (x: number, y: number) =>
+      document.elementFromPoint(x, y)?.localName === "player-switch-ui",
+    buttonCorner.x,
+    buttonCorner.y,
+  );
+}
+
 /**
  * Waits until `check` holds, asking again every 100 ms. Firefox's WebDriver BiDi
  * reports no events of an extension page (bug 1755014), so Puppeteer neither sees a
  * popup.html load nor finds its realm again after a reload; every question here is
  * asked anew, from this side.
  */
-async function until(
+export async function until(
   check: () => Promise<boolean>,
   what: string,
   timeout = TIMEOUT,
@@ -306,6 +333,28 @@ export class Display {
   }
 
   /**
+   * Opens the options page in a new tab, the page that about:addons embeds under the
+   * Preferences of the add-on, and waits until the background has answered it and it
+   * shows its settings, as it does while no manager PIN locks them.
+   */
+  async options(): Promise<Page> {
+    const page = await this.browser.newPage();
+    // As for the popup, the page waits for itself instead of its load.
+    page.goto(OPTIONS).catch(() => undefined);
+    await until(
+      () =>
+        page.evaluate(
+          (address: string) =>
+            location.href === address &&
+            document.querySelector<HTMLElement>("#settings")?.hidden === false,
+          OPTIONS,
+        ),
+      "the options page shows its settings",
+    );
+    return page;
+  }
+
+  /**
    * Saves the accounts on the display, one after another, the way a new display
    * does it: the first one by itself after the install, every other one with
    * "Add account" and a sign-in. The last one plays.
@@ -347,7 +396,7 @@ export async function withFirefox(
     // The certificate of the fake server has no authority behind it. Firefox
     // reaches no other server, so it may pass every certificate.
     acceptInsecureCerts: true,
-    defaultViewport: { width: 1280, height: 800 },
+    defaultViewport: VIEWPORT,
     // WebDriver BiDi navigates a tab to an extension page, moz-extension://, only
     // with system access, as the popup is opened here. Firefox 159 takes it from this
     // variable alone; older ones, such as ESR 140 and 153, also had a flag for it.
@@ -395,4 +444,28 @@ export async function withFirefox(
       `Refresh tokens that reached Autodarts a second time: ${autodarts.reused.join(", ")}`,
     );
   }
+}
+
+/** The Firefox of this computer, or undefined when it has none. */
+const FIREFOX = findFirefox();
+
+/** Why the tests skip: no Firefox on this computer, other than in the CI, which has one. */
+export const skip =
+  FIREFOX === undefined && process.env.CI === undefined
+    ? "no Firefox on this computer: install one or set E2E_FIREFOX_PATH"
+    : false;
+
+/** A test in a Firefox of its own (withFirefox), with a fake Autodarts of its own. */
+export function inFirefox(
+  run: (display: Display, autodarts: FakeAutodarts) => Promise<void>,
+): () => Promise<void> {
+  return async () => {
+    if (FIREFOX === undefined) {
+      throw new Error(
+        "The CI has no Firefox: install one, or set E2E_FIREFOX_PATH to it.",
+      );
+    }
+    const autodarts = new FakeAutodarts();
+    await withFirefox(FIREFOX, autodarts, (display) => run(display, autodarts));
+  };
 }

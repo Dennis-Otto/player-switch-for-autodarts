@@ -16,6 +16,10 @@
 //   under the fixed id of the add-on, from the first Firefox that shows the data the
 //   add-on sends at its install, and that data is exactly what store/permissions.json
 //   declares (decision 0012);
+// - the release guide tells to declare that same data under the privacy practices of
+//   the Chrome Web Store, in the words of its Developer Dashboard, and nothing else,
+//   and the privacy policy in every language says so, as the store shows on the page
+//   of the extension only what is declared there;
 // - the manifest names a minimum version of Chrome and a homepage, its icons have the
 //   sizes it declares, and the name and description in every language, and the short
 //   descriptions of the listings, fit the limits of the store, and each language of
@@ -53,6 +57,32 @@ export const FIREFOX_ID = "player-switch-for-autodarts@dennis-otto.github.io";
  */
 export const FIREFOX_MIN = 140;
 export const FIREFOX_ANDROID_MIN = 142;
+
+/**
+ * The kinds of data that Firefox knows in data_collection_permissions, by the name that
+ * the Chrome Web Store gives the same kind under Privacy practices → Data usage in its
+ * Developer Dashboard. A kind of Firefox that the store has no plain counterpart for
+ * (searchTerms, bookmarksInfo, technicalAndInteraction) is missing on purpose: the check
+ * asks for its name in the dashboard before the extension may send it.
+ */
+export const STORE_DATA = {
+  personallyIdentifyingInfo: "Personally identifiable information",
+  healthInfo: "Health information",
+  financialAndPaymentInfo: "Financial and payment information",
+  authenticationInfo: "Authentication information",
+  personalCommunications: "Personal communications",
+  locationInfo: "Location",
+  browsingActivity: "Web history",
+  websiteActivity: "User activity",
+  websiteContent: "Website content",
+};
+
+/** The step of the release guide that fills in the privacy practices of the store. */
+export const PRIVACY_STEP = /^\d+\. \*\*Privacy practices\*\*.*$/m;
+
+/** The privacy policy that the store links, and the pages of it in other languages. */
+export const PRIVACY_POLICY = "docs/privacy.md";
+export const PRIVACY_PATH = /^docs\/privacy(?:\.[a-z]{2})?\.md$/;
 
 /** The limits of the Chrome Web Store for the name and the short description. */
 export const NAME_MAX = 75;
@@ -264,6 +294,67 @@ function checkFirefox(problems, manifest, allowed) {
         `store/permissions.json says that the add-on sends ${data}, which data_collection_permissions.required ` +
           "in extension/manifest.json doesn't declare; Firefox shows at the install only what the manifest declares.",
       );
+    }
+  }
+}
+
+/**
+ * The data that the Chrome Web Store shows: the dashboard takes it by hand, so the
+ * release guide names it there in the words of the dashboard, from the same allowlist
+ * as Firefox, and the privacy policy in every language says what the store shows. With
+ * nothing declared, the store's page says that the extension collects no data.
+ */
+function checkStoreData(problems, allowed, releaseGuide, privacyPolicies) {
+  const sent = Object.keys(allowed.data_collection_permissions ?? {});
+  const names = [];
+  // Firefox's "none" is no data, which the store declares by ticking nothing.
+  for (const data of sent.filter((kind) => kind !== "none")) {
+    if (data in STORE_DATA) {
+      names.push(STORE_DATA[data]);
+    } else {
+      problems.push(
+        `store/permissions.json says that the add-on sends ${data}, which STORE_DATA in scripts/check-extension.mjs ` +
+          "can't name in the Chrome Web Store; find the kind of data under Privacy practices → Data usage of the " +
+          "Developer Dashboard that covers it and add it to STORE_DATA.",
+      );
+    }
+  }
+  if (!(PRIVACY_POLICY in privacyPolicies)) {
+    problems.push(
+      `${PRIVACY_POLICY} is missing; the Chrome Web Store links it as the privacy policy of the extension.`,
+    );
+  }
+  const step = PRIVACY_STEP.exec(releaseGuide)?.[0];
+  const texts = { ...privacyPolicies };
+  if (step === undefined) {
+    problems.push(
+      "docs/releases.md has no step **Privacy practices** in the first listing; it tells what to declare in the " +
+        "Developer Dashboard, which the API of the store can't set.",
+    );
+  } else {
+    texts["docs/releases.md"] = step;
+  }
+  for (const [file, text] of Object.entries(texts)) {
+    const where =
+      file === "docs/releases.md"
+        ? "the step **Privacy practices** of docs/releases.md"
+        : file;
+    for (const name of names) {
+      if (!text.includes(`*${name}*`)) {
+        problems.push(
+          `${where} doesn't name *${name}*, which the extension sends as store/permissions.json declares; the ` +
+            "Chrome Web Store shows on the page of the extension only the data ticked in the dashboard, and says " +
+            "that it collects none when nothing is.",
+        );
+      }
+    }
+    for (const name of Object.values(STORE_DATA)) {
+      if (!names.includes(name) && text.includes(`*${name}*`)) {
+        problems.push(
+          `${where} names *${name}*, which data_collection_permissions in store/permissions.json doesn't declare; ` +
+            "declare only what the extension sends.",
+        );
+      }
     }
   }
 }
@@ -578,6 +669,7 @@ function checkListings(problems, manifest, listings) {
  * @param {Record<string, object>} input.pictures the parsed texts on the pictures of each language, by their path
  * @param {string[]} input.images the path of each file in store/images/
  * @param {string} input.releaseGuide the text of docs/releases.md
+ * @param {Record<string, string>} input.privacyPolicies the text of the privacy policy in each language, by its path
  * @param {(path: string) => {width: number, height: number} | null} input.imageSize the size of a PNG of extension/
  * @returns {string[]}
  */
@@ -589,12 +681,14 @@ export function checkManifest({
   pictures,
   images,
   releaseGuide,
+  privacyPolicies,
   imageSize,
 }) {
   const problems = [];
   checkAccess(problems, manifest, allowed);
   checkPolicy(problems, manifest);
   checkFirefox(problems, manifest, allowed);
+  checkStoreData(problems, allowed, releaseGuide, privacyPolicies);
   checkDetails(problems, manifest, locales, imageSize);
   checkListings(problems, manifest, listings);
   checkLanguages(problems, locales, listings);
@@ -662,6 +756,11 @@ function main() {
   const images = readdirSync(new URL("store/images/", root)).map(
     (name) => `store/images/${name}`,
   );
+  const privacyPolicies = Object.fromEntries(
+    readdirSync(new URL("docs/", root))
+      .filter((name) => PRIVACY_PATH.test(`docs/${name}`))
+      .map((name) => [`docs/${name}`, read(`docs/${name}`)]),
+  );
   const imageSize = (path) => {
     const file = new URL(`extension/${path}`, root);
     return pngSize(existsSync(file) ? readFileSync(file) : null);
@@ -686,6 +785,7 @@ function main() {
       pictures,
       images,
       releaseGuide: read("docs/releases.md"),
+      privacyPolicies,
       imageSize,
     }),
     ...checkKinds(files),
