@@ -7,10 +7,14 @@
  * - Every renewal rotates the refresh token: the answer carries a new one, and the
  *   one that was sent is spent.
  * - A spent token that comes back is taken for a stolen one: the service refuses it
- *   with 400 and ends the session it belonged to. The test records it in `reused`,
+ *   as dead and ends the session it belonged to. The test records it in `reused`,
  *   and the fixture fails every test that sent one, so a token sent twice can't
  *   pass unnoticed.
- * - A wrong password is refused with 401, a token that it doesn't know with 400.
+ * - Its refusals are the answers of the real service, recorded in recorded.ts: a
+ *   token that it doesn't know, spent or never issued, 401 with `invalid_token`, a
+ *   wrong password 401 with `invalid_credentials`, a request without its field or
+ *   with a body that is no JSON 400 with `invalid_request`, and the end of a session
+ *   that it doesn't know 200.
  *
  * Its game service, at https://api.autodarts.com/gs/v0, keeps the lobbies that a test
  * opens and seats a player in one as the real one does for the page `/join/<lobby>`:
@@ -20,6 +24,16 @@
  * the status and the body of the answer, which the fake HTTPS server of server.ts sends
  * back to the browser.
  */
+
+import {
+  LOGIN_WITHOUT_PASSWORD,
+  LOGIN_WRONG_PASSWORD,
+  LOGOUT_UNKNOWN_TOKEN,
+  REFRESH_DEAD_TOKEN,
+  REFRESH_WITHOUT_TOKEN,
+  type Recorded,
+  UNREADABLE_BODY,
+} from "./recorded.ts";
 
 /** An account of the fake Autodarts, made up for the tests. */
 export interface Account {
@@ -49,10 +63,7 @@ export const CAROL: Account = {
 };
 
 /** What the service answers to one request. */
-export interface Answer {
-  readonly status: number;
-  readonly body: unknown;
-}
+export type Answer = Recorded;
 
 /** One request that the service was sent, for the checks of a test. */
 export interface Sent {
@@ -98,11 +109,6 @@ function field(body: unknown, key: string): string | null {
   return typeof value === "string" ? value : null;
 }
 
-const REFUSED: Answer = {
-  status: 400,
-  body: { error: "invalid_grant", error_description: "Token is not active" },
-};
-
 export class FakeAutodarts {
   /** The refresh tokens that came back after they were spent, in order. */
   readonly reused: string[] = [];
@@ -122,7 +128,7 @@ export class FakeAutodarts {
   answer(path: string, body: unknown): Answer {
     switch (path) {
       case "refresh":
-        return this.refresh(field(body, "refresh_token"));
+        return this.refresh(body);
       case "login":
         return this.login(field(body, "username"), field(body, "password"));
       case "logout":
@@ -229,11 +235,15 @@ export class FakeAutodarts {
     ).length;
   }
 
-  private refresh(token: string | null): Answer {
+  private refresh(body: unknown): Answer {
+    const token = field(body, "refresh_token");
     const session = this.use(token);
     if (session === null) {
       this.sent.push({ path: "refresh", account: null });
-      return REFUSED;
+      if (typeof body !== "object" || body === null) {
+        return UNREADABLE_BODY;
+      }
+      return token === null ? REFRESH_WITHOUT_TOKEN : REFRESH_DEAD_TOKEN;
     }
     this.sent.push({ path: "refresh", account: session.account.id });
     this.spend(session);
@@ -247,14 +257,11 @@ export class FakeAutodarts {
         candidate.username === username && candidate.password === password,
     );
     this.sent.push({ path: "login", account: account?.id ?? null });
+    if (username === null || password === null) {
+      return LOGIN_WITHOUT_PASSWORD;
+    }
     if (account === undefined) {
-      return {
-        status: 401,
-        body: {
-          error: "invalid_grant",
-          error_description: "Invalid user credentials",
-        },
-      };
+      return LOGIN_WRONG_PASSWORD;
     }
     const session: Session = { account, token: "" };
     this.rotate(session);
@@ -265,7 +272,7 @@ export class FakeAutodarts {
     const session = this.use(token);
     this.sent.push({ path: "logout", account: session?.account.id ?? null });
     if (session === null) {
-      return REFUSED;
+      return LOGOUT_UNKNOWN_TOKEN;
     }
     this.spend(session);
     this.close(session);

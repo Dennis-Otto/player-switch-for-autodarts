@@ -14,7 +14,7 @@ flowchart TB
         values["The expected values<br>from src/autodarts.ts"]
         page["play.autodarts.com and its scripts<br>the key of the session, the sign-in service<br>and the client, until all three are found"]
         forward["play.autodarts.io<br>forwards to play.autodarts.com"]
-        auth["api.autodarts.com/auth/v1<br>a made-up token and account are refused<br>with 400 or 401, a session ends"]
+        auth["api.autodarts.com/auth/v1<br>a made-up token and account are refused<br>with 401 and their codes, a session ends"]
         game["api.autodarts.com/gs/v0<br>a made-up token is refused with 401<br>at a lobby and at its seats"]
         values --> page
         page --> forward

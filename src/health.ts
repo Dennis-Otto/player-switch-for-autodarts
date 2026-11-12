@@ -29,12 +29,19 @@ export interface Health {
   lastAttemptAt: number | null;
   /** The last renewal that got answers turned every parked account away. */
   suspectedChange: boolean;
+  /**
+   * The last renewal that got answers had a request that Autodarts refused itself,
+   * as after a change of what its sign-in asks for: the sessions are kept, but they
+   * no longer renew until an update of the extension.
+   */
+  requestRefused: boolean;
 }
 
 export const NO_HEALTH: Health = {
   lastRefreshAt: null,
   lastAttemptAt: null,
   suspectedChange: false,
+  requestRefused: false,
 };
 
 const time = (value: unknown): number | null =>
@@ -45,14 +52,13 @@ export function parseHealth(stored: unknown): Health {
   if (typeof stored !== "object" || stored === null) {
     return NO_HEALTH;
   }
-  const { lastRefreshAt, lastAttemptAt, suspectedChange } = stored as Record<
-    string,
-    unknown
-  >;
+  const { lastRefreshAt, lastAttemptAt, suspectedChange, requestRefused } =
+    stored as Record<string, unknown>;
   return {
     lastRefreshAt: time(lastRefreshAt),
     lastAttemptAt: time(lastAttemptAt),
     suspectedChange: suspectedChange === true,
+    requestRefused: requestRefused === true,
   };
 }
 
@@ -114,6 +120,11 @@ export interface RunCounts {
   rejected: number;
   /** Accounts that Autodarts could not be asked about; they stay as they were. */
   unreachable: number;
+  /**
+   * Of the unreachable accounts, those whose request Autodarts refused itself, as when
+   * its sign-in asks for another field now: the extension may need an update.
+   */
+  requestRefused: number;
 }
 
 /**
@@ -130,7 +141,8 @@ export function looksLikeSignInChanged(run: RunCounts): boolean {
  * account, so a start without a network catches up at the next start; the time of the
  * attempt moves on always, so that such a catch-up is tried at most once per retry time. A run that
  * renews an account clears the suspicion of a change, and one without any answer
- * leaves it as it was.
+ * leaves it as it was. A request that Autodarts refused itself is noted by the run
+ * that has one, and forgotten by the next run that gets answers without one.
  */
 export function recordRun(health: Health, run: RunCounts, now: number): Health {
   let suspectedChange = health.suspectedChange;
@@ -139,10 +151,12 @@ export function recordRun(health: Health, run: RunCounts, now: number): Health {
   } else if (run.renewed > 0) {
     suspectedChange = false;
   }
+  const answered = run.renewed + run.rejected + run.requestRefused > 0;
   return {
     lastRefreshAt: run.unreachable === 0 ? now : health.lastRefreshAt,
     lastAttemptAt: now,
     suspectedChange,
+    requestRefused: answered ? run.requestRefused > 0 : health.requestRefused,
   };
 }
 
@@ -195,14 +209,17 @@ export function badge(
 
 /**
  * The popup suggests an update of the extension while the last run suspected a change
- * at Autodarts and an account still has to sign in again.
+ * at Autodarts and an account still has to sign in again, and at once when Autodarts
+ * refused a request of the last run itself: then nobody has to sign in yet, but the
+ * sessions no longer renew, and only an update of the extension brings that back.
  */
 export function suggestsUpdate(
   health: Health,
   profiles: readonly Attention[],
 ): boolean {
   return (
-    health.suspectedChange && profiles.some((profile) => profile.needsSignIn)
+    health.requestRefused ||
+    (health.suspectedChange && profiles.some((profile) => profile.needsSignIn))
   );
 }
 

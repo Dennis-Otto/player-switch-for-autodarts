@@ -16,6 +16,15 @@ import {
   signIn,
 } from "../src/autodarts.ts";
 import {
+  LOGIN_WITHOUT_PASSWORD,
+  LOGIN_WRONG_PASSWORD,
+  LOGOUT_UNKNOWN_TOKEN,
+  REFRESH_DEAD_TOKEN,
+  REFRESH_WITHOUT_TOKEN,
+  type Recorded,
+  UNREADABLE_BODY,
+} from "./e2e/fake/recorded.ts";
+import {
   accessTokenFor,
   counting,
   jsonResponse,
@@ -27,6 +36,19 @@ const answer =
   () =>
     Promise.resolve(response);
 const throwing: Fetch = () => Promise.reject(new Error("offline"));
+const recorded = ({ status, body }: Recorded): Fetch =>
+  answer(jsonResponse(body, status));
+
+/** The AuthError that a request ends in. */
+async function failure(request: Promise<unknown>): Promise<AuthError> {
+  try {
+    await request;
+  } catch (error) {
+    assert.ok(error instanceof AuthError);
+    return error;
+  }
+  assert.fail("the request was accepted");
+}
 
 test("refreshSession reads the rotated session", async () => {
   const fetcher = answer(
@@ -63,17 +85,81 @@ test("a request that can't be sent is unreachable", async () => {
   });
 });
 
-for (const status of [400, 401]) {
-  test(`status ${status} means the session is rejected`, async () => {
-    await assert.rejects(
-      refreshSession(answer(jsonResponse({}, status)), "x"),
-      (error: AuthError) => {
-        assert.equal(error.kind, "rejected");
-        return true;
-      },
+test("the recorded answer to a dead token rejects the session", async () => {
+  const error = await failure(
+    refreshSession(recorded(REFRESH_DEAD_TOKEN), "x"),
+  );
+  assert.equal(error.kind, "rejected");
+  assert.equal(error.code, "invalid_token");
+  assert.equal(error.requestRefused, false);
+});
+
+test("the recorded answer to a wrong password rejects the sign-in", async () => {
+  const error = await failure(
+    signIn(recorded(LOGIN_WRONG_PASSWORD), "ada", "wrong"),
+  );
+  assert.equal(error.kind, "rejected");
+  assert.equal(error.code, "invalid_credentials");
+  assert.equal(error.requestRefused, false);
+});
+
+test("every 401 rejects the session, whatever its body says", async () => {
+  for (const body of [{}, null, { error: "invalid_request" }, "Unauthorized"]) {
+    const error = await failure(
+      refreshSession(answer(jsonResponse(body, 401)), "x"),
     );
-  });
-}
+    assert.equal(error.kind, "rejected");
+  }
+});
+
+test("a 400 that names a dead session rejects it, in both forms of the sign-in service", async () => {
+  for (const [body, code] of [
+    [{ error: { status: 400, code: "invalid_token" } }, "invalid_token"],
+    [{ error: { code: "invalid_credentials" } }, "invalid_credentials"],
+    [{ error: "invalid_grant" }, "invalid_grant"],
+  ] as const) {
+    const error = await failure(
+      refreshSession(answer(jsonResponse(body, 400)), "x"),
+    );
+    assert.equal(error.kind, "rejected");
+    assert.equal(error.code, code);
+  }
+});
+
+test("a 400 that refuses the request itself keeps the session and is marked as such", async () => {
+  for (const [request, code] of [
+    [refreshSession(recorded(REFRESH_WITHOUT_TOKEN), "x"), "invalid_request"],
+    [signIn(recorded(LOGIN_WITHOUT_PASSWORD), "ada", "pw"), "invalid_request"],
+    [refreshSession(recorded(UNREADABLE_BODY), "x"), "invalid_request"],
+  ] as const) {
+    const error = await failure(request);
+    assert.equal(error.kind, "unreachable");
+    assert.equal(error.requestRefused, true);
+    assert.equal(error.code, code);
+  }
+});
+
+test("a 400 with a body that the extension doesn't know keeps the session as well", async () => {
+  for (const response of [
+    jsonResponse({}, 400),
+    jsonResponse(null, 400),
+    jsonResponse({ error: 7 }, 400),
+    jsonResponse({ error: { code: 7 } }, 400),
+    jsonResponse({ error: { message: "field is required" } }, 400),
+    new Response("Bad Request", { status: 400 }),
+  ]) {
+    const error = await failure(refreshSession(answer(response), "x"));
+    assert.equal(error.kind, "unreachable");
+    assert.equal(error.requestRefused, true);
+    assert.equal(error.code, null);
+  }
+});
+
+test("an AuthError of an outage has no code and no refused request", async () => {
+  const error = await failure(refreshSession(throwing, "x"));
+  assert.equal(error.code, null);
+  assert.equal(error.requestRefused, false);
+});
 
 test("another error status is unreachable", async () => {
   await assert.rejects(
@@ -126,15 +212,22 @@ test("revokeSession tells Autodarts to end the session", async () => {
 
 test("revokeSession counts a session that had ended already as over", async () => {
   for (const status of [400, 401]) {
-    const fetcher = answer(jsonResponse({ error: "invalid_grant" }, status));
-    assert.equal(await revokeSession(fetcher, "token"), true);
+    for (const body of [
+      { error: "invalid_grant" },
+      { error: { status, code: "invalid_token" } },
+    ]) {
+      const fetcher = answer(jsonResponse(body, status));
+      assert.equal(await revokeSession(fetcher, "token"), true);
+    }
   }
+  assert.equal(await revokeSession(recorded(LOGOUT_UNKNOWN_TOKEN), "t"), true);
 });
 
 test("revokeSession doesn't count another refusal as the end of the session", async () => {
   for (const status of [400, 401]) {
     for (const body of [
       jsonResponse({ error: "invalid_request" }, status),
+      jsonResponse({ error: { status, code: "invalid_request" } }, status),
       jsonResponse({ error: "unauthorized_client" }, status),
       jsonResponse(null, status),
       jsonResponse({}, status),
