@@ -288,7 +288,7 @@ die gespeicherten Daten sind darauf vorbereitet:
 | Jemand am Display entfernt Konten oder merkt ein Passwort | Im Modus für Verein und Kneipe nimmt der Service Worker keine Änderung unter **Konten verwalten** und keine Änderung des Modus ohne die Manager-PIN an |
 | Jemand am Display rät eine PIN von Hand | Fünf falsche PINs in Folge sperren jede PIN für eine Minute, gezählt im Service Worker, nicht im Popup |
 | Eine PIN wird aus dem Speicher gelesen | Der Speicher hält einen gesalzenen PBKDF2-Hash mit 600.000 Runden, nie die PIN, und nur der Service Worker und die Seiten der Erweiterung können ihn lesen, [in Firefox](#firefox) auch das Content-Skript |
-| Ein Spieler geht, und die nächsten Spiele zählen für sein Konto | Der Modus für Verein und Kneipe bringt das Display nach einer Pause ohne Eingabe zu einem Hauskonto zurück oder meldet es ab und parkt die Sitzung des Spielers; ein laufendes Match zählt als Eingabe und wird nie unterbrochen |
+| Ein Spieler geht, und die nächsten Spiele zählen für sein Konto | Der Modus für Verein und Kneipe bringt das Display nach einer Pause ohne Eingabe zu einem Hauskonto zurück oder meldet es ab und parkt die Sitzung des Spielers; ein laufendes Match zählt als Eingabe und wird nie unterbrochen, und eine Lobby, die auf Spieler wartet, streckt die Pause auf das Dreifache |
 
 ## Verbleibende Risiken
 

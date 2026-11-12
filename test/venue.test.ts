@@ -13,6 +13,7 @@ import {
   type IdleStep,
   idleTick,
   isPin,
+  LOBBY_STRETCH,
   LOCKOUT_MS,
   type Lockout,
   MAX_FAILURES,
@@ -390,6 +391,7 @@ function input(overrides: Partial<IdleInput>): IdleInput {
     lastActivity: 0,
     now: 10 * MINUTE,
     matchRunning: false,
+    lobbyOpen: false,
     ...overrides,
   };
 }
@@ -446,15 +448,18 @@ test("with no input known yet, as after a restart, the break starts now", () => 
 /**
  * Runs the worker's look at the display once a minute on a fake clock, as its alarm
  * does, and records each step: `matchUntil` is when a match that runs from the start
- * ends, `touches` the minutes with an input on the page.
+ * ends, `lobbyUntil` when a lobby that is open from the start closes, `touches` the
+ * minutes with an input on the page.
  */
 function simulate({
   minutes,
   matchUntil = 0,
+  lobbyUntil = 0,
   touches = [],
 }: {
   minutes: number;
   matchUntil?: number;
+  lobbyUntil?: number;
   touches?: number[];
 }): { minute: number; step: IdleStep }[] {
   const venue: Venue = { ...NO_VENUE, idleMinutes: 10, house: "a" };
@@ -473,6 +478,7 @@ function simulate({
       lastActivity,
       now,
       matchRunning: minute < matchUntil,
+      lobbyOpen: minute < lobbyUntil,
     });
     lastActivity = tick.lastActivity;
     if (tick.step.kind === "switch") {
@@ -496,6 +502,34 @@ test("the break starts only once the match has ended", () => {
   // look that saw it, once.
   assert.deepEqual(simulate({ minutes: 90, matchUntil: 45 }), [
     { minute: 54, step: { kind: "switch", id: "a" } },
+  ]);
+});
+
+test("a lobby that waits for players holds the display beyond the break", () => {
+  // Nobody touches the display while the lobby waits: the set ten minutes pass, and
+  // the display stays; only three times the break returns it.
+  assert.equal(LOBBY_STRETCH, 3);
+  assert.deepEqual(step({ lobbyOpen: true, now: 29 * MINUTE }), {
+    kind: "wait",
+  });
+  assert.deepEqual(step({ lobbyOpen: true, now: 30 * MINUTE }), {
+    kind: "switch",
+    id: "a",
+  });
+});
+
+test("a lobby left alone returns the display in the end, and a closed one at once", () => {
+  // The lobby stays open for two hours that nobody touches the display.
+  assert.deepEqual(simulate({ minutes: 120, lobbyUntil: 121 }), [
+    { minute: 30, step: { kind: "switch", id: "a" } },
+  ]);
+  // The lobby closes after twelve minutes without a tap: the set break is over.
+  assert.deepEqual(simulate({ minutes: 60, lobbyUntil: 12 }), [
+    { minute: 12, step: { kind: "switch", id: "a" } },
+  ]);
+  // A lobby that becomes a match: the break starts once the match has ended.
+  assert.deepEqual(simulate({ minutes: 90, lobbyUntil: 8, matchUntil: 40 }), [
+    { minute: 49, step: { kind: "switch", id: "a" } },
   ]);
 });
 

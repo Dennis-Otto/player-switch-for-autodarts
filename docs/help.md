@@ -350,7 +350,7 @@ Anyone at that display can switch to any account saved on it: it is made for a d
 
 ### The display switched to another player by itself {#returned-after-break}
 
-The [venue mode](shared-display.md#venue-mode) can return the display to a house account, or sign it out, after a break without a tap, a click or a key on the Autodarts page, so that the next games don't count for the player who left. It never interrupts a match: the break starts once the match has ended. The player before keeps their session parked, and a tap brings them back. **Settings** → **For a club or pub** → **Return after a break** sets how long the break is, or turns it off.
+The [venue mode](shared-display.md#venue-mode) can return the display to a house account, or sign it out, after a break without a tap, a click or a key on the Autodarts page, so that the next games don't count for the player who left. It never interrupts a match: the break starts once the match has ended. A lobby that waits for players holds the display for three times the break. The player before keeps their session parked, and a tap brings them back. **Settings** → **For a club or pub** → **Return after a break** sets how long the break is, or turns it off.
 
 ### Several displays
 

@@ -1100,6 +1100,40 @@ test("after a break the display returns to the house account, never during a mat
   assert.equal(fake.autodarts.reuses, 0);
 });
 
+test("a lobby that waits for players holds the display past the break, and the list of lobbies doesn't", async () => {
+  const LOBBY =
+    "https://play.autodarts.com/lobby/0b6f5c1e-7d1a-4a52-9e0f-3c2d8a9b1f47";
+  for (const [url, held] of [
+    [LOBBY, true],
+    [
+      "https://play.autodarts.com/lobbies/0b6f5c1e-7d1a-4a52-9e0f-3c2d8a9b1f47",
+      true,
+    ],
+    ["https://play.autodarts.com/lobbies", false],
+    ["https://play.autodarts.com/lobbies/new/x01", false],
+  ] as const) {
+    const fake = browser();
+    await twoPlayers(fake);
+    fake.local.data.set(VENUE_KEY, { idleMinutes: 5, house: "bob" });
+    // Ten minutes without a tap: twice the set break.
+    fake.sessionArea.data.set(ACTIVITY_KEY, fake.clock - 10 * MINUTE);
+    fake.addTab({ url });
+    await started(fake);
+
+    fake.alarms.onAlarm.fire({ name: IDLE_ALARM });
+    if (held) {
+      await settle();
+      assert.equal((await accounts(fake)).activeId, "ada", url);
+      // Three times the break returns even a lobby that everyone walked away from.
+      fake.clock += 5 * MINUTE;
+      fake.alarms.onAlarm.fire({ name: IDLE_ALARM });
+    }
+    await until(() => fake.pageToken?.startsWith("bob") === true, url);
+    await settle();
+    assert.equal((await accounts(fake)).activeId, "bob", url);
+  }
+});
+
 test("after a break, a sign-out waits while Autodarts can't be reached and works at the next look", async () => {
   const fake = browser();
   await twoPlayers(fake);

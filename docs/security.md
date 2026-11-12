@@ -271,7 +271,7 @@ stored data is ready for that:
 | Someone at the display removes accounts or remembers a password | In the venue mode, the service worker takes no change under **Manage accounts** and no change of the venue mode without the manager PIN |
 | Someone at the display guesses a PIN by hand | Five wrong PINs in a row lock every PIN for a minute, counted in the service worker, not in the popup |
 | A PIN is read out of the storage | The storage holds a salted PBKDF2 hash of 600,000 rounds, never the PIN, and only the service worker and the pages of the extension can read it, [in Firefox](#firefox) the content script as well |
-| A player leaves, and the next games count for their account | The venue mode returns the display to a house account, or signs it out, after a break without input, parking the session of the player; a match that runs counts as input and is never interrupted |
+| A player leaves, and the next games count for their account | The venue mode returns the display to a house account, or signs it out, after a break without input, parking the session of the player; a match that runs counts as input and is never interrupted, and a lobby that waits for players stretches the break to three times its length |
 | An older browser installs the extension and then fails as it runs | The manifest asks for Chrome 140 or newer (`minimum_chrome_version`), the first version in which `chrome.storage.local.setAccessLevel` keeps the accounts from the content script, and Firefox 140 or newer (`strict_min_version`), the first that shows at the install the data that the add-on sends; `scripts/check-extension.mjs` fails on a lower one |
 
 ## Residual risks
