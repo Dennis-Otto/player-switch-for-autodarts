@@ -351,10 +351,12 @@ body.popup:not(:has(:focus-visible)) .key {
   color: var(--accent);
 }
 
-/* "Join the lobby", below the tile of a parked player on a page with a lobby: a row of
-   its own across the card, a target as large as a finger needs. It steps aside while
-   the accounts are managed, as the tiles do. */
-.join {
+/* "Join the lobby", below the tile of a parked player on a page with a lobby, and the
+   own action of the player who plays at a venue display, "Protect with a PIN" or
+   "Remove my account": a row of its own across the card, a target as large as a finger
+   needs. Each steps aside while the accounts are managed, as the tiles do. */
+.join,
+.own {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -371,8 +373,14 @@ body.popup:not(:has(:focus-visible)) .key {
   cursor: pointer;
 }
 
-.join:hover {
+.join:hover,
+.own:hover {
   background: var(--accent-soft);
+}
+
+/* "Remove my account" ends the session at Autodarts, so it reads as the other removals. */
+.own.danger {
+  color: var(--danger);
 }
 
 /* "Join again", below a tile that says "In the lobby": quieter than a first join, as
@@ -382,15 +390,18 @@ body.popup:not(:has(:focus-visible)) .key {
   font-weight: 500;
 }
 
-.join:focus-visible {
+.join:focus-visible,
+.own:focus-visible {
   outline-offset: -3px;
 }
 
-.join[aria-disabled="true"]:hover {
+.join[aria-disabled="true"]:hover,
+.own[aria-disabled="true"]:hover {
   background: transparent;
 }
 
-body.managing .join {
+body.managing .join,
+body.managing .own {
   display: none;
 }
 

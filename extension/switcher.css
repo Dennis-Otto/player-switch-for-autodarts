@@ -141,7 +141,8 @@ h1 {
     monospace;
 }
 
-.join {
+.join,
+.own {
   min-height: 52px;
   font-size: 15px;
   touch-action: manipulation;

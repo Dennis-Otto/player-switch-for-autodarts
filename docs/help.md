@@ -234,9 +234,19 @@ Under **Settings**, a shortcut says:
 >
 > This account asks for its PIN before anyone plays under it.
 
-**What it means:** the [venue mode](shared-display.md#venue-mode) is on at this display, and the account got a PIN on the options page. The extension asks for it before a switch to that account, in the popup and on the Autodarts page alike.
+**What it means:** the [venue mode](shared-display.md#venue-mode) is on at this display, and the account got a PIN, from the manager on the options page or from its player with [**Protect with a PIN**](shared-display.md#own-account). The extension asks for it before a switch to that account, in the popup and on the Autodarts page alike.
 
 **What to do:** type the PIN on the number pad, or with the keyboard, and choose **OK**. **Cancel** changes nothing. A forgotten PIN can't be read anywhere: the manager removes it, or sets a new one, under **Settings** → **For a club or pub** → **PINs of the players**.
+
+### Remove my account {#remove-own}
+
+> PIN of Bob
+>
+> Enter the PIN of this account to remove it from this display.
+
+**What it means:** at a display with a manager PIN, the player of an account with a PIN chose **Remove my account** below its tile and said yes. The PIN of the account removes it without the manager: the extension signs it out at Autodarts and forgets it, with its PIN, [as the guide shows](shared-display.md#own-account).
+
+**What to do:** type the PIN of the account and choose **OK**. **Cancel** keeps the account. A forgotten PIN can't be read anywhere: the manager removes the account under **Manage accounts**.
 
 ### Wrong PIN {#wrong-pin}
 
@@ -268,7 +278,7 @@ Under **Settings**, a shortcut says:
 >
 > Enter the manager PIN to manage the accounts and the settings.
 
-**What it means:** a manager PIN guards **Manage accounts**: removing an account, remembering or forgetting a password. The extension asks for it once as **Manage accounts** opens, and forgets it as it closes.
+**What it means:** a manager PIN guards **Manage accounts**: removing an account, remembering or forgetting a password. The extension asks for it once as **Manage accounts** opens, and forgets it as it closes. A player protects or removes their own account without it, with **Protect with a PIN** and **Remove my account** ([own account](shared-display.md#own-account)).
 
 **What to do:** the manager types it. Forgotten? The PIN can't be read anywhere, but someone who can use the computer can turn the venue mode off, as the [shared display guide](shared-display.md#forgotten-manager-pin) shows; the accounts stay.
 

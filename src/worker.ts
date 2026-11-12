@@ -31,7 +31,9 @@
  * The venue mode, which the options page turns on, comes from `venue.ts`: the worker
  * checks the PIN of every switch to an account that has one, and of its join, and of
  * every change in "Manage accounts" while a manager PIN is set, so neither the popup
- * nor the switcher can go around it, and it returns the display to the house account
+ * nor the switcher can go around it. A player looks after their own account without
+ * the manager: a first PIN for the account that plays, and a removal with the PIN of
+ * the account (decision 0018). It returns the display to the house account
  * after a break that the content script measures, never during a match.
  */
 import {
@@ -69,7 +71,7 @@ import {
   toButtonView,
 } from "./page.ts";
 import { createQueue } from "./queue.ts";
-import { EMPTY, forgetCredentials, toView } from "./state.ts";
+import { EMPTY, forgetCredentials, type State, toView } from "./state.ts";
 import {
   ACCOUNTS_KEY,
   accountsIn,
@@ -91,6 +93,7 @@ import {
   refreshParked,
   rememberPassword,
   removeAccount,
+  type Store,
   signOutForNewAccount,
   startAddingAccount,
   stopAddingAccount,
@@ -118,18 +121,22 @@ import {
 import { createVault, keyStoreIn } from "./vault.ts";
 import {
   ACTIVITY_KEY,
+  addGuests,
   checkPin,
   forgetAccount,
+  forgetGuest,
   hashPin,
   idleTick,
   isPin,
   LOCKOUT_KEY,
+  ownRemovalPin,
   type PinCheck,
   type PinHash,
   parseActivity,
   parseLockout,
   parseVenue,
   pinOf,
+  protectsItself,
   returnsAfterBreak,
   setIdle,
   setManagerPin,
@@ -347,13 +354,15 @@ function removed(removal: Removal): Outcome {
 
 /**
  * The requests that change an account in "Manage accounts", and "unlock", with which
- * the popup or the switcher opens it: each needs the manager PIN while one is set.
+ * the popup or the switcher opens it: each needs the manager PIN while one is set,
+ * apart from what a player does with their own account (see `permit`).
  */
 const MANAGER_ACTIONS: ReadonlySet<string> = new Set([
   "unlock",
   "remember",
   "forgetPassword",
   "removeAccount",
+  "protect",
   "forgetAll",
 ]);
 
@@ -459,9 +468,31 @@ export function startWorker(api: ChromeApi, platform: Platform): StartedWorker {
     return createPage(tabs, (await tab)?.id);
   }
 
+  // The accounts as every change of them reads and saves them. An account saved while a
+  // manager PIN is set is a guest's (decision 0018): the changes run one at a time, each
+  // saving what it loaded, so an id that the last load didn't have is a new account.
+  let loaded: ReadonlySet<string> = new Set();
+  const ids = (state: State) => state.profiles.map((profile) => profile.id);
+  const accounts: Store = {
+    async load() {
+      const state = await store.load();
+      loaded = new Set(ids(state));
+      return state;
+    },
+    async save(state) {
+      await store.save(state);
+      const before = loaded;
+      loaded = new Set(ids(state));
+      const added = ids(state).filter((id) => !before.has(id));
+      if (added.length > 0) {
+        await changeVenue((venue) => addGuests(venue, added));
+      }
+    },
+  };
+
   // What every change of the accounts shares; each one adds the page of its tab.
   const shared: Omit<Deps, "page"> = {
-    store,
+    store: accounts,
     fetcher: (url, init) =>
       platform.fetch(url, {
         ...init,
@@ -603,19 +634,51 @@ export function startWorker(api: ChromeApi, platform: Platform): StartedWorker {
     await api.storage.session.clear();
   }
 
+  /** The account that plays on the page, as the extension keeps it, or null. */
+  async function playing(): Promise<string | null> {
+    return (await shared.queue(() => store.load())).activeId;
+  }
+
+  /**
+   * Whether a request of "Manage accounts" may go on: with the manager PIN while one is
+   * set. A player looks after their own account without the manager (decision 0018):
+   * the account that plays on the page gets a first PIN, and an account with a PIN goes
+   * with that PIN, which counts towards the wrong PINs as at a switch. Answers the
+   * refusal, or null when the request may go on.
+   */
+  async function permit(message: PlayersRequest): Promise<Refusal | null> {
+    if (!MANAGER_ACTIONS.has(message.action)) {
+      return null;
+    }
+    const venue = await loadVenue();
+    if (
+      message.action === "protect" &&
+      protectsItself(venue, message.id, await playing())
+    ) {
+      return null;
+    }
+    // A request with the manager PIN, as from "Manage accounts", is the manager's.
+    const own =
+      message.action === "removeAccount" && message.managerPin === undefined
+        ? ownRemovalPin(venue, message.id)
+        : null;
+    const check =
+      own === null
+        ? await guard(venue.manager, message.managerPin)
+        : await guard(own, message.pin);
+    return check.kind === "ok"
+      ? null
+      : refusal(check, own === null ? "manager" : "player");
+  }
+
   async function runAction(
     message: PlayersRequest,
     tab: Promise<BrowserTab | undefined>,
   ): Promise<Outcome> {
     const deps = { ...shared, page: await pageFor(tab) };
-    if (MANAGER_ACTIONS.has(message.action)) {
-      const check = await guard(
-        (await loadVenue()).manager,
-        message.managerPin,
-      );
-      if (check.kind !== "ok") {
-        return refusal(check, "manager");
-      }
+    const refused = await permit(message);
+    if (refused !== null) {
+      return refused;
     }
     switch (message.action) {
       case "view": {
@@ -738,6 +801,20 @@ export function startWorker(api: ChromeApi, platform: Platform): StartedWorker {
         }
         return removed(removal);
       }
+      case "protect": {
+        const { id } = message;
+        const pin = await newPin(message.newPin);
+        // Only a saved account gets a PIN, as on the options page.
+        const { profiles } = await shared.queue(() => store.load());
+        if (
+          pin === undefined ||
+          !profiles.some((profile) => profile.id === id)
+        ) {
+          return { ok: false, reason: "invalid" };
+        }
+        await changeVenue((venue) => setPlayerPin(venue, id, pin));
+        return { ok: true };
+      }
       case "forgetAll":
         return removed(
           await withPage(
@@ -764,11 +841,24 @@ export function startWorker(api: ChromeApi, platform: Platform): StartedWorker {
       loadVenue(),
       lobbyView(tab),
     ]);
+    const playingNow = view.profiles.find((profile) => profile.active);
     return {
       ...view,
       // Which accounts ask for a PIN, and whether "Manage accounts" does: never a hash.
       profiles: withPins(view.profiles, venue),
-      venue: { manager: venue.manager !== null },
+      venue: {
+        manager: venue.manager !== null,
+        protectable:
+          playingNow !== undefined &&
+          protectsItself(venue, playingNow.id, playingNow.id)
+            ? playingNow.id
+            : null,
+        removable:
+          playingNow !== undefined &&
+          ownRemovalPin(venue, playingNow.id) !== null
+            ? playingNow.id
+            : null,
+      },
       updateHint: suggestsUpdate(health, view.profiles),
       lobby,
     };
@@ -781,7 +871,7 @@ export function startWorker(api: ChromeApi, platform: Platform): StartedWorker {
     return popupView(tab).catch(() => ({
       ...toView(EMPTY, false, 0),
       profiles: [],
-      venue: { manager: false },
+      venue: { manager: false, protectable: null, removable: null },
       updateHint: false,
       lobby: null,
     }));
@@ -881,7 +971,10 @@ export function startWorker(api: ChromeApi, platform: Platform): StartedWorker {
         ) {
           return { ok: false, reason: "invalid" };
         }
-        await changeVenue((venue) => setPlayerPin(venue, id, pin));
+        // The manager takes the account on: its player gives it no PIN by themselves now.
+        await changeVenue((venue) =>
+          forgetGuest(setPlayerPin(venue, id, pin), id),
+        );
         return { ok: true };
       }
       case "idle": {

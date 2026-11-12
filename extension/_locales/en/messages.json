@@ -86,6 +86,23 @@
     "message": "$NAME$ is removed and signed out at Autodarts.",
     "placeholders": { "name": { "content": "$1" } }
   },
+  "protectOwn": {
+    "message": "Protect with a PIN",
+    "description": "The button below the tile of the player who plays, at a display with a manager PIN: that player gives their own account a PIN, without the manager."
+  },
+  "protectedOwn": {
+    "message": "$NAME$ is protected with a PIN now: the account asks for it before anyone plays under it.",
+    "description": "The status line after a player gave their own account a PIN. $NAME$ is the name of the player.",
+    "placeholders": { "name": { "content": "$1" } }
+  },
+  "removeOwn": {
+    "message": "Remove my account",
+    "description": "The button below the tile of the player who plays, at a display with a manager PIN, once the account has a PIN: that player removes their own account with that PIN, without the manager."
+  },
+  "removeOwnPinText": {
+    "message": "Enter the PIN of this account to remove it from this display.",
+    "description": "The text of the question for the PIN of an account before its player removes it."
+  },
   "removedOffline": {
     "message": "$NAME$ is removed from this display. Autodarts can't be reached, so the session there ends only when it expires.",
     "placeholders": { "name": { "content": "$1" } }

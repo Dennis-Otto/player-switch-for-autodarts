@@ -206,6 +206,19 @@ kann.
   bei jeder Änderung unter **Konten verwalten** oder auf der Seite der Einstellungen,
   so kommen weder das Popup noch der Umschalter auf der Autodarts-Seite daran vorbei.
   Das Content-Skript kann die Hashes weder lesen noch diese Anfragen senden.
+- **Ein Spieler kümmert sich ohne den Manager um sein eigenes Konto**
+  ([Entscheidung 0018](decisions/0018-let-a-player-protect-and-remove-their-own-account.md), auf Englisch).
+  Der Service Worker gibt eine erste PIN ohne die Manager-PIN nur dem Konto eines
+  Gastes, das am Display gespeichert wurde, während die Manager-PIN gesetzt war, und
+  nur, während es auf der Seite spielt, solange es keine hat, und nie dem Hauskonto;
+  er entfernt ein Konto ohne die Manager-PIN nur mit der PIN dieses Kontos, nie das
+  Hauskonto, und die PIN zählt wie jede andere zu den falschen PINs. Eine Anfrage mit
+  der Manager-PIN wird allein gegen die Manager-PIN geprüft. So kann ein Gast die PIN
+  eines anderen nicht ersetzen, und das Konto eines Stammspielers, gespeichert vor der
+  Manager-PIN oder vom Manager übernommen, bekommt von dem, der gerade darunter spielt,
+  keine PIN und wird so auch nicht entfernt. Was bleibt: Wer unter dem Konto eines
+  Gastes spielt, das noch keine PIN hat, kann ihm eine geben und es mit dieser PIN
+  entfernen und bei Autodarts abmelden.
 - **Fünf falsche PINs in Folge sperren jede PIN für eine Minute.** Alle PINs des
   Displays teilen sich eine Zahl, und eine richtige PIN setzt sie nicht zurück: Die
   Folge endet erst, wenn eine Minute ohne falsche PIN vergeht. So kann ein Gast die

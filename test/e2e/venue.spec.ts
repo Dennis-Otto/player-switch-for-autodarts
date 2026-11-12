@@ -114,6 +114,64 @@ test("Manage accounts opens with the manager PIN, and a removal takes the PIN al
   expect(stored.venue).toMatchObject({ players: {} });
 });
 
+test("without the manager, the player who plays protects their account with a PIN and removes it with that PIN", async ({
+  autodarts,
+  display,
+}) => {
+  const page = await display.openAutodarts();
+  // The accounts are saved at the display while the manager PIN is set: guests' accounts.
+  const first = await display.popup();
+  await venue(first, { action: "managerPin", pin: "2468" });
+  await first.page.close();
+  const popup = await display.saveAccounts(page, [ALICE, BOB]);
+
+  // Bob plays and has no PIN: his tile offers one, and Alice's, parked, nothing.
+  const own = popup.tile(BOB).locator(".own");
+  await expect(own).toHaveText(display.t("protectOwn"));
+  await expect(own).toHaveAttribute(
+    "aria-label",
+    `${display.t("protectOwn")}: ${BOB.name}`,
+  );
+  await expect(popup.tile(ALICE).locator(".own")).toBeHidden();
+
+  await own.click();
+  const dialog = popup.page.locator("dialog.pin");
+  await expect(dialog.locator("h2")).toHaveText(
+    display.t("newPinFor", BOB.name),
+  );
+  await dialog.locator(".pin-input").fill("4711");
+  await dialog.locator(".pin-input").press("Enter");
+  await expect(dialog.locator("h2")).toHaveText(display.t("repeatPinTitle"));
+  await dialog.locator(".pin-input").fill("4711");
+  await dialog.locator(".pin-input").press("Enter");
+  await popup.ready();
+  await popup.expectStatus(display.t("protectedOwn", BOB.name));
+  await expect(popup.tile(BOB).locator(".pin-mark")).toBeVisible();
+  await expect(own).toHaveText(display.t("removeOwn"));
+
+  // The removal asks for a yes and Bob's PIN, never the manager PIN.
+  await own.click();
+  await popup.page
+    .locator("dialog.confirm[open]")
+    .getByRole("button", { name: display.t("remove") })
+    .click();
+  await expect(dialog.locator("h2")).toHaveText(
+    display.t("pinTitle", BOB.name),
+  );
+  await expect(dialog.locator("#pin-text")).toHaveText(
+    display.t("removeOwnPinText"),
+  );
+  await dialog.locator(".pin-input").fill("4711");
+  await dialog.locator(".pin-input").press("Enter");
+  await popup.ready();
+  await popup.expectStatus(display.t("removed", BOB.name));
+  await popup.expectAccounts([ALICE], null);
+  await expectPlayer(page, null);
+  expect(autodarts.sessionsOf(BOB)).toBe(0);
+  const stored = await display.stored();
+  expect(stored.venue).toMatchObject({ players: {} });
+});
+
 test("the extension keeps no PIN, only a salted hash of it", async ({
   display,
 }) => {

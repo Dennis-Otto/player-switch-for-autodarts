@@ -2,7 +2,8 @@
 // with chrome-stub.js in place of Chrome and its made-up accounts, as the pictures of
 // scripts/screenshots.sh show it (capture.py). axe-core checks the list, "Manage
 // accounts", the form of a remembered password, the question before a removal, an
-// error and the join of a lobby, in every language and both color schemes, the switcher in the Autodarts page
+// error, the join of a lobby and the own action of the player who plays at a venue
+// display, in every language and both color schemes, the switcher in the Autodarts page
 // and the welcome page of the install in every language; the page itself checks that
 // every control is a target of 44 by 44 pixels, that no text is smaller than 12 pixels
 // and that no button text breaks, and that no text of a tile is cut off, in the
@@ -882,6 +883,41 @@ suite("the question for a PIN of the venue mode", {
       "true",
     );
     await page.context().close();
+  });
+
+  test("the player who plays protects their account below its tile, and then may remove it", async () => {
+    for (const page of ["popup", "switcher"]) {
+      for (const lang of ["en", "de"]) {
+        for (const scheme of ["light", "dark"]) {
+          const tab = await open({ page, lang, scheme, manager: true });
+          const view = `the own action of the player in the ${page}, ${lang}, ${scheme}`;
+          const own = control("miakeller", ".own");
+          assert.equal(await tab.isVisible(own), true, view);
+          // The parked players offer nothing of the kind.
+          assert.equal(
+            await tab.isVisible(control("jonasberg", ".own")),
+            false,
+          );
+          await check(tab, view);
+          await tab.click(own);
+          await settle(tab);
+          for (let ask = 0; ask < 2; ask += 1) {
+            assert.equal(await tab.locator("dialog.pin[open]").count(), 1);
+            await tab.keyboard.type("4711");
+            await press(tab, "Enter");
+          }
+          assert.equal(await tab.locator("dialog").count(), 0);
+          assert.equal(
+            await tab.locator(`${control("miakeller", ".own")}.danger`).count(),
+            1,
+            "once the account has a PIN, it offers its removal",
+          );
+          await check(tab, `${view}, with a PIN`);
+          assert.deepEqual(tab.errors, []);
+          await tab.context().close();
+        }
+      }
+    }
   });
 
   test("Manage accounts asks for the manager PIN before it opens", async () => {
