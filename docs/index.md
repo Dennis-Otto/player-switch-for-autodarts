@@ -176,7 +176,7 @@ A copy loaded this way gets no update by itself, so a display does better with t
 
 ## Good to know
 
-- The way the extension keeps a session is not an official Autodarts interface. A change on Autodarts' side can stop it until the extension is adjusted. When Autodarts turns every saved account away at once, the popup says so and links to the known problems and updates, so you look for an update of the extension rather than sign everyone in again.
+- The way the extension keeps a session is not an official Autodarts interface. A change on Autodarts' side can stop it until the extension is adjusted. When Autodarts turns every saved account away at once, or refuses the renewal itself, the popup says so and links to the known problems and updates, so you look for an update of the extension rather than sign everyone in again.
 - It is built for a display that the people of a household, club or venue share and trust: anyone at that display can switch to any saved account. Where not everyone knows everyone, the [venue mode](shared-display.md#venue-mode) adds a manager PIN, a PIN per player and a return to a house account after a break, never during a match.
 - The saved sessions and remembered passwords are stored encrypted, with a key that the browser keeps for the extension and never hands out. A tool or a copy that reads the storage of the extension finds no token and no password in it.
 - **Remove account** ends the session of the account at Autodarts before it deletes it, so no copy of it keeps working, and **Forget all accounts** under **Manage accounts** does so for every account and wipes the extension before a display changes hands. Removing the extension alone signs nobody out at Autodarts: [the help](help.md#forget-all) says more.

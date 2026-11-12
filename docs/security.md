@@ -35,8 +35,9 @@ and never leaves it except to Autodarts itself:
   ids of the last eight lobbies and of the accounts that the extension seated in
   each, for "In the lobby" on their tiles. It holds no token and no name.
 - **When the renewal last ran,** and whether Autodarts turned every parked account
-  away in it, so that the extension catches up on a renewal it missed while the
-  computer was off and can suggest an update of itself. This holds no token and no
+  away in it or refused one of its requests itself, so that the extension catches up
+  on a renewal it missed while the computer was off and can suggest an update of
+  itself. This holds no token and no
   name.
 - **Only after going back to an older version: a copy of the saved accounts** that
   a newer version stored in a format this one can't read, under `accounts.backup`,

@@ -8,7 +8,10 @@
 A switch depends on parts of Autodarts that are no public contract: the key
 `autodarts_refresh_token` under which Autodarts Play keeps its session in
 `localStorage`, the sign-in service `https://api.autodarts.com/auth/v1` with the client
-`autodarts-play`, the answers 400 and 401 for a dead session and a wrong password, and
+`autodarts-play`, the answers 401 with `invalid_token` and `invalid_credentials` for a
+dead session and a wrong password (a 400 with `invalid_request` refuses the request
+itself, and the extension keeps the session then; the check expects exactly the two
+answers, so that a change of the request turns it red), and
 the forward of play.autodarts.io to play.autodarts.com. When Autodarts renames the key
 or moves the service, every switch fails on every display, and an address that answers
 404 counts as an outage, so the extension keeps retrying and never falls back to a

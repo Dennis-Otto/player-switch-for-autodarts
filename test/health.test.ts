@@ -29,7 +29,13 @@ const ranAt = (
   lastRefreshAt: number | null,
   suspectedChange = false,
   lastAttemptAt: number | null = lastRefreshAt,
-): Health => ({ lastRefreshAt, lastAttemptAt, suspectedChange });
+  requestRefused = false,
+): Health => ({
+  lastRefreshAt,
+  lastAttemptAt,
+  suspectedChange,
+  requestRefused,
+});
 
 test("the period of the alarm and the one of the clock agree", () => {
   assert.equal(REFRESH_PERIOD_MS, REFRESH_PERIOD_MINUTES * MINUTE);
@@ -42,6 +48,10 @@ test("parseHealth reads a stored record", () => {
     ranAt(5, true, 7),
   );
   assert.deepEqual(parseHealth({ lastRefreshAt: 5 }), ranAt(5, false, null));
+  assert.deepEqual(
+    parseHealth({ lastRefreshAt: 5, lastAttemptAt: 7, requestRefused: true }),
+    ranAt(5, false, 7, true),
+  );
 });
 
 test("parseHealth starts afresh from anything it doesn't recognise", () => {
@@ -53,6 +63,7 @@ test("parseHealth starts afresh from anything it doesn't recognise", () => {
       lastRefreshAt: "yesterday",
       lastAttemptAt: "today",
       suspectedChange: "yes",
+      requestRefused: 1,
     }),
     NO_HEALTH,
   );
@@ -147,88 +158,199 @@ test("an attempt ahead of the clock does not hold up a catch-up", () => {
 
 test("every parked account turned away in one run hints at a change at Autodarts", () => {
   assert.equal(
-    looksLikeSignInChanged({ renewed: 0, rejected: 2, unreachable: 0 }),
+    looksLikeSignInChanged({
+      renewed: 0,
+      rejected: 2,
+      unreachable: 0,
+      requestRefused: 0,
+    }),
     true,
   );
   assert.equal(
-    looksLikeSignInChanged({ renewed: 0, rejected: 5, unreachable: 0 }),
+    looksLikeSignInChanged({
+      renewed: 0,
+      rejected: 5,
+      unreachable: 0,
+      requestRefused: 0,
+    }),
     true,
   );
 });
 
 test("one account turned away, or some still renewed or unasked, is no such hint", () => {
   assert.equal(
-    looksLikeSignInChanged({ renewed: 0, rejected: 1, unreachable: 0 }),
+    looksLikeSignInChanged({
+      renewed: 0,
+      rejected: 1,
+      unreachable: 0,
+      requestRefused: 0,
+    }),
     false,
   );
   assert.equal(
-    looksLikeSignInChanged({ renewed: 1, rejected: 3, unreachable: 0 }),
+    looksLikeSignInChanged({
+      renewed: 1,
+      rejected: 3,
+      unreachable: 0,
+      requestRefused: 0,
+    }),
     false,
   );
   assert.equal(
-    looksLikeSignInChanged({ renewed: 0, rejected: 3, unreachable: 1 }),
+    looksLikeSignInChanged({
+      renewed: 0,
+      rejected: 3,
+      unreachable: 1,
+      requestRefused: 0,
+    }),
     false,
   );
   assert.equal(
-    looksLikeSignInChanged({ renewed: 0, rejected: 0, unreachable: 0 }),
+    looksLikeSignInChanged({
+      renewed: 0,
+      rejected: 0,
+      unreachable: 0,
+      requestRefused: 0,
+    }),
     false,
   );
 });
 
 test("a run that reached Autodarts for everyone moves the time on", () => {
   assert.deepEqual(
-    recordRun(ranAt(1), { renewed: 2, rejected: 0, unreachable: 0 }, NOW),
+    recordRun(
+      ranAt(1),
+      { renewed: 2, rejected: 0, unreachable: 0, requestRefused: 0 },
+      NOW,
+    ),
     ranAt(NOW),
   );
   assert.deepEqual(
-    recordRun(ranAt(1), { renewed: 0, rejected: 0, unreachable: 0 }, NOW),
+    recordRun(
+      ranAt(1),
+      { renewed: 0, rejected: 0, unreachable: 0, requestRefused: 0 },
+      NOW,
+    ),
     ranAt(NOW),
   );
 });
 
 test("a run without a network for an account keeps the old time, so the next start catches up", () => {
   assert.deepEqual(
-    recordRun(ranAt(1), { renewed: 1, rejected: 0, unreachable: 1 }, NOW),
+    recordRun(
+      ranAt(1),
+      { renewed: 1, rejected: 0, unreachable: 1, requestRefused: 0 },
+      NOW,
+    ),
     ranAt(1, false, NOW),
   );
   assert.deepEqual(
-    recordRun(NO_HEALTH, { renewed: 0, rejected: 0, unreachable: 2 }, NOW),
+    recordRun(
+      NO_HEALTH,
+      { renewed: 0, rejected: 0, unreachable: 2, requestRefused: 0 },
+      NOW,
+    ),
     ranAt(null, false, NOW),
   );
 });
 
 test("a run that turns everyone away records the suspicion of a change", () => {
   assert.deepEqual(
-    recordRun(ranAt(1), { renewed: 0, rejected: 2, unreachable: 0 }, NOW),
+    recordRun(
+      ranAt(1),
+      { renewed: 0, rejected: 2, unreachable: 0, requestRefused: 0 },
+      NOW,
+    ),
     ranAt(NOW, true),
   );
 });
 
 test("a run that renews an account clears the suspicion", () => {
   assert.deepEqual(
-    recordRun(ranAt(1, true), { renewed: 1, rejected: 1, unreachable: 0 }, NOW),
+    recordRun(
+      ranAt(1, true),
+      { renewed: 1, rejected: 1, unreachable: 0, requestRefused: 0 },
+      NOW,
+    ),
     ranAt(NOW),
   );
 });
 
 test("a run with nobody to renew leaves the suspicion as it was", () => {
   assert.deepEqual(
-    recordRun(ranAt(1, true), { renewed: 0, rejected: 0, unreachable: 0 }, NOW),
+    recordRun(
+      ranAt(1, true),
+      { renewed: 0, rejected: 0, unreachable: 0, requestRefused: 0 },
+      NOW,
+    ),
     ranAt(NOW, true),
   );
   assert.deepEqual(
-    recordRun(ranAt(1, true), { renewed: 0, rejected: 1, unreachable: 0 }, NOW),
+    recordRun(
+      ranAt(1, true),
+      { renewed: 0, rejected: 1, unreachable: 0, requestRefused: 0 },
+      NOW,
+    ),
     ranAt(NOW, true),
+  );
+});
+
+test("a run in which Autodarts refused a request itself notes it, keeps the old time and retries soon", () => {
+  const run = { renewed: 0, rejected: 0, unreachable: 2, requestRefused: 2 };
+  assert.deepEqual(recordRun(ranAt(1), run, NOW), ranAt(1, false, NOW, true));
+  assert.equal(nextRunAt(run, NOW), NOW + RETRY_MS);
+  // Beside an account that still renews, the refusal is noted all the same.
+  assert.deepEqual(
+    recordRun(
+      ranAt(1),
+      { renewed: 1, rejected: 0, unreachable: 1, requestRefused: 1 },
+      NOW,
+    ),
+    ranAt(1, false, NOW, true),
+  );
+});
+
+test("the next run that gets answers without a refused request forgets it, one without answers keeps it", () => {
+  const refused = ranAt(1, false, 1, true);
+  assert.deepEqual(
+    recordRun(
+      refused,
+      { renewed: 1, rejected: 0, unreachable: 0, requestRefused: 0 },
+      NOW,
+    ),
+    ranAt(NOW),
+  );
+  assert.deepEqual(
+    recordRun(
+      refused,
+      { renewed: 0, rejected: 1, unreachable: 0, requestRefused: 0 },
+      NOW,
+    ),
+    ranAt(NOW),
+  );
+  assert.deepEqual(
+    recordRun(
+      refused,
+      { renewed: 0, rejected: 0, unreachable: 2, requestRefused: 0 },
+      NOW,
+    ),
+    ranAt(1, false, NOW, true),
   );
 });
 
 test("the next run comes a period later, or soon when an account could not be asked", () => {
   assert.equal(
-    nextRunAt({ renewed: 2, rejected: 1, unreachable: 0 }, NOW),
+    nextRunAt(
+      { renewed: 2, rejected: 1, unreachable: 0, requestRefused: 0 },
+      NOW,
+    ),
     NOW + REFRESH_PERIOD_MS,
   );
   assert.equal(
-    nextRunAt({ renewed: 2, rejected: 0, unreachable: 1 }, NOW),
+    nextRunAt(
+      { renewed: 2, rejected: 0, unreachable: 1, requestRefused: 0 },
+      NOW,
+    ),
     NOW + RETRY_MS,
   );
   assert.ok(RETRY_MS < REFRESH_PERIOD_MS);
@@ -292,6 +414,12 @@ test("the popup suggests an update only while a suspected change still locks som
   assert.equal(suggestsUpdate(ranAt(NOW, true), [ada, bob]), true);
   assert.equal(suggestsUpdate(ranAt(NOW, true), [ada]), false);
   assert.equal(suggestsUpdate(ranAt(NOW, false), [ada, bob]), false);
+});
+
+test("the popup suggests an update at once when Autodarts refused a request itself, though nobody has to sign in", () => {
+  assert.equal(suggestsUpdate(ranAt(NOW, false, NOW, true), [ada]), true);
+  assert.equal(suggestsUpdate(ranAt(NOW, false, NOW, true), []), true);
+  assert.equal(suggestsUpdate(ranAt(NOW, false, NOW, false), [ada]), false);
 });
 
 test("renewedAgo says in minutes how long ago a session was renewed within the hour", () => {
