@@ -32,6 +32,7 @@ on:
       - scripts/upstream-contract.ts
       - scripts/chrome-for-testing.sh
       - src/autodarts.ts
+      - src/page.ts
   workflow_dispatch:
 
 permissions: {}

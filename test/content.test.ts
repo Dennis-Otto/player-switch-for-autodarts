@@ -6,6 +6,7 @@ import { type Context, createContext, runInContext } from "node:vm";
 
 import { SESSION_KEY } from "../src/autodarts.ts";
 import type { PageButtonView } from "../src/messages.ts";
+import { isMatchPage, LOBBY_ROUTE, MATCH_ROUTE } from "../src/page.ts";
 
 // The content script, run as Chrome runs it: a classic script, in a world of its own
 // beside an Autodarts page (happy-dom), with a fake `chrome`. A second run in the same
@@ -530,7 +531,7 @@ test("a script that an update cut off steps aside, and its button reloads the pa
 test("on a match page, the button of a cut-off script reloads only after a yes", async () => {
   for (const confirms of [false, true]) {
     const tab = page({
-      url: "https://play.autodarts.com/matches/42",
+      url: `https://play.autodarts.com/${MATCH_ROUTE}/42`,
       confirms,
     });
     tab.chrome.button = VIEW;
@@ -541,7 +542,30 @@ test("on a match page, the button of a cut-off script reloads only after a yes",
 
     button.click();
     assert.deepEqual(tab.questions, ["reloadAfterUpdate"]);
-    assert.deepEqual(tab.reloads, confirms ? ["/matches/42"] : []);
+    assert.deepEqual(tab.reloads, confirms ? [`/${MATCH_ROUTE}/42`] : []);
+  }
+});
+
+test("the content script asks before a reload exactly where isMatchPage sees a match, with the route of page.ts", async () => {
+  // The content script can't import page.ts and keeps its own copy of the route.
+  for (const path of [
+    `/${MATCH_ROUTE}/42`,
+    `/${MATCH_ROUTE}/42/`,
+    `/${MATCH_ROUTE}/`,
+    "/history/matches/42",
+    `/${LOBBY_ROUTE}/42`,
+    "/",
+  ]) {
+    const url = `https://play.autodarts.com${path}`;
+    const tab = page({ url, confirms: false });
+    tab.chrome.button = VIEW;
+    tab.run();
+    await settle();
+    const button = tab.button();
+    tab.chrome.runtime.id = undefined;
+
+    button.click();
+    assert.equal(tab.questions.length > 0, isMatchPage(url), path);
   }
 });
 

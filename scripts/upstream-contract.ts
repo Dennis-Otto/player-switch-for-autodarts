@@ -1,12 +1,12 @@
 // Checks that Autodarts still works the way the extension relies on: the key under
 // which Autodarts Play keeps its session, the sign-in service and the client that it
-// signs in as, the answer to a dead session and to a wrong password, the end of a
-// session, the lobby of a board and a seat in it, and the forwarding of
-// play.autodarts.io. None of it is a public contract of Autodarts, so this is how a
+// signs in as, the addresses of a match and of a lobby in the page, the answer to a
+// dead session and to a wrong password, the end of a session, the lobby of a board and
+// a seat in it, and the forwarding of play.autodarts.io. None of it is a public contract of Autodarts, so this is how a
 // change shows up before a player notices it.
 // .github/workflows/upstream.yml runs this file every day; test/upstream-contract.test.ts
-// tests it. No dependencies: the values come from src/autodarts.ts, and the requests
-// to the sign-in service and the game service go through the functions of the
+// tests it. No dependencies: the values come from src/autodarts.ts and src/page.ts,
+// and the requests to the sign-in service and the game service go through the functions of the
 // extension itself, so neither can drift apart from what the extension does.
 //
 //   node scripts/upstream-contract.ts
@@ -35,6 +35,7 @@ import {
   signIn,
   WRONG_PASSWORD_CODE,
 } from "../src/autodarts.ts";
+import { LOBBY_ROUTE, MATCH_ROUTE } from "../src/page.ts";
 
 /** Keeps a message on the one line of a workflow command of GitHub. */
 export const escapeData = (text: string): string =>
@@ -74,7 +75,7 @@ export interface Place {
   readonly text: string;
 }
 
-/** What the extension expects of Autodarts; CONTRACT holds the values of src/autodarts.ts. */
+/** What the extension expects of Autodarts; CONTRACT holds the values of src/autodarts.ts and src/page.ts. */
 export interface Contract {
   readonly playOrigin: string;
   readonly oldPlayOrigin: string;
@@ -82,6 +83,10 @@ export interface Contract {
   readonly authBase: string;
   readonly clientId: string;
   readonly gameBase: string;
+  /** The first part of the address of a match that runs, `/matches/<id>`. */
+  readonly matchRoute: string;
+  /** The first part of the address of a lobby, `/lobby/<id>`. */
+  readonly lobbyRoute: string;
 }
 
 export const CONTRACT: Contract = {
@@ -91,6 +96,8 @@ export const CONTRACT: Contract = {
   authBase: AUTH_BASE,
   clientId: CLIENT_ID,
   gameBase: GAME_BASE,
+  matchRoute: MATCH_ROUTE,
+  lobbyRoute: LOBBY_ROUTE,
 };
 
 /** The places that rely on each part of the contract, the fake Autodarts of the end-to-end tests among them. */
@@ -114,6 +121,16 @@ export const placesOf = (contract: Contract) => {
     ],
     forward: [
       { file: "src/page.ts", text: new URL(contract.oldPlayOrigin).host },
+    ],
+    matchRoute: [
+      { file: "src/page.ts", text: `"${contract.matchRoute}"` },
+      { file: "src/content.ts", text: `"${contract.matchRoute}"` },
+      { file: "test/e2e/switching.spec.ts", text: `/${contract.matchRoute}/` },
+      { file: "test/e2e/accounts.spec.ts", text: `/${contract.matchRoute}/` },
+    ],
+    lobbyRoute: [
+      { file: "src/page.ts", text: `"${contract.lobbyRoute}"` },
+      { file: "test/e2e/lobby.spec.ts", text: `/${contract.lobbyRoute}/` },
     ],
     refresh: [
       { file: "src/autodarts.ts", text: '"/refresh"' },
@@ -236,41 +253,118 @@ export const scriptsOf = (html: string, pageUrl: string): string[] => {
 };
 
 /**
- * Looks for the key of the session, the sign-in service and the client in the code
- * of Autodarts Play: its page, then its scripts one after another, until each is
- * found. A visit of a player loads every script; this stops at the one that has them.
+ * The script of a route of Autodarts Play whose address is `/<route>/<id>`, as its
+ * router and Vite name it: `matches_._matchId-D9YCnlHE.js` for `/matches/<id>` and
+ * `lobby._lobbyId-C_du1iQ6.js` for `/lobby/<id>`. The page names these scripts, and
+ * their names change with the routes, not with a build: only the hash at the end does.
+ */
+export const routeScript = (route: string): RegExp => {
+  const literal = route.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  return new RegExp(`/${literal}_?\\._[A-Za-z]\\w*-[\\w-]+\\.js\\b`);
+};
+
+/** Something that the code of Autodarts Play has to have, and how to find it in a text. */
+interface Wanted {
+  readonly what: string;
+  readonly expected: string;
+  readonly places: readonly Place[];
+  /** Where the text has it, as the report says it, or undefined. */
+  readonly find: (code: string, path: string) => string | undefined;
+}
+
+/** A value that the code has to have as it is. */
+const value = (
+  what: string,
+  text: string,
+  playOrigin: string,
+  places: readonly Place[],
+): Wanted => ({
+  what,
+  expected: `\`${text}\` in the code of ${playOrigin}`,
+  places,
+  find: (code, path) => (code.includes(text) ? `in ${path}` : undefined),
+});
+
+/** A route of the page, which the name of its script gives away. */
+const route = (
+  what: string,
+  name: string,
+  playOrigin: string,
+  places: readonly Place[],
+): Wanted => {
+  const pattern = routeScript(name);
+  return {
+    what,
+    expected: `a script of the route \`/${name}/<id>\` in the code of ${playOrigin}`,
+    places,
+    find: (code, path) => {
+      const script = pattern.exec(code)?.[0];
+      return script === undefined
+        ? undefined
+        : `\`${script.slice(1)}\` in ${path}`;
+    },
+  };
+};
+
+/**
+ * Looks for the key of the session, the sign-in service, the client and the routes of
+ * a match and of a lobby in the code of Autodarts Play: its page, then its scripts one
+ * after another, until each is found. A visit of a player loads every script; this
+ * stops at the one that has them.
  */
 export const checkPage = async (
   requests: Requests,
   contract: Contract,
 ): Promise<Finding[]> => {
   const places = placesOf(contract);
+  const origin = contract.playOrigin;
   const wanted = [
-    {
-      what: "The key of the session in the page",
-      value: contract.sessionKey,
-      places: places.sessionKey,
-    },
-    {
-      what: "The sign-in service",
-      value: contract.authBase,
-      places: places.authBase,
-    },
-    {
-      what: "The client that Autodarts Play signs in as",
-      value: contract.clientId,
-      places: places.clientId,
-    },
+    value(
+      "The key of the session in the page",
+      contract.sessionKey,
+      origin,
+      places.sessionKey,
+    ),
+    value("The sign-in service", contract.authBase, origin, places.authBase),
+    value(
+      "The client that Autodarts Play signs in as",
+      contract.clientId,
+      origin,
+      places.clientId,
+    ),
+    route(
+      "The address of a match",
+      contract.matchRoute,
+      origin,
+      places.matchRoute,
+    ),
+    route(
+      "The address of a lobby",
+      contract.lobbyRoute,
+      origin,
+      places.lobbyRoute,
+    ),
   ];
-  const where = new Map<string, string>();
-  const page = `${contract.playOrigin}/`;
+  const where = new Map<Wanted, string>();
+  const search = (code: string, path: string): void => {
+    for (const item of wanted) {
+      const found = where.has(item) ? undefined : item.find(code, path);
+      if (found !== undefined) {
+        where.set(item, found);
+      }
+    }
+  };
+  const page = `${origin}/`;
   let failure: string | undefined;
   let scripts: string[] = [];
   let unloaded = 0;
   try {
     const response = await requests.fetch(page, {});
     if (response.ok) {
-      scripts = scriptsOf(await response.text(), response.url || page);
+      const address = response.url || page;
+      const html = await response.text();
+      search(html, new URL(address).pathname);
+      scripts = scriptsOf(html, address);
     } else {
       failure = `the page answered ${response.status}`;
     }
@@ -293,24 +387,19 @@ export const checkPage = async (
       unloaded += 1;
       continue;
     }
-    const path = new URL(script).pathname;
-    for (const { value } of wanted) {
-      if (!where.has(value) && code.includes(value)) {
-        where.set(value, path);
-      }
-    }
+    search(code, new URL(script).pathname);
   }
   const missing =
     failure ??
     `missing from the page and its ${scripts.length} ${scripts.length === 1 ? "script" : "scripts"}${unloaded > 0 ? `, ${unloaded} of which didn't load` : ""}`;
-  return wanted.map(({ what, value, places: placesOfValue }) => {
-    const path = where.get(value);
+  return wanted.map((item) => {
+    const found = where.get(item);
     return {
-      what,
-      expected: `\`${value}\` in the code of ${contract.playOrigin}`,
-      found: path === undefined ? missing : `in ${path}`,
-      ok: path !== undefined,
-      places: placesOfValue,
+      what: item.what,
+      expected: item.expected,
+      found: found ?? missing,
+      ok: found !== undefined,
+      places: item.places,
     };
   });
 };

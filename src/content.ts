@@ -47,6 +47,8 @@
     return;
   }
   const SESSION_KEY = "autodarts_refresh_token";
+  // The first part of the address of a match, MATCH_ROUTE of page.ts, which a test compares.
+  const MATCH_ROUTE = "matches";
   // Marks the elements of the page that the open switcher made inert, so that the script
   // of a later version can make them usable again when it takes over.
   const INERT_MARK = "data-player-switch-inert";
@@ -394,7 +396,7 @@
       // brings it, and on a match page that ends the match, so it asks first there.
       retire();
       if (
-        !/^\/matches\/[^/]+/.test(window.location.pathname) ||
+        !new RegExp(`^/${MATCH_ROUTE}/[^/]+`).test(window.location.pathname) ||
         window.confirm(reloadQuestion)
       ) {
         window.location.reload();

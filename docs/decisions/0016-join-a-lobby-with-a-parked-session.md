@@ -103,3 +103,7 @@ seats and expects 401, so a change of the game service shows before a player not
   settings of a new one, neither a lobby yet. The game service keeps its own address,
   `api.autodarts.com/gs/v0/lobbies/<id>`, which the daily check watches. The tests
   and the fake Autodarts of the end-to-end tests open the lobby at `/lobby/<uuid>`.
+  Since 2026-11-12 the daily check watches the address of the page as well: it looks
+  for the script of the route `/lobby/<id>` that the page names, from `LOBBY_ROUTE` of
+  `src/page.ts`, so a renamed address turns the check red before a player misses the
+  join.
