@@ -1138,11 +1138,11 @@ export function startWorker(api: ChromeApi, platform: Platform): StartedWorker {
    * Returns the display to the house account, or signs it out, once the break of the
    * venue mode is over: `venue.ts` decides, from the last input on the page and the
    * accounts, and a match that runs in any Autodarts tab counts as input, so the return
-   * never ends one; a lobby in any Autodarts tab stretches the break. A switch or a sign-out parks the session of the player before. With
-   * no Autodarts tab open there is nothing to return; a house account that Autodarts
-   * can't reach now is tried again at the next look, as is a sign-out while Autodarts
-   * can't say whose the session in the page is, and one that has to sign in again signs
-   * the page out then.
+   * never ends one; a lobby in any Autodarts tab stretches the break. A switch or a
+   * sign-out parks the session of the player before. With no Autodarts tab open there
+   * is nothing to return; a house account that Autodarts can't reach now is tried again
+   * at the next look, as is a sign-out while Autodarts can't say whose the session in
+   * the page is, and one that has to sign in again signs the page out then.
    */
   function returnAfterBreak(): Promise<void> {
     returning ??= (async () => {

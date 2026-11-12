@@ -393,8 +393,8 @@ export type IdleStep =
  * ended. A lobby that waits for players stretches the break to `LOBBY_STRETCH` times
  * its length, so that nobody has to tap the screen while an opponent joins, and a lobby
  * left alone still returns the display in the end. With no input known yet, as after a
- * restart of the browser, the break starts now. A house account that has to sign in again can't take over the page, so the page
- * signs out instead.
+ * restart of the browser, the break starts now. A house account that has to sign in
+ * again can't take over the page, so the page signs out instead.
  */
 export function idleTick(input: IdleInput): {
   step: IdleStep;
