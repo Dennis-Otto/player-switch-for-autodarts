@@ -22,7 +22,10 @@ import {
   htmlText,
   ITEM_ID,
   listingsOf,
+  main,
   pageUrl,
+  pasteListing,
+  pasteText,
   plainText,
   readListing,
   readPage,
@@ -600,5 +603,58 @@ test("the workflow runs the file itself, which writes the report", async () => {
       /::error file=store\/listing\.en\.md,title=The check can't read the store::The page didn't answer \(offline\)/,
     );
     assert.match(readFileSync(file, "utf8"), /\| can't tell \| can't tell \|/);
+  });
+});
+
+test("a text to paste has each paragraph and each bullet on one line, as the store keeps the line breaks", () => {
+  assert.equal(
+    pasteText(`\n${DETAILED.replaceAll("\n", "\r\n")}\n\n`),
+    "Share one display.\n\nHow it works:\n\n• Save each account once: a tap on a tile puts that account on the board.\n• Accounts that sign in with Google or Apple can't use this.",
+  );
+  assert.equal(
+    pasteText("A wrapped\nparagraph.\n  \nAnother."),
+    "A wrapped paragraph.\n\nAnother.",
+  );
+  // What the dashboard gets is what the check compares, once collapsed.
+  for (const code of listingsOf(ROOT)) {
+    const markdown = readFileSync(
+      join(ROOT, "store", `listing.${code}.md`),
+      "utf8",
+    );
+    const texts = readListing(markdown);
+    assert.ok("detailed" in texts);
+    const paste = pasteListing(markdown);
+    assert.ok(paste.includes(`\n${texts.short}\n`), code);
+    const detailed = paste.split("--- Detailed description ---\n")[1] ?? "";
+    assert.equal(plainText(detailed), texts.detailed, code);
+    // No line ends in the middle of a sentence.
+    assert.doesNotMatch(detailed, /[^.:!?\n]\n[^•\n]/, code);
+  }
+  assert.throws(
+    () => pasteListing("# Listing\n"),
+    /The file has no section "## Short description"/,
+  );
+});
+
+test("--print writes the descriptions of a language ready to paste, and names the codes otherwise", async () => {
+  await withRoot(async (root) => {
+    const lines: string[] = [];
+    const log = (line: string) => lines.push(line);
+    assert.equal(await main(["--print", "en"], {}, log, root), 0);
+    assert.equal(
+      lines.join("\n"),
+      `--- Short description ---\n${SHORT}\n\n--- Detailed description ---\n${pasteText(DETAILED)}\n`,
+    );
+    for (const args of [["--print"], ["--print", "xx"]]) {
+      lines.length = 0;
+      assert.equal(await main(args, {}, log, root), 2);
+      assert.deepEqual(lines, [
+        "Usage: node scripts/store-listing.ts --print <code>, with a code of store/listing.<code>.md: de, en.",
+      ]);
+    }
+    // Without --print, the check runs.
+    const { fetcher, asked } = store(SAME);
+    assert.equal(await main([], {}, log, root, fetcher), 0);
+    assert.equal(asked.length, 2);
   });
 });

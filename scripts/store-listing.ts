@@ -123,6 +123,41 @@ const JUSTIFICATIONS = "Permission justifications";
  * after it, whose heading each language words in its own way.
  */
 export const readListing = (markdown: string): Texts => {
+  const texts = listingSections(markdown);
+  return "problem" in texts
+    ? texts
+    : { short: plainText(texts.short), detailed: plainText(texts.detailed) };
+};
+
+/**
+ * A section of a file of store/ as the dashboard takes it. The store keeps each line
+ * break of a paste, and the files are wrapped, so each paragraph and each bullet (•)
+ * becomes one line, and a blank line stays between the paragraphs.
+ */
+export const pasteText = (body: string): string =>
+  body
+    .replaceAll("\r\n", "\n")
+    .trim()
+    .split(/\n[ \t]*\n/)
+    .map((paragraph) =>
+      paragraph
+        .split(/\n(?=[ \t]*•)/)
+        .map(plainText)
+        .join("\n"),
+    )
+    .join("\n\n");
+
+/** The descriptions of a file of store/, ready to paste into the dashboard. */
+export const pasteListing = (markdown: string): string => {
+  const texts = listingSections(markdown);
+  if ("problem" in texts) {
+    throw new Error(`The file ${texts.problem}.`);
+  }
+  return `--- ${SHORT} ---\n${pasteText(texts.short)}\n\n--- Detailed description ---\n${pasteText(texts.detailed)}\n`;
+};
+
+/** The two sections of the descriptions, as the file has them. */
+const listingSections = (markdown: string): Texts => {
   const sections = markdown
     .replaceAll("\r\n", "\n")
     .split(/^## /m)
@@ -141,10 +176,7 @@ export const readListing = (markdown: string): Texts => {
       problem: `has no section "## ${SHORT}" followed by the section of the detailed description`,
     };
   }
-  return {
-    short: plainText(short.body),
-    detailed: plainText(detailed.body),
-  };
+  return { short: short.body, detailed: detailed.body };
 };
 
 /** The descriptions on a page of the store, and the version it names, if any. */
@@ -499,6 +531,36 @@ export const run = async (
   return failed ? 1 : 0;
 };
 
+/**
+ * The command line: `--print <code>` writes the descriptions of store/listing.<code>.md
+ * ready to paste; without arguments, the check runs.
+ */
+export const main = async (
+  args: readonly string[],
+  env: NodeJS.ProcessEnv,
+  log: (line: string) => void = console.log,
+  root: string = ROOT,
+  fetcher: Fetch = fetch,
+): Promise<number> => {
+  if (args[0] !== "--print") {
+    return run(env, fetcher, log, root);
+  }
+  const codes = listingsOf(root);
+  const code = args[1];
+  if (code === undefined || !codes.includes(code)) {
+    log(
+      `Usage: node scripts/store-listing.ts --print <code>, with a code of store/listing.<code>.md: ${codes.join(", ")}.`,
+    );
+    return 2;
+  }
+  log(
+    pasteListing(
+      readFileSync(join(root, "store", `listing.${code}.md`), "utf8"),
+    ),
+  );
+  return 0;
+};
+
 if (import.meta.main) {
-  process.exitCode = await run(process.env);
+  process.exitCode = await main(process.argv.slice(2), process.env);
 }
