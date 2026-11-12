@@ -127,6 +127,24 @@ export function isPlayPage(url: string | undefined): boolean {
 }
 
 /**
+ * The first part of the address of a match that runs in Autodarts Play,
+ * `/matches/<id>`. `src/content.ts` keeps a copy, which a test compares, and the
+ * workflow Upstream checks every day that Autodarts Play still has this route.
+ */
+export const MATCH_ROUTE = "matches";
+
+/**
+ * The first part of the address of a lobby, as Autodarts Play shows it: `/lobby/<id>`.
+ * The workflow Upstream checks every day that Autodarts Play still has this route.
+ */
+export const LOBBY_ROUTE = "lobby";
+
+/** The first part of the address of a lobby in older links of the community, `/lobbies/<id>`. */
+const OLD_LOBBY_ROUTE = "lobbies";
+
+const MATCH_PATH = new RegExp(`^/${MATCH_ROUTE}/[^/]+`);
+
+/**
  * The address is a match that runs in Autodarts Play, `/matches/<id>`. A switch
  * reloads the page and so ends the match on that display. The history of a match
  * that has ended, under `/history/`, is no match that runs.
@@ -136,7 +154,7 @@ export function isMatchPage(url: string | undefined): boolean {
   return (
     parsed !== null &&
     PLAY_ORIGINS.includes(parsed.origin) &&
-    /^\/matches\/[^/]+/.test(parsed.pathname)
+    MATCH_PATH.test(parsed.pathname)
   );
 }
 
@@ -146,8 +164,10 @@ export function isMatchPage(url: string | undefined): boolean {
  * `/lobbies` alone is the list of the open lobbies, and `/lobbies/new/<game>` sets up
  * a new one; neither is a lobby yet.
  */
-const LOBBY_PATH =
-  /^\/lobb(?:y|ies)\/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})\/?$/i;
+const LOBBY_PATH = new RegExp(
+  `^/(?:${LOBBY_ROUTE}|${OLD_LOBBY_ROUTE})/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})/?$`,
+  "i",
+);
 
 /**
  * The lobby that an address of Autodarts Play shows, or null for any other address.

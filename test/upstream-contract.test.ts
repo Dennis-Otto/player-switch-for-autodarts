@@ -21,6 +21,7 @@ import {
   OLD_PLAY_ORIGIN,
   placesOf,
   Requests,
+  routeScript,
   run,
   scriptsOf,
   summary,
@@ -33,6 +34,7 @@ import {
   PLAY_ORIGIN,
   SESSION_KEY,
 } from "../src/autodarts.ts";
+import { LOBBY_ROUTE, MATCH_ROUTE } from "../src/page.ts";
 import {
   LOGIN_WRONG_PASSWORD,
   LOGOUT_UNKNOWN_TOKEN,
@@ -47,14 +49,23 @@ test("escapeData keeps a message on the one line of a workflow command", () => {
   assert.equal(escapeData("100% done\r\nnext"), "100%25 done%0D%0Anext");
 });
 
+/** The scripts of the routes of a match and of a lobby, as Autodarts Play named them on 2026-11-12. */
+const MATCH_SCRIPT = "matches_._matchId-D9YCnlHE.js";
+const LOBBY_SCRIPT = "lobby._lobbyId-C_du1iQ6.js";
+
 /** The start page of the fake Autodarts Play, with its scripts as Vite writes them. */
-const PAGE = `<!doctype html><html><head>
+const pageWith = (
+  routes: readonly string[],
+): string => `<!doctype html><html><head>
 <script type="module" crossorigin src="/assets/index.js"></script>
 <link rel="modulepreload" crossorigin href="/assets/vendor.js">
 <link rel="modulepreload" crossorigin href="/assets/auth.js">
 <link rel="modulepreload" crossorigin href="/assets/late.js">
+${routes.map((route) => `<link rel="modulepreload" crossorigin href="/assets/${route}">`).join("\n")}
 <link rel="stylesheet" href="/assets/style.css">
 </head><body><div id="root"></div></body></html>`;
+
+const PAGE = pageWith([MATCH_SCRIPT, LOBBY_SCRIPT]);
 
 /** The minified code of Autodarts Play that keeps its session and signs in. */
 const AUTH_CODE = `var o=\`${AUTH_BASE}\`,s=\`${CLIENT_ID}\`;function E(e,t){n.set(\`${SESSION_KEY}\`,t)}`;
@@ -95,6 +106,8 @@ const ANSWERS: Record<string, Answer> = {
   [`${PLAY_ORIGIN}/assets/vendor.js`]: () => text("var react = {};"),
   [`${PLAY_ORIGIN}/assets/auth.js`]: () => text(AUTH_CODE),
   [`${PLAY_ORIGIN}/assets/late.js`]: () => text("var late = 1;"),
+  [`${PLAY_ORIGIN}/assets/${MATCH_SCRIPT}`]: () => text("var match = 1;"),
+  [`${PLAY_ORIGIN}/assets/${LOBBY_SCRIPT}`]: () => text("var lobby = 1;"),
   [`${OLD_PLAY_ORIGIN}/lobbies`]: () =>
     new Response(null, {
       status: 301,
@@ -175,9 +188,10 @@ test("Autodarts as it is passes every check, with a handful of requests and made
     );
     assert.doesNotMatch(report, /\*\*changed\*\*/);
   });
-  assert.equal(lines.length, 9);
+  assert.equal(lines.length, 11);
   assert.ok(lines.every((line) => !line.startsWith("::error")));
-  // The search stops at the script that has everything; the page has one more.
+  // The page names the routes, and the search stops at the script that has the rest;
+  // the page has three more.
   assert.deepEqual(fake.requests, [
     `GET ${PLAY_ORIGIN}/`,
     `GET ${PLAY_ORIGIN}/assets/index.js`,
@@ -223,7 +237,7 @@ test("a renamed key of the session fails the check and names every place that re
     const report = readFileSync(file, "utf8");
     assert.match(
       report,
-      /\| The key of the session in the page \| `autodarts_refresh_token` in the code of https:\/\/play\.autodarts\.com \| missing from the page and its 4 scripts \| \*\*changed\*\* \|/,
+      /\| The key of the session in the page \| `autodarts_refresh_token` in the code of https:\/\/play\.autodarts\.com \| missing from the page and its 6 scripts \| \*\*changed\*\* \|/,
     );
     const change = report
       .split("\n")
@@ -261,7 +275,7 @@ test("a change of the expected key or sign-in service on this side fails the che
   const findings = await checkPage(requestsOf(fake), contract);
   assert.deepEqual(
     findings.map((finding) => finding.ok),
-    [false, false, true],
+    [false, false, true, true, true],
   );
   const report = summary(findings, 6);
   assert.match(report, /6 requests reached Autodarts/);
@@ -290,7 +304,7 @@ test("a page that doesn't load fails every check of its code, without a request 
   ] as const) {
     const fake = autodarts({ [`${PLAY_ORIGIN}/`]: answer });
     const findings = await checkPage(requestsOf(fake), CONTRACT);
-    assert.equal(findings.length, 3);
+    assert.equal(findings.length, 5);
     for (const finding of findings) {
       assert.equal(finding.ok, false);
       assert.equal(finding.found, found);
@@ -308,7 +322,7 @@ test("scripts that don't load are counted and skipped", async () => {
   const findings = await checkPage(requestsOf(fake), CONTRACT);
   assert.equal(
     byWhat(findings, "The sign-in service").found,
-    "missing from the page and its 4 scripts, 2 of which didn't load",
+    "missing from the page and its 6 scripts, 2 of which didn't load",
   );
 });
 
@@ -328,11 +342,126 @@ test("the scripts of a forwarded page are found from the address it ended at", a
       Object.defineProperty(response, "url", { value: `${PLAY_ORIGIN}/de/` });
       return response;
     },
-    [`${PLAY_ORIGIN}/de/assets/app.js`]: () => text(AUTH_CODE),
+    // The router of the page loads the script of each route when it is needed.
+    [`${PLAY_ORIGIN}/de/assets/app.js`]: () =>
+      text(
+        `${AUTH_CODE};const r={match:()=>import("./${MATCH_SCRIPT}"),lobby:()=>import("./${LOBBY_SCRIPT}")}`,
+      ),
   });
   const findings = await checkPage(requestsOf(fake), CONTRACT);
   assert.ok(findings.every((finding) => finding.ok));
   assert.equal(findings[0]?.found, "in /de/assets/app.js");
+  assert.equal(
+    byWhat(findings, "The address of a match").found,
+    `\`${MATCH_SCRIPT}\` in /de/assets/app.js`,
+  );
+});
+
+test("the page names the scripts of the routes of a match and of a lobby", async () => {
+  const fake = autodarts();
+  const findings = await checkPage(requestsOf(fake), CONTRACT);
+  const match = byWhat(findings, "The address of a match");
+  assert.equal(match.ok, true);
+  assert.equal(match.found, `\`${MATCH_SCRIPT}\` in /`);
+  assert.equal(
+    match.expected,
+    "a script of the route `/matches/<id>` in the code of https://play.autodarts.com",
+  );
+  const lobby = byWhat(findings, "The address of a lobby");
+  assert.equal(lobby.ok, true);
+  assert.equal(lobby.found, `\`${LOBBY_SCRIPT}\` in /`);
+  assert.equal(
+    lobby.expected,
+    "a script of the route `/lobby/<id>` in the code of https://play.autodarts.com",
+  );
+});
+
+test("a renamed address of a match or of a lobby fails the check and names every place that relies on it", async () => {
+  // Autodarts shows a match at /match/<id> and a lobby at /lobbies/<id> again; the
+  // history of a match and the join of a lobby keep their routes, and count for neither.
+  const fake = autodarts({
+    [`${PLAY_ORIGIN}/`]: () =>
+      text(
+        pageWith([
+          "match_._matchId-D9YCnlHE.js",
+          "history.matches_._matchId-Bx1.js",
+          "lobbies._lobbyId-C_du1iQ6.js",
+          "join_._lobbyId-C6wXR5WK.js",
+        ]),
+      ),
+  });
+  const lines: string[] = [];
+  await withSummary(async (file) => {
+    const code = await run({ GITHUB_STEP_SUMMARY: file }, fake.fetch, (line) =>
+      lines.push(line),
+    );
+    assert.equal(code, 1);
+    const report = readFileSync(file, "utf8");
+    for (const [what, files] of [
+      [
+        "The address of a match",
+        [
+          "src/page.ts",
+          "src/content.ts",
+          "test/e2e/switching.spec.ts",
+          "test/e2e/accounts.spec.ts",
+        ],
+      ],
+      ["The address of a lobby", ["src/page.ts", "test/e2e/lobby.spec.ts"]],
+    ] as const) {
+      const change = report
+        .split("\n")
+        .find((line) => line.startsWith(`- **Changed: ${what}.**`));
+      assert.ok(change, report);
+      assert.match(change, /missing from the page and its 8 scripts/);
+      for (const place of files) {
+        assert.ok(change.includes(`\`${place}:`), `${place} in ${change}`);
+      }
+    }
+  });
+  const errors = lines.filter((line) => line.startsWith("::error"));
+  assert.deepEqual(
+    errors.map((line) => /::(The address of a \w+)\./.exec(line)?.[1]),
+    ["The address of a match", "The address of a lobby"],
+  );
+});
+
+test("a change of a route on this side fails the check too", async () => {
+  // As after a change of src/page.ts that Autodarts doesn't share.
+  const contract = { ...CONTRACT, matchRoute: "games", lobbyRoute: "rooms" };
+  const findings = await checkPage(requestsOf(autodarts()), contract);
+  assert.deepEqual(
+    findings.map((finding) => finding.ok),
+    [true, true, true, false, false],
+  );
+});
+
+test("routeScript knows the script of a route by its first part, whatever the hash of the build", () => {
+  assert.equal(CONTRACT.matchRoute, MATCH_ROUTE);
+  assert.equal(CONTRACT.lobbyRoute, LOBBY_ROUTE);
+  const match = routeScript(MATCH_ROUTE);
+  const lobby = routeScript(LOBBY_ROUTE);
+  assert.ok(match.test(`/assets/${MATCH_SCRIPT}`));
+  assert.ok(match.test('import("./matches_._matchId-Dop8j_mI.js")'));
+  assert.ok(lobby.test(`href="/assets/${LOBBY_SCRIPT}"`));
+  for (const other of [
+    "/assets/matches-D9YCnlHE.js",
+    "/assets/history.matches_._matchId-D9YCnlHE.js",
+    "/assets/matches_._matchId.js",
+    "/assets/matchesx_._matchId-D9YCnlHE.js",
+  ]) {
+    assert.ok(!match.test(other), other);
+  }
+  for (const other of [
+    "/assets/lobbies._lobbyId-C_du1iQ6.js",
+    "/assets/join_._lobbyId-C6wXR5WK.js",
+    "/assets/lobby._lobbyId-C_du1iQ6.jsx",
+  ]) {
+    assert.ok(!lobby.test(other), other);
+  }
+  // A route is a text, never a pattern.
+  assert.ok(routeScript("a.b").test("/a.b._id-1.js"));
+  assert.ok(!routeScript("a.b").test("/axb._id-1.js"));
 });
 
 test("scriptsOf takes the scripts and module preloads of the page's own origin, once each", () => {
