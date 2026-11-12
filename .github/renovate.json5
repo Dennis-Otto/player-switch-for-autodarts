@@ -12,7 +12,9 @@
       // together in one pull request, so that the driver never meets another browser;
       // @playwright/test of the end-to-end tests and playwright-core of the
       // accessibility test move with them, so that the pictures and the tests see the
-      // same version of Chromium, and npm keeps one copy of playwright-core.
+      // same version of Chromium. package.json pins playwright-core to the version of
+      // @playwright/test, so that npm keeps one copy of playwright-core and lock file
+      // maintenance can't split them (test/playwright.test.ts).
       matchPackageNames: ["mcr.microsoft.com/playwright/python", "playwright", "@playwright/test", "playwright-core"],
       groupName: "Playwright",
     },
