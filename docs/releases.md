@@ -70,7 +70,7 @@ The first listing is done by hand, once:
 | French | `store/images/*.fr.png` |
 | Spanish | `store/images/*.es.png` |
 
-The pictures show no logo and no design of Autodarts, and each screenshot says that the extension is not affiliated with Autodarts. A new picture of the store comes into `test/harness/capture.py` and `test/harness/stage.js`, and a new language brings its pictures by itself, from `store/pictures.<code>.json` ([Add a language](development.md#add-a-language)); a change of one reaches the store only by hand, as the listing texts do.
+The pictures show no logo and no design of Autodarts, and each screenshot says that the extension is not affiliated with Autodarts. A new picture of the store comes into `test/harness/capture.py` and `test/harness/stage.js`, and a new language brings its pictures by itself, from `store/pictures.<code>.json` ([Add a language](development.md#add-a-language)); a change of one reaches the store only by hand, as [the listing texts](#the-texts-of-the-store) do.
 
 ## Later versions
 
@@ -100,6 +100,23 @@ Every run writes a table into its summary: the release, the version that the sto
 | It refuses the upload or the submission, because a review began after the run asked | Fails, with the answer of the store. A later day delivers the release, and nothing has to be done. |
 
 The days of a review count from the artifact of the delivery, or from the release of the version when it went to the store another way.
+
+### The texts of the store {#the-texts-of-the-store}
+
+The workflow delivers the package, not the texts: the API of the store can't set the short or the detailed description. So a release whose pull requests changed a `store/listing.<code>.md` needs a paste. Once the change is on `main`, open **Store listing** in the [Developer Dashboard](https://chrome.google.com/webstore/devconsole), switch to each language whose file changed, paste its short and its detailed description, and submit the listing for review. Take the texts from `node scripts/store-listing.ts --print <code>`, such as `--print de`, not from the file itself: the store keeps every line break of a paste, and the files are wrapped, so a paste of the file would break the lines of the listing in the middle of a sentence. The command writes each paragraph and each bullet on one line, with a blank line between the paragraphs. A new picture of the store needs the same, under **Graphic assets** ([the images of the store](#the-images-of-the-store)).
+
+The job `store-listing` of the workflow Upstream names a paste that is due. Every morning, `scripts/store-listing.ts` reads the public page of the item in each language of `store/`, which needs no secret, and compares its two descriptions with the file, both reduced to plain text with the whitespace collapsed, so the line breaks of the file don't count. When a text differs, the run fails, its summary names the file and the words where the store and the file part, and the bot-health bot opens an issue with the label `bot-failure`, which the next run that passes closes. Two cases don't count:
+
+- **A release in review.** The check compares only while the store publishes the version of `extension/manifest.json`, the latest release; before, the store may show the texts of the version before.
+- **A paste in review.** The store reviews a pasted text as well, for a few days. A file whose descriptions changed in the last 7 days, by the history of git, a change of its other sections aside, may still differ; after that, the run fails until the store shows the text.
+
+A pull request that changes the check runs it too, where a text that differs is a warning, as a pull request can't change the store. To run it on your computer:
+
+```sh
+node scripts/store-listing.ts
+```
+
+A page that answered without its texts or its version means that the store changed its page: open it, and teach `readPage` of `scripts/store-listing.ts` the new form.
 
 ### The one-time set-up
 

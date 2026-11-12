@@ -254,3 +254,31 @@ commands = [
 docs = "docs/development.md#what-autodarts-and-the-next-chrome-change"
 autofix = """A test that fails in the next Chrome needs a person who knows what the
 extension should do there; no command can make it pass."""
+
+[check."store-listing"]
+title = "The descriptions on the Chrome Web Store"
+problem = """The Chrome Web Store shows another short or detailed description than a
+file of `store/`: the summary of the check has a table of every language, and for each
+text that differs the words where the store and the file part. The texts reach the
+store only by a paste into the Developer Dashboard, so a change of
+`store/listing.<code>.md` that was never pasted, or a paste of an older text, shows up
+here. The check compares only while the store publishes the latest release, and a file
+whose descriptions changed in the last 7 days counts as waiting for the review of the
+store. A page that didn't answer may be an outage of the store, which the next run
+shows; a page that answered without its texts, or without its version, means that the
+store changed its page.
+When the step *Make sure that Harden-Runner blocks* stopped the job, Harden-Runner
+had no agent that blocks, mostly because an outage of GitHub kept it from downloading
+it: that is no problem of the change, and the check passes when it runs again."""
+why = """The page of the store is where most players decide whether to install the
+extension. A text that lags behind hides what the extension can do, and an old one may
+say something that no longer holds, as the store did about accounts of Google and
+Apple in November 2026."""
+fix = """Open the Developer Dashboard, and under **Store listing** paste the short and
+the detailed description of each file that the summary names into its language, then
+submit the listing for review. When the store changed its page instead, open it and
+teach `readPage` of `scripts/store-listing.ts` the new form. Then run the check:"""
+commands = ["node scripts/store-listing.ts", "npm test"]
+docs = "docs/releases.md#the-texts-of-the-store"
+autofix = """The API of the Chrome Web Store can't set the descriptions, so only a
+person can paste them into the Developer Dashboard; no command can."""
