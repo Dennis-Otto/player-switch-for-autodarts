@@ -25,12 +25,50 @@ import "./properties.ts";
 const text = fc.string({ unit: "binary" });
 const filled = fc.string({ unit: "binary", minLength: 1 });
 
-/** Every status a Response can carry; 204, 205 and 304 carry no body. */
-const status = fc.integer({ min: 200, max: 599 });
+/**
+ * Every status a Response can carry, and the two refusals of the sign-in service more
+ * often than by chance; 204, 205 and 304 carry no body.
+ */
+const status = fc.oneof(
+  fc.constantFrom(400, 401),
+  fc.integer({ min: 200, max: 599 }),
+);
 const WITHOUT_BODY = new Set([204, 205, 304]);
 
-/** An answer of the sign-in service: JSON of any shape, nearly a session, or no JSON. */
+/** The codes of a refusal: those of a dead session, of a refused request, or any text. */
+const DEAD = ["invalid_token", "invalid_credentials", "invalid_grant"];
+const refusalCode = fc.oneof(
+  fc.constantFrom(...DEAD, "invalid_request", "unauthorized_client"),
+  text,
+);
+
+/** The code that a refusal names, in either form of the service, or null. */
+function codeOf(body: string): string | null {
+  try {
+    const error: unknown = (JSON.parse(body) as { error?: unknown }).error;
+    if (typeof error === "string") {
+      return error;
+    }
+    const nested: unknown = (error as { code?: unknown }).code;
+    return typeof nested === "string" ? nested : null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * An answer of the sign-in service: JSON of any shape, nearly a session, a refusal in
+ * either form, or no JSON.
+ */
 const answerBody = fc.oneof(
+  fc
+    .oneof(
+      fc.record({ error: refusalCode }),
+      fc.record({
+        error: fc.record({ code: fc.oneof(refusalCode, fc.jsonValue()) }),
+      }),
+    )
+    .map((value) => JSON.stringify(value)),
   fc.jsonValue().map((value) => JSON.stringify(value)),
   fc
     .record(
@@ -88,14 +126,18 @@ function assertReadable(identity: Identity): void {
   );
 }
 
-test("every answer is a session or an AuthError, and a refusal only for 400 and 401", async () => {
+test("every answer is a session or an AuthError, and a refusal only for a 401 and for a 400 that names a dead session", async () => {
   await fc.assert(
     fc.asyncProperty(status, answerBody, async (code, body) => {
       const result = await outcome(
         refreshSession(respond(code, body), "token"),
       );
       if (typeof result === "string") {
-        assert.equal(result === "rejected", code === 400 || code === 401);
+        const dead = DEAD.includes(codeOf(body) ?? "");
+        assert.equal(
+          result === "rejected",
+          code === 401 || (code === 400 && dead),
+        );
         return;
       }
       // A session comes only from a successful answer that names both tokens.

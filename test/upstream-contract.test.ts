@@ -33,6 +33,13 @@ import {
   PLAY_ORIGIN,
   SESSION_KEY,
 } from "../src/autodarts.ts";
+import {
+  LOGIN_WRONG_PASSWORD,
+  LOGOUT_UNKNOWN_TOKEN,
+  REFRESH_DEAD_TOKEN,
+  REFRESH_WITHOUT_TOKEN,
+  type Recorded,
+} from "./e2e/fake/recorded.ts";
 
 const ROOT = fileURLToPath(new URL("..", import.meta.url));
 
@@ -63,6 +70,12 @@ const json = (status: number, body: unknown): Response =>
 const text = (body: string, status = 200): Response =>
   new Response(body, { status });
 
+/** An answer of the sign-in service as it was recorded. */
+const recorded =
+  ({ status, body }: Recorded): Answer =>
+  () =>
+    json(status, body);
+
 /** What the game service answers to a token that is no access token. */
 const UNAUTHORIZED = (): Response =>
   json(401, {
@@ -87,11 +100,10 @@ const ANSWERS: Record<string, Answer> = {
       status: 301,
       headers: { Location: `${PLAY_ORIGIN}/lobbies` },
     }),
-  [`${AUTH_BASE}/refresh`]: () =>
-    json(401, { error: { status: 401, code: "invalid_token" } }),
-  [`${AUTH_BASE}/login`]: () =>
-    json(401, { error: { status: 401, code: "invalid_credentials" } }),
-  [`${AUTH_BASE}/logout`]: () => json(200, { success: true }),
+  // The sign-in service as recorded on 2026-11-12, in test/e2e/fake/recorded.ts.
+  [`${AUTH_BASE}/refresh`]: recorded(REFRESH_DEAD_TOKEN),
+  [`${AUTH_BASE}/login`]: recorded(LOGIN_WRONG_PASSWORD),
+  [`${AUTH_BASE}/logout`]: recorded(LOGOUT_UNKNOWN_TOKEN),
   // The answers of 2026-11-08 to the made-up lobby, for a token that is no JWT.
   [`${GAME_BASE}/lobbies/${MADE_UP.lobby}`]: () => UNAUTHORIZED(),
   [`${GAME_BASE}/lobbies/${MADE_UP.lobby}/players`]: () => UNAUTHORIZED(),
@@ -385,10 +397,47 @@ test("the forward of play.autodarts.io has to keep the path and reach Autodarts 
   }
 });
 
-test("the sign-in service has to refuse a made-up token and a made-up account with 400 or 401", async () => {
+test("the sign-in service has to refuse a made-up token and a made-up account with 401 and the code of each", async () => {
+  const dead = (status: number, code: string): Answer =>
+    recorded({ status, body: { error: { status, code } } });
+  for (const [check, path, code] of [
+    [checkRefresh, "refresh", "invalid_token"],
+    [checkLogin, "login", "invalid_credentials"],
+  ] as const) {
+    const cases: [Answer, boolean, string][] = [
+      [dead(401, code), true, `refused with 401 and ${code}`],
+      [
+        dead(400, code),
+        false,
+        `refused with 400 and ${code}, where a dead session got 401 and ${code}`,
+      ],
+      [
+        () => json(401, {}),
+        false,
+        `refused with 401, where a dead session got 401 and ${code}`,
+      ],
+      [
+        recorded(REFRESH_WITHOUT_TOKEN),
+        false,
+        "refused with 400 and invalid_request: the request itself, so the extension keeps the sessions but renews none",
+      ],
+      [
+        () => json(400, {}),
+        false,
+        "refused with 400: the request itself, so the extension keeps the sessions but renews none",
+      ],
+    ];
+    for (const [answer, ok, found] of cases) {
+      const fake = autodarts({ [`${AUTH_BASE}/${path}`]: answer });
+      const finding = await check(requestsOf(fake), CONTRACT);
+      assert.equal(finding.ok, ok, found);
+      assert.equal(finding.found, found);
+    }
+  }
+});
+
+test("the sign-in service has to answer a made-up token and a made-up account at its address", async () => {
   const cases: [Answer | Error, boolean, string][] = [
-    [() => json(401, {}), true, "refused with 401"],
-    [() => json(400, {}), true, "refused with 400"],
     [
       () => text("404 page not found", 404),
       false,
@@ -462,7 +511,9 @@ test("the end of a session has to answer at its address", async () => {
     [() => json(200, { success: true }), true, "answered 200"],
     [() => json(401, { error: "invalid_grant" }), true, "answered 401"],
     [() => json(400, { error: "invalid_grant" }), true, "answered 400"],
+    [recorded(REFRESH_DEAD_TOKEN), true, "answered 401"],
     [() => json(400, { error: "invalid_request" }), false, "answered 400"],
+    [recorded(REFRESH_WITHOUT_TOKEN), false, "answered 400"],
     [() => json(401, {}), false, "answered 401"],
     [
       () => text("404 page not found", 404),

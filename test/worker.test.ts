@@ -45,7 +45,8 @@ import {
   settle,
   until,
 } from "./browser.ts";
-import { counting } from "./helpers.ts";
+import { REFRESH_WITHOUT_TOKEN } from "./e2e/fake/recorded.ts";
+import { counting, jsonResponse } from "./helpers.ts";
 
 const ada: Identity = {
   id: "ada",
@@ -248,6 +249,43 @@ test("the alarm renews the parked sessions, and two alarms close together share 
       "Player Switch: the renewal of the parked sessions failed.",
     ),
   );
+});
+
+test("a renewal whose request Autodarts refuses itself keeps the sessions, retries soon and suggests an update at once", async () => {
+  const fake = browser();
+  await twoPlayers(fake);
+  const parked = find(await accounts(fake), "bob")?.token;
+  const platform = fake.platform();
+  const fetcher = counting((url, init) =>
+    url.endsWith("/refresh")
+      ? Promise.resolve(
+          jsonResponse(
+            REFRESH_WITHOUT_TOKEN.body,
+            REFRESH_WITHOUT_TOKEN.status,
+          ),
+        )
+      : fake.autodarts.fetch(url, init),
+  );
+  const { startWorker } = await import("../src/worker.ts");
+  await startWorker(fake, { ...platform, fetch: fetcher }).ready;
+  fake.alarms.onAlarm.fire({ name: REFRESH_ALARM });
+  await until(
+    () =>
+      (fake.local.data.get(HEALTH_KEY) as { requestRefused?: boolean })
+        .requestRefused === true,
+    "the record of the run",
+  );
+  await settle();
+  const bobNow = find(await accounts(fake), "bob");
+  assert.equal(bobNow?.token, parked, "the parked session is kept");
+  assert.equal(bobNow?.needsSignIn, false);
+  assert.equal(
+    fake.alarmsSet.get(REFRESH_ALARM)?.when,
+    fake.clock + RETRY_MS,
+    "the next run comes soon",
+  );
+  const reply = await popup(fake, { action: "view" });
+  assert.equal(reply.view.updateHint, true);
 });
 
 test("Autodarts gets at most 20 seconds for a request", async () => {

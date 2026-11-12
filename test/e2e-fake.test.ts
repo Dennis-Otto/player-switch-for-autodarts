@@ -15,6 +15,14 @@ import {
   FakeAutodarts,
 } from "./e2e/fake/autodarts.ts";
 import { makeCertificate } from "./e2e/fake/certificate.ts";
+import {
+  LOGIN_WITHOUT_PASSWORD,
+  LOGIN_WRONG_PASSWORD,
+  LOGOUT_UNKNOWN_TOKEN,
+  REFRESH_DEAD_TOKEN,
+  REFRESH_WITHOUT_TOKEN,
+  UNREADABLE_BODY,
+} from "./e2e/fake/recorded.ts";
 
 /** The refresh token of a session answer. */
 function tokenOf(answer: { body: unknown }): string {
@@ -53,21 +61,24 @@ test("a sign-in starts a session whose access token names the account", () => {
   assert.equal(autodarts.count("login", BOB), 1);
 });
 
-test("a wrong password or an unknown account is refused with 401", () => {
+test("a wrong password or an unknown account is refused with 401, a sign-in without them with 400", () => {
   const autodarts = new FakeAutodarts();
-  assert.equal(
+  assert.deepEqual(
     autodarts.answer("login", {
       username: ALICE.username,
       password: BOB.password,
-    }).status,
-    401,
+    }),
+    LOGIN_WRONG_PASSWORD,
   );
-  assert.equal(
-    autodarts.answer("login", { username: "nobody", password: "secret" })
-      .status,
-    401,
+  assert.deepEqual(
+    autodarts.answer("login", { username: "nobody", password: "secret" }),
+    LOGIN_WRONG_PASSWORD,
   );
-  assert.equal(autodarts.answer("login", null).status, 401);
+  assert.deepEqual(autodarts.answer("login", null), LOGIN_WITHOUT_PASSWORD);
+  assert.deepEqual(
+    autodarts.answer("login", { username: ALICE.username }),
+    LOGIN_WITHOUT_PASSWORD,
+  );
   assert.equal(autodarts.sessionsOf(ALICE), 0);
 });
 
@@ -92,27 +103,27 @@ test("a token sent a second time is refused, recorded, and ends its session", ()
   const first = signIn(autodarts);
   const second = tokenOf(autodarts.answer("refresh", { refresh_token: first }));
 
-  assert.equal(
-    autodarts.answer("refresh", { refresh_token: first }).status,
-    400,
+  assert.deepEqual(
+    autodarts.answer("refresh", { refresh_token: first }),
+    REFRESH_DEAD_TOKEN,
   );
   assert.deepEqual(autodarts.reused, [first]);
   // The thief and the owner both lose the session.
-  assert.equal(
-    autodarts.answer("refresh", { refresh_token: second }).status,
-    400,
+  assert.deepEqual(
+    autodarts.answer("refresh", { refresh_token: second }),
+    REFRESH_DEAD_TOKEN,
   );
   assert.equal(autodarts.sessionsOf(ALICE), 0);
 });
 
 test("a token that it never issued is refused without counting as reused", () => {
   const autodarts = new FakeAutodarts();
-  assert.equal(
-    autodarts.answer("refresh", { refresh_token: "made-up" }).status,
-    400,
+  assert.deepEqual(
+    autodarts.answer("refresh", { refresh_token: "made-up" }),
+    REFRESH_DEAD_TOKEN,
   );
-  assert.equal(autodarts.answer("refresh", {}).status, 400);
-  assert.equal(autodarts.answer("refresh", "not json").status, 400);
+  assert.deepEqual(autodarts.answer("refresh", {}), REFRESH_WITHOUT_TOKEN);
+  assert.deepEqual(autodarts.answer("refresh", "not json"), UNREADABLE_BODY);
   assert.deepEqual(autodarts.reused, []);
   assert.deepEqual(autodarts.sent, [
     { path: "refresh", account: null },
@@ -132,11 +143,11 @@ test("each sign-in is a session of its own, and end() ends every one of an accou
   assert.equal(autodarts.sessionsOf(ALICE), 0);
   assert.equal(
     autodarts.answer("refresh", { refresh_token: page }).status,
-    400,
+    401,
   );
   assert.equal(
     autodarts.answer("refresh", { refresh_token: parked }).status,
-    400,
+    401,
   );
   // An ended session is no reuse: its token simply stopped working.
   assert.deepEqual(autodarts.reused, []);
@@ -151,9 +162,10 @@ test("a sign-out ends the session, and its token counts as reused when it comes 
     body: null,
   });
   assert.equal(autodarts.sessionsOf(ALICE), 0);
-  assert.equal(
-    autodarts.answer("logout", { refresh_token: token }).status,
-    400,
+  // The real service answers the end of a session that it doesn't know with 200 too.
+  assert.deepEqual(
+    autodarts.answer("logout", { refresh_token: token }),
+    LOGOUT_UNKNOWN_TOKEN,
   );
   assert.deepEqual(autodarts.reused, [token]);
   assert.equal(autodarts.count("logout", ALICE), 1);

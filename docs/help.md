@@ -154,6 +154,8 @@ Below that tile, the quieter **Join again** seats the player once more. Tap it w
 
 **What it means:** in one renewal, Autodarts turned away every parked account at once, at least two of them. One account can lose its session on its own; all of them at the same time more likely means that Autodarts changed how it signs in, and the extension needs an update for that.
 
+The popup says the same, at once and while nobody has to sign in yet, when Autodarts refused the renewal itself, as it does when its sign-in asks for something the extension doesn't send yet. The extension then keeps every parked session and only stops renewing them, so the players don't have to sign in again; **Manage accounts** shows since when the renewal fails. Update soon, before Autodarts lets the kept sessions expire.
+
 **What to do:** don't sign everybody in again yet. **Known problems and updates** opens the list of known problems. Chrome brings a new version of an extension by itself within a few hours; to fetch it now, turn on **Developer mode** under `chrome://extensions` and choose **Update**. The bottom of the players and of the popup shows [which version runs](#which-version). Installed unpacked? Then Chrome fetches nothing by itself: replace the contents of the folder with those of the zip of the [latest release](https://github.com/Dennis-Otto/player-switch-for-autodarts/releases/latest), or get the latest source (`git pull`) and run `npm run build`, and choose the reload arrow of Player Switch under `chrome://extensions`, as in the [quick start](https://github.com/Dennis-Otto/player-switch-for-autodarts#quick-start). Once the new version is there, sign in again only the accounts that still say so.
 
 ### Renewed 3 hours ago {#renewed}

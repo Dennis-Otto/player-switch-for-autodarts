@@ -7,8 +7,8 @@
 //   one, so a token that the extension writes is spent by the reload that follows.
 //   It starts half a second after the load, as the real page first loads its code:
 //   the extension waits for that renewal before it reads the token;
-// - a token that the sign-in service turns away (400 or 401) ends the session, and
-//   the page shows its sign-in form;
+// - a token that the sign-in service turns away (401 invalid_token, as recorded in
+//   recorded.ts) ends the session, and the page shows its sign-in form;
 // - a sign-in stores the new token and loads the page again, as the redirect back
 //   from the real sign-in page does.
 //

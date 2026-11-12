@@ -35,6 +35,12 @@ export interface Identity {
 
 export type Fetch = (url: string, init: RequestInit) => Promise<Response>;
 
+/** What an AuthError says beyond its kind; see the fields of AuthError. */
+interface RefusalDetails {
+  requestRefused: boolean;
+  code: string | null;
+}
+
 /**
  * Why a request to Autodarts failed: "rejected" when it will keep failing (a dead
  * session, a wrong password, a lobby that takes no seat), "unreachable" when it may
@@ -42,12 +48,67 @@ export type Fetch = (url: string, init: RequestInit) => Promise<Response>;
  */
 export class AuthError extends Error {
   readonly kind: "rejected" | "unreachable";
+  /**
+   * Autodarts refused the request itself, not the session or the password in it: a
+   * 400 of the sign-in service that names no dead session, as when it asks for another
+   * field now. The session may still be alive, so the error is "unreachable", and the
+   * extension may need an update.
+   */
+  readonly requestRefused: boolean;
+  /** The code that the sign-in service gave for its refusal, such as `invalid_token`, or null. */
+  readonly code: string | null;
 
-  constructor(kind: "rejected" | "unreachable", message: string) {
+  constructor(
+    kind: "rejected" | "unreachable",
+    message: string,
+    { requestRefused = false, code = null }: Partial<RefusalDetails> = {},
+  ) {
     super(message);
     this.name = "AuthError";
     this.kind = kind;
+    this.requestRefused = requestRefused;
+    this.code = code;
   }
+}
+
+/** The code with which the sign-in service refuses an unknown, spent or expired refresh token, with 401. */
+export const DEAD_TOKEN_CODE = "invalid_token";
+
+/** The code with which the sign-in service refuses a wrong username or password, with 401. */
+export const WRONG_PASSWORD_CODE = "invalid_credentials";
+
+/**
+ * The codes with which the sign-in service turns a session or a password away for
+ * good: those two, and `invalid_grant`, which it sent for both in the form of
+ * Keycloak. Any other code, such as `invalid_request` for a request without its
+ * field, refuses the request, not the session. The answers of the real service are
+ * recorded in `test/e2e/fake/recorded.ts`.
+ */
+export const DEAD_SESSION_CODES: ReadonlySet<string> = new Set([
+  DEAD_TOKEN_CODE,
+  WRONG_PASSWORD_CODE,
+  "invalid_grant",
+]);
+
+/**
+ * The code of a refusal of the sign-in service: `error.code` of the JSON that it
+ * answers today (`{"error":{"code":"invalid_token"}}`), or `error` itself in the form
+ * of Keycloak (`{"error":"invalid_grant"}`). Null for a body without either.
+ */
+async function refusalCode(response: Response): Promise<string | null> {
+  const body: unknown = await response.json().catch(() => null);
+  if (typeof body !== "object" || body === null) {
+    return null;
+  }
+  const error: unknown = (body as { error?: unknown }).error;
+  if (typeof error === "string") {
+    return error;
+  }
+  if (typeof error === "object" && error !== null) {
+    const code: unknown = (error as { code?: unknown }).code;
+    return typeof code === "string" ? code : null;
+  }
+  return null;
 }
 
 /** Sends a sign-in request and reads the session from its answer. */
@@ -66,9 +127,24 @@ async function postSession(
   } catch {
     throw new AuthError("unreachable", "Autodarts could not be reached");
   }
-  // Autodarts Play itself treats these two as the end of a session.
   if (response.status === 400 || response.status === 401) {
-    throw new AuthError("rejected", "Autodarts did not accept the request");
+    const code = await refusalCode(response);
+    // The sign-in service answers a dead token and a wrong password with 401. A 400
+    // ends the session only with a code that says so; any other 400 means that it
+    // can't read the request, as after a change of what it asks for, and the session
+    // stays for the next try, which an update of the extension may need.
+    if (
+      response.status === 401 ||
+      (code !== null && DEAD_SESSION_CODES.has(code))
+    ) {
+      throw new AuthError("rejected", "Autodarts did not accept the session", {
+        code,
+      });
+    }
+    throw new AuthError("unreachable", "Autodarts did not accept the request", {
+      requestRefused: true,
+      code,
+    });
   }
   if (!response.ok) {
     throw new AuthError("unreachable", `Autodarts answered ${response.status}`);
@@ -114,7 +190,7 @@ export function signIn(
  * player signs out: the refresh token alone, without the client, which the sign-out
  * doesn't ask for. True when the session is over: Autodarts ended it (it answers
  * 2xx, also for a token it doesn't know), or it refused the token as dead (400 or
- * 401 with `invalid_grant`, as for a renewal). Any other refusal means Autodarts
+ * 401 with a code of `DEAD_SESSION_CODES`, as for a renewal). Any other refusal means Autodarts
  * didn't accept the request itself, for example because it asks for another field
  * now, so the session may still be alive. False then, and when Autodarts couldn't be
  * reached; the session then lasts until it expires by itself, and the extension
@@ -140,16 +216,8 @@ export async function revokeSession(
   if (response.status !== 400 && response.status !== 401) {
     return false;
   }
-  try {
-    const body: unknown = await response.json();
-    return (
-      typeof body === "object" &&
-      body !== null &&
-      (body as { error?: unknown }).error === "invalid_grant"
-    );
-  } catch {
-    return false;
-  }
+  const code = await refusalCode(response);
+  return code !== null && DEAD_SESSION_CODES.has(code);
 }
 
 /**

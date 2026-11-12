@@ -35,6 +35,12 @@ import {
 } from "../src/switch.ts";
 import { idleTick, NO_VENUE } from "../src/venue.ts";
 import {
+  LOGIN_WITHOUT_PASSWORD,
+  REFRESH_DEAD_TOKEN,
+  REFRESH_WITHOUT_TOKEN,
+  type Recorded,
+} from "./e2e/fake/recorded.ts";
+import {
   counting,
   FakeAutodarts,
   FakePage,
@@ -57,7 +63,15 @@ function deps(
   return { store, page, fetcher, now, queue: createQueue() };
 }
 
-const rejected = () => Promise.resolve(jsonResponse({}, 400));
+/** An answer of the sign-in service as it was recorded. */
+const recorded =
+  ({ status, body }: Recorded): (() => Promise<Response>) =>
+  () =>
+    Promise.resolve(jsonResponse(body, status));
+/** The answer to a dead token, which ends the session. */
+const rejected = recorded(REFRESH_DEAD_TOKEN);
+/** The answer to a request that the service can't read, as after a change of what it asks for. */
+const misread = recorded(REFRESH_WITHOUT_TOKEN);
 const offline = () => Promise.resolve(jsonResponse({}, 503));
 
 /**
@@ -1022,6 +1036,86 @@ test("refreshParked keeps a parked session on a temporary problem and marks sinc
     "the mark is saved",
   );
   assert.deepEqual([run.renewed, run.rejected, run.unreachable], [0, 0, 1]);
+});
+
+test("refreshParked keeps a parked session that Autodarts can't read the request for, and counts it as unreachable", async () => {
+  const store = new FakeStore(park(park(EMPTY, ada, "ta", 0), bob, "tb", 0));
+  const run = await refreshParked(
+    deps(store, new FakePage(null), router({ refresh: misread })),
+  );
+  for (const [id, token] of [
+    ["a", "ta"],
+    ["b", "tb"],
+  ] as const) {
+    assert.equal(find(store.state, id)?.token, token, "the token is kept");
+    assert.equal(find(store.state, id)?.needsSignIn, false);
+    assert.equal(find(store.state, id)?.renewalFailedAt, 1000);
+  }
+  assert.deepEqual(
+    [run.renewed, run.rejected, run.unreachable, run.requestRefused],
+    [0, 0, 2, 2],
+  );
+});
+
+test("refreshParked tries no remembered password when Autodarts refused the request of the renewal itself", async () => {
+  const logins: string[] = [];
+  const store = new FakeStore(
+    rememberCredentials(park(EMPTY, ada, "ta", 0), "a", {
+      username: "ada",
+      password: "pw",
+    }),
+  );
+  const run = await refreshParked(
+    deps(
+      store,
+      new FakePage(null),
+      router({
+        refresh: misread,
+        login: () => {
+          logins.push("ada");
+          return Promise.resolve(sessionResponse("a", "fresh"));
+        },
+      }),
+    ),
+  );
+  assert.deepEqual(logins, []);
+  assert.equal(find(store.state, "a")?.token, "ta");
+  assert.deepEqual([run.unreachable, run.requestRefused], [1, 1]);
+});
+
+test("refreshParked keeps a remembered password that the sign-in can't read the request for", async () => {
+  const store = new FakeStore(
+    rememberCredentials(park(EMPTY, ada, "dead", 0), "a", {
+      username: "ada",
+      password: "pw",
+    }),
+  );
+  const run = await refreshParked(
+    deps(
+      store,
+      new FakePage(null),
+      router({ refresh: rejected, login: recorded(LOGIN_WITHOUT_PASSWORD) }),
+    ),
+  );
+  assert.equal(find(store.state, "a")?.needsSignIn, false);
+  assert.equal(find(store.state, "a")?.credentials?.password, "pw");
+  assert.deepEqual(
+    [run.renewed, run.rejected, run.unreachable, run.requestRefused],
+    [0, 0, 1, 1],
+  );
+});
+
+test("refreshParked still ends a session that Autodarts refuses as dead with 401", async () => {
+  const store = new FakeStore(park(EMPTY, ada, "ta", 0));
+  const run = await refreshParked(
+    deps(store, new FakePage(null), router({ refresh: rejected })),
+  );
+  assert.equal(find(store.state, "a")?.token, null);
+  assert.equal(find(store.state, "a")?.needsSignIn, true);
+  assert.deepEqual(
+    [run.renewed, run.rejected, run.unreachable, run.requestRefused],
+    [0, 1, 0, 0],
+  );
 });
 
 test("refreshParked keeps the time of the first failure of a row and clears it once renewing works", async () => {

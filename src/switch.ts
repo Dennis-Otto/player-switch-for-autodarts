@@ -97,12 +97,14 @@ export interface Deps {
 
 /**
  * The outcome of trying to make a session for an account: a fresh one, a refusal
- * that won't pass (the account must sign in again), or a problem that may pass.
+ * that won't pass (the account must sign in again), or a problem that may pass;
+ * `requestRefused` when Autodarts refused the request itself, which an update of the
+ * extension may need (see AuthError).
  */
 type Renewal =
   | { kind: "ok"; session: Session }
   | { kind: "rejected" }
-  | { kind: "unreachable" };
+  | { kind: "unreachable"; requestRefused?: true };
 
 async function commit(deps: Deps, state: State): Promise<State> {
   await deps.store.save(state);
@@ -116,9 +118,13 @@ async function attempt(request: Promise<Session>): Promise<Renewal | null> {
   } catch (error) {
     // A problem that may pass is reported as such; a refusal falls through so the
     // next way of signing in can be tried.
-    return (error as AuthError).kind === "unreachable"
-      ? { kind: "unreachable" }
-      : null;
+    const { kind, requestRefused } = error as AuthError;
+    if (kind === "rejected") {
+      return null;
+    }
+    return requestRefused
+      ? { kind: "unreachable", requestRefused }
+      : { kind: "unreachable" };
   }
 }
 
@@ -788,7 +794,11 @@ export interface RefreshRun extends RunCounts {
   state: State;
 }
 
-/** What became of one account in a renewal; "skipped" when a switch took it meanwhile. */
+/**
+ * What became of one account in a renewal; "skipped" when a switch took it meanwhile,
+ * and "requestRefused" when Autodarts refused the request itself, which counts as
+ * unreachable as well.
+ */
 type Outcome = keyof RunCounts | "skipped";
 
 /**
@@ -809,10 +819,14 @@ export async function refreshParked(deps: Deps): Promise<RefreshRun> {
     renewed: 0,
     rejected: 0,
     unreachable: 0,
+    requestRefused: 0,
   };
   for (const { id } of renewable(run.state)) {
     const { state, outcome } = await deps.queue(() => refreshOne(deps, id));
     run.state = state;
+    if (outcome === "requestRefused") {
+      run.unreachable += 1;
+    }
     if (outcome !== "skipped") {
       run[outcome] += 1;
     }
@@ -850,6 +864,6 @@ async function refreshOne(
   const failing = failRenewal(state, id, deps.now());
   return {
     state: failing === state ? state : await commit(deps, failing),
-    outcome: "unreachable",
+    outcome: renewal.requestRefused ? "requestRefused" : "unreachable",
   };
 }

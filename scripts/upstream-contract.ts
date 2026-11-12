@@ -23,6 +23,7 @@ import {
   AUTH_BASE,
   AuthError,
   CLIENT_ID,
+  DEAD_TOKEN_CODE,
   type Fetch,
   GAME_BASE,
   PLAY_ORIGIN,
@@ -32,6 +33,7 @@ import {
   SESSION_KEY,
   seatPlayer,
   signIn,
+  WRONG_PASSWORD_CODE,
 } from "../src/autodarts.ts";
 
 /** Keeps a message on the one line of a workflow command of GitHub. */
@@ -116,10 +118,14 @@ export const placesOf = (contract: Contract) => {
     refresh: [
       { file: "src/autodarts.ts", text: '"/refresh"' },
       { file: "src/autodarts.ts", text: "response.status === 401" },
+      { file: "src/autodarts.ts", text: `"${DEAD_TOKEN_CODE}"` },
+      { file: "test/e2e/fake/recorded.ts", text: `"${DEAD_TOKEN_CODE}"` },
       { file: "test/e2e/fake/play.js", text: '"/refresh"' },
     ],
     login: [
       { file: "src/autodarts.ts", text: '"/login"' },
+      { file: "src/autodarts.ts", text: `"${WRONG_PASSWORD_CODE}"` },
+      { file: "test/e2e/fake/recorded.ts", text: `"${WRONG_PASSWORD_CODE}"` },
       { file: "test/e2e/fake/play.js", text: '"/login"' },
     ],
     logout: [{ file: "src/autodarts.ts", text: "/logout" }],
@@ -345,9 +351,16 @@ export const checkForward = async (
 /** The answers of a server for an address that it doesn't have (any more). */
 const GONE: readonly number[] = [404, 405, 410];
 
-/** What a request that Autodarts must refuse found: ok only for a refusal, 400 or 401. */
+/**
+ * What a request that Autodarts must refuse found: ok only for exactly the answer to a
+ * dead session or a wrong password, 401 with its code. Any other refusal means that
+ * the sign-in service changed: a 400 that names no dead session refuses the request
+ * itself, as when the service asks for another field now, and the extension then keeps
+ * every parked session but can't renew one.
+ */
 const refused = async (
   requests: Requests,
+  code: string,
   call: () => Promise<unknown>,
 ): Promise<{ found: string; ok: boolean }> => {
   try {
@@ -355,8 +368,20 @@ const refused = async (
     return { found: "a session, for made-up data", ok: false };
   } catch (error) {
     const status = requests.status;
-    if (error instanceof AuthError && error.kind === "rejected") {
-      return { found: `refused with ${status}`, ok: true };
+    if (
+      error instanceof AuthError &&
+      (error.kind === "rejected" || error.requestRefused)
+    ) {
+      const answer = `refused with ${status}${error.code === null ? "" : ` and ${error.code}`}`;
+      if (status === 401 && error.code === code) {
+        return { found: answer, ok: true };
+      }
+      return {
+        found: error.requestRefused
+          ? `${answer}: the request itself, so the extension keeps the sessions but renews none`
+          : `${answer}, where a dead session got 401 and ${code}`,
+        ok: false,
+      };
     }
     let found: string;
     if (status === undefined) {
@@ -376,8 +401,8 @@ export const checkRefresh = async (
   contract: Contract,
 ): Promise<Finding> => ({
   what: "The answer to a dead session",
-  expected: `${contract.authBase}/refresh refuses a made-up token with 400 or 401`,
-  ...(await refused(requests, () =>
+  expected: `${contract.authBase}/refresh refuses a made-up token with 401 and ${DEAD_TOKEN_CODE}`,
+  ...(await refused(requests, DEAD_TOKEN_CODE, () =>
     refreshSession(requests.fetch, MADE_UP.token),
   )),
   places: placesOf(contract).refresh,
@@ -389,8 +414,8 @@ export const checkLogin = async (
   contract: Contract,
 ): Promise<Finding> => ({
   what: "The answer to a wrong password",
-  expected: `${contract.authBase}/login refuses a made-up account with 400 or 401`,
-  ...(await refused(requests, () =>
+  expected: `${contract.authBase}/login refuses a made-up account with 401 and ${WRONG_PASSWORD_CODE}`,
+  ...(await refused(requests, WRONG_PASSWORD_CODE, () =>
     signIn(requests.fetch, MADE_UP.username, MADE_UP.password),
   )),
   places: placesOf(contract).login,
@@ -417,7 +442,7 @@ export const checkLogout = async (
   const status = requests.status;
   return {
     what: "The end of a session",
-    expected: `${contract.authBase}/logout answers 2xx, or 400 or 401 with invalid_grant`,
+    expected: `${contract.authBase}/logout answers 2xx, or 400 or 401 for a dead session`,
     found:
       status === undefined
         ? `no answer: ${failure}`
