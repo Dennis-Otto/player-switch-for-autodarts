@@ -191,6 +191,16 @@ export type Outcome =
    * already, or Autodarts refused the seat: the lobby is gone, full or started.
    */
   | { readonly ok: false; readonly reason: "noLobby" | "playing" | "refused" }
+  /**
+   * "Remember password" kept nothing: Autodarts refused the username or the password,
+   * they sign in another account than the tile's, or Autodarts couldn't be reached to
+   * check them. No Autodarts tab takes part, so it says nothing about one.
+   */
+  | {
+      readonly ok: false;
+      readonly reason: "password" | "otherAccount" | "unreachable";
+      readonly page?: undefined;
+    }
   | Refusal;
 
 /** What a page of the extension can't get past, and the popup says. */

@@ -30,6 +30,8 @@ const explained = [
   "joinPlaying",
   "joinRefused",
   "joinKept",
+  "rememberRefused",
+  "rememberOtherAccount",
   "unreachable",
   "noPage",
   "empty",

@@ -20,12 +20,49 @@ test("a remembered password signs an account back in when its parked session has
     display.t("forgetPassword"),
   );
   await popup.manage();
+  // Remembering signed Alice in once to check the password; she keeps that session.
+  expect(autodarts.count("login", ALICE)).toBe(2);
+  expect(autodarts.sessionsOf(ALICE)).toBe(1);
 
   autodarts.end(ALICE);
   await popup.tap(ALICE);
   await expectPlayer(page, ALICE);
   await popup.expectAccounts([ALICE, BOB], ALICE);
-  expect(autodarts.count("login", ALICE)).toBe(2);
+  expect(autodarts.count("login", ALICE)).toBe(3);
+});
+
+test("Remember password refuses a wrong password and the sign-in of another account at once", async ({
+  autodarts,
+  display,
+}) => {
+  const page = await display.openAutodarts();
+  const popup = await display.saveAccounts(page, [ALICE, BOB]);
+
+  await popup.manage();
+  await popup.tile(ALICE).locator(".toggle-remember").click();
+  const form = popup.tile(ALICE).locator(".remember");
+  await form.locator(".cred-username").fill(ALICE.username);
+  await form.locator(".cred-password").fill(`${ALICE.password}-typo`);
+  await form.locator("[type=submit]").click();
+  await popup.expectStatus(display.t("rememberRefused"), true);
+  // The form opens again with the username, so only the password is typed anew.
+  await expect(popup.tile(ALICE).locator(".remember")).toBeVisible();
+  await expect(form.locator(".cred-username")).toHaveValue(ALICE.username);
+  await expect(form.locator(".cred-password")).toHaveValue("");
+  await expect(form.locator(".cred-password")).toBeFocused();
+
+  await form.locator(".cred-username").fill(BOB.username);
+  await form.locator(".cred-password").fill(BOB.password);
+  await form.locator("[type=submit]").click();
+  await popup.expectStatus(display.t("rememberOtherAccount", ALICE.name), true);
+  await expect(popup.tile(ALICE).locator(".toggle-remember")).toHaveText(
+    display.t("rememberPassword"),
+  );
+  // The session of Bob's sign-in ended at once; Bob plays on the page as before.
+  expect(autodarts.sessionsOf(BOB)).toBe(1);
+  await popup.manage();
+  await popup.expectAccounts([ALICE, BOB], BOB);
+  await expectPlayer(page, BOB);
 });
 
 test("an account whose session has died and that remembers no password has to sign in again", async ({

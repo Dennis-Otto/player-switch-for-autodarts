@@ -27,7 +27,8 @@ export interface Status {
 
 /**
  * What to say when a request failed: `signInHint` when the account has to sign in again.
- * A join that took no seat names its account, `name`.
+ * A join that took no seat, and a sign-in of another account at "Remember password", name
+ * the account of the request, `name`.
  */
 export function problemOf(
   reason: string,
@@ -49,6 +50,12 @@ export function problemOf(
     // Autodarts refused the seat: the lobby is full, started or closed.
     case "refused":
       return t("joinRefused", name);
+    // "Remember password": Autodarts refused the sign-in, or it is the sign-in of another
+    // account than the tile's, `name`.
+    case "password":
+      return t("rememberRefused");
+    case "otherAccount":
+      return t("rememberOtherAccount", name);
     default:
       return signInHint ?? t("error");
   }
@@ -145,6 +152,22 @@ export function statusAfter(
     };
   }
   return { text: "", error: false };
+}
+
+/**
+ * Whether "Remember password" kept nothing because of what the form held, or because
+ * Autodarts couldn't check it: the form then opens again. A PIN that was asked for and
+ * not given, or a worker that didn't answer, leaves it closed.
+ */
+export function rememberRefused(reply: PlayersReply | undefined): boolean {
+  return (
+    reply !== undefined &&
+    !("error" in reply) &&
+    !reply.ok &&
+    (reply.reason === "password" ||
+      reply.reason === "otherAccount" ||
+      reply.reason === "unreachable")
+  );
 }
 
 /** What the worker asks of the person before it goes on: a yes, or a PIN. */

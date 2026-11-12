@@ -226,6 +226,17 @@
       }
     }
   },
+  "rememberRefused": {
+    "message": "Autodarts n'a pas accepté ce nom d'utilisateur et ce mot de passe, ils ne sont donc pas mémorisés. Vérifiez les deux et réessayez."
+  },
+  "rememberOtherAccount": {
+    "message": "Ce nom d'utilisateur et ce mot de passe connectent un autre compte que $NAME$, ils ne sont donc pas mémorisés. Saisissez ceux de $NAME$.",
+    "placeholders": {
+      "name": {
+        "content": "$1"
+      }
+    }
+  },
   "unreachable": {
     "message": "Autodarts est injoignable pour le moment. Réessayez dans un instant."
   },

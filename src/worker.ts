@@ -69,12 +69,7 @@ import {
   toButtonView,
 } from "./page.ts";
 import { createQueue } from "./queue.ts";
-import {
-  EMPTY,
-  forgetCredentials,
-  rememberCredentials,
-  toView,
-} from "./state.ts";
+import { EMPTY, forgetCredentials, toView } from "./state.ts";
 import {
   ACCOUNTS_KEY,
   accountsIn,
@@ -94,6 +89,7 @@ import {
   type Removal,
   readView,
   refreshParked,
+  rememberPassword,
   removeAccount,
   signOutForNewAccount,
   startAddingAccount,
@@ -720,11 +716,10 @@ export function startWorker(api: ChromeApi, platform: Platform): StartedWorker {
         await stopAddingAccount(deps);
         return { ok: true };
       case "remember": {
+        // Autodarts checks the sign-in first, so a typo shows now and not when it's needed.
         const { id, username, password } = message;
-        await edit(deps, (state) =>
-          rememberCredentials(state, id, { username, password }),
-        );
-        return { ok: true };
+        const result = await rememberPassword(deps, id, { username, password });
+        return result.ok ? { ok: true } : { ok: false, reason: result.reason };
       }
       case "forgetPassword":
         await edit(deps, (state) => forgetCredentials(state, message.id));
