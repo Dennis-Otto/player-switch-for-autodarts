@@ -74,7 +74,7 @@ test("an account that remembers its password and signs out on the page stays rea
 
   // Nothing tried his password yet, so his tile doesn't ask for a sign-in.
   await popup.expectAccounts([ALICE, BOB], null);
-  await expect(popup.tile(BOB).locator(".chip")).toHaveCount(0);
+  await expect(popup.tile(BOB).locator(".chip")).toBeHidden();
   await popup.tap(BOB);
   await expectPlayer(page, BOB);
   await popup.expectAccounts([ALICE, BOB], BOB);
