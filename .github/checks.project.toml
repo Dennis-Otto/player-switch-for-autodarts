@@ -196,9 +196,11 @@ check has a table of every part, and for each that changed what it expected, wha
 found and every place of the code that relies on it. The parts are the key under
 which Autodarts Play keeps its session in `localStorage`, the address of its sign-in
 service and the client that it signs in as, all three in the code of
-play.autodarts.com; the answer 400 or 401 to a dead session and to a wrong password;
+play.autodarts.com; the routes of a match, `/matches/<id>`, and of a lobby,
+`/lobby/<id>`, whose scripts the page names; the answer 400 or 401 to a dead session and to a wrong password;
 the end of a session; and the forward of play.autodarts.io to play.autodarts.com.
-`scripts/upstream-contract.ts` takes the expected values from `src/autodarts.ts`. A
+`scripts/upstream-contract.ts` takes the expected values from `src/autodarts.ts` and
+`src/page.ts`. A
 part that got no answer at all may be an outage of Autodarts, which the next run
 shows. A job that ran out of time with every step passed hung at its end, in *Cleaning
 up orphan processes*, which no change of Autodarts causes.
