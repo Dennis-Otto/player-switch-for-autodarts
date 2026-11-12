@@ -1,0 +1,3 @@
+### Bug fixes
+
+- An account that remembers its password no longer says **Sign in again** after a sign-out on the Autodarts page, or after someone signed in as another player there: nothing had tried the password yet. The next renewal signs the account in with it, a tap plays it as before, its tile offers the join into a lobby again, and the toolbar badge no longer counts it. With **Return after a break** in the venue mode, the display returns to such a house account instead of signing out after every break until someone taps its tile. An account whose remembered password Autodarts refuses still says **Sign in again**.

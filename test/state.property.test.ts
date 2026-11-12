@@ -25,6 +25,7 @@ import {
   forget,
   forgetCredentials,
   isAdding,
+  loseSession,
   PLAIN_VERSION,
   park,
   parked,
@@ -32,6 +33,7 @@ import {
   parseState,
   readStored,
   rememberCredentials,
+  renewable,
   STATE_VERSION,
   type State,
   setActive,
@@ -77,6 +79,7 @@ const change = fc.oneof(
   fc.record({ kind: fc.constant("setActive" as const), identity }),
   fc.record({ kind: fc.constant("activate" as const), id }),
   fc.record({ kind: fc.constant("endSession" as const), id }),
+  fc.record({ kind: fc.constant("loseSession" as const), id }),
   fc.record({ kind: fc.constant("failRenewal" as const), id, now }),
   fc.record({ kind: fc.constant("deactivate" as const) }),
   fc.record({ kind: fc.constant("forget" as const), id }),
@@ -103,6 +106,8 @@ function apply(state: State, step: Change): State {
       return activate(state, step.id);
     case "endSession":
       return endSession(state, step.id);
+    case "loseSession":
+      return loseSession(state, step.id);
     case "failRenewal":
       return failRenewal(state, step.id, step.now);
     case "deactivate":
@@ -159,6 +164,19 @@ test("every change keeps each account once, in the order of the popup, and the a
             (profile) =>
               profile.token !== null && profile.id !== state.activeId,
           ),
+        );
+        // The renewal takes the parked sessions, and the accounts without one that a
+        // remembered password, which nothing refused yet, signs in again.
+        assert.deepEqual(
+          renewable(state).map((profile) => profile.id),
+          state.profiles
+            .filter(
+              (profile) =>
+                profile.id !== state.activeId &&
+                (profile.token !== null ||
+                  (profile.credentials !== null && !profile.needsSignIn)),
+            )
+            .map((profile) => profile.id),
         );
         // A new account is waited for only while no account of the extension plays.
         assert.ok(state.addingUntil === null || state.activeId === null);
@@ -254,6 +272,15 @@ test("a session goes where the change puts it, whatever happened before", () => 
           assert.equal(profile?.needsSignIn, existed ? true : undefined);
           assert.notEqual(after.activeId, target);
           break;
+        case "loseSession":
+          // Only an account that remembers no password has to sign in again.
+          assert.equal(profile?.token, existed ? null : undefined);
+          assert.equal(
+            profile?.needsSignIn,
+            existed ? profile?.credentials === null : undefined,
+          );
+          assert.notEqual(after.activeId, target);
+          break;
         case "failRenewal":
           // The session stays; only the time when the renewal began to fail is kept.
           assert.deepEqual(
@@ -277,10 +304,25 @@ test("a session goes where the change puts it, whatever happened before", () => 
         default:
           // A password change leaves the sessions alone.
           assert.deepEqual(
-            after.profiles.map(({ credentials: _, ...rest }) => rest),
-            before.profiles.map(({ credentials: _, ...rest }) => rest),
+            after.profiles.map(
+              ({ credentials: _, needsSignIn: __, ...rest }) => rest,
+            ),
+            before.profiles.map(
+              ({ credentials: _, needsSignIn: __, ...rest }) => rest,
+            ),
           );
           assert.equal(after.activeId, before.activeId);
+          for (const account of after.profiles) {
+            const was = find(before, account.id);
+            // Without its password, an account off the page that has no session can't
+            // make one any more, so it has to sign in again.
+            const stranded: boolean =
+              step.kind === "forgetCredentials" &&
+              account.id === target &&
+              account.token === null &&
+              account.id !== after.activeId;
+            assert.equal(account.needsSignIn, was?.needsSignIn || stranded);
+          }
       }
     }),
   );
@@ -404,6 +446,7 @@ test("a renewal fails for an account until a session of it works again", () => {
             "setActive",
             "activate",
             "endSession",
+            "loseSession",
             "forget",
           ].includes(step.kind)
         ) {
@@ -560,15 +603,22 @@ test("the popup sees no session and no password of any account", () => {
         assert.equal(shown.id, profile?.id);
         assert.equal(shown.active, shown.id === state.activeId);
         assert.equal(shown.remembersPassword, profile?.credentials !== null);
-        // A time shows only for a parked session, which the extension renews itself.
+        // The time of a renewal shows only for a parked session, which the extension
+        // renews itself. A failing renewal shows for every account the renewal takes,
+        // also one that it signs in with its remembered password.
         const ownsSession = profile?.token !== null && !shown.active;
+        const renews =
+          ownsSession ||
+          (!shown.active &&
+            profile?.credentials !== null &&
+            profile?.needsSignIn === false);
         assert.equal(
           shown.renewedAt,
           ownsSession ? profile?.refreshedAt : null,
         );
         assert.equal(
           shown.renewalFailingSince,
-          ownsSession ? profile?.renewalFailedAt : null,
+          renews ? profile?.renewalFailedAt : null,
         );
       }
     }),
@@ -581,6 +631,24 @@ test("the popup sees no session and no password of any account", () => {
             profiles: [
               { id: "b", username: "", name: "", token: "\u0000" },
               { id: "b", username: "", name: "", refreshedAt: 0 },
+            ],
+          },
+          false,
+          0,
+        ],
+        // An account off the page that the renewal signs in with its password shows
+        // since when that fails.
+        [
+          {
+            profiles: [
+              {
+                id: "a",
+                username: "ada",
+                name: "",
+                token: null,
+                renewalFailedAt: 0,
+                credentials: { username: "ada", password: "pw" },
+              },
             ],
           },
           false,

@@ -33,6 +33,7 @@ import {
   switchTo,
   syncFromPage,
 } from "../src/switch.ts";
+import { idleTick, NO_VENUE } from "../src/venue.ts";
 import {
   LOGIN_WITHOUT_PASSWORD,
   REFRESH_DEAD_TOKEN,
@@ -350,6 +351,76 @@ test("syncFromPage notices a sign-out in the page", async () => {
   const state = await syncFromPage(deps(store, new FakePage(null), router()));
   assert.equal(state.activeId, null);
   assert.equal(find(state, "a")?.needsSignIn, true);
+});
+
+/** Ada plays on the page and remembers her password. */
+function adaPlaysWithPassword() {
+  return rememberCredentials(setActive(EMPTY, ada), "a", {
+    username: "ada",
+    password: "pw",
+  });
+}
+
+test("syncFromPage leaves an account that remembers its password ready, and the renewal signs it in", async () => {
+  const store = new FakeStore(adaPlaysWithPassword());
+  const board = deps(
+    store,
+    new FakePage(null),
+    router({ login: () => Promise.resolve(sessionResponse("a", "fresh")) }),
+  );
+  const state = await syncFromPage(board);
+  // Nothing tried the password yet: the session is gone, but the account isn't stuck.
+  assert.equal(state.activeId, null);
+  assert.equal(find(state, "a")?.token, null);
+  assert.equal(find(state, "a")?.needsSignIn, false);
+
+  const run = await refreshParked(board);
+  assert.equal(find(run.state, "a")?.token, "fresh");
+  assert.equal(find(run.state, "a")?.needsSignIn, false);
+  assert.equal(find(run.state, "a")?.refreshedAt, 1000);
+  assert.deepEqual([run.renewed, run.rejected, run.unreachable], [1, 0, 0]);
+});
+
+test("the renewal marks an account without a session once Autodarts refuses its remembered password", async () => {
+  const store = new FakeStore(adaPlaysWithPassword());
+  const board = deps(store, new FakePage(null), router({ login: rejected }));
+  await syncFromPage(board);
+  const run = await refreshParked(board);
+  assert.equal(find(run.state, "a")?.needsSignIn, true);
+  assert.deepEqual([run.renewed, run.rejected, run.unreachable], [0, 1, 0]);
+  // A marked account waits for a person: the next run asks Autodarts nothing.
+  const again = await refreshParked(board);
+  assert.deepEqual(
+    [again.renewed, again.rejected, again.unreachable],
+    [0, 0, 0],
+  );
+});
+
+test("the renewal tries the remembered password of an account without a session again after a temporary problem", async () => {
+  const store = new FakeStore(adaPlaysWithPassword());
+  const board = deps(store, new FakePage(null), router({ login: offline }));
+  await syncFromPage(board);
+  const run = await refreshParked(board);
+  assert.equal(find(run.state, "a")?.needsSignIn, false);
+  assert.equal(find(run.state, "a")?.token, null);
+  assert.deepEqual([run.renewed, run.rejected, run.unreachable], [0, 0, 1]);
+});
+
+test("after a sign-out on the page, the return after a break switches to a house account that remembers its password", async () => {
+  const store = new FakeStore(adaPlaysWithPassword());
+  const board = deps(store, new FakePage(null), router());
+  await syncFromPage(board);
+  const view = await readView(board);
+  const tick = idleTick({
+    venue: { ...NO_VENUE, idleMinutes: 5, house: "a" },
+    profiles: view.profiles,
+    unsaved: view.unsaved,
+    lastActivity: 0,
+    now: 60 * 60_000,
+    matchRunning: false,
+    lobbyOpen: false,
+  });
+  assert.deepEqual(tick.step, { kind: "switch", id: "a" });
 });
 
 test("signOutForNewAccount parks the account that was playing", async () => {
@@ -800,6 +871,46 @@ test("a session in the page that Autodarts refuses is parked nowhere, and the pa
   assert.ok(out.ok);
   assert.equal(stale.token, null);
   assert.equal(find(out.state, "a")?.needsSignIn, true);
+});
+
+test("an account that remembers its password and lost its session on the page is left ready, and the renewal signs it in", async () => {
+  const withPassword = () =>
+    rememberCredentials(adaPlays(), "a", { username: "ada", password: "pw" });
+  // Someone signed in as Cy right in the page, and then the page's session is refused.
+  for (const [token, sessions] of [
+    ["pc", { tb: ["b", "fb"], pc: ["c", "fc"] }],
+    ["dead", { tb: ["b", "fb"] }],
+  ] as const) {
+    const store = new FakeStore(withPassword());
+    const result = await switchTo(
+      deps(store, new FakePage(token), renewing(sessions)),
+      "b",
+    );
+    assert.ok(result.ok);
+    assert.equal(find(result.state, "a")?.token, null);
+    assert.equal(find(result.state, "a")?.needsSignIn, false, token);
+  }
+  const store = new FakeStore(withPassword());
+  const board = deps(
+    store,
+    new FakePage("dead"),
+    router({
+      refresh: rejected,
+      login: () => Promise.resolve(sessionResponse("a", "fa")),
+    }),
+  );
+  const out = await signOutForNewAccount(board);
+  assert.ok(out.ok);
+  assert.equal(find(out.state, "a")?.needsSignIn, false);
+  const run = await refreshParked({
+    ...board,
+    fetcher: router({
+      refresh: renewing({ tb: ["b", "fb"], tc: ["c", "fc"] }),
+      login: () => Promise.resolve(sessionResponse("a", "fa")),
+    }),
+  });
+  assert.equal(find(run.state, "a")?.token, "fa");
+  assert.deepEqual([run.renewed, run.rejected, run.unreachable], [3, 0, 0]);
 });
 
 test("the token of the page is read again right before it is sent, so one the page renewed meanwhile isn't sent", async () => {
