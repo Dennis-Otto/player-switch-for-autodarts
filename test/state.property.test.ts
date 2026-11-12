@@ -25,6 +25,7 @@ import {
   forget,
   forgetCredentials,
   isAdding,
+  loseSession,
   PLAIN_VERSION,
   park,
   parked,
@@ -32,6 +33,7 @@ import {
   parseState,
   readStored,
   rememberCredentials,
+  renewable,
   STATE_VERSION,
   type State,
   setActive,
@@ -77,6 +79,7 @@ const change = fc.oneof(
   fc.record({ kind: fc.constant("setActive" as const), identity }),
   fc.record({ kind: fc.constant("activate" as const), id }),
   fc.record({ kind: fc.constant("endSession" as const), id }),
+  fc.record({ kind: fc.constant("loseSession" as const), id }),
   fc.record({ kind: fc.constant("failRenewal" as const), id, now }),
   fc.record({ kind: fc.constant("deactivate" as const) }),
   fc.record({ kind: fc.constant("forget" as const), id }),
@@ -103,6 +106,8 @@ function apply(state: State, step: Change): State {
       return activate(state, step.id);
     case "endSession":
       return endSession(state, step.id);
+    case "loseSession":
+      return loseSession(state, step.id);
     case "failRenewal":
       return failRenewal(state, step.id, step.now);
     case "deactivate":
@@ -159,6 +164,19 @@ test("every change keeps each account once, in the order of the popup, and the a
             (profile) =>
               profile.token !== null && profile.id !== state.activeId,
           ),
+        );
+        // The renewal takes the parked sessions, and the accounts without one that a
+        // remembered password, which nothing refused yet, signs in again.
+        assert.deepEqual(
+          renewable(state).map((profile) => profile.id),
+          state.profiles
+            .filter(
+              (profile) =>
+                profile.id !== state.activeId &&
+                (profile.token !== null ||
+                  (profile.credentials !== null && !profile.needsSignIn)),
+            )
+            .map((profile) => profile.id),
         );
         // A new account is waited for only while no account of the extension plays.
         assert.ok(state.addingUntil === null || state.activeId === null);
@@ -252,6 +270,15 @@ test("a session goes where the change puts it, whatever happened before", () => 
         case "endSession":
           assert.equal(profile?.token, existed ? null : undefined);
           assert.equal(profile?.needsSignIn, existed ? true : undefined);
+          assert.notEqual(after.activeId, target);
+          break;
+        case "loseSession":
+          // Only an account that remembers no password has to sign in again.
+          assert.equal(profile?.token, existed ? null : undefined);
+          assert.equal(
+            profile?.needsSignIn,
+            existed ? profile?.credentials === null : undefined,
+          );
           assert.notEqual(after.activeId, target);
           break;
         case "failRenewal":
@@ -404,6 +431,7 @@ test("a renewal fails for an account until a session of it works again", () => {
             "setActive",
             "activate",
             "endSession",
+            "loseSession",
             "forget",
           ].includes(step.kind)
         ) {

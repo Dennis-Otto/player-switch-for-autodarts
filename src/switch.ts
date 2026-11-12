@@ -56,9 +56,10 @@ import {
   find,
   forget,
   isAdding,
+  loseSession,
   type Profile,
   park,
-  parked,
+  renewable,
   type State,
   startAdding,
   stash,
@@ -147,8 +148,9 @@ async function renew(deps: Deps, profile: Profile): Promise<Renewal> {
 
 /**
  * Reflects, without the network, whether a session is in the page. When the active
- * account's session has vanished (a sign-out in the page), it is marked as needing
- * a new one.
+ * account's session has vanished (a sign-out in the page), it no longer plays: an
+ * account that remembers its password stays ready, since the next renewal or tap signs
+ * it in with it, and one without is marked as needing a new sign-in.
  */
 export function syncFromPage(deps: Deps): Promise<State> {
   return deps.queue(async () => {
@@ -160,7 +162,7 @@ export function syncFromPage(deps: Deps): Promise<State> {
     if (state.activeId === null) {
       return state;
     }
-    return commit(deps, endSession(state, state.activeId));
+    return commit(deps, loseSession(state, state.activeId));
   });
 }
 
@@ -373,7 +375,8 @@ async function bringOn(deps: Deps, id: string): Promise<SwitchResult> {
  * when it comes a second time.
  *
  * The account that played last needs a new session when this one isn't its own: it
- * was signed out in the page. A session of an account without a tile leaves with the
+ * was signed out in the page. Its remembered password isn't tried here, so an account
+ * with one stays ready for the next renewal or tap (`loseSession`). A session of an account without a tile leaves with the
  * page: a sign-in is saved only with a tap, and nobody holds its token any more. While
  * no account plays, the session in the page is nobody's that the extension knows, and
  * it stays unspent.
@@ -392,11 +395,11 @@ async function keepOutgoing(deps: Deps, state: State): Promise<State | null> {
     return null;
   }
   if (renewal.kind === "rejected") {
-    return commit(deps, endSession(state, activeId));
+    return commit(deps, loseSession(state, activeId));
   }
   // The page's token is spent now: keep the fresh one before the page can fail.
   const identity = readIdentity(renewal.session.accessToken);
-  const left = identity.id === activeId ? state : endSession(state, activeId);
+  const left = identity.id === activeId ? state : loseSession(state, activeId);
   return commit(
     deps,
     find(left, identity.id) === undefined
@@ -673,10 +676,12 @@ export interface RefreshRun extends RunCounts {
 type Outcome = keyof RunCounts | "skipped";
 
 /**
- * Keeps every parked session fresh, so a stored account can play at any time. An
- * account whose token has died and that has no stored sign-in is marked as needing
- * one; a temporary problem keeps its session for the next run and marks since when
- * its renewal fails, until a renewal works again.
+ * Keeps every parked session fresh, so a stored account can play at any time, and signs
+ * in with its remembered password each account whose session is gone but whose password
+ * nothing refused yet, such as after a sign-out on the page. An account whose token has
+ * died and whose stored sign-in is refused, or that has none, is marked as needing one;
+ * a temporary problem keeps its session for the next run and marks since when its
+ * renewal fails, until a renewal works again.
  *
  * Each account takes a turn of its own in the queue, so a tap waits for one renewal at
  * most, and each fresh token is saved as soon as it arrives. The counts tell the
@@ -689,7 +694,7 @@ export async function refreshParked(deps: Deps): Promise<RefreshRun> {
     rejected: 0,
     unreachable: 0,
   };
-  for (const { id } of parked(run.state)) {
+  for (const { id } of renewable(run.state)) {
     const { state, outcome } = await deps.queue(() => refreshOne(deps, id));
     run.state = state;
     if (outcome !== "skipped") {
@@ -704,8 +709,8 @@ async function refreshOne(
   id: string,
 ): Promise<{ state: State; outcome: Outcome }> {
   const state = await deps.store.load();
-  // A switch may have run since the list was made: renew only what is still parked.
-  const profile = parked(state).find((candidate) => candidate.id === id);
+  // A switch may have run since the list was made: renew only what still waits for it.
+  const profile = renewable(state).find((candidate) => candidate.id === id);
   if (profile === undefined) {
     return { state, outcome: "skipped" };
   }

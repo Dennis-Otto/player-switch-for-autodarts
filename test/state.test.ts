@@ -12,6 +12,7 @@ import {
   forget,
   forgetCredentials,
   isAdding,
+  loseSession,
   PLAIN_VERSION,
   park,
   parked,
@@ -20,6 +21,7 @@ import {
   parseState,
   readStored,
   rememberCredentials,
+  renewable,
   STATE_VERSION,
   type State,
   setActive,
@@ -38,6 +40,7 @@ const ada: Identity = {
 };
 const bob: Identity = { id: "b", username: "bob", name: "Bob", picture: null };
 const cy: Identity = { id: "c", username: "cy", name: "Cy", picture: null };
+const dee: Identity = { id: "d", username: "dee", name: "Dee", picture: null };
 
 /** The accounts as release 0.2.0 stored them, with no version: one plays, one is parked. */
 const RELEASE_0_2_0 = {
@@ -386,6 +389,42 @@ test("endSession keeps the active id when a different account's session ends", (
   state = park(state, ada, "ta", 1);
   state = endSession(state, "a");
   assert.equal(state.activeId, "b");
+});
+
+test("loseSession marks only an account that remembers no password", () => {
+  let state = rememberCredentials(setActive(EMPTY, ada), "a", {
+    username: "ada",
+    password: "pw",
+  });
+  state = loseSession(state, "a");
+  assert.equal(state.activeId, null);
+  assert.equal(find(state, "a")?.token, null);
+  assert.equal(find(state, "a")?.needsSignIn, false);
+  const bobPlays = loseSession(setActive(state, bob), "b");
+  assert.equal(bobPlays.activeId, null);
+  assert.equal(find(bobPlays, "b")?.needsSignIn, true);
+  assert.equal(loseSession(state, "z"), state);
+});
+
+test("renewable lists the parked sessions and the accounts that a remembered password signs in again", () => {
+  const pw = { username: "x", password: "pw" };
+  let state: State = park(EMPTY, ada, "ta", 1);
+  // Bob lost his session, and his password wasn't tried yet.
+  state = loseSession(rememberCredentials(setActive(state, bob), "b", pw), "b");
+  // Cy's password was refused; Dee plays, with a password, on the page.
+  state = endSession(
+    rememberCredentials(park(state, cy, "tc", 1), "c", pw),
+    "c",
+  );
+  state = rememberCredentials(setActive(state, dee), "d", pw);
+  assert.deepEqual(
+    renewable(state).map((profile) => profile.id),
+    ["a", "b"],
+  );
+  assert.deepEqual(
+    parked(state).map((profile) => profile.id),
+    ["a"],
+  );
 });
 
 test("deactivate forgets who is on the page", () => {
