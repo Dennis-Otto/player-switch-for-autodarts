@@ -8,7 +8,9 @@
  * says "In the lobby". In the venue mode, the
  * worker asks for a PIN before a switch, a join or a change in "Manage accounts"; this
  * module then asks the person, with a number pad for a touch screen, and sends the
- * request again.
+ * request again. Below the tile of the player who plays, it offers that player to
+ * protect their account with a PIN, or to remove it with that PIN, without the manager
+ * (decision 0018).
  */
 import type {
   PlayersAction,
@@ -34,7 +36,7 @@ import {
   tileOf,
   toggled,
 } from "../popup-model.ts";
-import { confirmDialog, pinDialog } from "./dialogs.ts";
+import { choosePin, confirmDialog, pinDialog } from "./dialogs.ts";
 import { find, t, translate } from "./dom.ts";
 
 // The language of the texts that show, so that names and times read the same: the
@@ -47,6 +49,16 @@ const language = t("locale");
  */
 function confirmMatch(action: string): Promise<boolean> {
   return confirmDialog(matchQuestion(action, t));
+}
+
+/** Asks whether to remove an account, which also ends its session at Autodarts. */
+function confirmRemoval(profile: PlayerView): Promise<boolean> {
+  return confirmDialog({
+    title: t("remove"),
+    text: t("removeConfirm", profile.name),
+    confirm: t("remove"),
+    cancel: t("cancel"),
+  });
 }
 
 /** A small mark on the tile of an account that asks for a PIN: a lock and the word. */
@@ -70,13 +82,14 @@ function pinMark(): HTMLSpanElement {
 
 // The controls that send a request to the service worker.
 const REQUEST_CONTROLS =
-  ".tile, .join, .toggle-remember, .remove, .save-remember, #adopt, #add, #open-page, #stop-adding, #forget-all";
+  ".tile, .join, .own, .toggle-remember, .remove, .save-remember, #adopt, #add, #open-page, #stop-adding, #forget-all";
 
 // The controls of a tile, so that the focus comes back to the same one when the tiles
 // are drawn anew after a request.
 const TILE_CONTROLS = [
   ".tile",
   ".join",
+  ".own",
   ".toggle-remember",
   ".remove",
   ".cred-username",
@@ -166,8 +179,9 @@ export function mountPlayers({
   let busy = false;
   // The accounts that show, for the name in the question for a PIN.
   let shown: PlayerView[] = [];
-  // Whether a manager PIN guards "Manage accounts".
-  let guarded = false;
+  // Whether a manager PIN guards "Manage accounts", and the account whose player may
+  // protect it with a PIN of their own.
+  let venue: PlayersView["venue"] = { manager: false, protectable: null };
   // The lobby that the page shows, with the accounts seated there, or null.
   let lobby: PlayersView["lobby"] = null;
 
@@ -252,7 +266,9 @@ export function mountPlayers({
         }
         message = answered(message, question);
       } else {
-        const pin = await pinDialog(pinQuestion(question, nameOf(message), t));
+        const pin = await pinDialog(
+          pinQuestion(question, nameOf(message), t, message.action),
+        );
         if (pin === null) {
           showStatus("");
           render(view);
@@ -294,7 +310,7 @@ export function mountPlayers({
   function render(view: PlayersView): void {
     const before = focusBefore();
     shown = view.profiles;
-    guarded = view.venue.manager;
+    venue = view.venue;
     lobby = view.lobby;
     profiles.replaceChildren();
     view.profiles.forEach((profile, index) => {
@@ -397,6 +413,7 @@ export function mountPlayers({
       language,
       t,
       lobby,
+      venue,
     });
     node.classList.toggle("active", profile.active);
     node.dataset.id = profile.id;
@@ -452,6 +469,32 @@ export function mountPlayers({
         { action: "join", id: profile.id },
         t("switchSignIn", profile.name),
       );
+    });
+
+    // At a display with a manager PIN, the player who plays looks after their own
+    // account: "Protect with a PIN" gives it a first PIN, asked twice, and "Remove my
+    // account", once it has one, removes it after a yes and that PIN.
+    const own = find<HTMLButtonElement>(".own", node);
+    own.hidden = view.own === null;
+    if (view.own !== null) {
+      own.textContent = view.own.text;
+      own.setAttribute("aria-label", view.own.label);
+      own.classList.toggle("danger", view.own.kind === "remove");
+    }
+    own.addEventListener("click", async () => {
+      if (busy || manage.managing || view.own === null) {
+        return;
+      }
+      if (view.own.kind === "protect") {
+        const newPin = await choosePin(t("newPinFor", profile.name));
+        if (newPin !== null) {
+          void send({ action: "protect", id: profile.id, newPin });
+        }
+        return;
+      }
+      if (await confirmRemoval(profile)) {
+        void send({ action: "removeAccount", id: profile.id });
+      }
     });
 
     const menu = find(".menu", node);
@@ -530,13 +573,7 @@ export function mountPlayers({
       if (busy) {
         return;
       }
-      const confirmed = await confirmDialog({
-        title: t("remove"),
-        text: t("removeConfirm", profile.name),
-        confirm: t("remove"),
-        cancel: t("cancel"),
-      });
-      if (confirmed) {
+      if (await confirmRemoval(profile)) {
         void send({ action: "removeAccount", id: profile.id });
       }
     });
@@ -573,7 +610,7 @@ export function mountPlayers({
     if (busy) {
       return;
     }
-    if (mustUnlock(manage, guarded)) {
+    if (mustUnlock(manage, venue.manager)) {
       const reply = await send({ action: "unlock" });
       if (reply === undefined || "error" in reply || !reply.ok) {
         return;

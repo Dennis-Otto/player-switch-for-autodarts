@@ -107,6 +107,19 @@
       }
     }
   },
+  "protectOwn": {
+    "message": "Protéger par un PIN"
+  },
+  "protectedOwn": {
+    "message": "$NAME$ est désormais protégé par un PIN : le compte le demande avant que quelqu'un joue avec.",
+    "placeholders": { "name": { "content": "$1" } }
+  },
+  "removeOwn": {
+    "message": "Supprimer mon compte"
+  },
+  "removeOwnPinText": {
+    "message": "Saisissez le PIN de ce compte pour le supprimer de cet écran."
+  },
   "removedOffline": {
     "message": "$NAME$ est supprimé de cet écran. Autodarts est injoignable, la session n'y prendra donc fin qu'à son expiration.",
     "placeholders": {

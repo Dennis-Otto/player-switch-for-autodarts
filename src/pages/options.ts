@@ -28,7 +28,7 @@ import {
   venueReport,
 } from "../options-model.ts";
 import { openShortcuts, parseSettings, SETTINGS_KEY } from "../page.ts";
-import { confirmDialog, pinDialog } from "./dialogs.ts";
+import { choosePin, confirmDialog, pinDialog } from "./dialogs.ts";
 import { find, t, translate } from "./dom.ts";
 
 const showButton = find<HTMLInputElement>("#show-button");
@@ -153,31 +153,6 @@ async function venueRequest(
     drawVenue(reply.status);
   }
   return reply;
-}
-
-/**
- * Asks for a new PIN twice, so that a slip of a finger locks nobody out. Answers the
- * PIN, or null when the person cancels.
- */
-async function choosePin(title: string): Promise<string | null> {
-  let error = "";
-  for (;;) {
-    const first = await pinDialog({ title, text: t("newPinText"), error });
-    if (first === null) {
-      return null;
-    }
-    const second = await pinDialog({
-      title: t("repeatPinTitle"),
-      text: t("repeatPinText"),
-    });
-    if (second === null) {
-      return null;
-    }
-    if (first === second) {
-      return first;
-    }
-    error = t("pinMismatch");
-  }
 }
 
 /** A choice of a select, with its value and its text. */

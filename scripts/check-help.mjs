@@ -50,6 +50,7 @@ const explained = [
   "managerPinText",
   "optionsLocked",
   "pinMismatch",
+  "removeOwnPinText",
 ];
 
 // Names, labels, buttons, titles and the texts of the welcome page, which the help
@@ -67,6 +68,9 @@ const plain = [
   "addingText",
   "savedAccount",
   "removed",
+  "protectOwn",
+  "protectedOwn",
+  "removeOwn",
   "forgetAll",
   "forgotAll",
   "saveAccount",

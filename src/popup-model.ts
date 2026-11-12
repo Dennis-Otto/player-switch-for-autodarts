@@ -2,7 +2,8 @@
  * What the popup and the switcher in the Autodarts page decide, apart from the page that
  * shows it: what the status line says after an answer of the service worker, which
  * question an answer asks of the person, what a tile shows, such as "Join the lobby" or
- * "Join again" on a page with a lobby, and when "Manage accounts" opens. `pages/players.ts` draws it and sends the taps; the end-to-end tests check the
+ * "Join again" on a page with a lobby, or what a player at a venue display does with their
+ * own account, and when "Manage accounts" opens. `pages/players.ts` draws it and sends the taps; the end-to-end tests check the
  * two together in the real extension.
  *
  * Every text comes from `t`, the texts of the extension, which a test passes in.
@@ -141,6 +142,10 @@ export function statusAfter(
   if (typeof reply.ended === "boolean") {
     return { text: removalText(about, reply.ended, t), error: !reply.ended };
   }
+  if (about.action === "protect") {
+    // The tile shows the lock from now on; the line says whose account it guards.
+    return { text: t("protectedOwn", about.name), error: false };
+  }
   if (typeof reply.joined === "string") {
     // A player who still sat in the lobby kept that seat, and nothing changed there.
     return {
@@ -211,15 +216,25 @@ export function answered(message: Ask, question: Question, pin = ""): Ask {
     : { ...message, pin };
 }
 
-/** The texts of the question for a PIN: of the account `name`, or the manager PIN. */
+/**
+ * The texts of the question for a PIN: of the account `name`, or the manager PIN. The
+ * PIN of an account before a removal (`action`) says that it removes the account.
+ */
 export function pinQuestion(
   question: { manager: boolean; wrong: boolean },
   name: string,
   t: Translate,
+  action = "",
 ): { title: string; text: string; error: string } {
+  let text = t("pinText");
+  if (question.manager) {
+    text = t("managerPinText");
+  } else if (action === "removeAccount") {
+    text = t("removeOwnPinText");
+  }
   return {
     title: question.manager ? t("managerPinTitle") : t("pinTitle", name),
-    text: question.manager ? t("managerPinText") : t("pinText"),
+    text,
     error: question.wrong ? t("pinWrong") : "",
   };
 }
@@ -255,6 +270,15 @@ export interface Tile {
    * screen reader, with the name of the account.
    */
   join: { text: string; label: string; again: boolean } | null;
+  /**
+   * The button below the tile of the player who plays, at a display with a manager PIN,
+   * with which that player looks after their own account (decision 0018): "Protect with
+   * a PIN" for the account that the view names as `protectable`, and "Remove my account"
+   * for one with a PIN, which asks for that PIN. `label` is its name for a screen reader:
+   * its text and the name of the account, as the options page names its buttons. Null
+   * for every other tile.
+   */
+  own: { text: string; label: string; kind: "protect" | "remove" } | null;
   /** In "Manage accounts": when the renewal of the parked session last worked. */
   renewed: string | null;
   /** In "Manage accounts": since when the renewal fails, while the extension keeps trying. */
@@ -263,9 +287,31 @@ export interface Tile {
   toggle: string;
 }
 
+/** The own action of the player who plays on the tile of `profile`, as `Tile.own` says. */
+function ownOf(
+  profile: PlayerView,
+  venue: PlayersView["venue"] | undefined,
+  t: Translate,
+): Tile["own"] {
+  if (venue === undefined || !venue.manager || !profile.active) {
+    return null;
+  }
+  let kind: "protect" | "remove";
+  if (venue.protectable === profile.id) {
+    kind = "protect";
+  } else if (profile.pin) {
+    kind = "remove";
+  } else {
+    return null;
+  }
+  const text = kind === "protect" ? t("protectOwn") : t("removeOwn");
+  return { text, label: `${text}: ${profile.name}`, kind };
+}
+
 /**
  * What the tile of an account shows, the `index`-th of the list. `lobby` is the lobby
- * that the page shows, from the view, or null on any other page.
+ * that the page shows, from the view, or null on any other page, and `venue` the venue
+ * mode of the view.
  */
 export function tileOf(
   profile: PlayerView,
@@ -276,6 +322,7 @@ export function tileOf(
     language: string;
     t: Translate;
     lobby?: PlayersView["lobby"];
+    venue?: PlayersView["venue"];
   },
 ): Tile {
   const { t, language, lobby = null } = options;
@@ -307,6 +354,7 @@ export function tileOf(
     key: options.numbered && index < 9 ? String(index + 1) : null,
     chip,
     join,
+    own: ownOf(profile, options.venue, t),
     renewed:
       profile.renewedAt === null
         ? null

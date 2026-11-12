@@ -434,7 +434,7 @@ test("the view of the popup says when no Autodarts tab answers", async () => {
       ["bob", false, false],
     ],
   );
-  assert.deepEqual(reply.view.venue, { manager: false });
+  assert.deepEqual(reply.view.venue, { manager: false, protectable: null });
   assert.equal(reply.view.updateHint, false);
 });
 
@@ -816,11 +816,161 @@ test("while a manager PIN is set, Manage accounts and its changes need it", asyn
       ["pin", "manager"],
       JSON.stringify(message),
     );
-    assert.deepEqual(refused.view.venue, { manager: true });
+    // Ada plays and has no PIN yet: her player may protect her account.
+    assert.deepEqual(refused.view.venue, { manager: true, protectable: "ada" });
   }
   assert.equal((await accounts(fake)).profiles.length, 2);
   const open = await popup(fake, { action: "unlock", managerPin: "9999" });
   assert.equal(open.ok, true);
+});
+
+test("the player who plays protects their account with a first PIN without the manager, and no other account", async () => {
+  const fake = browser();
+  await twoPlayers(fake);
+  fake.local.data.set(VENUE_KEY, { manager: await quickHash("9999") });
+  await started(fake);
+  const players = (): Record<string, object> =>
+    (fake.local.data.get(VENUE_KEY) as { players?: Record<string, object> })
+      .players ?? {};
+
+  const view = await popup(fake, { action: "view" });
+  assert.deepEqual(view.view.venue, { manager: true, protectable: "ada" });
+
+  // Bob is parked: his account is the manager's to protect, and his PIN stays unset.
+  const parked = await popup(fake, {
+    action: "protect",
+    id: "bob",
+    newPin: "1234",
+  });
+  assert.deepEqual([parked.reason, parked.pin], ["pin", "manager"]);
+  const invalid = await popup(fake, {
+    action: "protect",
+    id: "ada",
+    newPin: "12",
+  });
+  assert.equal(invalid.reason, "invalid");
+  assert.deepEqual(players(), {});
+
+  const protectedAda = await popup(fake, {
+    action: "protect",
+    id: "ada",
+    newPin: "1234",
+  });
+  assert.equal(protectedAda.ok, true);
+  assert.deepEqual(protectedAda.view.venue, {
+    manager: true,
+    protectable: null,
+  });
+  assert.equal(
+    protectedAda.view.profiles.find((profile) => profile.id === "ada")?.pin,
+    true,
+  );
+  const first = players().ada;
+  assert.ok(first !== undefined);
+  assert.ok(!JSON.stringify(fake.local.data.get(VENUE_KEY)).includes("1234"));
+
+  // A PIN of its own is never replaced without the manager, who still may.
+  const again = await popup(fake, {
+    action: "protect",
+    id: "ada",
+    newPin: "5555",
+  });
+  assert.deepEqual([again.reason, again.pin], ["pin", "manager"]);
+  assert.equal(players().ada, first);
+  const byManager = await popup(fake, {
+    action: "protect",
+    id: "ada",
+    newPin: "5555",
+    managerPin: "9999",
+  });
+  assert.equal(byManager.ok, true);
+  assert.notDeepEqual(players().ada, first);
+  // Only a saved account gets a PIN.
+  const unknown = await popup(fake, {
+    action: "protect",
+    id: "carl",
+    newPin: "1234",
+    managerPin: "9999",
+  });
+  assert.equal(unknown.reason, "invalid");
+  assert.deepEqual(Object.keys(players()), ["ada"]);
+});
+
+test("the house account and a display without a manager PIN offer no PIN of one's own", async () => {
+  const fake = browser();
+  await twoPlayers(fake);
+  fake.local.data.set(VENUE_KEY, {
+    manager: await quickHash("9999"),
+    idleMinutes: 10,
+    house: "ada",
+  });
+  await started(fake);
+  const house = await popup(fake, {
+    action: "protect",
+    id: "ada",
+    newPin: "1234",
+  });
+  assert.deepEqual([house.reason, house.pin], ["pin", "manager"]);
+  assert.deepEqual(house.view.venue, { manager: true, protectable: null });
+
+  const home = browser();
+  await twoPlayers(home);
+  await started(home);
+  const view = await popup(home, { action: "view" });
+  assert.deepEqual(view.view.venue, { manager: false, protectable: null });
+});
+
+test("a player removes their own account with its PIN, which opens no other account", async () => {
+  const fake = browser();
+  await twoPlayers(fake);
+  fake.local.data.set(VENUE_KEY, {
+    manager: await quickHash("9999"),
+    players: { bob: await quickHash("1234") },
+  });
+  await started(fake);
+
+  const ask = await popup(fake, { action: "removeAccount", id: "bob" });
+  assert.deepEqual([ask.reason, ask.pin, ask.wrong], ["pin", "player", false]);
+  const wrong = await popup(fake, {
+    action: "removeAccount",
+    id: "bob",
+    pin: "0000",
+  });
+  assert.deepEqual(
+    [wrong.reason, wrong.pin, wrong.wrong],
+    ["pin", "player", true],
+  );
+  // Ada has no PIN: Bob's PIN removes only Bob's account, hers takes the manager.
+  const other = await popup(fake, {
+    action: "removeAccount",
+    id: "ada",
+    pin: "1234",
+  });
+  assert.deepEqual([other.reason, other.pin], ["pin", "manager"]);
+  // A request with a manager PIN is the manager's, whatever account PIN it carries.
+  const manager = await popup(fake, {
+    action: "removeAccount",
+    id: "bob",
+    pin: "1234",
+    managerPin: "0000",
+  });
+  assert.deepEqual([manager.reason, manager.pin], ["pin", "manager"]);
+  assert.equal((await accounts(fake)).profiles.length, 2);
+
+  const removed = await popup(fake, {
+    action: "removeAccount",
+    id: "bob",
+    pin: "1234",
+  });
+  assert.equal(removed.ok, true);
+  assert.deepEqual(
+    removed.view.profiles.map((profile) => profile.id),
+    ["ada"],
+  );
+  assert.deepEqual(
+    (fake.local.data.get(VENUE_KEY) as { players: object }).players,
+    {},
+  );
 });
 
 test("the popup says when the accounts are of a newer version, and leaves them as they are", async () => {

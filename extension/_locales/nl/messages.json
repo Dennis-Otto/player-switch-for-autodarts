@@ -107,6 +107,19 @@
       }
     }
   },
+  "protectOwn": {
+    "message": "Beveiligen met een pincode"
+  },
+  "protectedOwn": {
+    "message": "$NAME$ is nu beveiligd met een pincode: het account vraagt erom voordat iemand ermee speelt.",
+    "placeholders": { "name": { "content": "$1" } }
+  },
+  "removeOwn": {
+    "message": "Mijn account verwijderen"
+  },
+  "removeOwnPinText": {
+    "message": "Voer de pincode van dit account in om het van dit scherm te verwijderen."
+  },
   "removedOffline": {
     "message": "$NAME$ is van dit scherm verwijderd. Autodarts is niet bereikbaar, dus de sessie daar eindigt pas wanneer die verloopt.",
     "placeholders": {

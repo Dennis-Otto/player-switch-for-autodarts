@@ -20,6 +20,7 @@ import {
   MAX_ITERATIONS,
   NO_LOCKOUT,
   NO_VENUE,
+  ownRemovalPin,
   PBKDF2_ITERATIONS,
   type PinCheck,
   type PinHash,
@@ -28,6 +29,7 @@ import {
   parsePinHash,
   parseVenue,
   pinOf,
+  protectsItself,
   returnsAfterBreak,
   SALT_BYTES,
   setIdle,
@@ -249,6 +251,30 @@ test("pinOf finds the PIN of an account and of nothing else", async () => {
   for (const id of ["b", "__proto__", "constructor", 5, undefined]) {
     assert.equal(pinOf(venue, id), null, String(id));
   }
+});
+
+test("the player who plays protects their own account only while a manager PIN is set and the account has no PIN", async () => {
+  const pin = await hash("1234");
+  const venue: Venue = { ...NO_VENUE, manager: pin };
+  assert.equal(protectsItself(venue, "a", "a"), true);
+  // Another account than the one that plays, or none that plays.
+  assert.equal(protectsItself(venue, "b", "a"), false);
+  assert.equal(protectsItself(venue, "a", null), false);
+  // A PIN of its own is never replaced without the manager.
+  assert.equal(protectsItself(setPlayerPin(venue, "a", pin), "a", "a"), false);
+  // The house account is the manager's.
+  assert.equal(protectsItself({ ...venue, house: "a" }, "a", "a"), false);
+  // Without a manager PIN, the options page sets every PIN, and the popup offers none.
+  assert.equal(protectsItself(NO_VENUE, "a", "a"), false);
+});
+
+test("a player removes their own account with its PIN while a manager PIN is set", async () => {
+  const pin = await hash("1234");
+  const manager = await hash("9999");
+  const venue = setPlayerPin({ ...NO_VENUE, manager }, "a", pin);
+  assert.equal(ownRemovalPin(venue, "a"), pin);
+  assert.equal(ownRemovalPin(venue, "b"), null);
+  assert.equal(ownRemovalPin({ ...venue, manager: null }, "a"), null);
 });
 
 test("parseActivity reads a time and nothing else", () => {

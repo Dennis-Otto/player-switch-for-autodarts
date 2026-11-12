@@ -93,11 +93,20 @@ At home, everyone at the display may play under any saved account, which is the 
   <img src="images/diagrams/venue-mode.svg" alt="The venue mode at a club or pub display: A tap on the tile of an account with a PIN asks for that PIN before anything changes; a wrong one changes nothing, and five in a row lock every PIN for a minute. Once a minute, the service worker looks whether the break is over. A match that runs counts as input, so a match is never interrupted, and a lobby that waits for players makes the break three times as long. After the break, the display switches to the house account, or signs out when none is set or it has to sign in again; either way the player before keeps their session parked.">
 </picture>
 
-- **A manager PIN** guards **Manage accounts**, where accounts are removed and passwords remembered or forgotten, and the settings themselves. The popup and the players on the Autodarts page ask for it once as **Manage accounts** opens, and forget it as it closes.
-- **A PIN for each player who wants one,** 4 to 8 digits, under **PINs of the players**. A tap on that player's tile asks for it, on a number pad that works on a touch screen, before anything changes; their tile shows a lock. Nobody else plays under their account and spoils their statistics.
+- **A manager PIN** guards **Manage accounts**, where accounts are removed and passwords remembered or forgotten, and the settings themselves. The popup and the players on the Autodarts page ask for it once as **Manage accounts** opens, and forget it as it closes. A player still protects or removes their own account without it, as [below](#own-account).
+- **A PIN for each player who wants one,** 4 to 8 digits, under **PINs of the players**, or set by the player themselves with **Protect with a PIN** while their account plays. A tap on that player's tile asks for it, on a number pad that works on a touch screen, before anything changes; their tile shows a lock. Nobody else plays under their account and spoils their statistics.
 - **Return after a break:** after 5 to 60 minutes without a tap, a click or a key on the Autodarts page, the display switches to a house account of your choice, or signs out, so that the next games don't count for the player who left. A match is never interrupted: the break starts once it has ended. A lobby that waits for an opponent, or for the rest of a group, holds the display for three times the break, so nobody has to tap the screen while the players join; a lobby that everyone walked away from still returns the display in the end. The player before keeps their session parked, so a tap brings them back. While Autodarts can't be reached, the display stays as it is and tries again a minute later.
 
 Five wrong PINs in a row lock every PIN of the display for a minute, so that nobody tries them all by hand. The extension keeps no PIN, only a salted hash of it.
+
+### A player's own account, without the manager {#own-account}
+
+**Add account** stays open to everybody at a display with a manager PIN, so a member or a guest can add their account while the manager isn't there. What protects or removes that account doesn't need the manager either, so nobody leaves a session on the display for anyone to play under:
+
+1. **Protect with a PIN,** below the tile of the player who plays, while their account has no PIN: it asks for a PIN of 4 to 8 digits, twice. From then on, the tile shows a lock and asks for the PIN before anyone plays under the account.
+2. **Remove my account,** below the same tile once the account has a PIN: it asks for a yes and that PIN, then signs the account out at Autodarts and removes it from the display, as **Remove account** does. A player whose account is parked switches to it first, with their PIN.
+
+Only the account that plays gets a first PIN this way, and never a second one: a PIN that an account has changes only with the manager, under **PINs of the players**, and so does the PIN of the house account. A wrong PIN counts towards the five that lock every PIN for a minute.
 
 A PIN is a lock for the people at the display, not a protection against someone who can use the computer: whoever can open `chrome://extensions` can remove the extension, and a program that reads the profile of the browser can try every 4-digit PIN against its hash. The [security design](security.md#venue-mode) says more.
 
@@ -124,6 +133,6 @@ Every PIN is gone then, and the display no longer returns after a break: set the
 
 ## 9. When the display changes hands {#changes-hands}
 
-Before the computer is sold, given away or leaves the club, open **Manage accounts** and choose [**Forget all accounts**](help.md#forget-all), while Autodarts can be reached. It signs every saved account out at Autodarts, the player on the page too, and deletes all that the extension keeps, with the key that seals the sessions, the PINs and the settings. Removing the extension alone signs nobody out at Autodarts. A player who leaves the club for good is removed the same way, one account at a time, with **Remove account**.
+Before the computer is sold, given away or leaves the club, open **Manage accounts** and choose [**Forget all accounts**](help.md#forget-all), while Autodarts can be reached. It signs every saved account out at Autodarts, the player on the page too, and deletes all that the extension keeps, with the key that seals the sessions, the PINs and the settings. Removing the extension alone signs nobody out at Autodarts. A player who leaves the club for good is removed the same way, one account at a time, with **Remove account**, or removes their own account with [**Remove my account**](#own-account) and their PIN.
 
 Not working as it should? The [help](help.md) explains every message of the extension.

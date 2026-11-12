@@ -119,6 +119,7 @@
   /** The view of worker.ts: the active account renews in the page, not here. */
   function view() {
     const now = Date.now();
+    const active = accounts.find((account) => account.id === activeId);
     return {
       profiles: accounts.map(({ renewedAgo, failingAgo, ...account }) => ({
         ...account,
@@ -135,7 +136,12 @@
       })),
       unsaved: false,
       adding,
-      venue: { manager: guarded },
+      // The player who plays protects an account without a PIN, as in worker.ts.
+      venue: {
+        manager: guarded,
+        protectable:
+          guarded && active !== undefined && !active.pin ? activeId : null,
+      },
       updateHint: false,
       lobby: lobby ? { seated: [...seated] } : null,
     };
@@ -162,6 +168,9 @@
         break;
       case "forgetPassword":
         account.remembersPassword = false;
+        break;
+      case "protect":
+        account.pin = true;
         break;
       case "removeAccount":
         accounts.splice(accounts.indexOf(account), 1);

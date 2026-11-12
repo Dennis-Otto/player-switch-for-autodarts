@@ -1,7 +1,8 @@
 /**
  * The venue mode, for a display in a club or a pub, where not everyone at the board
  * knows everyone else: a manager PIN that guards "Manage accounts" and the settings, a
- * PIN for each account that wants one, asked before a switch to it, and the return to a
+ * PIN for each account that wants one, asked before a switch to it and with which its
+ * player looks after the account without the manager (decision 0018), and the return to a
  * house account, or a sign-out, after a break without input on the Autodarts page.
  * Everything is off until a person turns it on, on the options page.
  *
@@ -249,6 +250,36 @@ export function pinOf(venue: Venue, id: unknown): PinHash | null {
   return typeof id === "string" && Object.hasOwn(venue.players, id)
     ? (venue.players[id] as PinHash)
     : null;
+}
+
+/**
+ * Whether the player of the account `id` may give it a PIN of their own, without the
+ * manager PIN (decision 0018): while a manager PIN is set, for the account that plays on
+ * the page (`playing`, or null when none does) and only while it has no PIN, so that
+ * nobody replaces the PIN of another. The house account is the manager's, so its player
+ * at the moment never locks it.
+ */
+export function protectsItself(
+  venue: Venue,
+  id: string,
+  playing: string | null,
+): boolean {
+  return (
+    venue.manager !== null &&
+    id === playing &&
+    pinOf(venue, id) === null &&
+    venue.house !== id
+  );
+}
+
+/**
+ * The PIN with which a player removes their own account without the manager PIN
+ * (decision 0018): the PIN of the account, while a manager PIN is set. Null when the
+ * account has none, or no manager PIN is set: the removal then takes the manager PIN,
+ * as every change of "Manage accounts" does.
+ */
+export function ownRemovalPin(venue: Venue, id: string): PinHash | null {
+  return venue.manager === null ? null : pinOf(venue, id);
 }
 
 /** The time of the last input on the page as the worker keeps it, or null when it has none. */

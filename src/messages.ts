@@ -51,8 +51,21 @@ export type PlayersAction =
       readonly password: string;
     }
   | { readonly action: "forgetPassword"; readonly id: string }
-  /** Ends the session of an account at Autodarts and forgets the account. */
+  /**
+   * Ends the session of an account at Autodarts and forgets the account. While a manager
+   * PIN is set, it needs that PIN, or the PIN of the account itself (`pin`).
+   */
   | { readonly action: "removeAccount"; readonly id: string }
+  /**
+   * Gives an account the PIN `newPin`. While a manager PIN is set, it needs that PIN,
+   * except for the account that plays on the page and has no PIN yet, whose player
+   * protects it themselves.
+   */
+  | {
+      readonly action: "protect";
+      readonly id: string;
+      readonly newPin: string;
+    }
   /** Ends every session at Autodarts and deletes all that the extension keeps. */
   | { readonly action: "forgetAll" }
   /** Opens "Manage accounts", which needs the manager PIN while one is set. */
@@ -133,8 +146,13 @@ export interface PlayerView extends ProfileView {
 /** What the popup and the switcher show. */
 export interface PlayersView extends View {
   profiles: PlayerView[];
-  /** Whether a manager PIN guards "Manage accounts". */
-  venue: { manager: boolean };
+  /**
+   * Whether a manager PIN guards "Manage accounts", and the account whose player may
+   * give it a PIN of their own without the manager, below its tile: the one that plays
+   * on the page and has no PIN yet, other than the house account. Null when there is
+   * none, or no manager PIN is set.
+   */
+  venue: { manager: boolean; protectable: string | null };
   /** Whether to suggest an update of the extension. */
   updateHint: boolean;
   /**
@@ -191,6 +209,8 @@ export type Outcome =
    * already, or Autodarts refused the seat: the lobby is gone, full or started.
    */
   | { readonly ok: false; readonly reason: "noLobby" | "playing" | "refused" }
+  /** "protect" kept nothing: the PIN has not 4 to 8 digits, or the account is not saved. */
+  | { readonly ok: false; readonly reason: "invalid" }
   /**
    * "Remember password" kept nothing: Autodarts refused the username or the password,
    * they sign in another account than the tile's, or Autodarts couldn't be reached to
@@ -282,6 +302,7 @@ const PLAYERS_FIELDS: Readonly<
   remember: { id: isString, username: isString, password: isString },
   forgetPassword: { id: isString },
   removeAccount: { id: isString },
+  protect: { id: isString, newPin: isString },
   forgetAll: {},
   unlock: {},
 };

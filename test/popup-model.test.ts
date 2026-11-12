@@ -43,7 +43,7 @@ const VIEW: PlayersView = {
   profiles: [],
   unsaved: false,
   adding: false,
-  venue: { manager: false },
+  venue: { manager: false, protectable: null },
   updateHint: false,
   lobby: null,
 };
@@ -242,6 +242,75 @@ test("the question for a PIN names the account, or asks for the manager PIN, and
     text: "managerPinText",
     error: "pinWrong",
   });
+  // The PIN of the account before its player removes it says so; the manager PIN
+  // before a removal stays the question of the manager.
+  assert.equal(
+    pinQuestion({ manager: false, wrong: false }, "Ada", t, "removeAccount")
+      .text,
+    "removeOwnPinText",
+  );
+  assert.equal(
+    pinQuestion({ manager: true, wrong: false }, "Ada", t, "removeAccount")
+      .text,
+    "managerPinText",
+  );
+  assert.equal(
+    pinQuestion({ manager: false, wrong: false }, "Ada", t, "switch").text,
+    "pinText",
+  );
+});
+
+test("at a display with a manager PIN, the player who plays protects their account, or removes it once it has a PIN", () => {
+  const options = { numbered: false, now: NOW, language: "en", t };
+  const playing = { ...ada, active: true };
+  const venue = { manager: true, protectable: ada.id };
+  assert.deepEqual(tileOf(playing, 0, { ...options, venue }).own, {
+    text: "protectOwn",
+    label: "protectOwn: Ada",
+    kind: "protect",
+  });
+  assert.deepEqual(
+    tileOf({ ...playing, pin: true }, 0, {
+      ...options,
+      venue: { manager: true, protectable: null },
+    }).own,
+    { text: "removeOwn", label: "removeOwn: Ada", kind: "remove" },
+  );
+  // Nothing for a parked player, for the house account without a PIN, which the view
+  // names as no account to protect, and at a display without a manager PIN.
+  assert.equal(tileOf(ada, 0, { ...options, venue }).own, null);
+  assert.equal(
+    tileOf(playing, 0, {
+      ...options,
+      venue: { manager: true, protectable: null },
+    }).own,
+    null,
+  );
+  assert.equal(
+    tileOf({ ...playing, pin: true }, 0, {
+      ...options,
+      venue: { manager: false, protectable: null },
+    }).own,
+    null,
+  );
+  assert.equal(tileOf({ ...playing, pin: true }, 0, options).own, null);
+});
+
+test("the status line says whose account a PIN of its own protects now", () => {
+  assert.deepEqual(
+    statusAfter({ ok: true, view: VIEW }, null, t, {
+      action: "protect",
+      name: "Ada",
+    }),
+    { text: "protectedOwn: Ada", error: false },
+  );
+  assert.deepEqual(
+    statusAfter({ ok: false, reason: "invalid", view: VIEW }, null, t, {
+      action: "protect",
+      name: "Ada",
+    }),
+    { text: "error", error: true },
+  );
 });
 
 test("the manager PIN that worked opens Manage accounts, and nothing else changes it", () => {
@@ -272,6 +341,7 @@ test("a tile shows the key of the first nine, the chip of the player and the hea
     key: "1",
     chip: null,
     join: null,
+    own: null,
     renewed: null,
     failing: null,
     toggle: "rememberPassword",

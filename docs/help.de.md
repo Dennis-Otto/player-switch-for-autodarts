@@ -234,9 +234,19 @@ Unter **Einstellungen** steht bei einem Tastenkürzel:
 >
 > Dieses Konto fragt nach seiner PIN, bevor jemand damit spielt.
 
-**Was es bedeutet:** Am Display ist der [Modus für Verein und Kneipe](shared-display.md#venue-mode) an, und das Konto hat auf der Seite der Einstellungen eine PIN bekommen. Die Erweiterung fragt vor einem Wechsel zu diesem Konto nach ihr, im Popup wie auf der Autodarts-Seite.
+**Was es bedeutet:** Am Display ist der [Modus für Verein und Kneipe](shared-display.md#venue-mode) an, und das Konto hat eine PIN bekommen, vom Manager auf der Seite der Einstellungen oder von seinem Spieler mit [**Mit einer PIN schützen**](shared-display.md#own-account). Die Erweiterung fragt vor einem Wechsel zu diesem Konto nach ihr, im Popup wie auf der Autodarts-Seite.
 
 **Was du tust:** Tippe die PIN auf dem Ziffernblock oder mit der Tastatur ein und wähle **OK**. **Abbrechen** ändert nichts. Eine vergessene PIN steht nirgends: Der Manager entfernt sie oder legt eine neue fest, unter **Einstellungen** → **Für Verein und Kneipe** → **PINs der Spieler**.
+
+### Mein Konto entfernen {#remove-own}
+
+> PIN von Bob
+>
+> Gib die PIN dieses Kontos ein, um es von diesem Display zu entfernen.
+
+**Was es bedeutet:** An einem Display mit Manager-PIN hat der Spieler eines Kontos mit PIN unter dessen Kachel **Mein Konto entfernen** gewählt und Ja gesagt. Die PIN des Kontos entfernt es ohne den Manager: Die Erweiterung meldet es bei Autodarts ab und vergisst es, mit seiner PIN, [wie die Anleitung zeigt](shared-display.md#own-account).
+
+**Was du tust:** Tippe die PIN des Kontos ein und wähle **OK**. **Abbrechen** behält das Konto. Eine vergessene PIN steht nirgends: Der Manager entfernt das Konto unter **Konten verwalten**.
 
 ### Falsche PIN {#wrong-pin}
 
@@ -268,7 +278,7 @@ Unter **Einstellungen** steht bei einem Tastenkürzel:
 >
 > Gib die Manager-PIN ein, um die Konten und die Einstellungen zu verwalten.
 
-**Was es bedeutet:** Eine Manager-PIN schützt **Konten verwalten**: ein Konto entfernen, ein Passwort merken oder vergessen. Die Erweiterung fragt einmal nach ihr, wenn **Konten verwalten** aufgeht, und vergisst sie, wenn es wieder zugeht.
+**Was es bedeutet:** Eine Manager-PIN schützt **Konten verwalten**: ein Konto entfernen, ein Passwort merken oder vergessen. Die Erweiterung fragt einmal nach ihr, wenn **Konten verwalten** aufgeht, und vergisst sie, wenn es wieder zugeht. Sein eigenes Konto schützt oder entfernt ein Spieler ohne sie, mit **Mit einer PIN schützen** und **Mein Konto entfernen** ([eigenes Konto](shared-display.md#own-account)).
 
 **Was du tust:** Der Manager tippt sie ein. Vergessen? Die PIN steht nirgends, aber wer den Computer benutzen kann, kann den Modus für Verein und Kneipe ausschalten, wie die [Anleitung für ein gemeinsames Display](shared-display.md#forgotten-manager-pin) zeigt; die Konten bleiben.
 

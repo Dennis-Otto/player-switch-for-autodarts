@@ -1,6 +1,6 @@
 /**
  * The dialogs of the pages: a question to confirm, and the question for a PIN with a
- * number pad. Both work on a touch screen, keep the focus inside while they are open,
+ * number pad, which a new PIN asks twice. Both work on a touch screen, keep the focus inside while they are open,
  * close with Esc and give the focus back to the control that opened them.
  */
 import { isPin } from "../venue.ts";
@@ -181,4 +181,29 @@ export function pinDialog({
     });
     dialog.showModal();
   });
+}
+
+/**
+ * Asks for a new PIN twice, so that a slip of a finger locks nobody out. Answers the
+ * PIN, or null when the person cancels.
+ */
+export async function choosePin(title: string): Promise<string | null> {
+  let error = "";
+  for (;;) {
+    const first = await pinDialog({ title, text: t("newPinText"), error });
+    if (first === null) {
+      return null;
+    }
+    const second = await pinDialog({
+      title: t("repeatPinTitle"),
+      text: t("repeatPinText"),
+    });
+    if (second === null) {
+      return null;
+    }
+    if (first === second) {
+      return first;
+    }
+    error = t("pinMismatch");
+  }
 }

@@ -83,6 +83,19 @@
     "message": "$NAME$ ist entfernt und bei Autodarts abgemeldet.",
     "placeholders": { "name": { "content": "$1" } }
   },
+  "protectOwn": {
+    "message": "Mit einer PIN schützen"
+  },
+  "protectedOwn": {
+    "message": "$NAME$ ist jetzt mit einer PIN geschützt: Das Konto fragt danach, bevor jemand damit spielt.",
+    "placeholders": { "name": { "content": "$1" } }
+  },
+  "removeOwn": {
+    "message": "Mein Konto entfernen"
+  },
+  "removeOwnPinText": {
+    "message": "Gib die PIN dieses Kontos ein, um es von diesem Display zu entfernen."
+  },
   "removedOffline": {
     "message": "$NAME$ ist von diesem Display entfernt. Autodarts ist nicht erreichbar, daher endet die Sitzung dort erst, wenn sie abläuft.",
     "placeholders": { "name": { "content": "$1" } }

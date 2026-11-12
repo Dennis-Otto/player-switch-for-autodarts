@@ -13,7 +13,7 @@ Copy [the template](0000-template.md) to the next free number and describe the d
 | [0005](0005-look-after-the-store-every-day-from-a-closed-network.md) | Look after the store every day, from jobs with a closed network | accepted, the build replaced by 0013, the workflow by 0014 |
 | [0006](0006-seal-the-secrets-with-a-key-that-never-leaves-the-browser.md) | Seal the saved sessions and passwords with a key that never leaves the browser | accepted |
 | [0007](0007-test-the-real-extension-against-a-fake-autodarts.md) | Test the real extension in Chromium against a fake Autodarts | accepted, extended by 0009 and 0015 |
-| [0008](0008-lock-a-venue-display-with-pins-that-the-worker-checks.md) | Lock a venue display with PINs that the service worker checks | accepted |
+| [0008](0008-lock-a-venue-display-with-pins-that-the-worker-checks.md) | Lock a venue display with PINs that the service worker checks | accepted, extended by 0018 |
 | [0009](0009-watch-autodarts-and-the-next-chrome-before-the-players-do.md) | Watch Autodarts and the next Chrome before the players do | accepted, extended by 0017 |
 | [0010](0010-sign-in-to-the-store-without-a-stored-secret.md) | Sign in to the Chrome Web Store with GitHub's OIDC token instead of a stored secret | accepted, the workflow replaced by 0014 |
 | [0011](0011-write-every-line-that-ships-in-typescript.md) | Write every line that ships in TypeScript, the service worker and the content script too | accepted |
@@ -23,3 +23,4 @@ Copy [the template](0000-template.md) to the next free number and describe the d
 | [0015](0015-lint-with-web-ext-and-test-in-a-real-firefox.md) | Lint with web-ext and test the add-on in a real Firefox | accepted |
 | [0016](0016-join-a-lobby-with-a-parked-session.md) | Join a lobby with a parked session, in the service worker | accepted |
 | [0017](0017-compare-the-texts-of-the-store-every-morning.md) | Compare the texts of the store with store/ every morning | accepted |
+| [0018](0018-let-a-player-protect-and-remove-their-own-account.md) | Let a player protect and remove their own account without the manager | accepted |
