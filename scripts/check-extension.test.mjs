@@ -13,9 +13,15 @@ import {
   FIREFOX_ID,
   FIREFOX_MIN,
   NAME_MAX,
+  PRIVACY_PATH,
   pngSize,
+  STORE_DATA,
   WHY,
 } from "./check-extension.mjs";
+
+/** The step of the release guide that declares the data in the Developer Dashboard. */
+const PRIVACY_PRACTICES =
+  "4. **Privacy practices**: under *Data usage*, tick *Authentication information*.";
 
 const POLICY =
   "default-src 'self'; script-src 'self'; object-src 'none'; img-src 'self' https: data:; connect-src https://api.example.com";
@@ -125,9 +131,14 @@ function check(changes = {}) {
     images: changes.images ?? [],
     releaseGuide:
       changes.releaseGuide ??
-      Object.keys(locales)
-        .map((code) => `store/images/*.${code}.png`)
-        .join("\n"),
+      [
+        PRIVACY_PRACTICES,
+        ...Object.keys(locales).map((code) => `store/images/*.${code}.png`),
+      ].join("\n"),
+    privacyPolicies: changes.privacyPolicies ?? {
+      "docs/privacy.md": "The store shows *Authentication information*.",
+      "docs/privacy.de.md": "Der Store zeigt *Authentication information*.",
+    },
     imageSize:
       changes.imageSize ??
       ((path) => ({
@@ -178,6 +189,12 @@ test("the manifest of the extension passes against the allowlist, its languages,
       (name) => `store/images/${name}`,
     ),
     releaseGuide: read("docs/releases.md").toString(),
+    privacyPolicies: Object.fromEntries(
+      readdirSync(url("docs/"))
+        .map((name) => `docs/${name}`)
+        .filter((path) => PRIVACY_PATH.test(path))
+        .map((path) => [path, read(path).toString()]),
+    ),
     imageSize: (path) => pngSize(read(`extension/${path}`)),
   });
   assert.deepEqual(problems, []);
@@ -470,7 +487,7 @@ test("the data that Firefox shows at the install is exactly the data of the allo
     /optional data technicalAndInteraction/,
   );
 
-  // A project that sends nothing allows none, and says so.
+  // A project that sends nothing allows none, says so, and ticks nothing in the store.
   const nothing = manifest();
   nothing.browser_specific_settings.gecko.data_collection_permissions.required =
     ["none"];
@@ -478,6 +495,9 @@ test("the data that Firefox shows at the install is exactly the data of the allo
     check({
       manifest: nothing,
       allowed: { ...ALLOWED, data_collection_permissions: { none: "nothing" } },
+      releaseGuide:
+        "4. **Privacy practices**: tick no data.\nstore/images/*.en.png",
+      privacyPolicies: { "docs/privacy.md": "It sends nothing." },
     }),
     [],
   );
@@ -488,6 +508,9 @@ test("the data that Firefox shows at the install is exactly the data of the allo
     check({
       manifest: noList,
       allowed: { ...ALLOWED, data_collection_permissions: undefined },
+      releaseGuide:
+        "4. **Privacy practices**: tick no data.\nstore/images/*.en.png",
+      privacyPolicies: { "docs/privacy.md": "It sends nothing." },
     }),
     /declares no data_collection_permissions\.required/,
   );
@@ -770,9 +793,82 @@ test("a picture of the store belongs to a language of the extension", () => {
 
 test("the release guide lists the pictures of each language of the listing", () => {
   findsOne(
-    check({ releaseGuide: "No pictures here." }),
+    check({ releaseGuide: `${PRIVACY_PRACTICES}\nNo pictures here.` }),
     /docs\/releases\.md doesn't list store\/images\/\*\.en\.png/,
   );
+});
+
+test("the release guide and the privacy policy declare to the Chrome Web Store the data that Firefox shows", () => {
+  // The listing said that the extension collects no data, while it sends authentication information.
+  findsOne(
+    check({
+      releaseGuide:
+        "4. **Privacy practices**: the data the extension handles is *authentication information*.\nstore/images/*.en.png",
+    }),
+    /the step \*\*Privacy practices\*\* of docs\/releases\.md doesn't name \*Authentication information\*.*says that it collects none/,
+  );
+  findsOne(
+    check({
+      privacyPolicies: {
+        "docs/privacy.md": "The store shows *Authentication information*.",
+        "docs/privacy.de.md": "Der Store führt dasselbe.",
+      },
+    }),
+    /^docs\/privacy\.de\.md doesn't name \*Authentication information\*/,
+  );
+  findsOne(
+    check({ releaseGuide: "store/images/*.en.png" }),
+    /docs\/releases\.md has no step \*\*Privacy practices\*\*/,
+  );
+  findsOne(
+    check({
+      privacyPolicies: {
+        "docs/privacy.de.md": "Der Store zeigt *Authentication information*.",
+      },
+    }),
+    /docs\/privacy\.md is missing; the Chrome Web Store links it/,
+  );
+});
+
+test("the store is told only the data that the extension sends", () => {
+  findsOne(
+    check({
+      releaseGuide: `${PRIVACY_PRACTICES} And *Web history*.\nstore/images/*.en.png`,
+    }),
+    /docs\/releases\.md names \*Web history\*, which data_collection_permissions in store\/permissions\.json doesn't declare/,
+  );
+  // Without the data, every place that still names it fails, and the manifest of Firefox too.
+  const silent = structuredClone(ALLOWED);
+  silent.data_collection_permissions = {};
+  const problems = check({ allowed: silent });
+  assert.equal(problems.length, 4, problems.join("\n"));
+  assert.match(
+    problems[0],
+    /declares that the add-on sends authenticationInfo/,
+  );
+  for (const problem of problems.slice(1)) {
+    assert.match(
+      problem,
+      /names \*Authentication information\*, which data_collection_permissions/,
+    );
+  }
+});
+
+test("a kind of data that the store can't name asks for its name in the dashboard", () => {
+  const more = structuredClone(ALLOWED);
+  more.data_collection_permissions.technicalAndInteraction = "the reports";
+  const added = manifest();
+  added.browser_specific_settings.gecko.data_collection_permissions.required.push(
+    "technicalAndInteraction",
+  );
+  findsOne(
+    check({ allowed: more, manifest: added }),
+    /sends technicalAndInteraction, which STORE_DATA in scripts\/check-extension\.mjs can't name/,
+  );
+  // Every name is that of the dashboard, distinct, so one never stands for two kinds.
+  const names = Object.values(STORE_DATA);
+  assert.equal(new Set(names).size, names.length);
+  assert.equal(STORE_DATA.authenticationInfo, "Authentication information");
 });
 
 test("a listing in any language is read by the headings in English, as the check of the blueprint reads it", () => {
