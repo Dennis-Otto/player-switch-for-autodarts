@@ -129,6 +129,32 @@ async function startProxy(server: FakeServer): Promise<Proxy> {
   };
 }
 
+/** The size of every page of the tests, which decides where the button of the page sits. */
+const VIEWPORT = { width: 1280, height: 800 };
+
+/**
+ * The middle of the button of the switcher in the bottom right corner of a page: 16
+ * pixels from the edges, 56 wide (src/content.ts).
+ */
+export const buttonCorner = {
+  x: VIEWPORT.width - 16 - 28,
+  y: VIEWPORT.height - 16 - 28,
+};
+
+/**
+ * Whether the button of the switcher shows in the bottom right corner of the page.
+ * It sits in a closed shadow root that no selector reaches, so this asks what a
+ * finger would tap there.
+ */
+export function buttonShows(page: Page): Promise<boolean> {
+  return page.evaluate(
+    (x: number, y: number) =>
+      document.elementFromPoint(x, y)?.localName === "player-switch-ui",
+    buttonCorner.x,
+    buttonCorner.y,
+  );
+}
+
 /**
  * Waits until `check` holds, asking again every 100 ms. Firefox's WebDriver BiDi
  * reports no events of an extension page (bug 1755014), so Puppeteer neither sees a
@@ -370,7 +396,7 @@ export async function withFirefox(
     // The certificate of the fake server has no authority behind it. Firefox
     // reaches no other server, so it may pass every certificate.
     acceptInsecureCerts: true,
-    defaultViewport: { width: 1280, height: 800 },
+    defaultViewport: VIEWPORT,
     // WebDriver BiDi navigates a tab to an extension page, moz-extension://, only
     // with system access, as the popup is opened here. Firefox 159 takes it from this
     // variable alone; older ones, such as ESR 140 and 153, also had a flag for it.

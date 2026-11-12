@@ -4,23 +4,8 @@
 // (display.ts). The Chromium tests of test/e2e/options.spec.ts walk the page in
 // full. It skips without a Firefox on this computer, other than in the CI.
 import { test } from "node:test";
-import type { Page } from "puppeteer-core";
 import { ALICE } from "../e2e/fake/autodarts.ts";
-import { inFirefox, skip, until } from "./display.ts";
-
-/**
- * Whether the button of the switcher shows in the bottom right corner of the page.
- * It sits in a closed shadow root that no selector reaches, so this asks what a
- * finger would tap there.
- */
-function buttonShows(page: Page): Promise<boolean> {
-  return page.evaluate(
-    (x: number, y: number) =>
-      document.elementFromPoint(x, y)?.localName === "player-switch-ui",
-    1280 - 16 - 28,
-    800 - 16 - 28,
-  );
-}
+import { buttonShows, inFirefox, skip, until } from "./display.ts";
 
 test(
   "the options page opens with the saved account, and the button of the page follows it",

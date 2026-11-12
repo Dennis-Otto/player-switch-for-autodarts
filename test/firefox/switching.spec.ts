@@ -8,7 +8,14 @@ import { readFileSync } from "node:fs";
 import { test } from "node:test";
 import type { Page } from "puppeteer-core";
 import { type Account, ALICE, BOB } from "../e2e/fake/autodarts.ts";
-import { expectPlayer, inFirefox, skip } from "./display.ts";
+import {
+  buttonCorner,
+  buttonShows,
+  expectPlayer,
+  inFirefox,
+  skip,
+  until,
+} from "./display.ts";
 
 /** The manifest of the extension: its version and the Autodarts sites that it asks for. */
 const MANIFEST = JSON.parse(
@@ -102,15 +109,8 @@ test(
 
     // The button sits in the bottom right corner, in a closed shadow root that no
     // selector reaches, so the test taps where it shows, as a finger does.
-    const corner = { x: 1280 - 16 - 28, y: 800 - 16 - 28 };
-    await page.waitForFunction(
-      (x: number, y: number) =>
-        document.elementFromPoint(x, y)?.localName === "player-switch-ui",
-      { timeout: 15_000 },
-      corner.x,
-      corner.y,
-    );
-    await page.mouse.click(corner.x, corner.y);
+    await until(() => buttonShows(page), "the page shows its button", 15_000);
+    await page.mouse.click(buttonCorner.x, buttonCorner.y);
 
     // The switcher is an extension page in a frame, which WebDriver BiDi doesn't
     // reach in Firefox (display.ts). It gives the first tile, Alice's, the focus once
