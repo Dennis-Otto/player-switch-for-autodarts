@@ -603,15 +603,22 @@ test("the popup sees no session and no password of any account", () => {
         assert.equal(shown.id, profile?.id);
         assert.equal(shown.active, shown.id === state.activeId);
         assert.equal(shown.remembersPassword, profile?.credentials !== null);
-        // A time shows only for a parked session, which the extension renews itself.
+        // The time of a renewal shows only for a parked session, which the extension
+        // renews itself. A failing renewal shows for every account the renewal takes,
+        // also one that it signs in with its remembered password.
         const ownsSession = profile?.token !== null && !shown.active;
+        const renews =
+          ownsSession ||
+          (!shown.active &&
+            profile?.credentials !== null &&
+            profile?.needsSignIn === false);
         assert.equal(
           shown.renewedAt,
           ownsSession ? profile?.refreshedAt : null,
         );
         assert.equal(
           shown.renewalFailingSince,
-          ownsSession ? profile?.renewalFailedAt : null,
+          renews ? profile?.renewalFailedAt : null,
         );
       }
     }),
@@ -624,6 +631,24 @@ test("the popup sees no session and no password of any account", () => {
             profiles: [
               { id: "b", username: "", name: "", token: "\u0000" },
               { id: "b", username: "", name: "", refreshedAt: 0 },
+            ],
+          },
+          false,
+          0,
+        ],
+        // An account off the page that the renewal signs in with its password shows
+        // since when that fails.
+        [
+          {
+            profiles: [
+              {
+                id: "a",
+                username: "ada",
+                name: "",
+                token: null,
+                renewalFailedAt: 0,
+                credentials: { username: "ada", password: "pw" },
+              },
             ],
           },
           false,
