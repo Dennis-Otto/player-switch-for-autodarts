@@ -100,6 +100,9 @@ test("an account that remembers its password and signs out on the page stays rea
   await bob.locator(".remember [type=submit]").click();
   await popup.ready();
   await popup.manage();
+  // Remembering signed Bob in once to check the password; he plays, so the page keeps
+  // its own session.
+  expect(autodarts.count("login", BOB)).toBe(2);
 
   // In the page itself, someone signs out.
   await page.evaluate(
@@ -115,7 +118,8 @@ test("an account that remembers its password and signs out on the page stays rea
   await popup.tap(BOB);
   await expectPlayer(page, BOB);
   await popup.expectAccounts([ALICE, BOB], BOB);
-  expect(autodarts.count("login", BOB)).toBe(2);
+  // The tap signed him in with his remembered password.
+  expect(autodarts.count("login", BOB)).toBe(3);
 });
 
 test("with no Autodarts tab, Open Autodarts opens one", async ({ display }) => {
