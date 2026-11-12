@@ -1,6 +1,6 @@
 # Watch Autodarts and the next Chrome before the players do
 
-- Status: accepted
+- Status: accepted, extended by [0017](0017-compare-the-texts-of-the-store-every-morning.md), which compares the texts of the store as well
 - Date: 2026-10-25
 
 ## Context

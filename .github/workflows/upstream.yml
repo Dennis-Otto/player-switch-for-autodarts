@@ -13,24 +13,31 @@ name: Upstream
 # - chrome-beta, every morning as well: the end-to-end tests of test/e2e/ in Chrome for
 #   Testing Beta, the next version of Chrome, about four weeks before it reaches the
 #   players. Branded Chrome, Beta too, no longer loads an unpacked extension.
+# - store-listing, every morning as well: the Chrome Web Store shows the short and the
+#   detailed description of each store/listing.<code>.md. The texts reach the store
+#   only by a paste into the Developer Dashboard, whose API can't set them, so
+#   scripts/store-listing.ts reads the public page of each language, which needs no
+#   secret, and names the file whose paste is due.
 #
 # A failure of a scheduled run opens an issue with the label bot-failure, which the
 # next run that passes closes (bot-health.yml). A pull request that changes this
-# workflow, its scripts or what the extension expects of Autodarts runs both, so the
-# change is checked against the real Autodarts and the next Chrome before it merges.
-# Neither is a required check.
+# workflow, its scripts or what the extension expects of Autodarts runs every job, so
+# the change is checked against the real Autodarts, the next Chrome and the store
+# before it merges; there a description that differs is a warning, as a pull request
+# can't change the store. None is a required check.
 
 on:
   schedule:
-    # Both jobs, every morning. One schedule only: bot-health keeps one issue per
+    # Every job, every morning. One schedule only: bot-health keeps one issue per
     # workflow and closes it after the next run that passes, so a run without one of
-    # the jobs would close the issue of the other one.
+    # the jobs would close the issue of another one.
     - cron: "17 5 * * *"
   pull_request:
     paths:
       - .github/workflows/upstream.yml
       - scripts/upstream-contract.ts
       - scripts/chrome-for-testing.sh
+      - scripts/store-listing.ts
       - src/autodarts.ts
       - src/page.ts
   workflow_dispatch:
@@ -292,3 +299,121 @@ jobs:
             sleep 1
           done
           echo "::warning::Harden-Runner still removes Docker after two minutes; the job may hang until its timeout."
+
+  listing:
+    name: store-listing
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    steps:
+      # GitHub for the checkout and for Node.js should the runner image lack its
+      # version, and the public pages of the Chrome Web Store. The check needs no
+      # package, no sudo and no Docker, and no secret.
+      - name: Block every host that the job doesn't need
+        uses: step-security/harden-runner@46b06cea07f9e64621fdf066ba77ac6915163d43 # v2.22.3
+        with:
+          egress-policy: block
+          disable-sudo-and-containers: true
+          allowed-endpoints: >
+            api.github.com:443
+            github.com:443
+            objects.githubusercontent.com:443
+            release-assets.githubusercontent.com:443
+            chromewebstore.google.com:443
+      - name: Make sure that Harden-Runner blocks
+        id: blocks
+        # Harden-Runner goes on without its agent when the agent can't be downloaded, as
+        # in GitHub's outage of 8 November 2026, or doesn't start: the job would reach
+        # every host. It stops here instead, so that it can run again (decision 0134 of
+        # the blueprint). A later step that runs after a failure skips then, as it would
+        # run without the block; only the wait for the removal of Docker runs anyway.
+        timeout-minutes: 1
+        run: |
+          # The agent writes Initialized into its status once its firewall stands, and
+          # runs as the service agent until the end of the job; one that is there may
+          # still be starting.
+          for _ in {1..30}; do
+            [[ -e /home/agent/agent.status || ! -e /home/agent/agent ]] && break
+            sleep 1
+          done
+          status="$(cat /home/agent/agent.status 2>/dev/null || true)"
+          if [[ ! -d /home/agent/ ]]; then
+            # Harden-Runner returns before it makes the folder of the agent when
+            # StepSecurity says that it is unavailable, or the repository skips it.
+            why="didn't install its agent, as StepSecurity said that it is unavailable or the repository skips it (the log of its step says which),"
+          elif [[ ! -e /home/agent/agent ]]; then
+            why="couldn't download its agent, mostly in an outage of GitHub (https://www.githubstatus.com),"
+          elif [[ "$status" != Initialized ]]; then
+            why="has an agent that didn't start,"
+          elif ! systemctl is-active --quiet agent; then
+            why="has an agent that stopped,"
+          else
+            echo "Harden-Runner blocks every host that the job doesn't name."
+            exit 0
+          fi
+          echo "The status of the agent: ${status:-none}"
+          echo "::error title=Harden-Runner doesn't block::Harden-Runner $why so this job would reach every host, and it stops here instead. That is no problem of the change: run the job again."
+          exit 1
+      - name: Wait until Harden-Runner lets the hosts through
+        # The runner may have asked for an address past Harden-Runner, which then blocks
+        # that address for as long as systemd-resolved keeps it, up to a minute.
+        timeout-minutes: 4
+        env:
+          HOSTS: >
+            api.github.com:443
+            github.com:443
+            objects.githubusercontent.com:443
+            release-assets.githubusercontent.com:443
+            chromewebstore.google.com:443
+        run: |
+          deadline=$(($(date +%s) + 120))
+          for endpoint in $HOSTS; do
+            host="${endpoint%:*}"
+            # A wildcard names no host to ask.
+            [[ "$host" == '*.'* ]] && continue
+            until curl --silent --head --connect-timeout 3 --max-time 5 --output /dev/null "https://$host/"; do
+              if (($(date +%s) >= deadline)); then
+                echo "::warning::Harden-Runner still blocks $host after two minutes; a step that needs it will fail, and the job can run again."
+                break
+              fi
+              echo "Harden-Runner still blocks $host, waiting 3 s."
+              sleep 3
+            done
+          done
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          # The whole history: a text that changed in the last days may still wait for
+          # the review of the store, and git says since when each file has its texts.
+          # A shallow clone would date every file to its one commit.
+          fetch-depth: 0
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .nvmrc
+      - name: Compare the descriptions on the store with store/
+        env:
+          # A pull request can't change the store: a text that differs is a warning
+          # there. A page without its texts fails anyway, as the change may be the
+          # cause.
+          REPORT_ONLY: ${{ github.event_name == 'pull_request' }}
+        run: node scripts/store-listing.ts
+      # The PR coach: what failed, why it matters and how to fix it, in the summary
+      # of the check and as its annotation, from .github/checks.project.toml.
+      - name: Explain the failure
+        if: failure() && steps.blocks.outcome != 'failure'
+        env:
+          CHECK: store-listing
+        run: python3 .github/blueprint.py coach explain "$CHECK"
+      # Without sudo and Docker, Harden-Runner removes Docker with apt-get while the
+      # job runs. A job that ends first hangs in "Cleaning up orphan processes" until
+      # its timeout, so it waits for apt-get, also after a failure.
+      - name: Wait until Harden-Runner has removed Docker
+        if: always()
+        run: |
+          for _ in {1..120}; do
+            pgrep -x 'apt-get|dpkg' >/dev/null || exit 0
+            sleep 1
+          done
+          echo "::warning::Harden-Runner still removes Docker after two minutes; the job may hang until its timeout."
+
