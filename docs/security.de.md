@@ -39,9 +39,9 @@ verlässt ihn nie, außer an Autodarts selbst:
   Erweiterung in jede gesetzt hat, für „In der Lobby“ auf ihren Kacheln. Das enthält
   keinen Token und keinen Namen.
 - **Wann die Erneuerung zuletzt lief,** und ob Autodarts dabei jedes geparkte Konto
-  abgewiesen oder eine ihrer Anfragen selbst abgelehnt hat, damit die Erweiterung eine Erneuerung nachholt, die sie verpasst hat,
-  während der Computer aus war, und ein Update von sich selbst vorschlagen kann. Das
-  enthält keinen Token und keinen Namen.
+  abgewiesen oder eine ihrer Anfragen selbst abgelehnt hat, damit die Erweiterung eine
+  Erneuerung nachholt, die sie verpasst hat, während der Computer aus war, und ein
+  Update von sich selbst vorschlagen kann. Das enthält keinen Token und keinen Namen.
 - **Nur nach dem Wechsel zurück auf eine ältere Version: eine Kopie der gespeicherten
   Konten**, die eine neuere Version in einem Format gespeichert hat, das diese nicht
   lesen kann, unter `accounts.backup`, mit ihren Tokens und gemerkten Passwörtern,

@@ -37,8 +37,7 @@ and never leaves it except to Autodarts itself:
 - **When the renewal last ran,** and whether Autodarts turned every parked account
   away in it or refused one of its requests itself, so that the extension catches up
   on a renewal it missed while the computer was off and can suggest an update of
-  itself. This holds no token and no
-  name.
+  itself. This holds no token and no name.
 - **Only after going back to an older version: a copy of the saved accounts** that
   a newer version stored in a format this one can't read, under `accounts.backup`,
   with their tokens and remembered passwords, sealed as that version sealed them.
