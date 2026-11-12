@@ -55,7 +55,8 @@ test(
       "the page hides its button",
     );
 
-    await options.bringToFront();
+    // WebDriver BiDi brings no extension page to the front, and a click needs no
+    // frame: the options page takes it in the background.
     await options.evaluate(() =>
       document.querySelector<HTMLInputElement>("#show-button")?.click(),
     );
