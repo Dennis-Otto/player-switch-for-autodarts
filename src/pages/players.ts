@@ -27,6 +27,7 @@ import {
   mustUnlock,
   pinQuestion,
   questionOf,
+  rememberRefused,
   showsEmpty,
   showsForgetAll,
   statusAfter,
@@ -316,6 +317,24 @@ export function mountPlayers({
     onRender();
   }
 
+  /**
+   * Opens the form of "Remember password" of an account again after Autodarts didn't
+   * take what it held, with the username but never the password, so that a typo is
+   * fixed without typing everything again; the status line says what went wrong.
+   */
+  function reopenRemember(id: string, username: string): void {
+    const item = ([...profiles.children] as HTMLElement[]).find(
+      (candidate) => candidate.dataset.id === id,
+    );
+    const form = item?.querySelector<HTMLFormElement>(".remember");
+    if (form === null || form === undefined) {
+      return;
+    }
+    form.hidden = false;
+    find<HTMLInputElement>(".cred-username", form).value = username;
+    find(".cred-password", form).focus();
+  }
+
   /** Where the focus is before the tiles are drawn anew, to bring it back after. */
   function focusBefore(): FocusBefore {
     const element = document.activeElement;
@@ -495,7 +514,16 @@ export function mountPlayers({
       if (username === "" || password === "") {
         return;
       }
-      void send({ action: "remember", id: profile.id, username, password });
+      void send({
+        action: "remember",
+        id: profile.id,
+        username,
+        password,
+      }).then((reply) => {
+        if (rememberRefused(reply)) {
+          reopenRemember(profile.id, username);
+        }
+      });
     });
 
     find(".remove", node).addEventListener("click", async () => {

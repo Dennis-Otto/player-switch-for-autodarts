@@ -9,6 +9,7 @@ import {
   find,
   park,
   rememberCredentials,
+  type State,
   setActive,
   startAdding,
 } from "../src/state.ts";
@@ -24,6 +25,7 @@ import {
   type Removal,
   readView,
   refreshParked,
+  rememberPassword,
   removeAccount,
   signOutForNewAccount,
   startAddingAccount,
@@ -1715,4 +1717,254 @@ test("a join and a switch of the same account at once spend each token once", as
   assert.equal(page.token, autodarts.live.get("b"));
   assert.equal(find(store.state, "a")?.token, autodarts.live.get("a"));
   assert.equal(autodarts.reuses, 0);
+});
+
+/**
+ * Ada is parked with a token that Autodarts no longer takes, and remembers a sign-in
+ * that belongs to Bob: the form takes any username or email. The sign-in service answers
+ * with a session of Bob and records each session that it is asked to end.
+ */
+function remembersBob() {
+  const ended: string[] = [];
+  const store = new FakeStore(
+    rememberCredentials(park(EMPTY, ada, "dead", 0), "a", {
+      username: "bob",
+      password: "pw-bob",
+    }),
+  );
+  const fetcher = router({
+    refresh: rejected,
+    login: () => Promise.resolve(sessionResponse("b", "bob-session")),
+    logout: recordEnd(ended),
+  });
+  return { store, fetcher, ended };
+}
+
+/** A sign-out that Autodarts accepts, which records the refresh token of the session. */
+function recordEnd(ended: string[]): Deps["fetcher"] {
+  return (_url, init) => {
+    const { refresh_token: token } = JSON.parse(String(init.body)) as {
+      refresh_token: string;
+    };
+    ended.push(token);
+    return Promise.resolve(new Response(null, { status: 204 }));
+  };
+}
+
+/** Nothing of Bob's session stays: it ended, and Ada has to sign in again. */
+function assertNothingOfBob(state: State, ended: string[]): void {
+  assert.deepEqual(ended, ["bob-session"]);
+  assert.equal(find(state, "b"), undefined);
+  assert.equal(find(state, "a")?.token, null);
+  assert.equal(find(state, "a")?.needsSignIn, true);
+}
+
+test("refreshParked keeps no session of another account that a remembered sign-in makes, and ends it", async () => {
+  const { store, fetcher, ended } = remembersBob();
+  const run = await refreshParked(deps(store, new FakePage(null), fetcher));
+  assert.deepEqual([run.renewed, run.rejected, run.unreachable], [0, 1, 0]);
+  assertNothingOfBob(store.state, ended);
+});
+
+test("switchTo brings no other account onto the page from a remembered sign-in", async () => {
+  const { store, fetcher, ended } = remembersBob();
+  const page = new FakePage(null);
+  const result = await switchTo(deps(store, page, fetcher), "a");
+  assert.deepEqual(!result.ok && result.reason, "signin");
+  assert.equal(page.token, null);
+  assert.equal(store.state.activeId, null);
+  assertNothingOfBob(store.state, ended);
+});
+
+test("joinLobbyAs seats no other account from a remembered sign-in", async () => {
+  const { store, fetcher, ended } = remembersBob();
+  const result = await joinLobbyAs(
+    deps(store, new FakePage(null), fetcher),
+    "a",
+    "lobby",
+  );
+  assert.deepEqual(!result.ok && result.reason, "signin");
+  assertNothingOfBob(store.state, ended);
+});
+
+test("a remembered sign-in still renews the account that stored it once its token died", async () => {
+  const store = new FakeStore(
+    rememberCredentials(park(EMPTY, ada, "dead", 0), "a", {
+      username: "ada",
+      password: "pw",
+    }),
+  );
+  const run = await refreshParked(
+    deps(
+      store,
+      new FakePage(null),
+      router({
+        refresh: rejected,
+        login: () => Promise.resolve(sessionResponse("a", "fresh")),
+      }),
+    ),
+  );
+  assert.deepEqual([run.renewed, run.rejected, run.unreachable], [1, 0, 0]);
+  assert.equal(find(store.state, "a")?.token, "fresh");
+});
+
+/** A sign-in whose access token names no account that the extension can read. */
+const unreadable = () =>
+  Promise.resolve(
+    jsonResponse({ access_token: "no-claims", refresh_token: "nobody" }),
+  );
+
+test("a remembered sign-in whose account can't be read ends and counts as a problem that may pass", async () => {
+  const ended: string[] = [];
+  const store = new FakeStore(
+    rememberCredentials(park(EMPTY, ada, "dead", 0), "a", {
+      username: "ada",
+      password: "pw",
+    }),
+  );
+  const run = await refreshParked(
+    deps(
+      store,
+      new FakePage(null),
+      router({
+        refresh: rejected,
+        login: unreadable,
+        logout: recordEnd(ended),
+      }),
+    ),
+  );
+  assert.deepEqual([run.renewed, run.rejected, run.unreachable], [0, 0, 1]);
+  assert.deepEqual(ended, ["nobody"]);
+  // The dead token stays for the next try, as on any problem that may pass.
+  assert.equal(find(store.state, "a")?.token, "dead");
+  assert.equal(find(store.state, "a")?.needsSignIn, false);
+});
+
+/** The fetch of the check at "Remember password": its sign-in, and each session it ends. */
+function checking(login: Deps["fetcher"]) {
+  const ended: string[] = [];
+  const fetcher = counting(router({ login, logout: recordEnd(ended) }));
+  return { fetcher, ended };
+}
+
+const ADA_SIGN_IN = { username: "ada", password: "pw" };
+const signsInAda = () => Promise.resolve(sessionResponse("a", "checked"));
+
+test("rememberPassword keeps a sign-in that Autodarts takes, with its session, and ends the session before", async () => {
+  const store = new FakeStore(park(EMPTY, ada, "ta", 0));
+  const { fetcher, ended } = checking(signsInAda);
+  const result = await rememberPassword(
+    deps(store, new FakePage(null), fetcher),
+    "a",
+    ADA_SIGN_IN,
+  );
+  assert.ok(result.ok);
+  assert.deepEqual(find(store.state, "a")?.credentials, ADA_SIGN_IN);
+  assert.equal(find(store.state, "a")?.token, "checked");
+  assert.equal(find(store.state, "a")?.refreshedAt, 1000);
+  assert.deepEqual(ended, ["ta"]);
+});
+
+test("rememberPassword signs in an account that had to sign in again", async () => {
+  const store = new FakeStore(endSession(park(EMPTY, ada, "ta", 0), "a"));
+  const { fetcher, ended } = checking(signsInAda);
+  const result = await rememberPassword(
+    deps(store, new FakePage(null), fetcher),
+    "a",
+    ADA_SIGN_IN,
+  );
+  assert.ok(result.ok);
+  assert.equal(find(store.state, "a")?.token, "checked");
+  assert.equal(find(store.state, "a")?.needsSignIn, false);
+  assert.deepEqual(ended, []);
+});
+
+test("rememberPassword leaves the session of the account that plays to the page and ends the one of the check", async () => {
+  const store = new FakeStore(setActive(EMPTY, ada));
+  const page = new FakePage("in-page");
+  const { fetcher, ended } = checking(signsInAda);
+  const result = await rememberPassword(
+    deps(store, page, fetcher),
+    "a",
+    ADA_SIGN_IN,
+  );
+  assert.ok(result.ok);
+  assert.deepEqual(find(store.state, "a")?.credentials, ADA_SIGN_IN);
+  assert.equal(find(store.state, "a")?.token, null);
+  assert.equal(store.state.activeId, "a");
+  assert.equal(page.token, "in-page");
+  assert.deepEqual(ended, ["checked"]);
+});
+
+test("rememberPassword refuses a password that Autodarts refuses, and keeps nothing", async () => {
+  const store = new FakeStore(park(EMPTY, ada, "ta", 0));
+  const { fetcher, ended } = checking(rejected);
+  const result = await rememberPassword(
+    deps(store, new FakePage(null), fetcher),
+    "a",
+    { username: "ada", password: "typo" },
+  );
+  assert.deepEqual(!result.ok && result.reason, "password");
+  assert.equal(find(store.state, "a")?.credentials, null);
+  assert.equal(find(store.state, "a")?.token, "ta");
+  assert.equal(store.saves, 0);
+  assert.deepEqual(ended, []);
+});
+
+test("rememberPassword refuses the sign-in of another account and ends its session", async () => {
+  const store = new FakeStore(park(park(EMPTY, ada, "ta", 0), bob, "tb", 0));
+  const { fetcher, ended } = checking(() =>
+    Promise.resolve(sessionResponse("b", "bob-session")),
+  );
+  const result = await rememberPassword(
+    deps(store, new FakePage(null), fetcher),
+    "a",
+    { username: "bob", password: "pw-bob" },
+  );
+  assert.deepEqual(!result.ok && result.reason, "otherAccount");
+  assert.equal(find(store.state, "a")?.credentials, null);
+  assert.equal(find(store.state, "a")?.token, "ta");
+  assert.equal(find(store.state, "b")?.token, "tb");
+  assert.equal(store.saves, 0);
+  assert.deepEqual(ended, ["bob-session"]);
+});
+
+test("rememberPassword says so when Autodarts can't be reached, and keeps nothing", async () => {
+  const store = new FakeStore(park(EMPTY, ada, "ta", 0));
+  const { fetcher } = checking(offline);
+  const result = await rememberPassword(
+    deps(store, new FakePage(null), fetcher),
+    "a",
+    ADA_SIGN_IN,
+  );
+  assert.deepEqual(!result.ok && result.reason, "unreachable");
+  assert.equal(find(store.state, "a")?.credentials, null);
+  assert.equal(store.saves, 0);
+});
+
+test("rememberPassword keeps no sign-in whose account can't be read, and ends its session", async () => {
+  const store = new FakeStore(park(EMPTY, ada, "ta", 0));
+  const { fetcher, ended } = checking(unreadable);
+  const result = await rememberPassword(
+    deps(store, new FakePage(null), fetcher),
+    "a",
+    ADA_SIGN_IN,
+  );
+  assert.deepEqual(!result.ok && result.reason, "unreachable");
+  assert.equal(find(store.state, "a")?.credentials, null);
+  assert.equal(store.saves, 0);
+  assert.deepEqual(ended, ["nobody"]);
+});
+
+test("rememberPassword for an account that is gone signs in nowhere", async () => {
+  const store = new FakeStore(EMPTY);
+  const { fetcher } = checking(signsInAda);
+  const result = await rememberPassword(
+    deps(store, new FakePage(null), fetcher),
+    "a",
+    ADA_SIGN_IN,
+  );
+  assert.ok(result.ok);
+  assert.equal(fetcher.calls, 0);
+  assert.equal(store.saves, 0);
 });

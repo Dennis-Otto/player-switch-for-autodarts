@@ -21,7 +21,8 @@ and never leaves it except to Autodarts itself:
 - **A password, only if you ask it to.** "Remember password" stores an account's
   username and password so the extension can sign that account in again when its
   token stops working. It is stored sealed, like the token (see below), and is
-  sent only to `api.autodarts.com/auth/v1/login`. Leave it off, and no password is
+  sent only to `api.autodarts.com/auth/v1/login`: once as it is saved, to check
+  that it signs in that account, and then whenever the token stops working. Leave it off, and no password is
   ever stored.
 - **The settings of the button in the page:** whether it shows, and in which corner.
 - **The settings of the venue mode, once a person turns it on:** a salted PBKDF2

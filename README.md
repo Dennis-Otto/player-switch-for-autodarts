@@ -171,7 +171,7 @@ Autodarts counts a match for each account that sits in its lobby, while the page
 
 ### Remember a password (optional)
 
-Under **Manage accounts**, choose **Remember password** for an account, and the extension signs it back in on its own if its session ever stops working. The password stays on that computer, encrypted like every saved session, and is sent only to Autodarts; [SECURITY.md](SECURITY.md) and the [privacy policy](docs/privacy.md) say exactly what is stored.
+Under **Manage accounts**, choose **Remember password** for an account, and the extension signs it back in on its own if its session ever stops working. It signs in at Autodarts once as it saves the password, so a typo, or the sign-in of another player, shows at once and nothing is remembered. The password stays on that computer, encrypted like every saved session, and is sent only to Autodarts; [SECURITY.md](SECURITY.md) and the [privacy policy](docs/privacy.md) say exactly what is stored.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/images/manage.dark.png">

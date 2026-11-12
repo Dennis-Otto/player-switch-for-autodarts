@@ -18,7 +18,9 @@ would find the tokens and passwords there only encrypted
   again without signing in. The extension renews these tokens with Autodarts.
 - **A username and password, only for accounts where you turn on "Remember
   password."** It is stored so the extension can sign that account in again if its
-  token stops working. It is off by default, and you can remove it at any time.
+  token stops working. As you save it, the extension signs in with it once, to
+  check that Autodarts takes it for that account. It is off by default, and you can
+  remove it at any time.
 - **A key that encrypts the tokens and passwords,** in the extension's own database
   in the browser (IndexedDB). The tokens and passwords are stored only encrypted,
   never in plain text, and the browser never hands out the key, not even to the

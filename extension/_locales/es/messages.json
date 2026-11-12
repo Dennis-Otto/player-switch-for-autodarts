@@ -226,6 +226,17 @@
       }
     }
   },
+  "rememberRefused": {
+    "message": "Autodarts no aceptó este nombre de usuario y esta contraseña, así que no se recuerdan. Revisa ambos y vuelve a intentarlo."
+  },
+  "rememberOtherAccount": {
+    "message": "Este nombre de usuario y esta contraseña inician sesión en otra cuenta que no es $NAME$, así que no se recuerdan. Introduce los de $NAME$.",
+    "placeholders": {
+      "name": {
+        "content": "$1"
+      }
+    }
+  },
   "unreachable": {
     "message": "No se puede acceder a Autodarts ahora mismo. Inténtalo de nuevo en un momento."
   },

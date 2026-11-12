@@ -10,6 +10,7 @@ import {
   pinQuestion,
   problemOf,
   questionOf,
+  rememberRefused,
   removalText,
   showsEmpty,
   showsForgetAll,
@@ -145,6 +146,44 @@ test("a join says who joined the lobby, or why the player took no seat", () => {
       about,
     ),
     { text: "switchSignIn: Ada", error: true },
+  );
+});
+
+test("Remember password says why it kept nothing", () => {
+  const about = { action: "remember", name: "Ada" };
+  for (const [reason, text] of [
+    ["password", "rememberRefused"],
+    ["otherAccount", "rememberOtherAccount: Ada"],
+    ["unreachable", "unreachable"],
+  ] as const) {
+    assert.deepEqual(
+      statusAfter({ ok: false, reason, view: VIEW }, null, t, about),
+      { text, error: true },
+      reason,
+    );
+  }
+  assert.deepEqual(statusAfter({ ok: true, view: VIEW }, null, t, about), {
+    text: "",
+    error: false,
+  });
+});
+
+test("the form of Remember password opens again only when Autodarts didn't take what it held", () => {
+  for (const reason of ["password", "otherAccount", "unreachable"] as const) {
+    assert.equal(rememberRefused({ ok: false, reason, view: VIEW }), true);
+  }
+  assert.equal(rememberRefused({ ok: true, view: VIEW }), false);
+  assert.equal(rememberRefused(undefined), false);
+  assert.equal(rememberRefused({ error: "error", view: VIEW }), false);
+  assert.equal(
+    rememberRefused({
+      ok: false,
+      reason: "pin",
+      pin: "manager",
+      wrong: false,
+      view: VIEW,
+    }),
+    false,
   );
 });
 

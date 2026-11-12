@@ -22,7 +22,9 @@ verlässt ihn nie, außer an Autodarts selbst:
 - **Ein Passwort, nur wenn du sie darum bittest.** „Passwort merken“ speichert
   Benutzername und Passwort eines Kontos, damit die Erweiterung das Konto wieder
   anmelden kann, wenn sein Token nicht mehr geht. Es wird versiegelt gespeichert,
-  wie der Token (siehe unten), und geht nur an `api.autodarts.com/auth/v1/login`.
+  wie der Token (siehe unten), und geht nur an `api.autodarts.com/auth/v1/login`:
+  einmal beim Speichern, um zu prüfen, dass es dieses Konto anmeldet, und dann
+  jedes Mal, wenn der Token nicht mehr geht.
   Lass es aus, und kein Passwort wird je gespeichert.
 - **Die Einstellungen des Knopfs in der Seite:** ob er zu sehen ist, und in welcher
   Ecke.

@@ -49,6 +49,7 @@ import type { RunCounts } from "./health.ts";
 import type { Queue } from "./queue.ts";
 import {
   activate,
+  type Credentials,
   deactivate,
   EMPTY,
   endSession,
@@ -59,6 +60,7 @@ import {
   loseSession,
   type Profile,
   park,
+  rememberCredentials,
   renewable,
   type State,
   startAdding,
@@ -139,11 +141,125 @@ async function renew(deps: Deps, profile: Profile): Promise<Renewal> {
         profile.credentials.password,
       ),
     );
+    if (result?.kind === "ok") {
+      return ownSession(deps, profile.id, result.session);
+    }
     if (result !== null) {
       return result;
     }
   }
   return { kind: "rejected" };
+}
+
+/**
+ * Lets the session of a stored sign-in count only for the account that stored it. The
+ * form takes any username or email, so a sign-in remembered for one tile may belong to
+ * another account; kept under the tile, its token would bring the wrong player onto the
+ * page or into a lobby, and the next renewal would spend it twice. Such a session ends at
+ * once, and the account has to sign in again, as after a refused password.
+ */
+async function ownSession(
+  deps: Deps,
+  id: string,
+  session: Session,
+): Promise<Renewal> {
+  const identity = await whose(deps, session);
+  if (identity === null) {
+    return { kind: "unreachable" };
+  }
+  if (identity.id !== id) {
+    await revokeSession(deps.fetcher, session.refreshToken);
+    return { kind: "rejected" };
+  }
+  return { kind: "ok", session };
+}
+
+/**
+ * The account of a session that a sign-in just made, or null when Autodarts sent claims
+ * that the extension can't read, which may pass with an update. Nobody keeps such a
+ * session, so it ends at once.
+ */
+async function whose(deps: Deps, session: Session): Promise<Identity | null> {
+  try {
+    return readIdentity(session.accessToken);
+  } catch {
+    await revokeSession(deps.fetcher, session.refreshToken);
+    return null;
+  }
+}
+
+/**
+ * How "Remember password" ended: the sign-in is kept, or Autodarts refused the username
+ * or the password ("password"), they sign in another account than the tile's
+ * ("otherAccount"), or Autodarts couldn't be reached to check them ("unreachable"). A
+ * sign-in that isn't kept changes nothing.
+ */
+export type Remembering =
+  | { state: State; ok: true; reason?: undefined }
+  | {
+      state: State;
+      ok: false;
+      reason: "password" | "otherAccount" | "unreachable";
+    };
+
+/**
+ * Remembers the sign-in of an account after signing in with it once, so that a typo
+ * shows now and not weeks later, when the session has ended and the sign-in is needed.
+ * The session of that sign-in isn't wasted: an account that waits keeps it as its fresh
+ * session, which also ends "Sign in again", and the session that it held before ends at
+ * Autodarts. The account that plays has its session in the page, so the new one ends.
+ */
+export function rememberPassword(
+  deps: Deps,
+  id: string,
+  credentials: Credentials,
+): Promise<Remembering> {
+  return deps.queue(async () => {
+    const state = await deps.store.load();
+    const profile = find(state, id);
+    if (profile === undefined) {
+      return { state, ok: true };
+    }
+    let session: Session;
+    try {
+      session = await signIn(
+        deps.fetcher,
+        credentials.username,
+        credentials.password,
+      );
+    } catch (error) {
+      // signIn throws nothing but AuthError.
+      return {
+        state,
+        ok: false,
+        reason:
+          (error as AuthError).kind === "rejected" ? "password" : "unreachable",
+      };
+    }
+    const identity = await whose(deps, session);
+    if (identity === null) {
+      return { state, ok: false, reason: "unreachable" };
+    }
+    if (identity.id !== id) {
+      await revokeSession(deps.fetcher, session.refreshToken);
+      return { state, ok: false, reason: "otherAccount" };
+    }
+    const remembered = rememberCredentials(state, id, credentials);
+    if (state.activeId === id) {
+      const saved = await commit(deps, remembered);
+      await revokeSession(deps.fetcher, session.refreshToken);
+      return { state: saved, ok: true };
+    }
+    // The new session is kept before the old one ends, so the account always has one.
+    const saved = await commit(
+      deps,
+      park(remembered, identity, session.refreshToken, deps.now()),
+    );
+    if (profile.token !== null) {
+      await revokeSession(deps.fetcher, profile.token);
+    }
+    return { state: saved, ok: true };
+  });
 }
 
 /**

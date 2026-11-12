@@ -589,18 +589,28 @@ test("a password is remembered and forgotten, and a removed account takes its PI
   const fake = browser();
   await twoPlayers(fake);
   fake.local.data.set(VENUE_KEY, { players: { bob: await quickHash("1234") } });
+  fake.autodarts.passwords.set("bob", { id: "bob", password: "secret" });
+  const parkedBefore = fake.autodarts.live.get("bob");
   await started(fake);
 
-  await popup(fake, {
+  const remembered = await popup(fake, {
     action: "remember",
     id: "bob",
     username: "bob",
     password: "secret",
   });
+  assert.equal(remembered.ok, true);
   assert.deepEqual(find(await accounts(fake), "bob")?.credentials, {
     username: "bob",
     password: "secret",
   });
+  // The check signed Bob in once: he keeps that session, and the one before ends.
+  assert.deepEqual(fake.autodarts.logins, ["bob"]);
+  assert.equal(
+    find(await accounts(fake), "bob")?.token,
+    fake.autodarts.live.get("bob"),
+  );
+  assert.deepEqual(fake.autodarts.logouts, [parkedBefore]);
   await popup(fake, { action: "forgetPassword", id: "bob" });
   assert.equal(find(await accounts(fake), "bob")?.credentials, null);
   const removed = await popup(fake, { action: "removeAccount", id: "bob" });
@@ -611,6 +621,58 @@ test("a password is remembered and forgotten, and a removed account takes its PI
   assert.deepEqual(
     (fake.local.data.get(VENUE_KEY) as { players: object }).players,
     {},
+  );
+});
+
+test("Remember password keeps no sign-in that Autodarts refuses, that belongs to another account, or that it can't check", async () => {
+  const fake = browser();
+  await twoPlayers(fake);
+  fake.autodarts.passwords.set("bob", { id: "bob", password: "secret" });
+  fake.autodarts.passwords.set("cy", { id: "cy", password: "pw-cy" });
+  const bobToken = fake.autodarts.live.get("bob");
+  await started(fake);
+
+  const typo = await popup(fake, {
+    action: "remember",
+    id: "bob",
+    username: "bob",
+    password: "secrte",
+  });
+  assert.deepEqual([typo.ok, typo.reason], [false, "password"]);
+
+  // Cy's sign-in in the form of Bob: Autodarts names Cy, whose session ends at once.
+  const other = await popup(fake, {
+    action: "remember",
+    id: "bob",
+    username: "cy",
+    password: "pw-cy",
+  });
+  assert.deepEqual([other.ok, other.reason], [false, "otherAccount"]);
+  assert.equal(fake.autodarts.live.has("cy"), false);
+  assert.equal(
+    other.view.profiles.some((profile) => profile.id === "cy"),
+    false,
+  );
+
+  fake.broken.add("fetch");
+  const offline = await popup(fake, {
+    action: "remember",
+    id: "bob",
+    username: "bob",
+    password: "secret",
+  });
+  assert.deepEqual([offline.ok, offline.reason], [false, "unreachable"]);
+  assert.equal(offline.page, undefined);
+
+  // Nothing was remembered, and Bob's parked session is as it was.
+  const bob = find(await accounts(fake), "bob");
+  assert.equal(bob?.credentials, null);
+  assert.equal(bob?.token, bobToken);
+  assert.equal(fake.autodarts.live.get("bob"), bobToken);
+  assert.equal(
+    offline.view.profiles.find((profile) => profile.id === "bob")
+      ?.remembersPassword,
+    false,
   );
 });
 

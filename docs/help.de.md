@@ -12,23 +12,43 @@ Das steht auf einer Kachel, und das Symbol in der Symbolleiste zeigt, wie viele 
 
 > Player Switch for Autodarts – neu anmelden: Ada und Bob
 
-**Was es bedeutet:** Autodarts nimmt die gespeicherte Sitzung dieses Kontos nicht mehr an, bei einer Erneuerung oder bei einem Tipp, und kein gemerktes Passwort konnte es anmelden. Eine Sitzung endet auch für immer, wenn sich der Spieler auf der Autodarts-Seite abmeldet: Zum Wechseln der Spieler tippst du stattdessen auf eine Kachel. Hat sich danach jemand direkt auf der Seite als anderer Spieler angemeldet, gibt der nächste Tipp oder **Konto hinzufügen** diese Sitzung an die Kachel dieses Spielers, und der abgemeldete Spieler zeigt diese Meldung. Ein Spieler mit gemerktem Passwort zeigt sie nicht: Noch hat nichts dieses Passwort versucht, darum meldet die nächste Erneuerung oder ein Tipp das Konto damit an, und **Zurück nach einer Pause** bringt das Display weiter zu ihm als Hauskonto zurück. Und wurden die Daten der Erweiterung gelöscht, muss sich jedes geparkte Konto auf einmal neu anmelden: Der Schlüssel, der die gespeicherten Sitzungen versiegelt, ging mit, darum lassen sie sich nicht mehr öffnen, und die gemerkten Passwörter sind ebenfalls vergessen.
+**Was es bedeutet:** Autodarts nimmt die gespeicherte Sitzung dieses Kontos nicht mehr an, bei einer Erneuerung oder bei einem Tipp, und kein gemerktes Passwort konnte es anmelden. Eine gemerkte Anmeldung, die zu einem anderen Konto als dem der Kachel gehört, gilt ebenfalls als abgelehnt: Die Erweiterung beendet diese Sitzung sofort, damit nie der falsche Spieler unter dieser Kachel spielt. Eine Sitzung endet auch für immer, wenn sich der Spieler auf der Autodarts-Seite abmeldet: Zum Wechseln der Spieler tippst du stattdessen auf eine Kachel. Hat sich danach jemand direkt auf der Seite als anderer Spieler angemeldet, gibt der nächste Tipp oder **Konto hinzufügen** diese Sitzung an die Kachel dieses Spielers, und der abgemeldete Spieler zeigt diese Meldung. Ein Spieler mit gemerktem Passwort zeigt sie nicht: Noch hat nichts dieses Passwort versucht, darum meldet die nächste Erneuerung oder ein Tipp das Konto damit an, und **Zurück nach einer Pause** bringt das Display weiter zu ihm als Hauskonto zurück. Und wurden die Daten der Erweiterung gelöscht, muss sich jedes geparkte Konto auf einmal neu anmelden: Der Schlüssel, der die gespeicherten Sitzungen versiegelt, ging mit, darum lassen sie sich nicht mehr öffnen, und die gemerkten Passwörter sind ebenfalls vergessen.
 
 **Was du tust**, auf einem von zwei Wegen:
 
 1. Wähle **Konto hinzufügen**, im Popup oder bei den Spielern auf der Autodarts-Seite, und melde dich auf Autodarts als dieser Spieler an, mit Passwort, Google oder Apple. Die Erweiterung erkennt das Konto wieder: Dieselbe Kachel ist bereit, und ein gemerktes Passwort bleibt.
-2. Für ein Konto mit Autodarts-Passwort: Wähle unter **Konten verwalten** für das Konto **Passwort merken** und tippe dann auf seine Kachel. Die Erweiterung meldet es von selbst an, jetzt und jedes Mal, wenn seine Sitzung wieder endet.
+2. Für ein Konto mit Autodarts-Passwort: Wähle unter **Konten verwalten** für das Konto **Passwort merken** und tippe dann auf seine Kachel. Die Erweiterung [prüft das Passwort bei Autodarts](#remember-password), während sie es speichert, und meldet das Konto von selbst an, jetzt und jedes Mal, wenn seine Sitzung wieder endet.
 
 Ein Tipp auf so eine Kachel sagt dasselbe:
 
 > Bob muss sich neu anmelden: über „Konto hinzufügen“ einmal auf Autodarts anmelden, oder das Passwort merken.
 
-Ein Konto, das sich sein Passwort merkt und sich trotzdem neu anmelden muss, hat ein Passwort, das Autodarts nicht mehr annimmt, etwa nach einer Änderung des Passworts: Wähle **Passwort nicht mehr merken** und dann **Passwort merken** mit dem neuen. Müssen sich alle gespeicherten Konten auf einmal neu anmelden? Dann lies zuerst [Autodarts hat vielleicht geändert, wie die Anmeldung funktioniert](#sign-in-changed).
+Ein Konto, das sich sein Passwort merkt und sich trotzdem neu anmelden muss, hat ein Passwort, das Autodarts nicht mehr annimmt, etwa nach einer Änderung des Passworts, oder die Anmeldung eines anderen Kontos, gemerkt, bevor die Erweiterung sie geprüft hat: Wähle **Passwort nicht mehr merken** und dann **Passwort merken** mit dem richtigen. Müssen sich alle gespeicherten Konten auf einmal neu anmelden? Dann lies zuerst [Autodarts hat vielleicht geändert, wie die Anmeldung funktioniert](#sign-in-changed).
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="images/diagrams/sign-in-again.de.dark.svg">
   <img src="images/diagrams/sign-in-again.de.svg" alt="Was tun, wenn eine Kachel Neu anmelden zeigt: Zeigen es alle gespeicherten Konten auf einmal, schau zuerst nach einem Update der Erweiterung. Sonst wählt ein Konto, das sich mit Google oder Apple anmeldet, oder eines ohne gemerktes Passwort, Konto hinzufügen und meldet sich einmal auf Autodarts als dieser Spieler an; dieselbe Kachel ist wieder bereit. Ein Konto mit Autodarts-Passwort kann sich stattdessen das Passwort merken lassen und auf die Kachel tippen, und die Erweiterung meldet es von selbst an. Merkt es sich schon ein Passwort, geht dieses nicht mehr: nicht mehr merken und das neue merken.">
 </picture>
+
+### Passwort merken {#remember-password}
+
+**Passwort merken** unter **Konten verwalten** meldet das Konto einmal mit dem Benutzernamen oder der E-Mail und dem Passwort bei Autodarts an, bevor es sie sich merkt. So zeigt sich ein Tippfehler sofort und nicht erst Wochen später, wenn die gespeicherte Sitzung abgelaufen ist und das Passwort gebraucht wird. Nimmt Autodarts sie an, bekommt das Konto die Sitzung dieser Anmeldung, bereit zum Spielen, und **Neu anmelden** verschwindet. Sonst wird nichts gemerkt, und das Formular öffnet sich wieder mit dem Benutzernamen, sodass nur das Passwort neu getippt wird. Es sagt:
+
+> Autodarts hat diesen Benutzernamen und dieses Passwort nicht angenommen, deshalb sind sie nicht gemerkt. Prüfe beides und versuche es nochmal.
+
+**Was es bedeutet:** Autodarts hat den Benutzernamen oder die E-Mail oder das Passwort abgelehnt.
+
+**Was du tust:** Prüfe beides, so wie es auf [play.autodarts.com](https://play.autodarts.com) funktioniert, und speichere noch einmal. Ein Konto, das sich mit Google oder Apple anmeldet, hat kein Autodarts-Passwort: Es nutzt stattdessen **Konto hinzufügen**, wie [Konten, die sich mit Google oder Apple anmelden](#google-or-apple) sagt.
+
+Oder:
+
+> Dieser Benutzername und dieses Passwort melden ein anderes Konto als Bob an, deshalb sind sie nicht gemerkt. Gib die von Bob ein.
+
+**Was es bedeutet:** Autodarts hat die Anmeldung angenommen, aber sie gehört zu einem anderen Konto als die Kachel, etwa zum Konto eines anderen Spielers. Unter dieser Kachel gemerkt, brächte sie den falschen Spieler auf die Seite, darum beendet die Erweiterung diese Sitzung sofort wieder.
+
+**Was du tust:** Gib den Benutzernamen oder die E-Mail und das Passwort des Spielers dieser Kachel ein.
+
+Ist Autodarts nicht erreichbar, sagt das Formular das [wie überall](#unreachable), und nichts wird gemerkt: Versuche es gleich noch einmal.
 
 ### Ein + am Symbol {#not-saved-yet}
 
@@ -48,7 +68,7 @@ und das Popup und die Spieler auf der Autodarts-Seite sagen:
 
 > Autodarts ist gerade nicht erreichbar. Bitte gleich nochmal versuchen.
 
-**Was es bedeutet:** Die Erweiterung konnte Autodarts nicht nach der Sitzung dieses Kontos fragen oder, bei einem Tipp oder **Konto hinzufügen**, wem die Sitzung in der Seite gehört: Der Computer hat keine Verbindung zum Internet, oder Autodarts hat ein Problem. Nichts hat sich geändert: Die Seite bleibt, wie sie war, und keine Sitzung geht verloren.
+**Was es bedeutet:** Die Erweiterung konnte Autodarts nicht nach der Sitzung dieses Kontos fragen oder, bei einem Tipp oder **Konto hinzufügen**, wem die Sitzung in der Seite gehört, oder, bei **Passwort merken**, ob das Passwort stimmt: Der Computer hat keine Verbindung zum Internet, oder Autodarts hat ein Problem. Nichts hat sich geändert: Die Seite bleibt, wie sie war, und keine Sitzung geht verloren.
 
 **Was du tust:** Prüfe, ob [play.autodarts.com](https://play.autodarts.com) lädt, und tippe dann noch einmal. In Firefox prüfe auch [den Zugriff auf die Autodarts-Seiten](#firefox-site-access). Die Erneuerung im Hintergrund versucht es nach 15 Minuten von selbst wieder.
 
