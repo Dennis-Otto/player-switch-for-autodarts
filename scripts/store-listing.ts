@@ -75,6 +75,8 @@ export const htmlText = (html: string): string =>
   html
     .replaceAll(/<br\s*\/?>/gi, "\n")
     .replaceAll(/<[^>]*>/g, "")
+    // A < that is left belongs to no tag, as the text of a page has it as &lt;.
+    .replaceAll("<", "")
     .replaceAll(/&(#x[0-9a-f]+|#\d+|[a-z]+);/gi, (entity, name: string) => {
       if (name.startsWith("#")) {
         const hex = /^#x/i.test(name);
@@ -100,7 +102,6 @@ const JUSTIFICATIONS = "Permission justifications";
 export const readListing = (markdown: string): Texts => {
   const sections = markdown
     .replaceAll("\r\n", "\n")
-    .replaceAll(/<!--[\s\S]*?-->/g, "")
     .split(/^## /m)
     .slice(1)
     .map((section) => {

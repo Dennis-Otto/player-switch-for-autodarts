@@ -201,6 +201,8 @@ test("the text of a piece of HTML has its line breaks, no tags and no entities",
     ),
     "a\nb\nc & \"d\" 'e' • <f> 'g h &unknown;",
   );
+  // A tag in a tag leaves no < behind; only an entity makes one.
+  assert.equal(htmlText("x <<b>script>y &lt;z"), "x script>y <z");
 });
 
 test("a file of store/ has its short description and the detailed one after it, in any language", () => {
