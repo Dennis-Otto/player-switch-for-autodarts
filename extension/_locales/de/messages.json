@@ -164,6 +164,13 @@
     "message": "Autodarts hat $NAME$ keinen Platz gegeben: Die Lobby ist vielleicht voll, geschlossen oder schon gestartet.",
     "placeholders": { "name": { "content": "$1" } }
   },
+  "rememberRefused": {
+    "message": "Autodarts hat diesen Benutzernamen und dieses Passwort nicht angenommen, deshalb sind sie nicht gemerkt. Prüfe beides und versuche es nochmal."
+  },
+  "rememberOtherAccount": {
+    "message": "Dieser Benutzername und dieses Passwort melden ein anderes Konto als $NAME$ an, deshalb sind sie nicht gemerkt. Gib die von $NAME$ ein.",
+    "placeholders": { "name": { "content": "$1" } }
+  },
   "unreachable": {
     "message": "Autodarts ist gerade nicht erreichbar. Bitte gleich nochmal versuchen."
   },

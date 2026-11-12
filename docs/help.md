@@ -12,23 +12,43 @@ A tile says this, and the icon in the toolbar shows how many accounts have to si
 
 > Player Switch for Autodarts – sign in again: Ada and Bob
 
-**What it means:** Autodarts no longer accepts the saved session of this account, in a renewal or at a tap, and no remembered password could sign it in. A session also ends for good when the player signs out on the Autodarts page: to change players, tap a tile instead. If someone then signed in as another player right on the page, the next tap or **Add account** gives that session to the tile of that player, and the player who was signed out shows this message. And when the data of the extension was cleared, every parked account has to sign in again at once: the key that seals the saved sessions went with it, so they no longer open, and the remembered passwords are forgotten too.
+**What it means:** Autodarts no longer accepts the saved session of this account, in a renewal or at a tap, and no remembered password could sign it in. A remembered sign-in that belongs to another account than the tile's counts as refused too: the extension ends that session at once, so the wrong player never plays under this tile. A session also ends for good when the player signs out on the Autodarts page: to change players, tap a tile instead. If someone then signed in as another player right on the page, the next tap or **Add account** gives that session to the tile of that player, and the player who was signed out shows this message. And when the data of the extension was cleared, every parked account has to sign in again at once: the key that seals the saved sessions went with it, so they no longer open, and the remembered passwords are forgotten too.
 
 **What to do**, in one of two ways:
 
 1. Choose **Add account**, in the popup or in the players on the Autodarts page, and sign in on Autodarts as that player, with a password, Google or Apple. The extension knows the account again: the same tile is ready, and a remembered password stays.
-2. For an account with an Autodarts password: under **Manage accounts**, choose **Remember password** for it, then tap its tile. The extension signs it in by itself, now and whenever its session ends again.
+2. For an account with an Autodarts password: under **Manage accounts**, choose **Remember password** for it, then tap its tile. The extension [checks the password with Autodarts](#remember-password) as it saves it and signs the account in by itself, now and whenever its session ends again.
 
 A tap on such a tile says the same:
 
 > Bob has to sign in again: use Add account to sign in once on Autodarts, or remember the password.
 
-An account that remembers its password and still has to sign in again has a password that Autodarts no longer takes, such as after a change of the password: choose **Forget password**, then **Remember password** with the new one. Do all saved accounts have to sign in again at once? Then read [Autodarts may have changed how it signs in](#sign-in-changed) first.
+An account that remembers its password and still has to sign in again has a password that Autodarts no longer takes, such as after a change of the password, or the sign-in of another account, remembered before the extension checked it: choose **Forget password**, then **Remember password** with the right one. Do all saved accounts have to sign in again at once? Then read [Autodarts may have changed how it signs in](#sign-in-changed) first.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="images/diagrams/sign-in-again.dark.svg">
   <img src="images/diagrams/sign-in-again.svg" alt="What to do when a tile says Sign in again: When every saved account says it at once, look for an update of the extension first. Otherwise, an account that signs in with Google or Apple, or one without a remembered password, chooses Add account and signs in once on Autodarts as that player; the same tile is ready again. An account with an Autodarts password can instead remember its password and tap the tile, and the extension signs it in by itself. When it remembers a password already, that password no longer works: forget it and remember the new one.">
 </picture>
+
+### Remember password {#remember-password}
+
+**Remember password**, under **Manage accounts**, signs the account in at Autodarts once with the username or email and the password before it keeps them. So a typo shows at once, and not weeks later, when the saved session has ended and the password is needed. When Autodarts takes them, the account gets the session of that sign-in, ready to play, and **Sign in again** goes away. Otherwise nothing is remembered, and the form opens again with the username, so only the password is typed anew. It says:
+
+> Autodarts didn't accept this username and password, so they aren't remembered. Check both and try again.
+
+**What it means:** Autodarts refused the username or email, or the password.
+
+**What to do:** check both, as they work on [play.autodarts.com](https://play.autodarts.com), and save again. An account that signs in with Google or Apple has no Autodarts password: it uses **Add account** instead, as [Accounts that sign in with Google or Apple](#google-or-apple) says.
+
+Or:
+
+> This username and password sign in another account than Bob, so they aren't remembered. Enter those of Bob.
+
+**What it means:** Autodarts took the sign-in, but it belongs to another account than the tile, such as the account of another player. Kept under this tile, it would bring the wrong player onto the page, so the extension ends that session again at once.
+
+**What to do:** enter the username or email and the password of the player of this tile.
+
+When Autodarts can't be reached, the form says so [as everywhere](#unreachable), and nothing is remembered: try again in a moment.
 
 ### A + on the icon {#not-saved-yet}
 
@@ -48,7 +68,7 @@ and the popup and the players on the Autodarts page say:
 
 > Autodarts can't be reached right now. Try again in a moment.
 
-**What it means:** the extension couldn't ask Autodarts for the session of this account, or, at a tap or **Add account**, whose session is in the page: the computer has no connection to the internet, or Autodarts has a problem. Nothing changed: the page stays as it was, and no session is lost.
+**What it means:** the extension couldn't ask Autodarts for the session of this account, or, at a tap or **Add account**, whose session is in the page, or, at **Remember password**, whether the password works: the computer has no connection to the internet, or Autodarts has a problem. Nothing changed: the page stays as it was, and no session is lost.
 
 **What to do:** check that [play.autodarts.com](https://play.autodarts.com) loads, then tap again. In Firefox, check [the access to the Autodarts sites](#firefox-site-access) too. The renewal in the background tries again by itself after 15 minutes.
 

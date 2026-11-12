@@ -134,7 +134,8 @@ export function router(handlers: Partial<Record<Route, Fetch>> = {}): Fetch {
  * Autodarts as far as a race needs it. Its sign-in service rotates the refresh token
  * as the real one does, so each token works once, and a sign-out ends the session of
  * its token. A token sent again is refused, and, as a service that detects the reuse
- * of a token may do, it ends that account's session too. It answers only after other
+ * of a token may do, it ends that account's session too. A sign-in with a password of
+ * `passwords` starts a new session of its account. It answers only after other
  * work has had a turn, as a network does. Its game service keeps lobbies, where it
  * seats the account of an access token at the board of the host.
  */
@@ -145,6 +146,10 @@ export class FakeAutodarts {
   readonly refreshes: string[] = [];
   /** The refresh tokens of the sessions it was asked to end, in order. */
   readonly logouts: string[] = [];
+  /** The sign-ins that it takes, by username: the account and its password. */
+  readonly passwords = new Map<string, { id: string; password: string }>();
+  /** The usernames that it was asked to sign in, in order. */
+  readonly logins: string[] = [];
   /** How often a token that was used already came back. */
   reuses = 0;
   private readonly spent = new Map<string, string>();
@@ -255,9 +260,30 @@ export class FakeAutodarts {
     return jsonResponse({}, 201);
   }
 
+  /**
+   * The sign-in with a password: a session of the account whose username and password
+   * it takes, which becomes the one that works for that account, or 401 as for a wrong
+   * password.
+   */
+  private async login(init: RequestInit): Promise<Response> {
+    const { username, password } = JSON.parse(String(init.body)) as {
+      username: string;
+      password: string;
+    };
+    this.logins.push(username);
+    await new Promise((resolve) => setTimeout(resolve, 5));
+    const account = this.passwords.get(username);
+    return account?.password === password
+      ? sessionResponse(account.id, this.issue(account.id))
+      : jsonResponse({ error: "invalid_grant" }, 401);
+  }
+
   readonly fetch: Fetch = async (url, init) => {
     if (url.startsWith(`${GAME_BASE}/`)) {
       return this.game(url, init);
+    }
+    if (url.endsWith("/login")) {
+      return this.login(init);
     }
     const { refresh_token: token } = JSON.parse(String(init.body)) as {
       refresh_token: string;

@@ -170,6 +170,13 @@
     "message": "Autodarts didn't seat $NAME$: the lobby may be full, closed or started already.",
     "placeholders": { "name": { "content": "$1" } }
   },
+  "rememberRefused": {
+    "message": "Autodarts didn't accept this username and password, so they aren't remembered. Check both and try again."
+  },
+  "rememberOtherAccount": {
+    "message": "This username and password sign in another account than $NAME$, so they aren't remembered. Enter those of $NAME$.",
+    "placeholders": { "name": { "content": "$1" } }
+  },
   "unreachable": {
     "message": "Autodarts can't be reached right now. Try again in a moment."
   },

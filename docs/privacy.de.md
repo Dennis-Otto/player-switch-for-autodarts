@@ -20,8 +20,9 @@ es aber könnte und die Tokens und Passwörter dort nur verschlüsselt fände
   Autodarts.
 - **Benutzername und Passwort, nur für Konten, bei denen du „Passwort merken“
   einschaltest.** Sie werden gespeichert, damit die Erweiterung dieses Konto wieder
-  anmelden kann, falls sein Token nicht mehr geht. Das ist von Haus aus aus, und du
-  kannst es jederzeit wieder entfernen.
+  anmelden kann, falls sein Token nicht mehr geht. Beim Speichern meldet sich die
+  Erweiterung einmal damit an, um zu prüfen, dass Autodarts sie für dieses Konto
+  annimmt. Das ist von Haus aus aus, und du kannst es jederzeit wieder entfernen.
 - **Ein Schlüssel, der die Tokens und Passwörter verschlüsselt,** in der eigenen
   Datenbank der Erweiterung im Browser (IndexedDB). Die Tokens und Passwörter werden
   nur verschlüsselt gespeichert, nie im Klartext, und der Browser gibt den Schlüssel

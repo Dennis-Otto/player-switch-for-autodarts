@@ -226,6 +226,17 @@
       }
     }
   },
+  "rememberRefused": {
+    "message": "Autodarts accepteerde deze gebruikersnaam en dit wachtwoord niet, dus ze worden niet onthouden. Controleer beide en probeer het opnieuw."
+  },
+  "rememberOtherAccount": {
+    "message": "Deze gebruikersnaam en dit wachtwoord melden een ander account aan dan $NAME$, dus ze worden niet onthouden. Vul die van $NAME$ in.",
+    "placeholders": {
+      "name": {
+        "content": "$1"
+      }
+    }
+  },
   "unreachable": {
     "message": "Autodarts is nu niet bereikbaar. Probeer het zo opnieuw."
   },
