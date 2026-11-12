@@ -463,6 +463,6 @@
     "message": "Niemandem: abmelden"
   },
   "idleHint": {
-    "message": "Eine Pause ist die Zeit ohne Tippen, Klicken oder Taste auf der Autodarts-Seite. Ein Match wird nie unterbrochen: Die Pause beginnt erst, wenn es zu Ende ist. Der Spieler davor behält seine Sitzung geparkt, ein Tipp holt ihn zurück."
+    "message": "Eine Pause ist die Zeit ohne Tippen, Klicken oder Taste auf der Autodarts-Seite. Ein Match wird nie unterbrochen: Die Pause beginnt erst, wenn es zu Ende ist. Eine Lobby, die auf Spieler wartet, hält das Display dreimal so lang. Der Spieler davor behält seine Sitzung geparkt, ein Tipp holt ihn zurück."
   }
 }

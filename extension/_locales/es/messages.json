@@ -541,6 +541,6 @@
     "message": "Nadie: cerrar sesión"
   },
   "idleHint": {
-    "message": "Una pausa es el tiempo sin un toque, un clic ni una tecla en la página de Autodarts. Una partida nunca se interrumpe: la pausa empieza cuando ha terminado. El jugador anterior mantiene su sesión aparcada, así que un toque lo trae de vuelta."
+    "message": "Una pausa es el tiempo sin un toque, un clic ni una tecla en la página de Autodarts. Una partida nunca se interrumpe: la pausa empieza cuando ha terminado. Un lobby que espera jugadores mantiene la pantalla el triple de tiempo. El jugador anterior mantiene su sesión aparcada, así que un toque lo trae de vuelta."
   }
 }

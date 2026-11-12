@@ -330,7 +330,7 @@ Jede Person an diesem Display kann zu jedem dort gespeicherten Konto wechseln: D
 
 ### Das Display hat von selbst zu einem anderen Spieler gewechselt {#returned-after-break}
 
-Der [Modus für Verein und Kneipe](shared-display.md#venue-mode) kann das Display nach einer Pause ohne Tippen, Klicken oder Taste auf der Autodarts-Seite zu einem Hauskonto zurückbringen oder abmelden, damit die nächsten Spiele nicht für den Spieler zählen, der gegangen ist. Ein Match unterbricht er nie: Die Pause beginnt erst, wenn es zu Ende ist. Der Spieler davor behält seine Sitzung geparkt, ein Tipp holt ihn zurück. **Einstellungen** → **Für Verein und Kneipe** → **Zurück nach einer Pause** legt fest, wie lang die Pause ist, oder schaltet es aus.
+Der [Modus für Verein und Kneipe](shared-display.md#venue-mode) kann das Display nach einer Pause ohne Tippen, Klicken oder Taste auf der Autodarts-Seite zu einem Hauskonto zurückbringen oder abmelden, damit die nächsten Spiele nicht für den Spieler zählen, der gegangen ist. Ein Match unterbricht er nie: Die Pause beginnt erst, wenn es zu Ende ist. Eine Lobby, die auf Spieler wartet, hält das Display dreimal so lang wie die Pause. Der Spieler davor behält seine Sitzung geparkt, ein Tipp holt ihn zurück. **Einstellungen** → **Für Verein und Kneipe** → **Zurück nach einer Pause** legt fest, wie lang die Pause ist, oder schaltet es aus.
 
 ### Mehrere Displays
 

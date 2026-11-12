@@ -541,6 +541,6 @@
     "message": "Personne : se déconnecter"
   },
   "idleHint": {
-    "message": "Une pause est le temps sans toucher, clic ni touche sur la page Autodarts. Une partie n'est jamais interrompue : la pause commence une fois qu'elle est terminée. Le joueur précédent garde sa session en attente, un toucher le ramène donc."
+    "message": "Une pause est le temps sans toucher, clic ni touche sur la page Autodarts. Une partie n'est jamais interrompue : la pause commence une fois qu'elle est terminée. Un lobby qui attend des joueurs garde l'écran trois fois plus longtemps. Le joueur précédent garde sa session en attente, un toucher le ramène donc."
   }
 }

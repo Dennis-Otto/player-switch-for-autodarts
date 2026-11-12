@@ -5,7 +5,7 @@ config:
 ---
 flowchart TB
     accTitle: Der Modus für Verein und Kneipe an einem Display
-    accDescr: Ein Tipp auf die Kachel eines Kontos mit PIN fragt nach dieser PIN, bevor sich etwas ändert; eine falsche ändert nichts, und fünf in Folge sperren jede PIN für eine Minute. Einmal pro Minute schaut der Service Worker, ob die Pause vorbei ist. Ein laufendes Match zählt als Eingabe, so wird ein Match nie unterbrochen. Nach der Pause wechselt das Display zum Hauskonto, oder es meldet sich ab, wenn keins festgelegt ist oder es sich neu anmelden muss; so oder so behält der Spieler davor seine Sitzung geparkt.
+    accDescr: Ein Tipp auf die Kachel eines Kontos mit PIN fragt nach dieser PIN, bevor sich etwas ändert; eine falsche ändert nichts, und fünf in Folge sperren jede PIN für eine Minute. Einmal pro Minute schaut der Service Worker, ob die Pause vorbei ist. Ein laufendes Match zählt als Eingabe, so wird ein Match nie unterbrochen, und eine Lobby, die auf Spieler wartet, macht die Pause dreimal so lang. Nach der Pause wechselt das Display zum Hauskonto, oder es meldet sich ab, wenn keins festgelegt ist oder es sich neu anmelden muss; so oder so behält der Spieler davor seine Sitzung geparkt.
 
     subgraph pins["Ein Wechsel zu einem Konto mit PIN"]
         direction TB
@@ -27,6 +27,8 @@ flowchart TB
         look["Einmal pro Minute:<br>der Worker schaut aufs Display"]
         match{"Läuft ein Match?"}
         counts["Das Match zählt als Eingabe:<br>es wird nie unterbrochen"]
+        lobby{"Wartet eine Lobby<br>auf Spieler?"}
+        longer["Die Pause ist<br>dreimal so lang"]
         over{"Ist die Pause vorbei?<br>N Minuten ohne Tippen, Klicken oder Taste"}
         house{"Ist ein Hauskonto festgelegt<br>und bereit?"}
         back["Zum Hauskonto wechseln"]
@@ -35,7 +37,9 @@ flowchart TB
 
         look --> match
         match -- "ja" --> counts
-        match -- "nein" --> over
+        match -- "nein" --> lobby
+        lobby -- "ja" --> longer --> over
+        lobby -- "nein" --> over
         over -- "ja" --> house
         house -- "ja" --> back --> parked
         house -- "nein" --> out --> parked
@@ -46,6 +50,6 @@ flowchart TB
     classDef bot fill:#526cfe2e,stroke:#526cfe,stroke-width:2px
     classDef person fill:#f59e0b2e,stroke:#f59e0b,stroke-width:2px
     classDef done fill:#16a34a2e,stroke:#16a34a,stroke-width:2px
-    class look,counts bot
+    class look,counts,longer bot
     class pin person
     class switch,parked done
