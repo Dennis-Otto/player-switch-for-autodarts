@@ -7,18 +7,8 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { test } from "node:test";
 import type { Page } from "puppeteer-core";
-import {
-  type Account,
-  ALICE,
-  BOB,
-  FakeAutodarts,
-} from "../e2e/fake/autodarts.ts";
-import {
-  type Display,
-  expectPlayer,
-  findFirefox,
-  withFirefox,
-} from "./display.ts";
+import { type Account, ALICE, BOB } from "../e2e/fake/autodarts.ts";
+import { expectPlayer, inFirefox, skip } from "./display.ts";
 
 /** The manifest of the extension: its version and the Autodarts sites that it asks for. */
 const MANIFEST = JSON.parse(
@@ -30,26 +20,6 @@ const MANIFEST = JSON.parse(
 
 /** The Autodarts sites that the manifest asks access to: the page and its API. */
 const SITES = MANIFEST.host_permissions;
-
-const firefox = findFirefox();
-const skip =
-  firefox === undefined && process.env.CI === undefined
-    ? "no Firefox on this computer: install one or set E2E_FIREFOX_PATH"
-    : false;
-
-function inFirefox(
-  run: (display: Display, autodarts: FakeAutodarts) => Promise<void>,
-) {
-  return async () => {
-    if (firefox === undefined) {
-      throw new Error(
-        "The CI has no Firefox: install one, or set E2E_FIREFOX_PATH to it.",
-      );
-    }
-    const autodarts = new FakeAutodarts();
-    await withFirefox(firefox, autodarts, (display) => run(display, autodarts));
-  };
-}
 
 /**
  * Presses Enter until the page plays this account: the first press may come before

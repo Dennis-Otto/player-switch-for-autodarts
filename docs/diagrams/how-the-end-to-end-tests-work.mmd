@@ -5,7 +5,7 @@ config:
 ---
 flowchart TB
     accTitle: How the end-to-end tests work
-    accDescr: npm run e2e, and the workflow E2E for a pull request that changes the extension, for main and every night, builds extension/lib from src/ and starts Playwright. For each test, Playwright's Chromium starts with a profile of its own and loads the real extension from extension/, as chrome://extensions loads it unpacked. The test taps through the real popup, the switcher in the page and the Autodarts tabs, and the service worker and content.js do the rest. The browser resolves play.autodarts.com and api.autodarts.com to the fake Autodarts on 127.0.0.1 and no other host, so nothing reaches the real Autodarts. The fake page keeps its token in localStorage and renews it as it starts; the fake sign-in service rotates every refresh token and refuses one that comes back. After each test, a token sent twice, a request that the fake has no answer for or an error of the service worker fails it, and a failed test keeps its trace and screenshots.
+    accDescr: npm run e2e, and the workflow E2E for a pull request that changes the extension, for main and every night, builds extension/lib from src/ and starts Playwright. For each test, Playwright's Chromium starts with a profile of its own and loads the real extension from extension/, as chrome://extensions loads it unpacked. The test taps through the real popup, the options page, the switcher in the page and the Autodarts tabs, and the service worker and content.js do the rest. The browser resolves play.autodarts.com and api.autodarts.com to the fake Autodarts on 127.0.0.1 and no other host, so nothing reaches the real Autodarts. The fake page keeps its token in localStorage and renews it as it starts; the fake sign-in service rotates every refresh token and refuses one that comes back. After each test, a token sent twice, a request that the fake has no answer for or an error of the service worker fails it, and a failed test keeps its trace and screenshots.
 
     start["npm run e2e, or the workflow E2E<br>for a pull request that changes the extension,<br>for main and every night"]
     build["npm run build<br>extension/lib from src/"]
@@ -14,7 +14,7 @@ flowchart TB
     subgraph browser ["Playwright's Chromium, a new profile for each test"]
         direction TB
         test["The test taps like a player<br>test/e2e/*.spec.ts"]
-        pages["The real popup, the switcher in the page<br>and the Autodarts tabs with content.js"]
+        pages["The real popup, the options page,<br>the switcher in the page<br>and the Autodarts tabs with content.js"]
         worker["The service worker, worker.ts,<br>built into lib/background.js"]
         test --> pages
         pages <--> worker
