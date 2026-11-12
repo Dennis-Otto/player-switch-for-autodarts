@@ -38,6 +38,13 @@ export const HASH_BYTES = 32;
 /** The breaks after which the display returns, in minutes, as the options page offers them. */
 export const IDLE_MINUTES: readonly number[] = [5, 10, 15, 30, 60];
 
+/**
+ * How many times the set break a lobby that waits for players holds the display: long
+ * enough for an opponent or the rest of a group to join without a tap, but not for ever,
+ * so a lobby that everyone walked away from still returns the display.
+ */
+export const LOBBY_STRETCH = 3;
+
 /** How many wrong PINs in a row lock the PINs, and for how long. */
 export const MAX_FAILURES = 5;
 export const LOCKOUT_MS = 60_000;
@@ -360,6 +367,8 @@ export interface IdleInput {
   now: number;
   /** A match runs in an Autodarts tab. */
   matchRunning: boolean;
+  /** An Autodarts tab shows a lobby, which waits for players to join. */
+  lobbyOpen: boolean;
 }
 
 /** What to do now. */
@@ -381,8 +390,10 @@ export type IdleStep =
  * Decides, each time the worker looks, whether the break on the display is over and
  * where it returns to, and gives the time of the last input to keep. A match that runs
  * is never interrupted: it counts as input, so the break starts only once the match has
- * ended. With no input known yet, as after a restart of the browser, the break starts
- * now. A house account that has to sign in again can't take over the page, so the page
+ * ended. A lobby that waits for players stretches the break to `LOBBY_STRETCH` times
+ * its length, so that nobody has to tap the screen while an opponent joins, and a lobby
+ * left alone still returns the display in the end. With no input known yet, as after a
+ * restart of the browser, the break starts now. A house account that has to sign in again can't take over the page, so the page
  * signs out instead.
  */
 export function idleTick(input: IdleInput): {
@@ -397,7 +408,8 @@ export function idleTick(input: IdleInput): {
     return { step: { kind: "match" }, lastActivity: now };
   }
   const lastActivity = input.lastActivity ?? now;
-  if (now - lastActivity < venue.idleMinutes * MINUTE) {
+  const stretch = input.lobbyOpen ? LOBBY_STRETCH : 1;
+  if (now - lastActivity < venue.idleMinutes * stretch * MINUTE) {
     return { step: { kind: "wait" }, lastActivity };
   }
   const house = profiles.find(

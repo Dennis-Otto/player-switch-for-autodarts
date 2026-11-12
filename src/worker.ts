@@ -1080,6 +1080,21 @@ export function startWorker(api: ChromeApi, platform: Platform): StartedWorker {
   }
 
   /**
+   * How the Autodarts tabs keep the display in use for the return after a break: a match
+   * that runs, and a lobby that waits for players, which `venue.ts` lets stretch the break.
+   */
+  async function displayInUse(): Promise<{
+    matchRunning: boolean;
+    lobbyOpen: boolean;
+  }> {
+    const tabs = await playTabs();
+    return {
+      matchRunning: tabs.some((tab) => mustConfirm(tab.url, false)),
+      lobbyOpen: tabs.some((tab) => lobbyOf(tab.url) !== null),
+    };
+  }
+
+  /**
    * After an Autodarts tab has finished loading: saves the session of a new account that
    * signed in there while an account is being added, and keeps the badge current, also for
    * a session that Autodarts stores a moment after the load.
@@ -1123,7 +1138,7 @@ export function startWorker(api: ChromeApi, platform: Platform): StartedWorker {
    * Returns the display to the house account, or signs it out, once the break of the
    * venue mode is over: `venue.ts` decides, from the last input on the page and the
    * accounts, and a match that runs in any Autodarts tab counts as input, so the return
-   * never ends one. A switch or a sign-out parks the session of the player before. With
+   * never ends one; a lobby in any Autodarts tab stretches the break. A switch or a sign-out parks the session of the player before. With
    * no Autodarts tab open there is nothing to return; a house account that Autodarts
    * can't reach now is tried again at the next look, as is a sign-out while Autodarts
    * can't say whose the session in the page is, and one that has to sign in again signs
@@ -1148,7 +1163,7 @@ export function startWorker(api: ChromeApi, platform: Platform): StartedWorker {
           unsaved: view.unsaved,
           lastActivity: before,
           now: platform.now(),
-          matchRunning: !(await noMatchRuns()),
+          ...(await displayInUse()),
         });
         if (lastActivity !== before) {
           await api.storage.session.set({ [ACTIVITY_KEY]: lastActivity });

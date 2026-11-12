@@ -541,6 +541,6 @@
     "message": "Niemand: afmelden"
   },
   "idleHint": {
-    "message": "Een pauze is de tijd zonder tik, klik of toets op de Autodarts-pagina. Een wedstrijd wordt nooit onderbroken: de pauze begint pas als hij voorbij is. De vorige speler houdt zijn sessie geparkeerd, dus één tik brengt hem terug."
+    "message": "Een pauze is de tijd zonder tik, klik of toets op de Autodarts-pagina. Een wedstrijd wordt nooit onderbroken: de pauze begint pas als hij voorbij is. Een lobby die op spelers wacht, houdt het scherm drie keer zo lang vast. De vorige speler houdt zijn sessie geparkeerd, dus één tik brengt hem terug."
   }
 }
