@@ -72,8 +72,12 @@ dessen Passwort du dir merken lässt, Benutzername und Passwort, die wie hier
 beschrieben an den Anmeldedienst von Autodarts gehen, und nirgendwohin sonst. Tritt
 ein gespeicherter Spieler der Lobby auf dem Bildschirm bei, geht ein frischer
 Zugangstoken dieses Kontos an den Spieldienst von Autodarts auf demselben Host, mit
-dem Benutzernamen und der ID des Kontos, die Autodarts ohnehin kennt. Der Chrome Web
-Store führt dasselbe unter seinen Datenschutzpraktiken.
+dem Benutzernamen und der ID des Kontos, die Autodarts ohnehin kennt. Der Entwickler
+gibt dieselben Daten im Chrome Web Store an, in den Datenschutzpraktiken der
+Erweiterung als Authentifizierungsdaten (*Authentication information*), und
+bestätigt dort, dass sie nicht verkauft, für nichts als das Umschalten der Spieler
+und nicht für Kredit- oder Bonitätszwecke verwendet werden; der Store zeigt das auf
+der Seite der Erweiterung unter *Datenschutz*.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="images/diagrams/data-flow.de.dark.svg">
