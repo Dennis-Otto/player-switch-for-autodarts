@@ -260,17 +260,22 @@ jobs:
           cache: npm
       - name: Install the locked packages
         run: npm ci --ignore-scripts
-      # The browser belongs to the version of playwright-core in package-lock.json,
-      # so a new version of Playwright downloads its own Chromium once.
+      # The browser belongs to the version of @playwright/test in package-lock.json,
+      # whose CLI downloads it below and whose tests start it, so a new version of
+      # Playwright downloads its own Chromium once; test/playwright.test.ts keeps
+      # playwright-core at that version. The key took a new prefix when it stopped
+      # following the top-level playwright-core, so that no cache saved under the
+      # old key, with the Chromium of another version, comes back.
       - name: Find the version of Playwright
         id: playwright
-        run: echo "version=$(jq -r '.packages["node_modules/playwright-core"].version' package-lock.json)" >> "$GITHUB_OUTPUT"
+        run: |
+          echo "version=$(jq -r '.packages["node_modules/@playwright/test"].version' package-lock.json)" >> "$GITHUB_OUTPUT"
       - name: Restore the browser of this version
         id: browser
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: ~/.cache/ms-playwright
-          key: playwright-chromium-${{ runner.os }}-${{ steps.playwright.outputs.version }}
+          key: playwright-${{ runner.os }}-chromium-${{ steps.playwright.outputs.version }}
       - name: Download the browser
         if: steps.browser.outputs.cache-hit != 'true'
         run: npx --no -- playwright install --no-shell chromium
