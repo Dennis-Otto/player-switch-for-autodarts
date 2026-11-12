@@ -70,12 +70,36 @@ const ENTITIES: Readonly<Record<string, string>> = {
   quot: '"',
 };
 
+/**
+ * What a piece of HTML has outside its tags, and a line break for each <br>. It reads
+ * character by character, so that no < of a tag stays behind, not even of a tag in a
+ * tag; the text of a page has each < of its own as &lt;.
+ */
+const outsideTags = (html: string): string => {
+  let text = "";
+  let tag: string | undefined;
+  for (const char of html) {
+    if (tag === undefined) {
+      if (char === "<") {
+        tag = "";
+      } else {
+        text += char;
+      }
+    } else if (char === ">") {
+      text += /^br\s*\/?$/i.test(tag) ? "\n" : "";
+      tag = undefined;
+    } else {
+      tag += char;
+    }
+  }
+  return text;
+};
+
 /** The text of a piece of HTML: a line break for each <br>, no tags, no entities. */
 export const htmlText = (html: string): string =>
-  html
-    // A < outside a tag goes too: the text of a page has each of its own as &lt;.
-    .replaceAll(/<[^>]*>|</g, (tag) => (/^<br\s*\/?>$/i.test(tag) ? "\n" : ""))
-    .replaceAll(/&(#x[0-9a-f]+|#\d+|[a-z]+);/gi, (entity, name: string) => {
+  outsideTags(html).replaceAll(
+    /&(#x[0-9a-f]+|#\d+|[a-z]+);/gi,
+    (entity, name: string) => {
       if (name.startsWith("#")) {
         const hex = /^#x/i.test(name);
         return String.fromCodePoint(
@@ -83,7 +107,8 @@ export const htmlText = (html: string): string =>
         );
       }
       return ENTITIES[name.toLowerCase()] ?? entity;
-    });
+    },
+  );
 
 /** The two descriptions of a listing, or what keeps the check from reading them. */
 export type Texts =
