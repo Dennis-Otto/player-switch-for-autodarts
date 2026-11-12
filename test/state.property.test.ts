@@ -304,10 +304,25 @@ test("a session goes where the change puts it, whatever happened before", () => 
         default:
           // A password change leaves the sessions alone.
           assert.deepEqual(
-            after.profiles.map(({ credentials: _, ...rest }) => rest),
-            before.profiles.map(({ credentials: _, ...rest }) => rest),
+            after.profiles.map(
+              ({ credentials: _, needsSignIn: __, ...rest }) => rest,
+            ),
+            before.profiles.map(
+              ({ credentials: _, needsSignIn: __, ...rest }) => rest,
+            ),
           );
           assert.equal(after.activeId, before.activeId);
+          for (const account of after.profiles) {
+            const was = find(before, account.id);
+            // Without its password, an account off the page that has no session can't
+            // make one any more, so it has to sign in again.
+            const stranded: boolean =
+              step.kind === "forgetCredentials" &&
+              account.id === target &&
+              account.token === null &&
+              account.id !== after.activeId;
+            assert.equal(account.needsSignIn, was?.needsSignIn || stranded);
+          }
       }
     }),
   );

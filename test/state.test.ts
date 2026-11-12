@@ -551,6 +551,40 @@ test("toView shows since when the renewal fails, only for a parked session", () 
   ]);
 });
 
+test("toView shows since when the renewal fails for an account it signs in with its password", () => {
+  let state = park(EMPTY, ada, "ta", 10);
+  state = rememberCredentials(state, "a", { username: "ada", password: "pw" });
+  state = loseSession(state, "a");
+  state = failRenewal(state, "a", 30);
+  const [profile] = toView(state, true, 0).profiles;
+  assert.equal(profile?.renewalFailingSince, 30);
+  // No session was renewed yet, so no time of a renewal shows.
+  assert.equal(profile?.renewedAt, null);
+});
+
+test("forgetting the password of an account without a session marks it for a new sign-in", () => {
+  let state = park(park(EMPTY, ada, "ta", 10), bob, "tb", 10);
+  state = rememberCredentials(state, "a", { username: "ada", password: "pw" });
+  state = rememberCredentials(state, "b", { username: "bob", password: "pw" });
+  state = loseSession(state, "a");
+  assert.equal(find(state, "a")?.needsSignIn, false);
+  state = forgetCredentials(state, "a");
+  assert.equal(find(state, "a")?.needsSignIn, true);
+  assert.deepEqual(
+    renewable(state).map((profile) => profile.id),
+    ["b"],
+  );
+  // A parked session still renews by its token, and the account that plays is the page's.
+  state = forgetCredentials(state, "b");
+  assert.equal(find(state, "b")?.needsSignIn, false);
+  state = activate(
+    rememberCredentials(state, "b", { username: "bob", password: "pw" }),
+    "b",
+  );
+  state = forgetCredentials(state, "b");
+  assert.equal(find(state, "b")?.needsSignIn, false);
+});
+
 test("toView reports a session that belongs to no account yet", () => {
   assert.equal(toView(EMPTY, true, 0).unsaved, true);
   assert.equal(toView(EMPTY, false, 0).unsaved, false);

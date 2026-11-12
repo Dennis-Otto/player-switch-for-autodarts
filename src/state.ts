@@ -489,15 +489,23 @@ export function rememberCredentials(
   return { ...state, profiles: write(state, { ...profile, credentials }) };
 }
 
-/** Drops the stored sign-in of the account. */
+/**
+ * Drops the stored sign-in of the account. An account off the page that has no session
+ * then has no way to make one either, so it has to sign in again.
+ */
 export function forgetCredentials(state: State, id: string): State {
   const profile = find(state, id);
   if (profile === undefined) {
     return state;
   }
+  const stranded = profile.token === null && profile.id !== state.activeId;
   return {
     ...state,
-    profiles: write(state, { ...profile, credentials: null }),
+    profiles: write(state, {
+      ...profile,
+      credentials: null,
+      needsSignIn: profile.needsSignIn || stranded,
+    }),
   };
 }
 
@@ -527,7 +535,8 @@ export function toView(
   pageHasSession: boolean,
   now: number,
 ): View {
-  const renewing = new Set(parked(state).map((profile) => profile.id));
+  const parkedIds = new Set(parked(state).map((profile) => profile.id));
+  const renewing = new Set(renewable(state).map((profile) => profile.id));
   return {
     profiles: state.profiles.map((profile) => ({
       id: profile.id,
@@ -538,7 +547,8 @@ export function toView(
       remembersPassword: profile.credentials !== null,
       active: profile.id === state.activeId,
       // The page renews the session of the account that plays; only a parked one is ours.
-      renewedAt: renewing.has(profile.id) ? profile.refreshedAt : null,
+      renewedAt: parkedIds.has(profile.id) ? profile.refreshedAt : null,
+      // An account that the renewal signs in with its password shows its failures too.
       renewalFailingSince: renewing.has(profile.id)
         ? profile.renewalFailedAt
         : null,
