@@ -100,10 +100,10 @@ Over days and weeks, a saved account moves between these states:
 
 A copy loaded this way gets no update by itself, so a display does better with the store. For a new version, replace the contents of the folder with those of the new zip and choose the reload arrow of Player Switch on that page. Leave the folder where it is: the browser ties the saved accounts to its path, so a copy in another folder starts without them. The zip is the very file that goes to the Chrome Web Store, and [the release guide](docs/releases.md#the-package-of-a-release) says how to check that a release built it. To move a display to the store, first remove this copy under `chrome://extensions`, then add Player Switch from the store and save the players again: the store copy has an id of its own and doesn't see the accounts of this one, and two copies at once would both keep the same sign-ins fresh.
 
-**From the source,** to change something:
+**From the source,** to change something, with Node.js 24 or newer, the version that `.nvmrc` names (`nvm use` picks it):
 
 ```sh
-npm ci
+npm ci --ignore-scripts
 npm run build
 ```
 

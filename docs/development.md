@@ -180,8 +180,10 @@ Each run takes the accounts of `renewable` in `state.ts`: every parked session, 
 
 ## Run it from the source
 
+With Node.js 24 or newer, the version that `.nvmrc` names (`nvm use` picks it):
+
 ```sh
-npm ci
+npm ci --ignore-scripts
 npm run build
 ```
 
@@ -362,7 +364,7 @@ The unit tests check `src/` without a browser: the service worker on a fake one,
 npm run e2e
 ```
 
-It builds `extension/lib/` from `src/` and runs every test of `test/e2e/`. `npm run e2e -- --headed` shows the browser, `npm run e2e -- --debug` steps through a test, and `npm run e2e -- -g "double tap"` runs the tests whose names have these words. The first run needs the Chromium of the Playwright version in `package-lock.json`: `npx playwright install --no-shell chromium`. Google Chrome no longer loads an unpacked extension from the command line, so the tests use Playwright's Chromium. `E2E_CHROME_PATH` runs them in another Chrome for Testing instead, such as the next version, Beta, which [the workflow Upstream](#what-autodarts-and-the-next-chrome-change) tests every morning. Where it doesn't start, as on some builds of Windows, the Playwright image of the same version, `mcr.microsoft.com/playwright:v<version>-noble`, runs them: `docker run --rm --ipc=host -v "$PWD":/work -w /work mcr.microsoft.com/playwright:v<version>-noble npx playwright test`, after `npm ci` and `npm run build`.
+It builds `extension/lib/` from `src/` and runs every test of `test/e2e/`. `npm run e2e -- --headed` shows the browser, `npm run e2e -- --debug` steps through a test, and `npm run e2e -- -g "double tap"` runs the tests whose names have these words. The first run needs the Chromium of the Playwright version in `package-lock.json`: `npx playwright install --no-shell chromium`. Google Chrome no longer loads an unpacked extension from the command line, so the tests use Playwright's Chromium. `E2E_CHROME_PATH` runs them in another Chrome for Testing instead, such as the next version, Beta, which [the workflow Upstream](#what-autodarts-and-the-next-chrome-change) tests every morning. Where it doesn't start, as on some builds of Windows, the Playwright image of the same version, `mcr.microsoft.com/playwright:v<version>-noble`, runs them: `docker run --rm --ipc=host -v "$PWD":/work -w /work mcr.microsoft.com/playwright:v<version>-noble npx playwright test`, after `npm ci --ignore-scripts` and `npm run build`.
 
 - **A fake Autodarts, and nothing else.** `--host-resolver-rules` sends `play.autodarts.com` and `api.autodarts.com` to the server of `test/e2e/fake/server.ts` on `127.0.0.1` and resolves no other host. No request of the page, of the service worker or of a tab that the extension opens can reach the real Autodarts. The server has a certificate that `fake/certificate.ts` makes for the run, and the browser trusts its key alone (`--ignore-certificate-errors-spki-list`).
 - **The page**, `fake/play.html` with `play.js`, keeps its refresh token in `localStorage` under `autodarts_refresh_token`, renews it half a second after it loads, as Autodarts Play does as it starts, and shows a sign-in form when it has no session.
@@ -399,7 +401,7 @@ Playwright loads no add-on into Firefox, so the tests of `test/firefox/` drive F
 npm run e2e:firefox
 ```
 
-It takes the Firefox of the computer, from where Firefox installs itself or from `E2E_FIREFOX_PATH`, and skips without one, other than in the CI; `E2E_HEADED=1` shows the window. Firefox 153 or newer runs them: in the CI the newest Firefox of the runner image with every change, and every morning Firefox Beta and Firefox 153 ESR, the oldest that the manifest allows, in [the workflow Upstream](#what-autodarts-and-the-next-chrome-change) ([decision 0021](decisions/0021-test-the-oldest-and-the-next-browsers-every-morning.md)). Without a Firefox, a container runs them, after `npm ci` and `npm run build` on the computer: `docker run --rm -v "$PWD":/app -w /app node:24-trixie-slim sh -c 'apt-get update && apt-get install -y firefox-esr && node --test "test/firefox/*.spec.ts"'`.
+It takes the Firefox of the computer, from where Firefox installs itself or from `E2E_FIREFOX_PATH`, and skips without one, other than in the CI; `E2E_HEADED=1` shows the window. Firefox 153 or newer runs them: in the CI the newest Firefox of the runner image with every change, and every morning Firefox Beta and Firefox 153 ESR, the oldest that the manifest allows, in [the workflow Upstream](#what-autodarts-and-the-next-chrome-change) ([decision 0021](decisions/0021-test-the-oldest-and-the-next-browsers-every-morning.md)). Without a Firefox, a container runs them, after `npm ci --ignore-scripts` and `npm run build` on the computer: `docker run --rm -v "$PWD":/app -w /app node:24-trixie-slim sh -c 'apt-get update && apt-get install -y firefox-esr && node --test "test/firefox/*.spec.ts"'`.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="images/diagrams/how-the-tests-in-firefox-work.dark.svg">
