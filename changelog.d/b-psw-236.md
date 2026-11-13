@@ -1,5 +1,0 @@
-### Bug fixes
-
-- A switch or a sign-out whose Autodarts tab closed or reloaded at the wrong moment no longer signs the player before out for good. The tab that the extension then opens or reloads starts without the session that the switch had just renewed, so Autodarts no longer takes it for a stolen one and ends the session that the extension keeps for that player.
-- Removing the account whose tile plays no longer signs out somebody else who signed in right on the Autodarts page meanwhile. Autodarts first says whose the session in the page is: only a session of the removed account ends, another player stays signed in and plays on, and while Autodarts can't be reached the page stays as it is. **Forget all accounts** does the same for a session that no tile keeps.
-- The extension no longer runs in incognito or private windows, even when extensions are allowed there. Such a window keeps an Autodarts session of its own, which a switch mixed up with the one of the normal windows. The help says so.
