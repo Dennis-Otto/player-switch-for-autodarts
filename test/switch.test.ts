@@ -1581,13 +1581,14 @@ test("removeAccount of the account that plays leaves the page as it is while Aut
   assert.equal(find(store.state, "a"), undefined);
 });
 
-test("removeAccount of the account that plays ends nothing more when the session in the page is over", async () => {
+test("removeAccount of the account that plays ends nothing more when the session in the page is over, and the page lets the spent token go", async () => {
   const autodarts = new FakeAutodarts();
   const store = adaOnThePage(autodarts);
   const page = new FakePage("dead");
   const removal = await removeAccount(deps(store, page, autodarts.fetch), "a");
   assert.deepEqual(outcome(removal), { kind: "removed", ended: true });
-  assert.equal(page.clears, 0);
+  assert.equal(page.clears, 1);
+  assert.equal(page.token, null);
   assert.deepEqual(autodarts.logouts, []);
   assert.equal(find(store.state, "a"), undefined);
   assert.equal(find(store.state, "b")?.token, autodarts.live.get("b"));

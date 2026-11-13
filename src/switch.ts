@@ -855,7 +855,9 @@ async function pageSession(
     return { kind: "unreachable" };
   }
   if (renewal.kind === "rejected") {
-    // Over already: Autodarts has nothing more to end, and the page finds out by itself.
+    // Over already: Autodarts has nothing more to end. The page still holds that spent
+    // token (`renewOutgoing` checked it), so it signs out of it, as `claim` does.
+    await deps.page.clearToken();
     return { kind: "none" };
   }
   const { id } = readIdentity(renewal.session.accessToken);
