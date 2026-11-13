@@ -48,7 +48,64 @@ color = "6f42c1"
 description = "CI, repository maintenance and release tooling"
 group = "type"
 
-# Areas: add one per part of the project, with the options of the Area field.
+# Areas, each with the options of the Area field of the issue forms that choose it.
+
+[[label]]
+name = "area: switching"
+color = "bfdadc"
+description = "Switching players, in the popup and in the switcher on the Autodarts page"
+group = "area"
+form_options = [
+  "Switching players",
+  "The switcher on the Autodarts page",
+]
+
+[[label]]
+name = "area: accounts"
+color = "bfdadc"
+description = "Adding, keeping and signing in accounts, and the remembered password"
+group = "area"
+form_options = [
+  "Adding an account",
+  "Remembered password",
+]
+
+[[label]]
+name = "area: lobby"
+color = "bfdadc"
+description = "Joining the lobby of a match"
+group = "area"
+form_options = [
+  "Join the lobby",
+]
+
+[[label]]
+name = "area: venue"
+color = "bfdadc"
+description = "The venue mode for a club or pub, its PINs and the return after a break"
+group = "area"
+form_options = [
+  "Venue mode for a club or pub",
+]
+
+[[label]]
+name = "area: install"
+color = "bfdadc"
+description = "Installing and updating, the stores, and Firefox and Edge"
+group = "area"
+form_options = [
+  "Install or update",
+  "Firefox or Edge",
+]
+
+[[label]]
+name = "area: website"
+color = "bfdadc"
+description = "The website and the documentation"
+group = "area"
+form_options = [
+  "Website or documentation",
+]
 
 # Topics
 

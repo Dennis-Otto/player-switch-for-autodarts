@@ -195,9 +195,11 @@ someone who can use the computer.
   own, made with WebCrypto. A check compares the hashes in a time that doesn't tell
   how many bytes agree.
 - **The service worker checks every PIN,** for every switch to an account with a PIN
-  and every change under **Manage accounts** or on the options page, so neither the
-  popup nor the switcher on the Autodarts page can go around it. The content script
-  can neither read the hashes nor send these requests.
+  and every change under **Manage accounts** or of the venue mode on the options page,
+  so neither the popup nor the switcher on the Autodarts page can go around it. The
+  content script can neither read the hashes nor send these requests. The settings of
+  the button on the Autodarts page, whether it shows, its corner and the order of the
+  tiles, change no account and guard nothing, so the options page saves them itself.
 - **A player looks after their own account without the manager**
   ([decision 0018](decisions/0018-let-a-player-protect-and-remove-their-own-account.md)).
   The service worker gives a first PIN without the manager PIN only to a guest's
