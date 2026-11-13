@@ -129,6 +129,8 @@ export class FakeBrowser implements ChromeApi {
   readonly autodarts = new FakeAutodarts();
   /** The session that Autodarts keeps in the `localStorage` of its tabs. */
   pageToken: string | null = null;
+  /** The token that the worker took to renew, beside it, as `content.ts` marks it. */
+  renewing: string | null = null;
   tabs_: FakeTab[] = [];
   focusedWindow: number | undefined = 1;
   readonly told: { tabId: number; message: PageRequest }[] = [];
@@ -202,10 +204,12 @@ export class FakeBrowser implements ChromeApi {
     },
     reload: (tabId: number) => {
       this.reloaded.push(tabId);
+      this.load();
       return Promise.resolve();
     },
     create: (properties: { url: string; active?: boolean }) => {
       this.opened.push(properties.url);
+      this.load();
       if (this.broken.has("tabs.create")) {
         return Promise.resolve({ windowId: 1, active: true } as BrowserTab);
       }
@@ -310,15 +314,34 @@ export class FakeBrowser implements ChromeApi {
     switch (message.action) {
       case "read":
         return { token: this.pageToken };
+      case "take":
+        this.renewing = this.pageToken;
+        return { token: this.pageToken };
+      case "release":
+        this.renewing = null;
+        return { ok: true };
       case "write":
         this.pageToken = message.token;
+        this.renewing = null;
         return { ok: true };
       case "clear":
         this.pageToken = null;
+        this.renewing = null;
         return { ok: true };
       default:
         return { ok: true };
     }
+  }
+
+  /**
+   * A page that loads, as `content.ts` starts it: without the token that the worker
+   * took to renew and neither replaced nor gave back.
+   */
+  private load(): void {
+    if (this.renewing !== null && this.renewing === this.pageToken) {
+      this.pageToken = null;
+    }
+    this.renewing = null;
   }
 
   /** Opens an Autodarts tab, or another page, in front of its window. */

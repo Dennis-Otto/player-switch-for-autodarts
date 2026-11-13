@@ -239,6 +239,17 @@ export function createPage(tabs: TabsPort, preferred?: number): PagePort {
       );
       return tokenOf(reply);
     },
+    async takeToken() {
+      const { reply } = await deliver(
+        tabs,
+        { type: "page", action: "take" },
+        preferred,
+      );
+      return tokenOf(reply);
+    },
+    async releaseToken() {
+      await deliver(tabs, { type: "page", action: "release" }, preferred);
+    },
     writeToken(token) {
       return change(tabs, { type: "page", action: "write", token }, preferred);
     },
@@ -349,7 +360,12 @@ export async function preparePage(tabs: TabsPort): Promise<OpenTab | null> {
  * switch that worked; after one that failed, the popup stays open with the reason.
  *
  * Running the task again is safe: `switch.ts` reads the page before it spends a
- * token, and keeps every fresh token before it writes one into the page.
+ * token, and keeps every fresh token before it writes one into the page. And the
+ * page that loads here never sends a token that the task spent before it failed: the
+ * token of the page that a task renews is marked when the task takes it ("take"), and
+ * a page that loads before the next write, clear or release starts without it
+ * (`content.ts`), so Autodarts can't take it for a stolen one and end the session that
+ * the task kept for its account.
  */
 export async function withPage<T>(
   tabs: TabsPort,

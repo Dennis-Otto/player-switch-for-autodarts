@@ -25,3 +25,4 @@ Copy [the template](0000-template.md) to the next free number and describe the d
 | [0017](0017-compare-the-texts-of-the-store-every-morning.md) | Compare the texts of the store with store/ every morning | accepted |
 | [0018](0018-let-a-player-protect-and-remove-their-own-account.md) | Let a player protect and remove their own account without the manager | accepted, extended by 0019 |
 | [0019](0019-let-a-player-pin-hold-by-itself.md) | Let a player's PIN hold by itself | accepted |
+| [0020](0020-run-in-no-incognito-or-private-window.md) | Run in no incognito or private window | accepted |

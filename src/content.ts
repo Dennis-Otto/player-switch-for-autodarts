@@ -2,7 +2,8 @@
 //
 // It is the only code that touches the page's stored session: it reads, writes and
 // clears the refresh token that Autodarts keeps in window.localStorage, on behalf of
-// the service worker.
+// the service worker. And a page that starts with a token that the service worker has
+// renewed, and so spent, starts without it (see RENEWING_KEY).
 //
 // And it shows the switcher in the page, for a display in fullscreen or kiosk mode
 // where the toolbar of the browser is out of reach: a round button in a corner with
@@ -47,6 +48,27 @@
     return;
   }
   const SESSION_KEY = "autodarts_refresh_token";
+  // The token of the page that the service worker takes to renew it ("take"), until it
+  // writes the next one, clears the session or gives the token back ("release"). It sits
+  // beside the session in localStorage, which every Autodarts tab shares and which a page
+  // can read before any script of Autodarts runs.
+  const RENEWING_KEY = "player_switch_renewing";
+  // A page that starts while that token is still in localStorage starts after a renewal
+  // whose next step never reached a page, as when the tab closed in between, or during
+  // one. The token is spent then, and Autodarts, which renews its session as it starts,
+  // would send it a second time: it takes such a token for a stolen one and ends the
+  // session of its account, the fresh one that the extension has just kept for it too.
+  // So the page starts without it, before Autodarts can read it; only a page that
+  // loads, since a page that runs has read its session already.
+  if (document.readyState === "loading") {
+    const renewing = window.localStorage.getItem(RENEWING_KEY);
+    if (renewing !== null) {
+      window.localStorage.removeItem(RENEWING_KEY);
+      if (renewing === window.localStorage.getItem(SESSION_KEY)) {
+        window.localStorage.removeItem(SESSION_KEY);
+      }
+    }
+  }
   // The first part of the address of a match, MATCH_ROUTE of page.ts, which a test compares.
   const MATCH_ROUTE = "matches";
   // Marks the elements of the page that the open switcher made inert, so that the script
@@ -446,6 +468,18 @@
       case "read":
         sendResponse({ token: window.localStorage.getItem(SESSION_KEY) });
         return;
+      case "take": {
+        const token = window.localStorage.getItem(SESSION_KEY);
+        if (token !== null) {
+          window.localStorage.setItem(RENEWING_KEY, token);
+        }
+        sendResponse({ token });
+        return;
+      }
+      case "release":
+        window.localStorage.removeItem(RENEWING_KEY);
+        sendResponse({ ok: true });
+        return;
       case "write":
         // Only a token goes into the session of the page, never another value.
         if (typeof message.token !== "string" || message.token === "") {
@@ -453,12 +487,14 @@
           return;
         }
         window.localStorage.setItem(SESSION_KEY, message.token);
+        window.localStorage.removeItem(RENEWING_KEY);
         sendResponse({ ok: true });
         // Let Autodarts pick up the new session.
         window.location.reload();
         return;
       case "clear":
         window.localStorage.removeItem(SESSION_KEY);
+        window.localStorage.removeItem(RENEWING_KEY);
         sendResponse({ ok: true });
         window.location.reload();
         return;

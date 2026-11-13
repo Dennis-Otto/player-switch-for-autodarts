@@ -145,6 +145,16 @@ class Page implements PagePort {
       : Promise.resolve(this.token);
   }
 
+  takeToken(): Promise<string | null> {
+    return this.readToken();
+  }
+
+  releaseToken(): Promise<void> {
+    return this.failing.has("release")
+      ? Promise.reject(new NoPage())
+      : Promise.resolve();
+  }
+
   writeToken(token: string): Promise<void> {
     if (this.failing.has("write")) {
       return Promise.reject(new NoPage());
@@ -506,14 +516,20 @@ function assertRemoved(
   assert.equal(removal.kind, "removed");
   assert.equal(find(w.store.state, id), undefined, `${id} is forgotten`);
   const played = before.state.activeId === id;
-  if (played) {
+  if (played && before.playing === id && autodarts.outage === "none") {
     assert.equal(page.token, null, "the page signs out with the account");
   }
-  const sessions = [
-    find(before.state, id)?.token ?? null,
-    played ? before.page : null,
-  ];
-  const alive = sessions.some((token) => autodarts.holder(token) === id);
+  // Someone signed in as another account in the page meanwhile: that session stays.
+  if (played && before.playing !== null && before.playing !== id) {
+    assert.equal(
+      autodarts.holder(page.token),
+      before.playing,
+      "the session of another account stays in the page",
+    );
+  }
+  const alive =
+    autodarts.holder(find(before.state, id)?.token ?? null) === id ||
+    (played && autodarts.holder(page.token) === id);
   const ended = removal.kind === "removed" && removal.ended;
   // An ended session is over; one that is not ended is only for an outage, in which
   // the extension can't tell a session that had ended already from a live one.
@@ -594,19 +610,23 @@ function assertKept(
   // Adopting renews the token that is live in the page, and so does saving a new sign-in
   // while an account is being added: both write the fresh one straight back. A switch
   // and a sign-out renew it as it leaves the page, to learn whose it is, so a token they
-  // spend is gone from there unless the page failed. Nothing else renews it.
+  // spend is gone from there unless the page failed. So does the removal of the account
+  // that plays, which then ends the session or writes it back. Nothing else renews it.
   const adopts =
     extension.kind === "adopt" ||
     (extension.kind === "pageLoads" && before.adding);
   const replaces = extension.kind === "switch" || extension.kind === "signOut";
+  const leaves =
+    replaces ||
+    (extension.kind === "remove" && before.state.activeId === extension.id);
   if (!adopts && before.page !== null) {
     const renewed = autodarts.renewed.slice(before.renewed);
-    if (replaces && !(result instanceof Error)) {
+    if (leaves && !(result instanceof Error)) {
       assert.ok(
         !renewed.includes(before.page) || page.token !== before.page,
         "left a spent session in the page",
       );
-    } else if (!replaces) {
+    } else if (!leaves) {
       assert.ok(!renewed.includes(before.page), "renewed the page's session");
     }
   }
@@ -831,6 +851,8 @@ function overlapsAreSafe(queue: () => Queue) {
       w.deps.fetcher = s.scheduleFunction(w.autodarts.fetch);
       w.deps.page = {
         readToken: s.scheduleFunction(() => w.page.readToken()),
+        takeToken: s.scheduleFunction(() => w.page.takeToken()),
+        releaseToken: s.scheduleFunction(() => w.page.releaseToken()),
         writeToken: s.scheduleFunction((token: string) =>
           w.page.writeToken(token),
         ),

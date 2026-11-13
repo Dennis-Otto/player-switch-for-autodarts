@@ -63,6 +63,7 @@ function manifest() {
       "https://api.example.com/*",
     ],
     content_security_policy: { extension_pages: POLICY },
+    incognito: "not_allowed",
   };
 }
 
@@ -317,6 +318,18 @@ test("a key that opens the extension wider fails", () => {
   ]) {
     const opened = { ...manifest(), [key]: {} };
     findsOne(check({ manifest: opened }), new RegExp(`declares ${key}, which`));
+  }
+});
+
+test("an extension that may run in incognito or private windows fails", () => {
+  for (const mode of [undefined, "spanning", "split"]) {
+    const opened = manifest();
+    if (mode === undefined) {
+      delete opened.incognito;
+    } else {
+      opened.incognito = mode;
+    }
+    findsOne(check({ manifest: opened }), /incognito": "not_allowed"/);
   }
 });
 

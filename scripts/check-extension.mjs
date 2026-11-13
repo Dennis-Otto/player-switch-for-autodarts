@@ -9,9 +9,9 @@
 //   store/permissions.json allows, each with its reason, and that the store listing of
 //   every language justifies each of them and nothing else;
 // - nothing opens the extension wider: no externally_connectable, no optional or
-//   sandboxed extras, no content script in the world of the page, and a content
-//   security policy that runs only the extension's own scripts and connects only to the
-//   hosts of the manifest;
+//   sandboxed extras, no content script in the world of the page, no run in incognito
+//   or private windows, and a content security policy that runs only the extension's
+//   own scripts and connects only to the hosts of the manifest;
 // - Firefox runs the same background.js as Chrome and Edge, as background.scripts,
 //   under the fixed id of the add-on, from the first Firefox that shows the data the
 //   add-on sends at its install, and that data is exactly what store/permissions.json
@@ -204,6 +204,13 @@ function checkAccess(problems, manifest, allowed) {
         "extension/manifest.json runs a content script in the world of the page, where the scripts of the page reach it; remove world.",
       );
     }
+  }
+  // An incognito or private window keeps a session of its own, which the one service
+  // worker of the default mode "spanning" would mix up with that of the normal windows.
+  if (manifest.incognito !== "not_allowed") {
+    problems.push(
+      'extension/manifest.json lets the extension run in incognito and private windows, whose Autodarts session is not the one of the normal windows; set "incognito": "not_allowed".',
+    );
   }
   for (const [key, reason] of Object.entries(FORBIDDEN)) {
     if (key in manifest) {

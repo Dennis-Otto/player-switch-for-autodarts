@@ -87,6 +87,8 @@ interface PageOptions {
   body?: boolean;
   /** The answer of window.confirm. */
   confirms?: boolean;
+  /** Whether the page still loads, as at `document_start`, or runs already. */
+  loading?: boolean;
 }
 
 /** An Autodarts page, the world of the content script beside it, and what happened there. */
@@ -94,6 +96,7 @@ function page({
   url = "https://play.autodarts.com/",
   body = true,
   confirms = false,
+  loading = false,
 }: PageOptions = {}) {
   const window = new HappyWindow({
     url,
@@ -101,6 +104,10 @@ function page({
   });
   opened.push(window);
   const { document } = window;
+  Object.defineProperty(document, "readyState", {
+    configurable: true,
+    get: () => (loading ? "loading" : "complete"),
+  });
   if (!body) {
     document.body.remove();
   }
@@ -213,6 +220,61 @@ test("the content script runs as a classic script and touches the session under 
   assert.equal(tab.window.localStorage.getItem(SESSION_KEY), null);
   // Autodarts picks up a new session, or none, with a reload.
   assert.deepEqual(tab.reloads, ["/", "/"]);
+});
+
+/** Where the content script marks the session that the worker takes to renew. */
+const RENEWING_KEY = "player_switch_renewing";
+
+test("the worker takes the session to renew it, and a release, a write or a clear ends the mark", () => {
+  const tab = page();
+  tab.run();
+  const storage = tab.window.localStorage;
+  const take = () => tab.tell({ type: "page", action: "take" }).answers;
+  assert.deepEqual(take(), [{ token: null }]);
+  assert.equal(storage.getItem(RENEWING_KEY), null, "no session, no mark");
+
+  storage.setItem(SESSION_KEY, "token-a");
+  for (const end of [
+    { type: "page", action: "release" },
+    { type: "page", action: "write", token: "token-b" },
+    { type: "page", action: "clear" },
+  ]) {
+    const before = storage.getItem(SESSION_KEY);
+    assert.deepEqual(take(), [{ token: before }]);
+    assert.equal(storage.getItem(RENEWING_KEY), before);
+    assert.deepEqual(tab.tell(end).answers, [{ ok: true }]);
+    assert.equal(storage.getItem(RENEWING_KEY), null, end.action);
+  }
+  // A release changes no session, so only the write and the clear reload the page.
+  assert.deepEqual(tab.reloads, ["/", "/"]);
+});
+
+test("a page that loads starts without the session that the worker took and didn't replace", () => {
+  const cases = [
+    // The worker renewed the session and lost the page before it wrote the next one.
+    { loading: true, mark: "spent", session: "spent", after: null },
+    // The page renewed its session since, or nothing was taken: it keeps it.
+    { loading: true, mark: "older", session: "fresh", after: "fresh" },
+    { loading: true, mark: null, session: "fresh", after: "fresh" },
+    // A page that runs read its session long ago: the script leaves it alone.
+    { loading: false, mark: "spent", session: "spent", after: "spent" },
+  ];
+  for (const { loading, mark, session, after } of cases) {
+    const tab = page({ loading });
+    const storage = tab.window.localStorage;
+    storage.clear();
+    storage.setItem(SESSION_KEY, session);
+    if (mark !== null) {
+      storage.setItem(RENEWING_KEY, mark);
+    }
+    tab.run();
+    assert.equal(storage.getItem(SESSION_KEY), after);
+    assert.equal(
+      storage.getItem(RENEWING_KEY),
+      loading ? null : mark,
+      "a page that loads takes the mark away",
+    );
+  }
 });
 
 test("the content script writes only a token into the session of the page", () => {

@@ -36,10 +36,15 @@ export function sessionResponse(id: string, refreshToken: string): Response {
 }
 
 /** What a fake page refuses to do, as a page without the extension's script would. */
-export type PageFailure = "read" | "write" | "clear";
+export type PageFailure = "read" | "release" | "write" | "clear";
 
 export class FakePage implements PagePort {
   token: string | null;
+  /**
+   * The token that the extension took to renew, until it writes, clears or gives it
+   * back: a page that loads starts without it, as `content.ts` starts it.
+   */
+  renewing: string | null = null;
   readonly writes: string[] = [];
   clears = 0;
   readonly failing: ReadonlySet<PageFailure>;
@@ -56,11 +61,39 @@ export class FakePage implements PagePort {
     return Promise.resolve(this.token);
   }
 
+  takeToken(): Promise<string | null> {
+    if (this.failing.has("read")) {
+      return Promise.reject(new Error("no page"));
+    }
+    if (this.token !== null) {
+      this.renewing = this.token;
+    }
+    return Promise.resolve(this.token);
+  }
+
+  releaseToken(): Promise<void> {
+    if (this.failing.has("release")) {
+      return Promise.reject(new Error("no page"));
+    }
+    this.renewing = null;
+    return Promise.resolve();
+  }
+
+  /**
+   * The page as a tab that loads now finds it, with the session that every Autodarts
+   * tab shares, and with the failures of none: without the token that the extension
+   * took and neither replaced nor gave back.
+   */
+  load(): FakePage {
+    return new FakePage(this.renewing === this.token ? null : this.token);
+  }
+
   writeToken(token: string): Promise<void> {
     if (this.failing.has("write")) {
       return Promise.reject(new Error("no page"));
     }
     this.token = token;
+    this.renewing = null;
     this.writes.push(token);
     return Promise.resolve();
   }
@@ -70,6 +103,7 @@ export class FakePage implements PagePort {
       return Promise.reject(new Error("no page"));
     }
     this.token = null;
+    this.renewing = null;
     this.clears += 1;
     return Promise.resolve();
   }

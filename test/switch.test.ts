@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 
-import type { Identity } from "../src/autodarts.ts";
+import { type Identity, refreshSession } from "../src/autodarts.ts";
 import { createQueue } from "../src/queue.ts";
 import {
   EMPTY,
@@ -334,6 +334,8 @@ test("adoptCurrentSession says when Autodarts can't be reached, and changes noth
   assert.equal(store.saves, 0);
   assert.equal(page.token, "x");
   assert.equal(page.clears, 0);
+  // Autodarts never got the token: a page that loads now keeps it.
+  assert.equal(page.load().token, "x");
 });
 
 test("syncFromPage leaves everything alone while a session is in the page", async () => {
@@ -979,13 +981,66 @@ test("a switch that runs again after the page failed spends no token twice and l
   assert.equal(find(store.state, "a")?.token, autodarts.live.get("a"));
   assert.equal(find(store.state, "b")?.token, autodarts.live.get("b"));
 
-  const answering = new FakePage(page.token);
-  const again = await switchTo({ ...board, page: answering }, "b");
+  // The tab that the retry reloads starts Autodarts, which renews the session that it
+  // finds in localStorage at once: Ada's spent token must not be there.
+  const reloaded = page.load();
+  await startAutodarts(reloaded, autodarts);
+  assert.equal(autodarts.reuses, 0);
+  assert.ok(autodarts.live.has("a"), "Ada's parked session lives");
+  const again = await switchTo({ ...board, page: reloaded }, "b");
   assert.ok(again.ok);
-  assert.equal(answering.token, autodarts.live.get("b"));
+  assert.equal(reloaded.token, autodarts.live.get("b"));
   assert.equal(find(again.state, "a")?.token, autodarts.live.get("a"));
   assert.equal(autodarts.reuses, 0);
 });
+
+test("a sign-out that runs again after the page failed loses no session either", async () => {
+  const autodarts = new FakeAutodarts();
+  const store = new FakeStore(setActive(EMPTY, ada));
+  const page = new FakePage(autodarts.issue("a"), ["clear"]);
+  const board = deps(store, page, autodarts.fetch);
+  await assert.rejects(signOutForNewAccount(board));
+  const reloaded = page.load();
+  await startAutodarts(reloaded, autodarts);
+  const again = await signOutForNewAccount({ ...board, page: reloaded });
+  assert.ok(again.ok);
+  assert.equal(reloaded.token, null);
+  assert.equal(find(again.state, "a")?.token, autodarts.live.get("a"));
+  assert.equal(autodarts.reuses, 0);
+});
+
+test("a switch that can't reach Autodarts gives the page its session back, and a page gone meanwhile fails nothing more", async () => {
+  for (const failing of [[], ["release"]] as const) {
+    const store = new FakeStore(park(setActive(EMPTY, ada), bob, "tb", 0));
+    const page = new FakePage("ta", [...failing]);
+    const result = await switchTo(
+      deps(store, page, renewing({ tb: ["b", "fb"], ta: "offline" })),
+      "b",
+    );
+    assert.deepEqual([result.ok, result.reason], [false, "unreachable"]);
+    assert.equal(page.token, "ta");
+    // A page that loads now keeps the session that Autodarts never got; without the
+    // page to say so, nobody knows, and the next page starts without it.
+    assert.equal(page.load().token, failing.length === 0 ? "ta" : null);
+  }
+});
+
+/** What Autodarts does as its page starts: it renews the session that it finds, if any. */
+async function startAutodarts(
+  page: FakePage,
+  autodarts: FakeAutodarts,
+): Promise<void> {
+  if (page.token === null) {
+    return;
+  }
+  try {
+    page.token = (
+      await refreshSession(autodarts.fetch, page.token)
+    ).refreshToken;
+  } catch {
+    page.token = null;
+  }
+}
 
 test("refreshParked renews a parked session", async () => {
   const store = new FakeStore(park(EMPTY, ada, "ta", 0));
@@ -1449,25 +1504,94 @@ test("removeAccount forgets the account when Autodarts can't be reached, and say
   }
 });
 
+/** Ada plays on the page, as far as the extension knows, and Bob is parked. */
+function adaOnThePage(autodarts: FakeAutodarts): FakeStore {
+  return new FakeStore(
+    park(setActive(EMPTY, ada), bob, autodarts.issue("b"), 0),
+  );
+}
+
 test("removeAccount of the account that plays signs the page out and ends the session it held", async () => {
-  const store = display();
-  const page = new FakePage("ta");
-  const fetcher = signOuts();
+  const autodarts = new FakeAutodarts();
+  const store = adaOnThePage(autodarts);
+  const page = new FakePage(autodarts.issue("a"));
   let asked = 0;
-  const removal = await removeAccount(deps(store, page, fetcher), "a", () => {
-    asked += 1;
-    return Promise.resolve(true);
-  });
+  const removal = await removeAccount(
+    deps(store, page, autodarts.fetch),
+    "a",
+    () => {
+      asked += 1;
+      return Promise.resolve(true);
+    },
+  );
   assert.equal(asked, 1);
+  // Autodarts named Ada as the owner of the session in the page, which then ended.
+  assert.equal(autodarts.refreshes.length, 1);
+  assert.equal(autodarts.live.has("a"), false);
   assert.equal(page.clears, 1);
   assert.equal(page.token, null);
-  assert.deepEqual(fetcher.ended, ["ta"]);
   assert.deepEqual(outcome(removal), { kind: "removed", ended: true });
   assert.equal(find(store.state, "a"), undefined);
   assert.equal(store.state.activeId, null);
-  // The parked accounts keep their sessions.
-  assert.equal(find(store.state, "b")?.token, "tb");
-  assert.equal(find(store.state, "c")?.token, "tc");
+  // The parked account keeps its session.
+  assert.equal(find(store.state, "b")?.token, autodarts.live.get("b"));
+  assert.equal(autodarts.reuses, 0);
+});
+
+test("removeAccount of the account that plays leaves the session of another account in the page, fresh", async () => {
+  // Ada signed out on the Autodarts page and Zoe signed in there: Ada's tile still plays.
+  const autodarts = new FakeAutodarts();
+  const store = adaOnThePage(autodarts);
+  const page = new FakePage(autodarts.issue("z"));
+  const removal = await removeAccount(deps(store, page, autodarts.fetch), "a");
+  assert.deepEqual(outcome(removal), { kind: "removed", ended: true });
+  assert.equal(page.token, autodarts.live.get("z"), "Zoe plays on");
+  assert.equal(page.clears, 0);
+  assert.deepEqual(autodarts.logouts, []);
+  assert.equal(find(store.state, "a"), undefined);
+  assert.equal(store.state.activeId, null);
+  assert.equal(autodarts.reuses, 0);
+});
+
+test("removeAccount of the account that plays lets an account with a tile that signed in on the page play on", async () => {
+  const autodarts = new FakeAutodarts();
+  const store = adaOnThePage(autodarts);
+  // Bob signed in right on the page, which ended nothing of his.
+  const page = new FakePage(autodarts.issue("b"));
+  const removal = await removeAccount(deps(store, page, autodarts.fetch), "a");
+  assert.deepEqual(outcome(removal), { kind: "removed", ended: true });
+  assert.equal(page.token, autodarts.live.get("b"));
+  assert.equal(store.state.activeId, "b");
+  assert.equal(find(store.state, "b")?.token, null);
+  assert.deepEqual(autodarts.logouts, []);
+});
+
+test("removeAccount of the account that plays leaves the page as it is while Autodarts can't be reached, and says so", async () => {
+  const store = display();
+  const page = new FakePage("ta");
+  const removal = await removeAccount(
+    deps(store, page, router({ refresh: offline })),
+    "a",
+  );
+  assert.deepEqual(outcome(removal), { kind: "removed", ended: false });
+  assert.equal(page.token, "ta");
+  assert.equal(page.clears, 0);
+  assert.deepEqual(page.writes, []);
+  assert.equal(page.load().token, "ta", "a page that loads keeps the session");
+  assert.equal(find(store.state, "a"), undefined);
+});
+
+test("removeAccount of the account that plays ends nothing more when the session in the page is over, and the page lets the spent token go", async () => {
+  const autodarts = new FakeAutodarts();
+  const store = adaOnThePage(autodarts);
+  const page = new FakePage("dead");
+  const removal = await removeAccount(deps(store, page, autodarts.fetch), "a");
+  assert.deepEqual(outcome(removal), { kind: "removed", ended: true });
+  assert.equal(page.clears, 1);
+  assert.equal(page.token, null);
+  assert.deepEqual(autodarts.logouts, []);
+  assert.equal(find(store.state, "a"), undefined);
+  assert.equal(find(store.state, "b")?.token, autodarts.live.get("b"));
 });
 
 test("removeAccount of the account that plays changes nothing while the page may not sign out", async () => {
@@ -1527,15 +1651,19 @@ test("removeAccount of an account without a session ends nothing, and one that i
 });
 
 test("forgetAll ends every session, signs the page out, forgets every account and then wipes", async () => {
-  const store = display();
-  const page = new FakePage("ta");
-  const fetcher = signOuts();
+  const autodarts = new FakeAutodarts();
+  const store = new FakeStore(
+    park(adaOnThePage(autodarts).state, cy, autodarts.issue("c"), 0),
+  );
+  const page = new FakePage(autodarts.issue("a"));
   const wipes: number[] = [];
-  const removal = await forgetAll(deps(store, page, fetcher), () => {
+  const removal = await forgetAll(deps(store, page, autodarts.fetch), () => {
     wipes.push(store.state.profiles.length);
     return Promise.resolve();
   });
-  assert.deepEqual([...fetcher.ended].sort(), ["ta", "tb", "tc"]);
+  assert.equal(autodarts.logouts.length, 3);
+  assert.equal(autodarts.live.size, 0, "every session ended");
+  assert.equal(autodarts.reuses, 0);
   assert.equal(page.token, null);
   assert.equal(page.clears, 1);
   assert.deepEqual(store.state, EMPTY);
@@ -1552,13 +1680,13 @@ test("forgetAll forgets everything when a session can't be ended, and says so", 
   );
   let wiped = false;
   const removal = await forgetAll(
-    deps(store, new FakePage("ta"), fetcher),
+    deps(store, new FakePage(null), fetcher),
     () => {
       wiped = true;
       return Promise.resolve();
     },
   );
-  assert.equal(fetcher.ended.length, 3, "each session is asked to end");
+  assert.equal(fetcher.ended.length, 2, "each session is asked to end");
   assert.deepEqual(outcome(removal), { kind: "removed", ended: false });
   assert.deepEqual(store.state, EMPTY);
   assert.ok(wiped);
@@ -1600,6 +1728,21 @@ test("forgetAll leaves a session in the page that no account keeps, and asks not
   assert.deepEqual(fetcher.ended, ["tb"]);
   assert.equal(page.token, "t-someone");
   assert.equal(asked, false);
+});
+
+test("forgetAll leaves the session of an account without a tile in the page, though one of the extension seemed to play", async () => {
+  const autodarts = new FakeAutodarts();
+  const store = adaOnThePage(autodarts);
+  const parked = find(store.state, "b")?.token;
+  const page = new FakePage(autodarts.issue("z"));
+  const removal = await forgetAll(deps(store, page, autodarts.fetch), () =>
+    Promise.resolve(),
+  );
+  assert.deepEqual(outcome(removal), { kind: "removed", ended: true });
+  assert.deepEqual(autodarts.logouts, [parked]);
+  assert.equal(page.token, autodarts.live.get("z"), "Zoe plays on");
+  assert.equal(page.clears, 0);
+  assert.deepEqual(store.state, EMPTY);
 });
 
 test("forgetAll with no account wipes all the same", async () => {
