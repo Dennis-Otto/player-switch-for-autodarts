@@ -2,14 +2,22 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 
 import type { Identity } from "../src/autodarts.ts";
+import {
+  DIAGNOSTICS_KEY,
+  type DiagnosticEvent,
+  type Diagnostics,
+} from "../src/diagnostics.ts";
 import { REFRESH_PERIOD_MINUTES, RETRY_MS } from "../src/health.ts";
 import { SEATS_KEY } from "../src/lobby.ts";
 import type { PlayersView, VenueAccount } from "../src/messages.ts";
 import { SETTINGS_KEY } from "../src/page.ts";
 import {
   EMPTY,
+  endSession,
   find,
   park,
+  rememberCredentials,
+  STATE_VERSION,
   type State,
   setActive,
   startAdding,
@@ -108,6 +116,7 @@ interface Reply {
   joined?: string;
   kept?: boolean;
   error?: string;
+  diagnostics?: Diagnostics;
   view: PlayersView;
 }
 
@@ -497,6 +506,31 @@ test("a tap on a tile switches players in the tab of the switcher, and parks the
   assert.equal(fake.sessionArea.data.get(ACTIVITY_KEY), fake.clock);
 });
 
+test("the tiles come by name, or with the account that played last first, as the options page sets", async () => {
+  const fake = browser();
+  // Zoe's username comes first, but the tile shows her name, which comes last.
+  const zoe = { id: "zoe", username: "aaa", name: "Zoe", picture: null };
+  await twoPlayers(fake, (state) =>
+    park(state, zoe, fake.autodarts.issue("zoe"), fake.clock),
+  );
+  fake.addTab();
+  await started(fake);
+  const order = async () =>
+    (await popup(fake, { action: "view" })).view.profiles.map(
+      (profile) => profile.id,
+    );
+  assert.deepEqual(await order(), ["ada", "bob", "zoe"]);
+
+  // Zoe plays, then Bob: with the order by the last game, Bob comes first.
+  assert.equal((await popup(fake, { action: "switch", id: "zoe" })).ok, true);
+  fake.clock += MINUTE;
+  assert.equal((await popup(fake, { action: "switch", id: "bob" })).ok, true);
+  assert.deepEqual(await order(), ["ada", "bob", "zoe"]);
+  fake.local.data.set(SETTINGS_KEY, { order: "recent" });
+  assert.deepEqual(await order(), ["bob", "zoe", "ada"]);
+  assert.equal(find(await accounts(fake), "bob")?.lastPlayedAt, fake.clock);
+});
+
 test("a switch says when Autodarts can't be reached and when the account has to sign in again", async () => {
   const fake = browser();
   await twoPlayers(fake);
@@ -771,6 +805,9 @@ test("a removal ends the session at Autodarts, asks first during a match, and Fo
   fake.addTab({ url: MATCH });
   fake.local.data.set(VENUE_KEY, { players: { ada: await quickHash("1234") } });
   fake.sessionArea.data.set("other", 1);
+  fake.local.data.set(DIAGNOSTICS_KEY, [
+    { at: 1, action: "switch", outcome: "ok", status: null },
+  ]);
   await started(fake);
 
   const bob = await popup(fake, { action: "removeAccount", id: "bob" });
@@ -793,6 +830,9 @@ test("a removal ends the session at Autodarts, asks first during a match, and Fo
   assert.equal(fake.pageToken, null);
   assert.equal(fake.local.data.has(VENUE_KEY), false);
   assert.equal(fake.sessionArea.data.has("other"), false);
+  // The ring of events goes too, with what the removal of Bob noted.
+  await settle();
+  assert.equal(fake.local.data.has(DIAGNOSTICS_KEY), false);
 });
 
 test("removing the player on the page, or forgetting all, opens a page in the background when none answers", async () => {
@@ -2140,4 +2180,197 @@ test("a view after a failure offers no join", async () => {
 
   assert.equal(reply.error, "error");
   assert.equal(reply.view.lobby, null);
+});
+
+test("the ring of events notes what happened and how it ended, and never a token, a name, a username or a password", async () => {
+  const fake = browser();
+  // Real-looking names, so that a leak would show in the stored ring.
+  const named = { ...bob, username: "bob.builder", name: "Bob Builder" };
+  fake.pageToken = fake.autodarts.issue("ada");
+  await fake.seed(
+    park(setActive(EMPTY, ada), named, fake.autodarts.issue("bob"), fake.clock),
+  );
+  fake.autodarts.passwords.set("bob.builder", {
+    id: "bob",
+    password: "pw-very-secret",
+  });
+  fake.addTab();
+  await started(fake);
+
+  const remembered = await popup(fake, {
+    action: "remember",
+    id: "bob",
+    username: "bob.builder",
+    password: "pw-very-secret",
+  });
+  assert.equal(remembered.ok, true);
+  const wrong = await popup(fake, {
+    action: "remember",
+    id: "bob",
+    username: "bob.builder",
+    password: "pw-wrong-secret",
+  });
+  assert.equal(wrong.reason, "password");
+  fake.broken.add("fetch");
+  assert.equal(
+    (await popup(fake, { action: "switch", id: "bob" })).reason,
+    "unreachable",
+  );
+  fake.broken.delete("fetch");
+  assert.equal((await popup(fake, { action: "switch", id: "bob" })).ok, true);
+  fake.alarms.onAlarm.fire({ name: REFRESH_ALARM });
+  await settle();
+
+  const ring = fake.local.data.get(DIAGNOSTICS_KEY) as DiagnosticEvent[];
+  assert.deepEqual(
+    ring.map(({ action, service, outcome, status }) =>
+      [action, service, outcome, status].filter((part) => part !== undefined),
+    ),
+    [
+      ["remember", "ok", null],
+      ["request", "signIn", "http", 401],
+      ["remember", "password", null],
+      ["request", "signIn", "TypeError", null],
+      ["switch", "unreachable", null],
+      ["switch", "ok", null],
+      ["renewal", "ok", null],
+    ],
+  );
+  assert.ok(ring.every(({ at }) => at === fake.clock));
+  assert.deepEqual(ring.at(-1)?.counts, {
+    renewed: 1,
+    rejected: 0,
+    unreachable: 0,
+    requestRefused: 0,
+  });
+  const stored = JSON.stringify(ring);
+  const secrets = [
+    "pw-very-secret",
+    "pw-wrong-secret",
+    "bob.builder",
+    "Bob Builder",
+    '"bob"',
+    '"ada"',
+    "autodarts.com",
+    ...fake.autodarts.live.values(),
+  ];
+  for (const secret of secrets) {
+    assert.equal(stored.includes(secret), false, secret);
+  }
+});
+
+test("Copy diagnostics answers how the accounts stand and the last events, behind the manager PIN", async () => {
+  const fake = browser();
+  await twoPlayers(fake, (state) =>
+    rememberCredentials(endSession(state, "bob"), "bob", {
+      username: "bob",
+      password: "pw",
+    }),
+  );
+  fake.local.data.set(VENUE_KEY, {
+    manager: await quickHash("9999"),
+    players: { bob: await quickHash("1234") },
+    idleMinutes: 30,
+    house: "ada",
+  });
+  fake.local.data.set(SETTINGS_KEY, { order: "recent" });
+  fake.local.data.set(DIAGNOSTICS_KEY, [
+    { at: 5, action: "join", outcome: "refused", status: null },
+  ]);
+  await started(fake);
+
+  const asked = await popup(fake, { action: "diagnostics" });
+  assert.deepEqual([asked.reason, asked.pin], ["pin", "manager"]);
+  const reply = await popup(fake, {
+    action: "diagnostics",
+    managerPin: "9999",
+  });
+  assert.equal(reply.ok, true);
+  assert.deepEqual(reply.diagnostics, {
+    format: STATE_VERSION,
+    accounts: [
+      {
+        playing: true,
+        needsSignIn: false,
+        remembersPassword: false,
+        renewalFailingSince: null,
+      },
+      {
+        playing: false,
+        needsSignIn: true,
+        remembersPassword: true,
+        renewalFailingSince: null,
+      },
+    ],
+    renewal: {
+      lastRefreshAt: fake.clock,
+      lastAttemptAt: fake.clock,
+      suspectedChange: false,
+      requestRefused: false,
+    },
+    venue: {
+      managerPin: true,
+      playerPins: 1,
+      idleMinutes: 30,
+      houseAccount: true,
+    },
+    settings: { showButton: true, corner: "bottom-right", order: "recent" },
+    events: [{ at: 5, action: "join", outcome: "refused", status: null }],
+  });
+  // Neither the question for the PIN nor the copy itself is an event.
+  assert.equal(
+    (fake.local.data.get(DIAGNOSTICS_KEY) as DiagnosticEvent[]).length,
+    1,
+  );
+});
+
+test("Copy diagnostics reports accounts of a newer version, which the popup can't read", async () => {
+  const fake = browser();
+  fake.local.data.set(ACCOUNTS_KEY, { version: 99, profiles: [] });
+  await started(fake);
+  const reply = await popup(fake, { action: "diagnostics" });
+  assert.equal(reply.ok, true);
+  assert.equal(reply.diagnostics?.format, "unknown");
+  assert.deepEqual(reply.diagnostics?.accounts, []);
+  assert.deepEqual(reply.view.profiles, []);
+  // Any other request says why it can't go on, and the ring notes it.
+  const view = await popup(fake, { action: "view" });
+  assert.equal(view.error, "unknownFormat");
+  assert.deepEqual(
+    (fake.local.data.get(DIAGNOSTICS_KEY) as DiagnosticEvent[]).map(
+      ({ action, outcome }) => [action, outcome],
+    ),
+    [
+      // The start of the worker could not bring the accounts up to date either.
+      ["failure", "UnknownStateError"],
+      ["view", "unknownFormat"],
+    ],
+  );
+});
+
+test("Copy diagnostics fails as any request does when the accounts can't be read at all", async () => {
+  const fake = browser();
+  await twoPlayers(fake);
+  // The key of the vault can't be reached, so no account opens.
+  fake.idb.open = () => {
+    throw new Error("no database");
+  };
+  await started(fake);
+  const reply = await popup(fake, { action: "diagnostics" });
+  assert.equal(reply.error, "error");
+  assert.equal(reply.diagnostics, undefined);
+});
+
+test("a failure of the worker leaves its kind in the ring, as well as in the console", async () => {
+  const fake = browser();
+  await twoPlayers(fake);
+  fake.broken.add("badge");
+  await started(fake);
+  await settle();
+  const ring = fake.local.data.get(DIAGNOSTICS_KEY) as DiagnosticEvent[];
+  assert.ok(ring.length > 0);
+  for (const event of ring) {
+    assert.deepEqual([event.action, event.outcome], ["failure", "Error"]);
+  }
+  assert.ok(fake.logs.some((text) => text.includes("the badge")));
 });

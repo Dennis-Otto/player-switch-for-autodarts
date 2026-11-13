@@ -10,6 +10,7 @@
  * only says where the sealed values go.
  */
 import type { Identity } from "./autodarts.ts";
+import type { TileOrder } from "./page.ts";
 
 /** A username and password a person asked the extension to keep for an account. */
 export interface Credentials {
@@ -34,6 +35,12 @@ export interface Profile extends Identity {
   renewalFailedAt: number | null;
   /** The sign-in the extension may use when a token no longer works, or null. */
   credentials: Credentials | null;
+  /**
+   * When the account last came on to play, by a tap on its tile or a join into a lobby,
+   * in milliseconds, or null when it never did since the extension keeps the time. The
+   * tiles may show the account that played last first.
+   */
+  lastPlayedAt: number | null;
 }
 
 export interface State {
@@ -57,6 +64,8 @@ export interface ProfileView extends Identity {
   renewedAt: number | null;
   /** Since when the renewal of the parked session fails, or null while it works or none is parked. */
   renewalFailingSince: number | null;
+  /** When the account last came on to play, or null. */
+  lastPlayedAt: number | null;
 }
 
 export interface View {
@@ -272,7 +281,14 @@ function parseProfile(entry: unknown): Profile | null {
     renewalFailedAt:
       typeof value.renewalFailedAt === "number" ? value.renewalFailedAt : null,
     credentials: parseCredentials(value.credentials),
+    // Stored since 1.7.0: an account of an earlier version has played at no known time.
+    lastPlayedAt: time(value.lastPlayedAt),
   };
+}
+
+/** A time in milliseconds as it was stored, or null for anything else. */
+function time(value: unknown): number | null {
+  return typeof value === "number" && Number.isFinite(value) ? value : null;
 }
 
 /** A username and password as they were stored, or null for anything else. */
@@ -296,13 +312,44 @@ export function find(state: State, id: string): Profile | undefined {
   return state.profiles.find((profile) => profile.id === id);
 }
 
+/**
+ * The accounts with `profile` in place of the one with its id, in the order of the name
+ * that a tile shows first, then of the username below it.
+ */
 function write(state: State, profile: Profile): State["profiles"] {
   const others = state.profiles.filter(
     (existing) => existing.id !== profile.id,
   );
-  return [...others, profile].sort(
-    (a, b) => a.username.localeCompare(b.username) || a.id.localeCompare(b.id),
+  return [...others, profile].sort(byName);
+}
+
+/** The order of the accounts by the name that a tile shows, then the username and the id. */
+export function byName(
+  a: Identity,
+  b: Identity,
+  language: string | undefined = undefined,
+): number {
+  return (
+    a.name.localeCompare(b.name, language, { sensitivity: "base" }) ||
+    a.username.localeCompare(b.username, language, { sensitivity: "base" }) ||
+    a.id.localeCompare(b.id)
   );
+}
+
+/**
+ * The accounts in the order of the tiles that the options page sets: by the name that a
+ * tile shows (the order in which the extension keeps them), or the account that played
+ * last first, and the accounts that never played since the extension keeps the time
+ * after them, by name.
+ */
+export function inOrder<T extends Identity & { lastPlayedAt: number | null }>(
+  profiles: readonly T[],
+  order: TileOrder,
+): T[] {
+  const byLastGame = (a: T, b: T) =>
+    (b.lastPlayedAt ?? Number.NEGATIVE_INFINITY) -
+      (a.lastPlayedAt ?? Number.NEGATIVE_INFINITY) || byName(a, b);
+  return [...profiles].sort(order === "recent" ? byLastGame : byName);
 }
 
 /** Updates the account's name and picture, keeping its session and credentials. */
@@ -315,6 +362,7 @@ function merge(state: State, identity: Identity): Profile {
     refreshedAt: existing?.refreshedAt ?? null,
     renewalFailedAt: existing?.renewalFailedAt ?? null,
     credentials: existing?.credentials ?? null,
+    lastPlayedAt: existing?.lastPlayedAt ?? null,
   };
 }
 
@@ -393,9 +441,15 @@ export function setActive(state: State, identity: Identity): State {
 
 /**
  * The account plays: its parked session moves to the page, which keeps it from now on.
- * An account being added is then no longer waited for.
+ * An account being added is then no longer waited for. With `now`, a player came on at
+ * that time, such as by a tap on the tile; without it, the extension only learnt again
+ * who plays on the page, which leaves the time of the last game as it was.
  */
-export function activate(state: State, id: string): State {
+export function activate(
+  state: State,
+  id: string,
+  now: number | null = null,
+): State {
   const profile = find(state, id);
   if (profile === undefined) {
     return state;
@@ -405,8 +459,21 @@ export function activate(state: State, id: string): State {
     token: null,
     needsSignIn: false,
     renewalFailedAt: null,
+    lastPlayedAt: now ?? profile.lastPlayedAt,
   };
   return { profiles: write(state, playing), activeId: id, addingUntil: null };
+}
+
+/** The account came on to play at `now` without the page, such as by a join into a lobby. */
+export function played(state: State, id: string, now: number): State {
+  const profile = find(state, id);
+  if (profile === undefined) {
+    return state;
+  }
+  return {
+    ...state,
+    profiles: write(state, { ...profile, lastPlayedAt: now }),
+  };
 }
 
 /**
@@ -552,6 +619,7 @@ export function toView(
       renewalFailingSince: renewing.has(profile.id)
         ? profile.renewalFailedAt
         : null,
+      lastPlayedAt: profile.lastPlayedAt,
     })),
     unsaved: pageHasSession && state.activeId === null,
     adding: isAdding(state, now),

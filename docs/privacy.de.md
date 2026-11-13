@@ -32,7 +32,15 @@ es aber könnte und die Tokens und Passwörter dort nur verschlüsselt fände
   [Sicherheitsdesign](security.de.md#versiegelte-tokens-und-passwörter) erklärt die
   Einzelheiten.
 - **Die Einstellungen des Knopfs auf der Autodarts-Seite:** ob er zu sehen ist, und
-  in welcher Ecke.
+  in welcher Ecke, und die Reihenfolge der Kacheln.
+- **Wann jedes gespeicherte Konto zuletzt gespielt hat,** damit die Kacheln das
+  Konto, das zuletzt gespielt hat, zuerst zeigen können.
+- **Die letzten 50 Ereignisse der Erweiterung, für eine Fehlermeldung:** die Zeit
+  jedes Wechsels, Beitritts, Speicherns und jeder Erneuerung und jeder Anfrage an
+  Autodarts, die fehlgeschlagen ist, wie sie ausging, und ihr HTTP-Status. Nie ein
+  Name, ein Benutzername, ein Passwort, ein Token, die ID eines Kontos oder eine
+  Adresse. Sie verlassen den Browser nur, wenn du **Diagnose kopieren** wählst und
+  die Kopie selbst irgendwo einfügst, etwa in eine Fehlermeldung.
 - **Nur im Modus für Verein und Kneipe, sobald du ihn einschaltest:** ein gesalzener
   Hash der Manager-PIN und der PIN jedes Spielers, nie eine PIN selbst, die Länge der
   Pause und das Hauskonto. Solange der Browser läuft, und nur solange die Rückkehr
@@ -81,7 +89,7 @@ der Seite der Erweiterung unter *Datenschutz*.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="images/diagrams/data-flow.de.dark.svg">
-  <img src="images/diagrams/data-flow.de.svg" alt="Wohin die Daten gehen: Alles bleibt im Browser auf diesem Computer. Das Popup und der Umschalter fragen den Service Worker, der in chrome.storage.local einen Token pro Konto behält, ein Passwort nur, wenn eines gemerkt ist, die Einstellungen des Knopfs, die Zeit der letzten Erneuerung, ob Autodarts dabei jedes Konto abgewiesen hat, und bis wann ein neues Konto hinzugefügt wird. Er bringt eine Sitzung in die Autodarts-Seite und liest die ausgehende nur über content.js aus ihr, das einzige Skript, das die Sitzung im localStorage der Seite liest oder schreibt. Um einen Token zu erneuern, mit einem Passwort anzumelden, eine Sitzung zu beenden oder einen gespeicherten Spieler in die Lobby auf dem Bildschirm zu setzen, mit einem frischen Token, dem Benutzernamen und der Konto-ID dieses Spielers, spricht er über HTTPS mit api.autodarts.com, demselben Dienst, den die Autodarts-Seite selbst nutzt. Das Popup und der Umschalter zeigen das Bild jedes Spielers von der Adresse, die Autodarts dafür angibt. Sonst geht nichts irgendwohin: kein Server des Entwicklers, keine Statistiken; Hilfe und Problem melden öffnen nur eine Seite in einem neuen Tab.">
+  <img src="images/diagrams/data-flow.de.svg" alt="Wohin die Daten gehen: Alles bleibt im Browser auf diesem Computer. Das Popup und der Umschalter fragen den Service Worker, der in chrome.storage.local einen Token pro Konto behält, ein Passwort nur, wenn eines gemerkt ist, die Einstellungen des Knopfs und die Reihenfolge der Kacheln, wann jedes Konto zuletzt gespielt hat, die letzten 50 Ereignisse der Erweiterung ohne einen Namen oder ein Geheimnis, die Zeit der letzten Erneuerung, ob Autodarts dabei jedes Konto abgewiesen hat, und bis wann ein neues Konto hinzugefügt wird. Er bringt eine Sitzung in die Autodarts-Seite und liest die ausgehende nur über content.js aus ihr, das einzige Skript, das die Sitzung im localStorage der Seite liest oder schreibt. Um einen Token zu erneuern, mit einem Passwort anzumelden, eine Sitzung zu beenden oder einen gespeicherten Spieler in die Lobby auf dem Bildschirm zu setzen, mit einem frischen Token, dem Benutzernamen und der Konto-ID dieses Spielers, spricht er über HTTPS mit api.autodarts.com, demselben Dienst, den die Autodarts-Seite selbst nutzt. Das Popup und der Umschalter zeigen das Bild jedes Spielers von der Adresse, die Autodarts dafür angibt. Sonst geht nichts irgendwohin: kein Server des Entwicklers, keine Statistiken; Hilfe und Problem melden öffnen nur eine Seite in einem neuen Tab.">
 </picture>
 
 „Hilfe“ und „Problem melden“ im Popup und auf der Willkommensseite und der Link

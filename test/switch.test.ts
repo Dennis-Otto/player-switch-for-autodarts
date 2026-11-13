@@ -1826,6 +1826,9 @@ test("joinLobbyAs seats a parked account at the board of Ada, who hosts and play
   // Bob's rotated token is kept, and he stays parked; Ada plays on as before.
   assert.equal(find(store.state, "b")?.token, autodarts.live.get("b"));
   assert.equal(find(store.state, "b")?.refreshedAt, 1000);
+  // Bob plays now, at the board of the display, though the page stays with Ada.
+  assert.equal(find(store.state, "b")?.lastPlayedAt, 1000);
+  assert.equal(find(store.state, "a")?.lastPlayedAt, null);
   assert.equal(store.state.activeId, "a");
   assert.equal(page.token, inPage);
   assert.deepEqual(page.writes, []);

@@ -289,6 +289,42 @@
   "keysHint": {
     "message": "Toetsen 1 tot en met 9 kiezen een speler, Esc sluit."
   },
+  "filterLabel": {
+    "message": "Speler zoeken"
+  },
+  "filterNone": {
+    "message": "Geen account komt overeen."
+  },
+  "keysFilterHint": {
+    "message": "Typ een naam om een speler te vinden. De toetsen 1 tot 9 kiezen een van de getoonde, Esc sluit."
+  },
+  "optionsTiles": {
+    "message": "De spelers"
+  },
+  "optionOrder": {
+    "message": "Volgorde van de tegels"
+  },
+  "optionOrderHint": {
+    "message": "In de pop-up en in de wisselaar op de Autodarts-pagina. Vanaf negen opgeslagen accounts vindt een veld boven de tegels een speler op naam."
+  },
+  "orderName": {
+    "message": "Op naam"
+  },
+  "orderRecent": {
+    "message": "Laatst gespeeld eerst"
+  },
+  "copyDiagnostics": {
+    "message": "Diagnose kopiëren"
+  },
+  "diagnosticsCopied": {
+    "message": "Diagnose gekopieerd. Plak deze in het veld Logs van de melding: er staat geen naam, token of wachtwoord in."
+  },
+  "diagnosticsHelp": {
+    "message": "Wat erin staat"
+  },
+  "diagnosticsNotCopied": {
+    "message": "De diagnose kon niet worden gekopieerd. Probeer het opnieuw."
+  },
   "version": {
     "message": "Player Switch $VERSION$",
     "placeholders": {

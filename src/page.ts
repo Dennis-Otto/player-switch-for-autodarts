@@ -28,18 +28,30 @@ export const CORNERS = [
 
 export type Corner = (typeof CORNERS)[number];
 
+/**
+ * The orders of the tiles in the popup and the switcher, the default first: by the name
+ * that a tile shows, or the account that played last first, as at a venue where the
+ * regulars find themselves at the top.
+ */
+export const ORDERS = ["name", "recent"] as const;
+
+export type TileOrder = (typeof ORDERS)[number];
+
 /** What a person can set for the switcher in the page, on the options page. */
 export interface PageSettings {
   /** The Autodarts page shows the button that opens the switcher. */
   showButton: boolean;
   /** The corner of the page where the button sits. */
   corner: Corner;
+  /** The order of the tiles in the popup and the switcher. */
+  order: TileOrder;
 }
 
 /** The button shows, at the bottom right, until a person chooses otherwise. */
 export const DEFAULT_SETTINGS: PageSettings = {
   showButton: true,
   corner: CORNERS[0],
+  order: ORDERS[0],
 };
 
 /** What the button in the page shows of the player: their picture or initial, and their name. */
@@ -51,13 +63,18 @@ export interface ButtonPlayer {
 
 /** What the content script needs to draw the button, and nothing more. */
 export interface ButtonView {
-  settings: PageSettings;
+  /** Where the button sits, and whether it shows: the order of the tiles isn't its business. */
+  settings: Pick<PageSettings, "showButton" | "corner">;
   /** The account that plays, or null when none of the saved ones does. */
   player: ButtonPlayer | null;
 }
 
 function isCorner(value: unknown): value is Corner {
   return CORNERS.some((corner) => corner === value);
+}
+
+function isOrder(value: unknown): value is TileOrder {
+  return ORDERS.some((order) => order === value);
 }
 
 /**
@@ -68,13 +85,14 @@ export function parseSettings(stored: unknown): PageSettings {
   if (stored === null || typeof stored !== "object") {
     return { ...DEFAULT_SETTINGS };
   }
-  const { showButton, corner } = stored as Record<string, unknown>;
+  const { showButton, corner, order } = stored as Record<string, unknown>;
   return {
     showButton:
       typeof showButton === "boolean"
         ? showButton
         : DEFAULT_SETTINGS.showButton,
     corner: isCorner(corner) ? corner : DEFAULT_SETTINGS.corner,
+    order: isOrder(order) ? order : DEFAULT_SETTINGS.order,
   };
 }
 
@@ -92,6 +110,14 @@ export function initialOf(identity: {
   return first === undefined ? "?" : first.toUpperCase();
 }
 
+/** The settings that the button in the page needs, and no other. */
+function buttonSettings({
+  showButton,
+  corner,
+}: PageSettings): ButtonView["settings"] {
+  return { showButton, corner };
+}
+
 /** What the button shows: the settings, and the account that plays, without its session. */
 export function toButtonView(
   state: State,
@@ -101,7 +127,7 @@ export function toButtonView(
     (profile) => profile.id === state.activeId,
   );
   return {
-    settings: parseSettings(storedSettings),
+    settings: buttonSettings(parseSettings(storedSettings)),
     player:
       active === undefined
         ? null

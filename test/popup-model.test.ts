@@ -5,6 +5,8 @@ import type { PlayersView, PlayerView } from "../src/messages.ts";
 import {
   answered,
   BOARD_HELP,
+  FILTER_FROM,
+  filterTiles,
   keptManagerPin,
   matchQuestion,
   mustUnlock,
@@ -14,11 +16,13 @@ import {
   rememberRefused,
   removalText,
   showsEmpty,
+  showsFilter,
   showsForgetAll,
   statusAfter,
   type Translate,
   tileOf,
   toggled,
+  typedInto,
 } from "../src/popup-model.ts";
 
 /** The texts of the extension as their keys, with the substitution after a colon. */
@@ -41,6 +45,7 @@ const ada: PlayerView = {
   remembersPassword: false,
   renewedAt: null,
   renewalFailingSince: null,
+  lastPlayedAt: null,
   pin: false,
 };
 
@@ -513,4 +518,72 @@ test("Manage accounts opens with the manager PIN while one guards it, and forget
     managing: false,
     managerPin: null,
   });
+});
+
+test("the field that finds a player shows from nine saved accounts", () => {
+  assert.equal(FILTER_FROM, 9);
+  assert.equal(showsFilter(8), false);
+  assert.equal(showsFilter(9), true);
+  assert.equal(showsFilter(20), true);
+});
+
+test("the filter finds an account by its name or username, without regard to capitals and accents", () => {
+  const zoe = { ...ada, id: "z", name: "Zoë Brandt", username: "zb_darts" };
+  const max = { ...ada, id: "m", name: "Max", username: "maxi180" };
+  const profiles = [ada, zoe, max];
+  const ids = (query: string) =>
+    filterTiles(profiles, query).map((profile) => profile.id);
+  assert.deepEqual(ids(""), ["a", "z", "m"]);
+  assert.deepEqual(ids("   "), ["a", "z", "m"]);
+  assert.deepEqual(ids("zoe"), ["z"]);
+  assert.deepEqual(ids(" BRANDT "), ["z"]);
+  assert.deepEqual(ids("180"), ["m"]);
+  assert.deepEqual(ids("a"), ["a", "z", "m"]);
+  assert.deepEqual(ids("darts"), ["z"]);
+  assert.deepEqual(ids("nobody"), []);
+  // A copy: a change of the answer leaves the accounts alone.
+  filterTiles(profiles, "").pop();
+  assert.equal(profiles.length, 3);
+});
+
+test("a key outside the field types into it, but the keys of the players and the space don't", () => {
+  assert.equal(typedInto("", "m"), "m");
+  assert.equal(typedInto("m", "A"), "mA");
+  assert.equal(typedInto("ma", "0"), "ma0");
+  assert.equal(typedInto("", "é"), "é");
+  assert.equal(typedInto("", "😀"), "😀");
+  assert.equal(typedInto("ma", "Backspace"), "m");
+  assert.equal(typedInto("a😀", "Backspace"), "a");
+  // Nothing to take away: Backspace stays the browser's.
+  assert.equal(typedInto("", "Backspace"), null);
+  for (const key of [
+    "1",
+    "9",
+    " ",
+    "Enter",
+    "Tab",
+    "Escape",
+    "ArrowDown",
+    "F5",
+  ]) {
+    assert.equal(typedInto("ma", key), null, key);
+  }
+});
+
+test("the keys of the tiles count among the tiles that show, so a filter brings any player within reach", () => {
+  const many = Array.from({ length: 12 }, (_, index) => ({
+    ...ada,
+    id: `p${index}`,
+    name: `Player ${String(index + 1).padStart(2, "0")}`,
+  }));
+  const keys = (profiles: PlayerView[]) =>
+    profiles.map(
+      (profile, index) =>
+        tileOf(profile, index, { numbered: true, now: NOW, language: "en", t })
+          .key,
+    );
+  // Without a filter, the twelfth player has no key.
+  assert.equal(keys(many)[11], null);
+  // With "12" in the field, it is the only tile, and key 1 picks it.
+  assert.deepEqual(keys(filterTiles(many, "12")), ["1"]);
 });

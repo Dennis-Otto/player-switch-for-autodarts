@@ -37,7 +37,12 @@
         <button type="button" id="stop-adding" class="link" data-i18n="cancel">Cancel</button>
       </section>
 
+      <label id="filter-box" class="filter" hidden>
+        <span data-i18n="filterLabel">Find a player</span>
+        <input type="search" id="filter" autocomplete="off" autocapitalize="none" spellcheck="false" enterkeyhint="go" aria-controls="profiles" />
+      </label>
       <ul id="profiles" data-i18n-label="accounts" aria-label="Accounts"></ul>
+      <p id="no-match" class="hint" data-i18n="filterNone" hidden>No account matches.</p>
 
       <section id="unsaved" hidden>
         <p data-i18n="unsavedText">Someone is signed in on Autodarts who isn't saved here yet.</p>

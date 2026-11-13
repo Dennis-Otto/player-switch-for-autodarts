@@ -278,6 +278,58 @@ export function keptManagerPin(
     : before;
 }
 
+/**
+ * From how many saved accounts a field above the tiles finds a player: at a club with
+ * more regulars than fit at a glance. With fewer, the tiles alone are quicker.
+ */
+export const FILTER_FROM = 9;
+
+/** Whether the field that finds a player shows above `accounts` tiles. */
+export function showsFilter(accounts: number): boolean {
+  return accounts >= FILTER_FROM;
+}
+
+/** A text as the filter compares it: in small letters, and without accents. */
+function folded(text: string): string {
+  return text.normalize("NFD").replace(/\p{M}/gu, "").toLocaleLowerCase();
+}
+
+/**
+ * The accounts whose name or username holds what was typed into the field, in their
+ * order, without regard to capitals and accents: "zoe" finds "Zoë". An empty field
+ * shows every account.
+ */
+export function filterTiles<T extends { name: string; username: string }>(
+  profiles: readonly T[],
+  query: string,
+): T[] {
+  const wanted = folded(query.trim());
+  return wanted === ""
+    ? [...profiles]
+    : profiles.filter(
+        (profile) =>
+          folded(profile.name).includes(wanted) ||
+          folded(profile.username).includes(wanted),
+      );
+}
+
+/**
+ * What the field holds after a key that was pressed outside it, while it shows: a
+ * letter, or any other character, joins what it holds, and Backspace takes the last one
+ * away again. Null for a key that is no part of a name, and for the keys 1 to 9, which
+ * pick a player among the tiles that show, and the space, which presses the tile that
+ * has the focus.
+ */
+export function typedInto(query: string, key: string): string | null {
+  if (key === "Backspace") {
+    return query === "" ? null : [...query].slice(0, -1).join("");
+  }
+  if ([...key].length !== 1 || /^[1-9\s]$/.test(key)) {
+    return null;
+  }
+  return query + key;
+}
+
 /** What a tile shows of an account. */
 export interface Tile {
   /** The key that picks it, "1" to "9", or null. */

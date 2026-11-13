@@ -4,6 +4,7 @@ import { test } from "node:test";
 import type { Identity } from "../src/autodarts.ts";
 import {
   activate,
+  byName,
   deactivate,
   EMPTY,
   endSession,
@@ -11,6 +12,7 @@ import {
   find,
   forget,
   forgetCredentials,
+  inOrder,
   isAdding,
   loseSession,
   PLAIN_VERSION,
@@ -19,6 +21,7 @@ import {
   parseCredentials,
   parseSealed,
   parseState,
+  played,
   readStored,
   rememberCredentials,
   renewable,
@@ -76,6 +79,7 @@ test("readStored takes the accounts of a release before the version without losi
       profiles: RELEASE_0_2_0.profiles.map((profile) => ({
         ...profile,
         renewalFailedAt: null,
+        lastPlayedAt: null,
       })),
       activeId: "a",
       addingUntil: null,
@@ -484,9 +488,58 @@ test("toView hides the session and shows what the popup needs", () => {
       active: true,
       renewedAt: null,
       renewalFailingSince: null,
+      lastPlayedAt: null,
     },
   ]);
   assert.equal(view.unsaved, false);
+});
+
+test("an account keeps when it last came on to play, which the page alone doesn't change", () => {
+  let state = park(park(EMPTY, ada, "ta", 10), bob, "tb", 20);
+  assert.equal(find(state, "a")?.lastPlayedAt, null);
+  // A tap brings Ada on at 100, and a join seats Bob at 200.
+  state = activate(state, "a", 100);
+  state = played(state, "b", 200);
+  assert.equal(find(state, "a")?.lastPlayedAt, 100);
+  assert.equal(find(state, "b")?.lastPlayedAt, 200);
+  // The extension learns again that Ada plays: her time stays, and so after a renewal.
+  state = activate(deactivate(state), "a");
+  state = park(state, ada, "ta2", 300);
+  assert.equal(find(state, "a")?.lastPlayedAt, 100);
+  assert.equal(toView(state, false, 0).profiles[0]?.lastPlayedAt, 100);
+  // An unknown account changes nothing.
+  assert.equal(played(state, "nobody", 400), state);
+  // The time is stored with the account and read back; anything else counts as none.
+  const stored = JSON.parse(JSON.stringify(state)) as {
+    profiles: Record<string, unknown>[];
+  };
+  assert.equal(find(parseState(stored), "b")?.lastPlayedAt, 200);
+  for (const value of ["200", Number.NaN, null, true]) {
+    const odd = {
+      ...stored,
+      profiles: stored.profiles.map((profile) => ({
+        ...profile,
+        lastPlayedAt: value,
+      })),
+    };
+    assert.equal(find(parseState(odd), "b")?.lastPlayedAt, null);
+  }
+});
+
+test("the accounts are in the order of the name that the tile shows first", () => {
+  // Zoe's username comes first, but her name last; equal names go by the username.
+  const zoe = { id: "z", username: "aaa", name: "Zoe", picture: null };
+  const max = { id: "m", username: "zzz", name: "max", picture: null };
+  const maxToo = { id: "n", username: "mmm", name: "Max", picture: null };
+  let state = park(EMPTY, zoe, "tz", 1);
+  state = park(state, max, "tm", 2);
+  state = park(state, maxToo, "tn", 3);
+  assert.deepEqual(
+    state.profiles.map((profile) => profile.id),
+    ["n", "m", "z"],
+  );
+  assert.ok(byName(max, maxToo, "de") > 0);
+  assert.equal(byName(max, max), 0);
 });
 
 test("toView shows when the extension last renewed a parked session, and only then", () => {
@@ -627,4 +680,31 @@ test("an account that comes on ends the adding, and other changes keep it", () =
   assert.equal(setActive(state, bob).addingUntil, null);
   // An account that is unknown doesn't come on, so the adding goes on.
   assert.equal(activate(state, "ghost").addingUntil, 100);
+});
+
+test("inOrder puts the tiles by name, or the account that played last first", () => {
+  const at = (id: string, name: string, lastPlayedAt: number | null) => ({
+    id,
+    username: id,
+    name,
+    picture: null,
+    lastPlayedAt,
+  });
+  const profiles = [
+    at("a", "Ada", 100),
+    at("b", "Bob", null),
+    at("c", "Cy", 300),
+    at("d", "Dee", null),
+    at("e", "Eve", 100),
+  ];
+  const ids = (order: "name" | "recent") =>
+    inOrder(profiles, order).map((profile) => profile.id);
+  assert.deepEqual(ids("name"), ["a", "b", "c", "d", "e"]);
+  // The last game first; the same time, and never played, by name.
+  assert.deepEqual(ids("recent"), ["c", "a", "e", "b", "d"]);
+  // A copy: the accounts stay in their order.
+  assert.deepEqual(
+    profiles.map((profile) => profile.id),
+    ["a", "b", "c", "d", "e"],
+  );
 });

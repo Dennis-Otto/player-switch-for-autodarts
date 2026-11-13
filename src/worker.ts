@@ -38,6 +38,15 @@
  */
 import type { Identity } from "./autodarts.ts";
 import {
+  type AccountDiagnosis,
+  createJournal,
+  type Diagnostics,
+  errorKind,
+  renewalNote,
+  requestNote,
+  serviceOf,
+} from "./diagnostics.ts";
+import {
   badge,
   nextRunAt,
   parseHealth,
@@ -48,6 +57,7 @@ import {
 } from "./health.ts";
 import { parseSeats, SEATS_KEY, seatsIn, withSeat } from "./lobby.ts";
 import {
+  type Failure,
   type Outcome,
   type PageButtonView,
   type PageRequest,
@@ -68,11 +78,19 @@ import {
   lobbyOf,
   mustConfirm,
   PLAY_ORIGINS,
+  parseSettings,
   SETTINGS_KEY,
   toButtonView,
 } from "./page.ts";
 import { createQueue } from "./queue.ts";
-import { EMPTY, forgetCredentials, type State, toView } from "./state.ts";
+import {
+  EMPTY,
+  forgetCredentials,
+  inOrder,
+  STATE_VERSION,
+  type State,
+  toView,
+} from "./state.ts";
 import {
   ACCOUNTS_KEY,
   accountsIn,
@@ -371,6 +389,7 @@ const MANAGER_ACTIONS: ReadonlySet<string> = new Set([
   "removeAccount",
   "protect",
   "forgetAll",
+  "diagnostics",
 ]);
 
 /**
@@ -385,8 +404,22 @@ export function startWorker(api: ChromeApi, platform: Platform): StartedWorker {
    * Writes a failure of the service worker to its console, instead of dropping it, so
    * that a renewal that keeps failing leaves a trace.
    */
-  const logFailure = (what: string) => (error: unknown) =>
+  const logFailure = (what: string) => (error: unknown) => {
     platform.log(`Player Switch: ${what} failed.`, error);
+    void journal.note({
+      action: "failure",
+      outcome: errorKind(error),
+      status: null,
+    });
+  };
+
+  // The ring of the last events for a bug report (`diagnostics.ts`): no name, token or
+  // password, only what happened and how it ended.
+  const journal = createJournal(
+    api.storage.local,
+    () => platform.now(),
+    createQueue(),
+  );
 
   // The key of the vault never leaves the browser: it can't be exported, and neither the
   // content script nor a page of another origin reaches the IndexedDB of the extension.
@@ -500,11 +533,33 @@ export function startWorker(api: ChromeApi, platform: Platform): StartedWorker {
   // What every change of the accounts shares; each one adds the page of its tab.
   const shared: Omit<Deps, "page"> = {
     store: accounts,
-    fetcher: (url, init) =>
-      platform.fetch(url, {
-        ...init,
-        signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
-      }),
+    // A request that fails leaves its status in the ring, with the service of Autodarts
+    // that it went to but never its address, which may name a lobby.
+    fetcher: async (url, init) => {
+      try {
+        const response = await platform.fetch(url, {
+          ...init,
+          signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
+        });
+        if (!response.ok) {
+          void journal.note({
+            action: "request",
+            service: serviceOf(url),
+            outcome: "http",
+            status: response.status,
+          });
+        }
+        return response;
+      } catch (error) {
+        void journal.note({
+          action: "request",
+          service: serviceOf(url),
+          outcome: errorKind(error),
+          status: null,
+        });
+        throw error;
+      }
+    },
     now: () => platform.now(),
     queue: createQueue(),
   };
@@ -638,8 +693,59 @@ export function startWorker(api: ChromeApi, platform: Platform): StartedWorker {
    */
   async function wipe(): Promise<void> {
     await store.clear();
-    await api.storage.local.clear();
+    // The ring of events goes as well, and no event noted before lands after it.
+    await journal.hold(() => api.storage.local.clear());
     await api.storage.session.clear();
+  }
+
+  /**
+   * What "Copy diagnostics" puts into a report: how each account stands, without its
+   * name, the renewal, the switches of the venue mode, the settings and the last events.
+   * Accounts of a newer version say so, as they are what a report then needs to know.
+   */
+  async function diagnose(): Promise<Diagnostics> {
+    const [health, venue, data, events] = await Promise.all([
+      loadHealth(),
+      loadVenue(),
+      api.storage.local.get([SETTINGS_KEY]),
+      journal.read(),
+    ]);
+    let format: Diagnostics["format"] = STATE_VERSION;
+    let accounts: AccountDiagnosis[] = [];
+    try {
+      const state = await shared.queue(() => store.load());
+      accounts = toView(state, false, platform.now()).profiles.map(
+        (profile) => ({
+          playing: profile.active,
+          needsSignIn: profile.needsSignIn,
+          remembersPassword: profile.remembersPassword,
+          renewalFailingSince: profile.renewalFailingSince,
+        }),
+      );
+    } catch (error) {
+      if (!(error instanceof UnknownStateError)) {
+        throw error;
+      }
+      format = "unknown";
+    }
+    return {
+      format,
+      accounts,
+      renewal: {
+        lastRefreshAt: health.lastRefreshAt,
+        lastAttemptAt: health.lastAttemptAt,
+        suspectedChange: health.suspectedChange,
+        requestRefused: health.requestRefused,
+      },
+      venue: {
+        managerPin: venue.manager !== null,
+        playerPins: Object.keys(venue.players).length,
+        idleMinutes: venue.idleMinutes,
+        houseAccount: venue.house !== null,
+      },
+      settings: parseSettings(data[SETTINGS_KEY]),
+      events,
+    };
   }
 
   /** The account that plays on the page, as the extension keeps it, or null. */
@@ -855,6 +961,8 @@ export function startWorker(api: ChromeApi, platform: Platform): StartedWorker {
         );
       case "unlock":
         return { ok: true };
+      case "diagnostics":
+        return { ok: true, diagnostics: await diagnose() };
     }
   }
 
@@ -865,17 +973,22 @@ export function startWorker(api: ChromeApi, platform: Platform): StartedWorker {
   async function popupView(
     tab: Promise<BrowserTab | undefined>,
   ): Promise<PlayersView> {
-    const [view, health, venue, lobby] = await Promise.all([
+    const [view, health, venue, lobby, settings] = await Promise.all([
       readView({ ...shared, page: await pageFor(tab) }),
       loadHealth(),
       loadVenue(),
       lobbyView(tab),
+      api.storage.local.get([SETTINGS_KEY]),
     ]);
     const playingNow = view.profiles.find((profile) => profile.active);
     return {
       ...view,
       // Which accounts ask for a PIN, and whether "Manage accounts" does: never a hash.
-      profiles: withPins(view.profiles, venue),
+      // The tiles come in the order that the options page sets.
+      profiles: withPins(
+        inOrder(view.profiles, parseSettings(settings[SETTINGS_KEY]).order),
+        venue,
+      ),
       venue: {
         manager: venue.manager !== null,
         protectable:
@@ -913,17 +1026,37 @@ export function startWorker(api: ChromeApi, platform: Platform): StartedWorker {
   ): Promise<PlayersReply> {
     try {
       const result = await runAction(message, tab);
-      return { ...result, view: await popupView(tab) };
+      noteRequest(message, result);
+      // The diagnostics go out also when the accounts can't be read, which they report.
+      const view =
+        message.action === "diagnostics"
+          ? await viewAfter(tab)
+          : await popupView(tab);
+      return { ...result, view };
     } catch (error) {
       if (error instanceof NoPageError) {
+        noteRequest(message, { error: "noPage" });
         return { error: "noPage", page: false, view: await viewAfter(tab) };
       }
       if (error instanceof UnknownStateError) {
         // The accounts of a newer version stay as they are, and the popup says why.
+        noteRequest(message, { error: "unknownFormat" });
         return { error: "unknownFormat", view: await viewAfter(tab) };
       }
       logFailure(`the request "${message.action}"`)(error);
+      noteRequest(message, { error: "error" });
       return { error: "error", view: await viewAfter(tab) };
+    }
+  }
+
+  /** Notes how a request of the popup ended in the ring of events, if it is one to note. */
+  function noteRequest(
+    message: PlayersRequest,
+    outcome: Outcome | { readonly error: Failure },
+  ): void {
+    const note = requestNote(message.action, outcome);
+    if (note !== null) {
+      void journal.note(note);
     }
   }
 
@@ -1344,6 +1477,7 @@ export function startWorker(api: ChromeApi, platform: Platform): StartedWorker {
         await api.storage.local.set({
           [HEALTH_KEY]: recordRun(await loadHealth(), run, now),
         });
+        await journal.note(renewalNote(run));
         await scheduleRefresh(nextRunAt(run, now));
       } finally {
         refreshing = null;

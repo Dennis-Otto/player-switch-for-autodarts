@@ -16,6 +16,7 @@ import {
   isPlayPage,
   lobbyOf,
   mustConfirm,
+  ORDERS,
   PLAY_ORIGINS,
   parseSettings,
   tileForKey,
@@ -30,7 +31,12 @@ test("parseSettings always answers settings the button can use", () => {
       const settings = parseSettings(stored);
       assert.equal(typeof settings.showButton, "boolean");
       assert.ok(CORNERS.includes(settings.corner));
-      assert.deepEqual(Object.keys(settings).sort(), ["corner", "showButton"]);
+      assert.ok(ORDERS.includes(settings.order));
+      assert.deepEqual(Object.keys(settings).sort(), [
+        "corner",
+        "order",
+        "showButton",
+      ]);
     }),
   );
 });
@@ -40,11 +46,12 @@ test("parseSettings reads back what the options page stores", () => {
     fc.property(
       fc.boolean(),
       corner,
+      fc.constantFrom(...ORDERS),
       fc.dictionary(fc.string(), fc.anything()),
-      (showButton, chosen, extra) => {
+      (showButton, chosen, order, extra) => {
         assert.deepEqual(
-          parseSettings({ ...extra, showButton, corner: chosen }),
-          { showButton, corner: chosen },
+          parseSettings({ ...extra, showButton, corner: chosen, order }),
+          { showButton, corner: chosen, order },
         );
       },
     ),

@@ -29,7 +29,15 @@ would find the tokens and passwords there only encrypted
   forgotten. The [security design](security.md#sealed-tokens-and-passwords) has
   the details.
 - **The settings of the button on the Autodarts page:** whether it shows, and in
-  which corner.
+  which corner, and the order of the tiles.
+- **When each saved account last played,** so that the tiles can show the account
+  that played last first.
+- **The last 50 events of the extension, for a bug report:** the time of each
+  switch, join, save and renewal and of each request to Autodarts that failed, how
+  it ended and its HTTP status. Never a name, a username, a password, a token, the
+  id of an account or an address. They leave the browser only when you choose
+  **Copy diagnostics** and paste the copy somewhere yourself, such as into a bug
+  report.
 - **Only in the venue mode for a club or pub, once you turn it on:** a salted hash of
   the manager PIN and of each player's PIN, never a PIN itself, the length of the
   break and the house account. While the browser runs, and only while the return
@@ -76,7 +84,7 @@ extension.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="images/diagrams/data-flow.dark.svg">
-  <img src="images/diagrams/data-flow.svg" alt="Where the data goes: Everything stays in the browser on this computer. The popup and the switcher ask the service worker, which keeps a token per account, a password only when one is remembered, the settings of the button, the time of the last renewal, whether Autodarts turned every account away in it, and until when a new account is being added in chrome.storage.local. It moves a session into the Autodarts page and reads the outgoing one out of it only through content.js, the one script that reads or writes the session in the page's localStorage. To renew a token, sign in with a password, end a session or seat a saved player in the lobby on the display, with a fresh token, the username and the account id of that player, it talks to api.autodarts.com over HTTPS, the same service the Autodarts page itself uses. The popup and the switcher show each player's picture from the address Autodarts gives for it. Nothing else goes anywhere: no server of the developer, no analytics; Help and Report a problem only open a page in a new tab.">
+  <img src="images/diagrams/data-flow.svg" alt="Where the data goes: Everything stays in the browser on this computer. The popup and the switcher ask the service worker, which keeps a token per account, a password only when one is remembered, the settings of the button and the order of the tiles, when each account last played, the last 50 events of the extension without a name or a secret, the time of the last renewal, whether Autodarts turned every account away in it, and until when a new account is being added in chrome.storage.local. It moves a session into the Autodarts page and reads the outgoing one out of it only through content.js, the one script that reads or writes the session in the page's localStorage. To renew a token, sign in with a password, end a session or seat a saved player in the lobby on the display, with a fresh token, the username and the account id of that player, it talks to api.autodarts.com over HTTPS, the same service the Autodarts page itself uses. The popup and the switcher show each player's picture from the address Autodarts gives for it. Nothing else goes anywhere: no server of the developer, no analytics; Help and Report a problem only open a page in a new tab.">
 </picture>
 
 "Help" and "Report a problem" in the popup and on the welcome page, and the link

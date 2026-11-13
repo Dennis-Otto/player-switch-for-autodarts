@@ -7,6 +7,7 @@ import {
   ALICE,
   BOB,
   buttonCorner,
+  CAROL,
   expect,
   expectPlayer,
   test,
@@ -204,6 +205,7 @@ test("the corner of the button, and whether it shows, follow in the open Autodar
   expect((await display.stored()).pageSettings).toEqual({
     showButton: false,
     corner: "top-left",
+    order: "name",
   });
 
   await show.check();
@@ -215,4 +217,42 @@ test("the corner of the button, and whether it shows, follow in the open Autodar
   await options.reopen();
   await expect(show).toBeChecked();
   await expect(topLeft).toBeChecked();
+});
+
+test("the tiles come by name, or with the account that played last first, as the options page sets", async ({
+  display,
+}) => {
+  const page = await display.openAutodarts();
+  const popup = await display.saveAccounts(page, [ALICE, BOB, CAROL]);
+  await popup.tap(BOB);
+  await popup.tap(ALICE);
+  await popup.expectAccounts([ALICE, BOB, CAROL], ALICE);
+
+  const options = await display.options();
+  const byName = options.page.getByRole("radio", {
+    name: display.t("orderName"),
+  });
+  await expect(byName).toBeChecked();
+  await options.page
+    .getByRole("radio", { name: display.t("orderRecent") })
+    .check();
+  await options.expectStatus(display.t("saved"));
+
+  // Alice played last, Bob before her; Carol was saved before both.
+  await popup.reopen();
+  await popup.expectAccounts([ALICE, BOB, CAROL], ALICE);
+  await popup.tap(CAROL);
+  await popup.expectAccounts([CAROL, ALICE, BOB], CAROL);
+  // The keys follow the order that shows.
+  await expect(popup.tile(CAROL).locator(".tile")).toHaveAttribute(
+    "aria-keyshortcuts",
+    "1",
+  );
+
+  await byName.check();
+  await expect
+    .poll(async () => (await display.stored()).pageSettings)
+    .toMatchObject({ order: "name" });
+  await popup.reopen();
+  await popup.expectAccounts([ALICE, BOB, CAROL], CAROL);
 });

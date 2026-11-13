@@ -24,7 +24,12 @@ and never leaves it except to Autodarts itself:
   sent only to `api.autodarts.com/auth/v1/login`: once as it is saved, to check
   that it signs in that account, and then whenever the token stops working. Leave it off, and no password is
   ever stored.
-- **The settings of the button in the page:** whether it shows, and in which corner.
+- **The settings of the button in the page:** whether it shows, and in which corner,
+  and the order of the tiles, with the time at which each account last played.
+- **The ring of the last 50 events** for **Copy diagnostics** (`src/diagnostics.ts`):
+  the time, the kind of action, a word for its outcome, the HTTP status of a request
+  that failed and the counts of a renewal, never a name, a token, a password, the id
+  of an account or an address.
 - **The settings of the venue mode, once a person turns it on:** a salted PBKDF2
   hash of the manager PIN and of each player's PIN, never a PIN itself, the length
   of the break and the house account (see [the venue mode](#venue-mode)). In
@@ -118,7 +123,7 @@ as `extension/lib/content.js`.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="images/diagrams/data-flow.dark.svg">
-  <img src="images/diagrams/data-flow.svg" alt="Where the data goes: Everything stays in the browser on this computer. The popup and the switcher ask the service worker, which keeps a token per account, a password only when one is remembered, the settings of the button, the time of the last renewal, whether Autodarts turned every account away in it, and until when a new account is being added in chrome.storage.local. It moves a session into the Autodarts page and reads the outgoing one out of it only through content.js, the one script that reads or writes the session in the page's localStorage. To renew a token, sign in with a password, end a session or seat a saved player in the lobby on the display, with a fresh token, the username and the account id of that player, it talks to api.autodarts.com over HTTPS, the same service the Autodarts page itself uses. The popup and the switcher show each player's picture from the address Autodarts gives for it. Nothing else goes anywhere: no server of the developer, no analytics; Help and Report a problem only open a page in a new tab.">
+  <img src="images/diagrams/data-flow.svg" alt="Where the data goes: Everything stays in the browser on this computer. The popup and the switcher ask the service worker, which keeps a token per account, a password only when one is remembered, the settings of the button and the order of the tiles, when each account last played, the last 50 events of the extension without a name or a secret, the time of the last renewal, whether Autodarts turned every account away in it, and until when a new account is being added in chrome.storage.local. It moves a session into the Autodarts page and reads the outgoing one out of it only through content.js, the one script that reads or writes the session in the page's localStorage. To renew a token, sign in with a password, end a session or seat a saved player in the lobby on the display, with a fresh token, the username and the account id of that player, it talks to api.autodarts.com over HTTPS, the same service the Autodarts page itself uses. The popup and the switcher show each player's picture from the address Autodarts gives for it. Nothing else goes anywhere: no server of the developer, no analytics; Help and Report a problem only open a page in a new tab.">
 </picture>
 
 ## Trust boundaries
@@ -271,6 +276,7 @@ stored data is ready for that:
 | Someone who can write the storage moves a sealed token to another account, or changes it | Each secret is sealed with its account and field as additional data, so a moved or changed value doesn't open, and the account has to sign in again |
 | The key is gone, for example after the data of the extension was cleared (the permission `unlimitedStorage` keeps Chrome from evicting it on its own) | The accounts that can't be opened need to sign in again, and their passwords are forgotten; nothing fails, and nothing is saved in plain text instead |
 | A removed account keeps working at Autodarts, from a backup or a copy of the profile | **Remove account** ends the session at Autodarts before the extension deletes it, the one in the page too for the account that plays; **Forget all accounts** does so for every account and then deletes the storage and the key. When Autodarts can't be reached, the popup says that the session lasts until it expires |
+| A bug report carries a token, a password, or who plays at the display | The ring of events behind **Copy diagnostics** keeps only a time, a kind of action from a closed list, a word of the code for the outcome, an HTTP status and the counts of a renewal; reading it drops every other field, a request names only the service of Autodarts it went to, never its address, and an error only its kind, never its message. A test runs sign-ins, switches and renewals with real-looking names and passwords and finds none of them in the ring. The copy reaches only the clipboard, when a person chooses it in **Manage accounts**, behind the manager PIN in the venue mode, and **Forget all accounts** deletes the ring ([decision 0022](decisions/0022-keep-a-ring-of-events-without-personal-data-for-reports.md)) |
 | A display changes hands with the accounts on it | **Forget all accounts**, behind a confirmation and, in the venue mode, the manager PIN, ends every session and leaves the extension as after its install |
 | A stale token is reused and locks an account out | The extension always keeps the token the server last returned (rotation) and renews parked tokens in the background; every change of the accounts runs one at a time in one queue of the service worker, so a double tap or the renewal never sends the same token twice |
 | A password is stored when it wasn't wanted | A password is kept only after an explicit "Remember password"; it is off by default and can be forgotten again |

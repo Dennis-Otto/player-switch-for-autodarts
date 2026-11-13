@@ -223,6 +223,42 @@
   "keysHint": {
     "message": "Die Tasten 1 bis 9 wählen einen Spieler, Esc schließt."
   },
+  "filterLabel": {
+    "message": "Spieler finden"
+  },
+  "filterNone": {
+    "message": "Kein Konto passt."
+  },
+  "keysFilterHint": {
+    "message": "Tippe einen Namen, um einen Spieler zu finden. Die Tasten 1 bis 9 wählen einen der gezeigten, Esc schließt."
+  },
+  "optionsTiles": {
+    "message": "Die Spieler"
+  },
+  "optionOrder": {
+    "message": "Reihenfolge der Kacheln"
+  },
+  "optionOrderHint": {
+    "message": "Im Popup und im Umschalter auf der Autodarts-Seite. Ab neun gespeicherten Konten findet ein Feld über den Kacheln einen Spieler nach dem Namen."
+  },
+  "orderName": {
+    "message": "Nach Namen"
+  },
+  "orderRecent": {
+    "message": "Zuletzt gespielt zuerst"
+  },
+  "copyDiagnostics": {
+    "message": "Diagnose kopieren"
+  },
+  "diagnosticsCopied": {
+    "message": "Diagnose kopiert. Füge sie in das Feld Logs der Meldung ein: Sie enthält keinen Namen, kein Token und kein Passwort."
+  },
+  "diagnosticsHelp": {
+    "message": "Was sie enthält"
+  },
+  "diagnosticsNotCopied": {
+    "message": "Die Diagnose konnte nicht kopiert werden. Bitte nochmal versuchen."
+  },
   "version": {
     "message": "Player Switch $VERSION$",
     "description": "The footer of the popup and of the switcher in the Autodarts page: the name of the extension and the version that runs, such as 'Player Switch 1.6.0'. $VERSION$ is the number of the version, from the manifest.",

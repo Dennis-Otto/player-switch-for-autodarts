@@ -9,6 +9,14 @@ interface BrandedNavigator extends Navigator {
   };
 }
 
+/** The browser and its major version, such as "Google Chrome 130", and nothing else of it. */
+export function runningBrowser(): string {
+  return browserName(
+    (navigator as BrandedNavigator).userAgentData?.brands,
+    navigator.userAgent,
+  );
+}
+
 /** The address of the help in the language of the extension, at the entry `anchor`. */
 export function helpHref(anchor?: string): string {
   return anchor === undefined ? t("helpUrl") : `${t("helpUrl")}#${anchor}`;
@@ -21,11 +29,7 @@ export function helpHref(anchor?: string): string {
  * the browser alone.
  */
 export function linkSupport(root: ParentNode): void {
-  const browser = browserName(
-    (navigator as BrandedNavigator).userAgentData?.brands,
-    navigator.userAgent,
-  );
-  const report = reportUrl(runningVersion(), browser);
+  const report = reportUrl(runningVersion(), runningBrowser());
   for (const link of root.querySelectorAll<HTMLAnchorElement>(
     "[data-link=help]",
   )) {
