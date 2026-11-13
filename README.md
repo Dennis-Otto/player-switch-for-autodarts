@@ -185,6 +185,10 @@ Under **Manage accounts**, choose **Remember password** for an account, and the 
 - The saved accounts carry the version of their format. Going back to an older version of the extension never wipes accounts that a newer one saved: the older one leaves them untouched, keeps a copy, and the popup asks you to update.
 - Something doesn't work? The [help](https://dennis-otto.github.io/player-switch-for-autodarts/help.html) explains every message of the extension and what to do about it.
 
+## Also for your board
+
+[**HomeDarts for Autodarts**](https://dennis-otto.github.io/homedarts-for-autodarts/), by the same author, brings your Autodarts board into Home Assistant: every dart live and local from the Board Manager in your network, scoreboards for any screen, statistics, and automations such as lights that follow the game. Each works without the other: Player Switch needs no Home Assistant, and HomeDarts needs no browser extension.
+
 ## Development
 
 Contributions are welcome. Every line of the extension is TypeScript in `src/`, the service worker, the content script and the pages alike, built into `extension/lib/` and checked by the compiler in its strict mode. [CONTRIBUTING.md](CONTRIBUTING.md) has the rules and the checks, [docs/development.md](docs/development.md) explains how the code is laid out, how to run the extension from the source and what the tests check, among them property-based tests that run the account logic on generated inputs and end-to-end tests that run the built extension in a real Chromium against a fake Autodarts, and checks that warn before a change of Autodarts or the next version of Chrome breaks the extension, [docs/releases.md](docs/releases.md) how a release reaches the Chrome Web Store, and [docs/roadmap.md](docs/roadmap.md) what is planned for the next twelve months and what isn't. A translation into another language is welcome: [Add a language](docs/development.md#add-a-language) says what it takes.
