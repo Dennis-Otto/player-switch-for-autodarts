@@ -9,6 +9,7 @@ import {
   isPlayPage,
   lobbyOf,
   mustConfirm,
+  ORDERS,
   openShortcuts,
   PLAY_ORIGINS,
   parseSettings,
@@ -27,6 +28,7 @@ const ada: Profile = {
   refreshedAt: null,
   renewalFailedAt: null,
   credentials: { username: "ada", password: "secret" },
+  lastPlayedAt: null,
 };
 const bob: Profile = {
   ...ada,
@@ -38,12 +40,14 @@ const bob: Profile = {
   credentials: null,
 };
 
-test("the button shows by default, at the bottom right", () => {
+test("the button shows by default, at the bottom right, and the tiles go by name", () => {
   assert.deepEqual(DEFAULT_SETTINGS, {
     showButton: true,
     corner: "bottom-right",
+    order: "name",
   });
   assert.equal(CORNERS[0], DEFAULT_SETTINGS.corner);
+  assert.equal(ORDERS[0], DEFAULT_SETTINGS.order);
 });
 
 test("parseSettings takes the default from anything that isn't settings", () => {
@@ -53,27 +57,32 @@ test("parseSettings takes the default from anything that isn't settings", () => 
 });
 
 test("parseSettings keeps each setting it knows", () => {
-  assert.deepEqual(parseSettings({ showButton: false, corner: "top-left" }), {
-    showButton: false,
-    corner: "top-left",
-  });
+  assert.deepEqual(
+    parseSettings({ showButton: false, corner: "top-left", order: "recent" }),
+    { showButton: false, corner: "top-left", order: "recent" },
+  );
   for (const corner of CORNERS) {
     assert.equal(parseSettings({ corner }).corner, corner);
+  }
+  for (const order of ORDERS) {
+    assert.equal(parseSettings({ order }).order, order);
   }
 });
 
 test("parseSettings replaces each setting it doesn't know with its default", () => {
   assert.deepEqual(
-    parseSettings({ showButton: "no", corner: "middle" }),
+    parseSettings({ showButton: "no", corner: "middle", order: "random" }),
     DEFAULT_SETTINGS,
   );
   assert.deepEqual(parseSettings({ showButton: false }), {
     showButton: false,
     corner: "bottom-right",
+    order: "name",
   });
   assert.deepEqual(parseSettings({ corner: "top-right", extra: 1 }), {
     showButton: true,
     corner: "top-right",
+    order: "name",
   });
 });
 

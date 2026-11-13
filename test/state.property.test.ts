@@ -16,6 +16,7 @@ import fc from "fast-check";
 import type { Identity } from "../src/autodarts.ts";
 import {
   activate,
+  byName,
   type Credentials,
   deactivate,
   EMPTY,
@@ -77,7 +78,11 @@ const change = fc.oneof(
   }),
   fc.record({ kind: fc.constant("stash" as const), id, token: filled, now }),
   fc.record({ kind: fc.constant("setActive" as const), identity }),
-  fc.record({ kind: fc.constant("activate" as const), id }),
+  fc.record({
+    kind: fc.constant("activate" as const),
+    id,
+    at: fc.option(fc.integer({ min: 0 }), { nil: null }),
+  }),
   fc.record({ kind: fc.constant("endSession" as const), id }),
   fc.record({ kind: fc.constant("loseSession" as const), id }),
   fc.record({ kind: fc.constant("failRenewal" as const), id, now }),
@@ -103,7 +108,7 @@ function apply(state: State, step: Change): State {
     case "setActive":
       return setActive(state, step.identity);
     case "activate":
-      return activate(state, step.id);
+      return activate(state, step.id, step.at);
     case "endSession":
       return endSession(state, step.id);
     case "loseSession":
@@ -145,10 +150,11 @@ test("every change keeps each account once, in the order of the popup, and the a
         for (const [index, profile] of state.profiles.entries()) {
           const next = state.profiles[index + 1];
           if (next !== undefined) {
-            const order =
-              profile.username.localeCompare(next.username) ||
-              profile.id.localeCompare(next.id);
-            assert.ok(order < 0, `${profile.id} before ${next.id}`);
+            // By the name that the tile shows first, then the username below it.
+            assert.ok(
+              byName(profile, next) < 0,
+              `${profile.id} before ${next.id}`,
+            );
           }
         }
         assert.ok(state.activeId === null || ids.includes(state.activeId));
@@ -592,6 +598,7 @@ test("the popup sees no session and no password of any account", () => {
         assert.deepEqual(Object.keys(shown).sort(), [
           "active",
           "id",
+          "lastPlayedAt",
           "name",
           "needsSignIn",
           "picture",

@@ -10,6 +10,7 @@
  * The content script can't import a module, so it takes the types alone, which the
  * compiler leaves out of the script it writes.
  */
+import type { Diagnostics } from "./diagnostics.ts";
 import type { ButtonView } from "./page.ts";
 import type { ProfileView, View } from "./state.ts";
 
@@ -76,7 +77,12 @@ export type PlayersAction =
   /** Ends every session at Autodarts and deletes all that the extension keeps. */
   | { readonly action: "forgetAll" }
   /** Opens "Manage accounts", which needs the manager PIN while one is set. */
-  | { readonly action: "unlock" };
+  | { readonly action: "unlock" }
+  /**
+   * What "Copy diagnostics" in "Manage accounts" puts into a bug report: how the
+   * accounts stand and the last events, never a name, a token or a password.
+   */
+  | { readonly action: "diagnostics" };
 
 export type PlayersRequest = { readonly type: "popup" } & PlayersAction &
   Answers;
@@ -220,6 +226,8 @@ export type Outcome =
        * while the host kept it there, so Autodarts got no second seat.
        */
       readonly kept?: true;
+      /** After "Copy diagnostics": what goes into the report. */
+      readonly diagnostics?: Diagnostics;
     }
   /** A match runs in the page: the worker spent no token yet and waits for a yes. */
   | { readonly ok: false; readonly reason: "match" }
@@ -330,6 +338,7 @@ const PLAYERS_FIELDS: Readonly<
   protect: { id: isString, newPin: isString },
   forgetAll: {},
   unlock: {},
+  diagnostics: {},
 };
 
 /** The fields that each action of the options page needs, and the check of each. */

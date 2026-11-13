@@ -99,6 +99,8 @@ Zu Hause darf jeder am Display unter jedem gespeicherten Konto spielen, genau da
 
 Fünf falsche PINs in Folge sperren jede PIN des Displays für eine Minute, damit niemand sie alle von Hand durchprobiert. Die Erweiterung speichert keine PIN, nur einen gesalzenen Hash davon.
 
+Bei vielen Stammspielern holt **Einstellungen** → **Die Spieler** → **Reihenfolge der Kacheln** → **Zuletzt gespielt zuerst** die, die am meisten spielen, nach oben, und ab neun Konten findet ein Feld über den Kacheln einen Spieler, während er seinen Namen tippt: [Viele Spieler](help.md#many-players).
+
 ### Wer die PIN eines Spielers ändert {#change-a-pin}
 
 Die PIN eines Spielers hält für sich allein, auch auf einem Display ohne Manager-PIN: Sobald ein Konto eine PIN hat, fragt eine Änderung oder **PIN entfernen** unter **PINs der Spieler** zuerst nach dieser PIN, auf dem Ziffernblock, und eine falsche zählt zu den fünf, die jede PIN sperren. Eine erste PIN fragt nach keiner anderen.

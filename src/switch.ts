@@ -61,6 +61,7 @@ import {
   loseSession,
   type Profile,
   park,
+  played,
   rememberCredentials,
   renewable,
   type State,
@@ -396,7 +397,10 @@ async function claim(
     park(loaded, identity, session.refreshToken, deps.now()),
   );
   await deps.page.writeToken(session.refreshToken);
-  return { state: await commit(deps, activate(state, identity.id)), identity };
+  return {
+    state: await commit(deps, activate(state, identity.id, deps.now())),
+    identity,
+  };
 }
 
 /**
@@ -519,7 +523,10 @@ async function bringOn(deps: Deps, id: string): Promise<SwitchResult> {
     return { state, ok: false, reason: "unreachable" };
   }
   await deps.page.writeToken(renewal.session.refreshToken);
-  return { state: await commit(deps, activate(kept, identity.id)), ok: true };
+  return {
+    state: await commit(deps, activate(kept, identity.id, deps.now())),
+    ok: true,
+  };
 }
 
 /**
@@ -694,9 +701,13 @@ export async function joinLobbyAs(
     };
   }
   // A player who still sits in the lobby, such as after a second tap, keeps that seat:
-  // the lobby was read first, and no second seat was asked for.
+  // the lobby was read first, and no second seat was asked for. Either way the account
+  // plays now, which the order of the tiles by the last game takes up.
+  const state = await deps.queue(async () =>
+    commit(deps, played(await deps.store.load(), id, deps.now())),
+  );
   return {
-    state: turn.state,
+    state,
     ok: true,
     seated: player,
     kept: join === "seated",

@@ -54,6 +54,8 @@ const explained = [
   "pinMismatch",
   "removeOwnPinText",
   "changePinText",
+  "diagnosticsCopied",
+  "diagnosticsNotCopied",
 ];
 
 // Names, labels, buttons, titles and the texts of the welcome page, which the help
@@ -98,6 +100,11 @@ const plain = [
   "settings",
   "close",
   "keysHint",
+  "keysFilterHint",
+  "filterLabel",
+  "filterNone",
+  "copyDiagnostics",
+  "diagnosticsHelp",
   "version",
   "switchButton",
   "switchButtonPlaying",
@@ -115,6 +122,11 @@ const plain = [
   "cornerBottomLeft",
   "cornerTopRight",
   "cornerTopLeft",
+  "optionsTiles",
+  "optionOrder",
+  "optionOrderHint",
+  "orderName",
+  "orderRecent",
   "optionShortcuts",
   "changeShortcuts",
   "saved",

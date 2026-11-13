@@ -46,7 +46,11 @@ body:
     id: logs
     attributes:
       label: Logs
-      description: The relevant lines of the log, without secrets.
+      description: >-
+        In the popup, open Manage accounts, choose Copy diagnostics at its bottom and paste
+        the copy here: the versions, how each account stands and the last 50 events of the
+        extension, without a name, a token or a password
+        (https://dennis-otto.github.io/player-switch-for-autodarts/help.html#report).
       render: text
   - type: checkboxes
     id: checks

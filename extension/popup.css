@@ -120,6 +120,17 @@ header .link {
   margin: 12px auto 0;
 }
 
+/* The field that finds a player among many, above the tiles, and what it says when it
+   finds none. */
+.filter {
+  margin-bottom: 10px;
+}
+
+#no-match {
+  padding: 8px 0;
+  text-align: center;
+}
+
 #status,
 #problem {
   margin: 0 0 12px;

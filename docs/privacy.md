@@ -29,7 +29,15 @@ would find the tokens and passwords there only encrypted
   forgotten. The [security design](security.md#sealed-tokens-and-passwords) has
   the details.
 - **The settings of the button on the Autodarts page:** whether it shows, and in
-  which corner.
+  which corner, and the order of the tiles.
+- **When each saved account last played,** so that the tiles can show the account
+  that played last first.
+- **The last 50 events of the extension, for a bug report:** the time of each
+  switch, join, save and renewal and of each request to Autodarts that failed, how
+  it ended and its HTTP status. Never a name, a username, a password, a token, the
+  id of an account or an address. They leave the browser only when you choose
+  **Copy diagnostics** and paste the copy somewhere yourself, such as into a bug
+  report.
 - **Only in the venue mode for a club or pub, once you turn it on:** a salted hash of
   the manager PIN and of each player's PIN, never a PIN itself, the length of the
   break and the house account. While the browser runs, and only while the return

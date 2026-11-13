@@ -99,6 +99,8 @@ At home, everyone at the display may play under any saved account, which is the 
 
 Five wrong PINs in a row lock every PIN of the display for a minute, so that nobody tries them all by hand. The extension keeps no PIN, only a salted hash of it.
 
+With many regulars, **Settings** → **The players** → **Order of the tiles** → **Last played first** brings those who play most to the top, and from nine accounts a field above the tiles finds a player as they type their name: [many players](help.md#many-players).
+
 ### Who changes a player's PIN {#change-a-pin}
 
 A player's PIN holds by itself, also on a display without a manager PIN: once an account has a PIN, a change of it or **Remove PIN** under **PINs of the players** asks for that PIN first, on the number pad, and a wrong one counts towards the five that lock every PIN. A first PIN asks for no other.

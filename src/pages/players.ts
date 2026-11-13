@@ -12,6 +12,7 @@
  * protect their account with a PIN, or to remove it with that PIN, without the manager
  * (decision 0018).
  */
+import { diagnosticsText } from "../diagnostics.ts";
 import type {
   PlayersAction,
   PlayersReply,
@@ -23,6 +24,7 @@ import { initialOf, tileForKey } from "../page.ts";
 import {
   type Ask,
   answered,
+  filterTiles,
   keptManagerPin,
   type Manage,
   matchQuestion,
@@ -32,14 +34,16 @@ import {
   rememberRefused,
   type Status,
   showsEmpty,
+  showsFilter,
   showsForgetAll,
   statusAfter,
   tileOf,
   toggled,
+  typedInto,
 } from "../popup-model.ts";
 import { choosePin, confirmDialog, pinDialog } from "./dialogs.ts";
-import { find, t, translate } from "./dom.ts";
-import { helpHref } from "./support.ts";
+import { find, runningVersion, t, translate } from "./dom.ts";
+import { helpHref, runningBrowser } from "./support.ts";
 
 // The language of the texts that show, so that names and times read the same: the
 // browser may run in a language the extension has no texts for.
@@ -84,7 +88,7 @@ function pinMark(): HTMLSpanElement {
 
 // The controls that send a request to the service worker.
 const REQUEST_CONTROLS =
-  ".tile, .join, .own, .toggle-remember, .remove, .save-remember, #adopt, #add, #open-page, #stop-adding, #forget-all";
+  ".tile, .join, .own, .toggle-remember, .remove, .save-remember, #adopt, #add, #open-page, #stop-adding, #forget-all, #diagnostics";
 
 // The controls of a tile, so that the focus comes back to the same one when the tiles
 // are drawn anew after a request.
@@ -149,8 +153,10 @@ interface FocusBefore {
  * list of tiles, "Manage accounts", "Save account", "Add account" and the notice while
  * a new account is being added, with its "Cancel". The page carries the elements of
  * popup.html, with the template of a tile. With `numbered`, each of the first nine tiles
- * shows its key, and the keys 1 to 9 pick a player. `onRender` runs each time the
- * players are shown anew.
+ * shows its key, and the keys 1 to 9 pick a player. From nine saved accounts, a field
+ * above the tiles finds a player by name: the keys then count among the tiles that
+ * show, and with `numbered`, a letter typed anywhere goes into the field. `onRender`
+ * runs each time the players are shown anew.
  */
 export function mountPlayers({
   numbered = false,
@@ -175,11 +181,20 @@ export function mountPlayers({
   const addButton = find("#add");
   // "Forget all accounts", which shows in "Manage accounts" while an account is saved.
   const forgetAllButton = document.querySelector<HTMLElement>("#forget-all");
+  // "Copy diagnostics", beside "Report a problem" in the popup, in "Manage accounts".
+  const diagnosticsButton = document.querySelector<HTMLElement>("#diagnostics");
+  // The field that finds a player among many, and what it says when it finds none.
+  const filterBox = find("#filter-box");
+  const filter = find<HTMLInputElement>("#filter");
+  const noMatch = find("#no-match");
+  // The hint of the keys in the switcher, which says so once the field shows.
+  const keysHint = document.querySelector<HTMLElement>("#keys");
 
   let manage: Manage = { managing: false, managerPin: null };
   // True while a request is with the service worker: the page then takes no other tap.
   let busy = false;
-  // The accounts that show, for the name in the question for a PIN.
+  // The accounts that the worker sent, for the name in the question for a PIN and for
+  // the tiles that the filter finds among them.
   let shown: PlayerView[] = [];
   // Whether a manager PIN guards "Manage accounts", and the account whose player may
   // protect it with a PIN of their own.
@@ -333,10 +348,7 @@ export function mountPlayers({
     shown = view.profiles;
     venue = view.venue;
     lobby = view.lobby;
-    profiles.replaceChildren();
-    view.profiles.forEach((profile, index) => {
-      profiles.append(tile(profile, index));
-    });
+    drawTiles();
     unsaved.hidden = !view.unsaved;
     adding.hidden = !view.adding;
     updateHint.hidden = !view.updateHint;
@@ -352,6 +364,34 @@ export function mountPlayers({
     }
     restoreFocus(before);
     onRender();
+  }
+
+  /**
+   * Draws the tiles of the accounts that the filter finds: all of them while the field
+   * is hidden or empty. Each key belongs to a tile that shows.
+   */
+  function drawTiles(): void {
+    const filtering = showsFilter(shown.length);
+    filterBox.hidden = !filtering;
+    if (!filtering) {
+      filter.value = "";
+    }
+    if (keysHint !== null) {
+      keysHint.textContent = filtering ? t("keysFilterHint") : t("keysHint");
+    }
+    const found = filterTiles(shown, filter.value);
+    profiles.replaceChildren();
+    found.forEach((profile, index) => {
+      profiles.append(tile(profile, index));
+    });
+    noMatch.hidden = found.length > 0 || shown.length === 0;
+  }
+
+  /** Draws the tiles anew after the filter changed, and keeps the focus where it was. */
+  function refilter(): void {
+    const before = focusBefore();
+    drawTiles();
+    restoreFocus(before);
   }
 
   /**
@@ -602,10 +642,16 @@ export function mountPlayers({
     return node;
   }
 
-  /** Shows "Forget all accounts" in "Manage accounts" while an account is saved. */
+  /**
+   * Shows "Forget all accounts" in "Manage accounts" while an account is saved, and
+   * "Copy diagnostics" in "Manage accounts".
+   */
   function showForgetAll(): void {
     if (forgetAllButton !== null) {
       forgetAllButton.hidden = !showsForgetAll(manage.managing, shown.length);
+    }
+    if (diagnosticsButton !== null) {
+      diagnosticsButton.hidden = !manage.managing;
     }
   }
 
@@ -662,6 +708,36 @@ export function mountPlayers({
     }
   });
 
+  // Puts what a bug report needs on the clipboard: how the accounts stand and the last
+  // events, never a name, a token or a password. The status line says where it goes.
+  diagnosticsButton?.addEventListener("click", async () => {
+    if (busy) {
+      return;
+    }
+    const reply = await send({ action: "diagnostics" });
+    if (reply === undefined || !("ok" in reply) || !reply.ok) {
+      return;
+    }
+    if (reply.diagnostics === undefined) {
+      return;
+    }
+    const text = diagnosticsText(reply.diagnostics, {
+      version: runningVersion(),
+      browser: runningBrowser(),
+      language,
+      browserLanguage: navigator.language,
+    });
+    try {
+      await navigator.clipboard.writeText(text);
+      showStatus(t("diagnosticsCopied"), false, {
+        anchor: "report",
+        label: t("diagnosticsHelp"),
+      });
+    } catch {
+      showStatus(t("diagnosticsNotCopied"), true);
+    }
+  });
+
   find("#adopt").addEventListener("click", () => {
     if (busy) {
       return;
@@ -695,6 +771,25 @@ export function mountPlayers({
     void send({ action: "stopAdding" });
   });
 
+  // The field finds as it is typed into. Enter there picks the first player that shows,
+  // the arrow down leads to the tiles, and Esc empties it before it closes anything.
+  filter.addEventListener("input", refilter);
+  filter.addEventListener("keydown", (event) => {
+    const first = profiles.querySelector<HTMLElement>(".tile:not([inert])");
+    if (event.key === "Enter" && first !== null) {
+      event.preventDefault();
+      first.click();
+    } else if (event.key === "ArrowDown" && first !== null) {
+      event.preventDefault();
+      first.focus();
+    } else if (event.key === "Escape" && filter.value !== "") {
+      event.preventDefault();
+      event.stopPropagation();
+      filter.value = "";
+      refilter();
+    }
+  });
+
   if (numbered) {
     document.addEventListener("keydown", (event) => {
       // A key is a player only outside the forms, the open dialogs and the manage mode.
@@ -710,6 +805,17 @@ export function mountPlayers({
         return;
       }
       if (document.querySelector("dialog[open]") !== null) {
+        return;
+      }
+      // Among many players, a letter goes into the field that finds them, and the
+      // keys 1 to 9 pick among the tiles that show.
+      const typed = filterBox.hidden
+        ? null
+        : typedInto(filter.value, event.key);
+      if (typed !== null) {
+        event.preventDefault();
+        filter.value = typed;
+        refilter();
         return;
       }
       const tiles = profiles.querySelectorAll<HTMLElement>(".tile");

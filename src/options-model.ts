@@ -11,7 +11,7 @@ import type {
   VenueReply,
   VenueStatus,
 } from "./messages.ts";
-import { CORNERS, type Corner } from "./page.ts";
+import { CORNERS, type Corner, ORDERS, type TileOrder } from "./page.ts";
 import type { Translate } from "./popup-model.ts";
 import { IDLE_MINUTES } from "./venue.ts";
 
@@ -40,6 +40,15 @@ export function cornerChoices(t: Translate): Choice[] {
   return SCREEN_ORDER.filter((corner) => CORNERS.includes(corner)).map(
     (corner) => ({ value: corner, text: names[corner] }),
   );
+}
+
+/** The orders of the tiles in the popup and the switcher, each with its name. */
+export function orderChoices(t: Translate): Choice[] {
+  const names: Record<TileOrder, string> = {
+    name: t("orderName"),
+    recent: t("orderRecent"),
+  };
+  return ORDERS.map((order) => ({ value: order, text: names[order] }));
 }
 
 /**

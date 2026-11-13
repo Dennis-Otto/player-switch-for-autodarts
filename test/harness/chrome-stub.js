@@ -58,8 +58,10 @@
   const LANGUAGES = ["en", "de", "nl", "fr", "es"];
   const asked = setup.get("lang") ?? "en";
   const language = LANGUAGES.includes(asked) ? asked : "en";
+  // Up to four made-up people with pictures, and up to twelve for a club, where a field
+  // finds a player among the tiles.
   const count = Math.min(
-    4,
+    12,
     Math.max(1, Number(setup.get("accounts") ?? 3) || 3),
   );
   const MINUTE = 60_000;
@@ -97,6 +99,15 @@
       username: "samortiz",
       colors: ["#10b981", "#0ea5e9", "#a3e635"],
     },
+    // The regulars of a club, without pictures, after the four of a household.
+    { name: "Noah Fischer", username: "noahf", colors: null },
+    { name: "Emma Schulz", username: "emma180", colors: null },
+    { name: "Paul Wagner", username: "pwagner", colors: null },
+    { name: "Hanna Becker", username: "hannab", colors: null },
+    { name: "Luca Hoffmann", username: "lucah", colors: null },
+    { name: "Lea Schäfer", username: "leaschaefer", colors: null },
+    { name: "Ben Koch", username: "benkoch", colors: null },
+    { name: "Zoë Richter", username: "zoerichter", colors: null },
   ];
   // How long ago the renewal in the background ran for each parked account, and which
   // accounts remember their password.
@@ -136,6 +147,7 @@
     renewedAgo: RENEWED[index] ?? null,
     failingAgo: trouble && index === 2 ? 3 * 60 * MINUTE : null,
     pin: pinned && index === 1,
+    lastPlayedAt: null,
   }));
   const last = accounts.at(-1);
   if (long && count > 1 && last !== undefined) {
@@ -257,6 +269,39 @@
       case "stopAdding":
         adding = false;
         break;
+      case "diagnostics":
+        // What worker.ts answers, for made-up accounts that stand as their tiles show.
+        return {
+          ok: true,
+          diagnostics: {
+            format: 2,
+            accounts: accounts.map((account) => ({
+              playing: account.id === activeId,
+              needsSignIn: account.needsSignIn,
+              remembersPassword: account.remembersPassword,
+              renewalFailingSince: null,
+            })),
+            renewal: {
+              lastRefreshAt: null,
+              lastAttemptAt: null,
+              suspectedChange: false,
+              requestRefused: false,
+            },
+            venue: {
+              managerPin: guarded,
+              playerPins: accounts.filter((account) => account.pin).length,
+              idleMinutes: null,
+              houseAccount: false,
+            },
+            settings: {
+              showButton: true,
+              corner: "bottom-right",
+              order: "name",
+            },
+            events: [],
+          },
+          view: view(),
+        };
       case "view":
       case "adopt":
       case "openPage":

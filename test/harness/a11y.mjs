@@ -394,6 +394,80 @@ suite("the popup in axe-core", { skip: browser === null }, () => {
     }
   });
 
+  // A club with twelve regulars: the field above the tiles finds a player, a letter
+  // typed in the switcher goes into it, and the keys 1 to 9 count among the tiles that
+  // show, so the twelfth player is a key away too.
+  test("among many players, the field finds one, and a key picks among those it shows", async () => {
+    for (const scheme of ["light", "dark"]) {
+      const page = await open({ page: "switcher", accounts: 12, scheme });
+      assert.equal(await page.isVisible("#filter"), true);
+      await check(page, `the switcher with twelve players, ${scheme}`);
+      assert.equal(await page.locator("#profiles .tile").count(), 12);
+      assert.equal(
+        await page.textContent("#keys"),
+        "Type a name to find a player. Keys 1 to 9 pick one of those shown, Esc closes.",
+      );
+      await press(page, "z");
+      await press(page, "o");
+      assert.equal(await page.inputValue("#filter"), "zo");
+      assert.equal(await page.locator("#profiles .tile").count(), 1);
+      assert.equal(
+        await page.getAttribute(tile("zoerichter"), "aria-keyshortcuts"),
+        "1",
+      );
+      await check(page, `the switcher with a filter, ${scheme}`);
+      await press(page, "x");
+      assert.equal(await page.isVisible("#no-match"), true);
+      await check(page, `the switcher when no player matches, ${scheme}`);
+      await press(page, "Backspace");
+      await press(page, "1");
+      assert.equal(
+        await page.getAttribute(tile("zoerichter"), "aria-current"),
+        "true",
+      );
+      assert.deepEqual(page.errors, []);
+      await page.context().close();
+    }
+  });
+
+  test("in the popup, Enter in the field plays the first player it shows, and Esc empties it", async () => {
+    const page = await open({ accounts: 12 });
+    await page.click("#filter");
+    await page.keyboard.type("emma");
+    await settle(page);
+    assert.equal(await page.locator("#profiles .tile").count(), 1);
+    await press(page, "Escape");
+    assert.equal(await page.inputValue("#filter"), "");
+    assert.equal(await page.locator("#profiles .tile").count(), 12);
+    await page.keyboard.type("180");
+    await settle(page);
+    await press(page, "Enter");
+    assert.equal(
+      await page.getAttribute(tile("emma180"), "aria-current"),
+      "true",
+    );
+    // With four players, there is no field.
+    const few = await open({ accounts: 4 });
+    assert.equal(await few.isVisible("#filter"), false);
+    assert.deepEqual([...page.errors, ...few.errors], []);
+    await page.context().close();
+    await few.context().close();
+  });
+
+  test("Copy diagnostics shows in Manage accounts, beside Report a problem", async () => {
+    const page = await open();
+    assert.equal(await page.isVisible("#diagnostics"), false);
+    await page.click("#manage");
+    await settle(page);
+    assert.equal(await page.isVisible("#diagnostics"), true);
+    await check(page, "the popup with Copy diagnostics");
+    await page.click("#manage");
+    await settle(page);
+    assert.equal(await page.isVisible("#diagnostics"), false);
+    assert.deepEqual(page.errors, []);
+    await page.context().close();
+  });
+
   test("the texts and names in German", async () => {
     const page = await open({ lang: "de" });
     assert.equal(await page.getAttribute("#profiles", "aria-label"), "Konten");

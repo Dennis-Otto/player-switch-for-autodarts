@@ -86,7 +86,19 @@ and the popup and the players on the Autodarts page say:
 
 **What it means:** something failed that the extension didn't expect. Under **Settings**, the same message says that a setting wasn't saved.
 
-**What to do:** try again, and reload the Autodarts page when it comes back. When it stays, choose **Report a problem** at the bottom of the popup: it opens the bug form with the versions of the extension and the browser filled in, and nothing else.
+**What to do:** try again, and reload the Autodarts page when it comes back. When it stays, open **Manage accounts** in the popup, choose **Copy diagnostics** at its bottom, then **Report a problem** beside it, and paste the copy into the field *Logs* of the bug form: it tells what failed and when, without a name, a token or a password ([what it holds](#report)).
+
+### Diagnostics copied {#report}
+
+> Diagnostics copied. Paste them into the field Logs of the report: they hold no name, token or password.
+
+**What it means:** **Copy diagnostics**, at the bottom of the popup while **Manage accounts** is open, put on the clipboard what the extension knows of its own work: its version, the browser and its language, the version of the stored format, how many accounts are saved and how each one stands, by its number and never its name (playing, ready or sign in again, whether it remembers a password, since when its renewal fails), when the renewal last worked, which locks of the venue mode and which settings are on, and the last 50 events: each switch, join, save and renewal, and each request to Autodarts that failed, with its time, how it ended and the HTTP status. It holds no name, username, password, token, account id or address. The events stay in the browser on this computer, and **Forget all accounts** deletes them with everything else.
+
+**What to do:** choose **Report a problem**, paste the copy into the field *Logs* of the bug form, and read it through before you send it.
+
+> The diagnostics couldn't be copied. Please try again.
+
+The browser didn't let the extension write to the clipboard, as when the popup lost the focus on the way. Choose **Copy diagnostics** again. A developer sees the failures also as they happen, in the console of the service worker: turn on **Developer mode** under `chrome://extensions` (`edge://extensions` in Edge) and choose **service worker** under Player Switch, or, in Firefox, **Inspect** beside Player Switch under `about:debugging#/runtime/this-firefox`.
 
 ### A match is running {#match-running}
 
@@ -390,6 +402,12 @@ Each browser profile on each computer keeps accounts of its own, and nothing is 
 
 It is made for Google Chrome 140 or newer, on Windows, macOS, Linux and ChromeOS, and installs from [the Chrome Web Store](https://chromewebstore.google.com/detail/player-switch-for-autodar/gbijblgchbbbkjeibpjaodflfgbgefam), which brings every update on its own. Browsers built on Chromium install it from there as well, such as Chromium on a Raspberry Pi, Brave, Opera or Vivaldi, and Microsoft Edge once **Allow extensions from other stores** under `edge://extensions` is on. Firefox 153 or newer runs it too, loaded from a release as a temporary add-on, since it isn't listed on addons.mozilla.org: [which browsers](index.md#browsers) says how. Use a normal window of a browser profile: Chrome runs no extension in a guest window, and Player Switch doesn't run in incognito or private windows, not even when you allow extensions there. Such a window keeps an Autodarts session of its own, apart from that of the normal windows, so a switch there would park the wrong session; open Autodarts in a normal window instead.
 
+### Many players on one display {#many-players}
+
+From nine saved accounts, a field **Find a player** shows above the tiles, in the popup and in the players on the Autodarts page. It finds an account by the name or the username, without regard to capitals and accents, so *zoe* finds *Zoë*. On the Autodarts page, just type: the letters go into the field, Backspace takes one away, and the keys 1 to 9 then pick among the tiles that show, so every player is within reach of a key. In the field, Enter plays the first tile that shows, the arrow down leads to the tiles, and Esc empties it.
+
+**Settings** → **The players** → **Order of the tiles** puts the tiles **By name**, the name that a tile shows first, or **Last played first**, so that the regulars of a club find themselves at the top. An account counts as played when a tap brings it onto the page or a join seats it in a lobby.
+
 ### Which version runs? {#which-version}
 
 The bottom of the players on the Autodarts page, beside the hint of the keys, and the bottom of the popup, below its links, show which version of the extension runs on this display, such as *Player Switch 1.6.0*. The extension reads it from itself, so it can be older than the newest version that the Chrome Web Store and the [releases](https://github.com/Dennis-Otto/player-switch-for-autodarts/releases) show already: Chrome looks for updates of its extensions by itself only every few hours. To fetch an update at once, turn on **Developer mode** under `chrome://extensions` (`edge://extensions` in Edge) and choose **Update**; then open the players again, and they show the new number. A copy installed unpacked gets no update by itself: [Autodarts may have changed how it signs in](#sign-in-changed) says how to bring in the new version. Neither does the temporary add-on in Firefox: load the zip of the new release, as [which browsers](index.md#browsers) says. What each version changed is in the [changelog](https://github.com/Dennis-Otto/player-switch-for-autodarts/blob/main/CHANGELOG.md).
@@ -405,4 +423,4 @@ The [privacy policy](privacy.md) lists everything that the extension keeps.
 
 ## Still stuck?
 
-**Report a problem** at the bottom of the popup opens the [bug form](https://github.com/Dennis-Otto/player-switch-for-autodarts/issues/new?template=bug_report.yml), filled in with the versions of the extension and the browser. Questions go to the [discussions](https://github.com/Dennis-Otto/player-switch-for-autodarts/discussions), and a vulnerability is reported privately, as [SECURITY.md](https://github.com/Dennis-Otto/player-switch-for-autodarts/blob/main/SECURITY.md) describes.
+**Report a problem** at the bottom of the popup opens the [bug form](https://github.com/Dennis-Otto/player-switch-for-autodarts/issues/new?template=bug_report.yml), filled in with the versions of the extension and the browser. **Copy diagnostics** beside it, in **Manage accounts**, gives the form [what the extension noted](#report) of the last events, for its field *Logs*. Questions go to the [discussions](https://github.com/Dennis-Otto/player-switch-for-autodarts/discussions), and a vulnerability is reported privately, as [SECURITY.md](https://github.com/Dennis-Otto/player-switch-for-autodarts/blob/main/SECURITY.md) describes.

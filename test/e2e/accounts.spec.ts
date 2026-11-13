@@ -276,3 +276,43 @@ test("Forget all accounts ends every session, leaves nothing behind and starts o
   );
   expect(keys).toBe(1);
 });
+
+test("Copy diagnostics in Manage accounts copies how the accounts stand, without a name, a token or a password", async ({
+  autodarts,
+  display,
+}) => {
+  const page = await display.openAutodarts();
+  const popup = await display.saveAccounts(page, [ALICE, BOB]);
+  await popup.tap(ALICE);
+  // What the page writes to the clipboard, which the test reads back here.
+  await popup.page.evaluate(() => {
+    const copied: string[] = [];
+    (window as unknown as { copied: string[] }).copied = copied;
+    navigator.clipboard.writeText = async (text: string) => {
+      copied.push(text);
+    };
+  });
+  const copy = popup.page.locator("#diagnostics");
+  await expect(copy).toBeHidden();
+  await popup.manage();
+  await copy.click();
+  await popup.expectStatus(
+    `${display.t("diagnosticsCopied")} ${display.t("diagnosticsHelp")}`,
+  );
+  const [text] = await popup.page.evaluate(
+    () => (window as unknown as { copied: string[] }).copied,
+  );
+  expect(text).toContain("Accounts: 2");
+  expect(text).toContain("switch ok");
+  for (const secret of [
+    ALICE.name,
+    ALICE.username,
+    ALICE.password,
+    BOB.name,
+    BOB.username,
+    ALICE.id,
+    ...autodarts.tokensOf(ALICE),
+  ]) {
+    expect(text).not.toContain(secret);
+  }
+});

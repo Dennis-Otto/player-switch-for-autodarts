@@ -13,6 +13,7 @@ How the code is laid out, how to run the extension from the source, and what the
 - `switch.ts`: the switch itself, with the page, the storage, the clock, `fetch` and the queue passed in.
 - `queue.ts`: the queue that runs one change of the accounts at a time.
 - `tabs.ts`: finds the Autodarts tab that a switch talks to, reloads the others and opens Autodarts when no tab is open.
+- `diagnostics.ts`: the ring of the last 50 events in `chrome.storage.local` (a switch, a join, a renewal, a request to Autodarts that failed, each with its time, a word for its outcome and the HTTP status, never a name, a token or a password), and the text of **Copy diagnostics** for the field *Logs* of the bug form. `worker.ts` notes each request of the popup as it ends, each renewal, each failed request of its fetcher and each failure that it logs.
 - `health.ts`: decides when the renewal runs and what the toolbar badge and the popup say about it.
 - `page.ts`: the decisions of the switcher in the page: its settings, what its button shows, whether a match runs in the page and which tile a key picks.
 - `onboarding.ts`: when the welcome page opens and what the bug report carries.

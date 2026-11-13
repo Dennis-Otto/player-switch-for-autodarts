@@ -8,6 +8,7 @@ import {
   idleChoices,
   idleRequest,
   managerView,
+  orderChoices,
   playerRowView,
   venuePinQuestion,
   venueReport,
@@ -37,6 +38,13 @@ test("the corners lie as on the screen: the top ones first", () => {
     { value: "top-right", text: "cornerTopRight" },
     { value: "bottom-left", text: "cornerBottomLeft" },
     { value: "bottom-right", text: "cornerBottomRight" },
+  ]);
+});
+
+test("the tiles go by name first, or with the last game first", () => {
+  assert.deepEqual(orderChoices(t), [
+    { value: "name", text: "orderName" },
+    { value: "recent", text: "orderRecent" },
   ]);
 });
 

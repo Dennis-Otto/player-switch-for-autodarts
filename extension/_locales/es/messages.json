@@ -289,6 +289,42 @@
   "keysHint": {
     "message": "Las teclas del 1 al 9 eligen un jugador; Esc cierra."
   },
+  "filterLabel": {
+    "message": "Buscar un jugador"
+  },
+  "filterNone": {
+    "message": "Ninguna cuenta coincide."
+  },
+  "keysFilterHint": {
+    "message": "Escribe un nombre para encontrar a un jugador. Las teclas 1 a 9 eligen uno de los mostrados, Esc cierra."
+  },
+  "optionsTiles": {
+    "message": "Los jugadores"
+  },
+  "optionOrder": {
+    "message": "Orden de los mosaicos"
+  },
+  "optionOrderHint": {
+    "message": "En la ventana de la extensión y en el selector de la página de Autodarts. A partir de nueve cuentas guardadas, un campo sobre los mosaicos encuentra a un jugador por su nombre."
+  },
+  "orderName": {
+    "message": "Por nombre"
+  },
+  "orderRecent": {
+    "message": "Último en jugar primero"
+  },
+  "copyDiagnostics": {
+    "message": "Copiar el diagnóstico"
+  },
+  "diagnosticsCopied": {
+    "message": "Diagnóstico copiado. Pégalo en el campo Logs del informe: no contiene ningún nombre, token ni contraseña."
+  },
+  "diagnosticsHelp": {
+    "message": "Qué contiene"
+  },
+  "diagnosticsNotCopied": {
+    "message": "No se pudo copiar el diagnóstico. Inténtalo de nuevo."
+  },
   "version": {
     "message": "Player Switch $VERSION$",
     "placeholders": {

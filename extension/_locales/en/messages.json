@@ -237,6 +237,42 @@
   "keysHint": {
     "message": "Keys 1 to 9 pick a player, Esc closes."
   },
+  "filterLabel": {
+    "message": "Find a player"
+  },
+  "filterNone": {
+    "message": "No account matches."
+  },
+  "keysFilterHint": {
+    "message": "Type a name to find a player. Keys 1 to 9 pick one of those shown, Esc closes."
+  },
+  "optionsTiles": {
+    "message": "The players"
+  },
+  "optionOrder": {
+    "message": "Order of the tiles"
+  },
+  "optionOrderHint": {
+    "message": "In the popup and in the switcher on the Autodarts page. From nine saved accounts, a field above the tiles finds a player by name."
+  },
+  "orderName": {
+    "message": "By name"
+  },
+  "orderRecent": {
+    "message": "Last played first"
+  },
+  "copyDiagnostics": {
+    "message": "Copy diagnostics"
+  },
+  "diagnosticsCopied": {
+    "message": "Diagnostics copied. Paste them into the field Logs of the report: they hold no name, token or password."
+  },
+  "diagnosticsHelp": {
+    "message": "What they hold"
+  },
+  "diagnosticsNotCopied": {
+    "message": "The diagnostics couldn't be copied. Please try again."
+  },
   "version": {
     "message": "Player Switch $VERSION$",
     "description": "The footer of the popup and of the switcher in the Autodarts page: the name of the extension and the version that runs, such as 'Player Switch 1.6.0'. $VERSION$ is the number of the version, from the manifest.",

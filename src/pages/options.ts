@@ -1,6 +1,7 @@
 /**
  * The options page: whether the Autodarts page shows the button of the switcher, in
- * which corner, the venue mode for a club or pub, and the keyboard shortcuts. A change
+ * which corner, the order of the tiles, the venue mode for a club or pub, and the
+ * keyboard shortcuts. A change
  * is saved at once, and the service worker redraws the button in every open Autodarts
  * tab when the settings change.
  *
@@ -24,6 +25,7 @@ import {
   idleChoices,
   idleRequest,
   managerView,
+  orderChoices,
   playerRowView,
   venuePinQuestion,
   venueReport,
@@ -34,6 +36,7 @@ import { find, t, translate } from "./dom.ts";
 
 const showButton = find<HTMLInputElement>("#show-button");
 const corners = find<HTMLFieldSetElement>("#corners");
+const orders = find<HTMLFieldSetElement>("#orders");
 const saved = find("#saved");
 const locked = find("#locked");
 const content = find("#settings");
@@ -44,21 +47,26 @@ const playerPins = find("#player-pins");
 const idleMinutes = find<HTMLSelectElement>("#idle-minutes");
 const idleHouse = find<HTMLSelectElement>("#idle-house");
 
-/** One radio button for each corner that the settings know. */
-function drawCorners(chosen: string): void {
-  for (const { value, text } of cornerChoices(t)) {
+/** One radio button for each choice, in the group `group`, which saves as it changes. */
+function drawChoices(
+  group: HTMLFieldSetElement,
+  name: string,
+  choices: readonly Choice[],
+  chosen: string,
+): void {
+  for (const { value, text } of choices) {
     const label = document.createElement("label");
     label.className = "check";
     const input = document.createElement("input");
     input.type = "radio";
-    input.name = "corner";
+    input.name = name;
     input.value = value;
     input.checked = value === chosen;
     input.addEventListener("change", save);
-    const name = document.createElement("span");
-    name.textContent = text;
-    label.append(input, name);
-    corners.append(label);
+    const words = document.createElement("span");
+    words.textContent = text;
+    label.append(input, words);
+    group.append(label);
   }
 }
 
@@ -67,6 +75,7 @@ async function save(): Promise<void> {
   const settings = parseSettings({
     showButton: showButton.checked,
     corner: corners.querySelector<HTMLInputElement>("input:checked")?.value,
+    order: orders.querySelector<HTMLInputElement>("input:checked")?.value,
   });
   try {
     await chrome.storage.local.set({ [SETTINGS_KEY]: settings });
@@ -315,7 +324,8 @@ const settings = parseSettings(
 );
 showButton.checked = settings.showButton;
 corners.disabled = !settings.showButton;
-drawCorners(settings.corner);
+drawChoices(corners, "corner", cornerChoices(t), settings.corner);
+drawChoices(orders, "order", orderChoices(t), settings.order);
 showButton.addEventListener("change", save);
 await drawShortcuts();
 

@@ -32,7 +32,15 @@ es aber könnte und die Tokens und Passwörter dort nur verschlüsselt fände
   [Sicherheitsdesign](security.de.md#versiegelte-tokens-und-passwörter) erklärt die
   Einzelheiten.
 - **Die Einstellungen des Knopfs auf der Autodarts-Seite:** ob er zu sehen ist, und
-  in welcher Ecke.
+  in welcher Ecke, und die Reihenfolge der Kacheln.
+- **Wann jedes gespeicherte Konto zuletzt gespielt hat,** damit die Kacheln das
+  Konto, das zuletzt gespielt hat, zuerst zeigen können.
+- **Die letzten 50 Ereignisse der Erweiterung, für eine Fehlermeldung:** die Zeit
+  jedes Wechsels, Beitritts, Speicherns und jeder Erneuerung und jeder Anfrage an
+  Autodarts, die fehlgeschlagen ist, wie sie ausging, und ihr HTTP-Status. Nie ein
+  Name, ein Benutzername, ein Passwort, ein Token, die ID eines Kontos oder eine
+  Adresse. Sie verlassen den Browser nur, wenn du **Diagnose kopieren** wählst und
+  die Kopie selbst irgendwo einfügst, etwa in eine Fehlermeldung.
 - **Nur im Modus für Verein und Kneipe, sobald du ihn einschaltest:** ein gesalzener
   Hash der Manager-PIN und der PIN jedes Spielers, nie eine PIN selbst, die Länge der
   Pause und das Hauskonto. Solange der Browser läuft, und nur solange die Rückkehr

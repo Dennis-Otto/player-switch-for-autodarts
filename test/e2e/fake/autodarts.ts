@@ -221,6 +221,13 @@ export class FakeAutodarts {
     }
   }
 
+  /** Every refresh token that was issued for an account, whether it works or was spent. */
+  tokensOf(account: Account): string[] {
+    return [...this.live, ...this.spent]
+      .filter(([, session]) => session.account === account)
+      .map(([token]) => token);
+  }
+
   /** How many sessions of an account work now. */
   sessionsOf(account: Account): number {
     return [...this.live.values()].filter(

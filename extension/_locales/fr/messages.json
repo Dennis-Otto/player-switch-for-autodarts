@@ -289,6 +289,42 @@
   "keysHint": {
     "message": "Les touches 1 à 9 choisissent un joueur, Échap ferme."
   },
+  "filterLabel": {
+    "message": "Trouver un joueur"
+  },
+  "filterNone": {
+    "message": "Aucun compte ne correspond."
+  },
+  "keysFilterHint": {
+    "message": "Tapez un nom pour trouver un joueur. Les touches 1 à 9 choisissent l'un de ceux affichés, Échap ferme."
+  },
+  "optionsTiles": {
+    "message": "Les joueurs"
+  },
+  "optionOrder": {
+    "message": "Ordre des tuiles"
+  },
+  "optionOrderHint": {
+    "message": "Dans la fenêtre de l'extension et dans le sélecteur de la page Autodarts. À partir de neuf comptes enregistrés, un champ au-dessus des tuiles trouve un joueur par son nom."
+  },
+  "orderName": {
+    "message": "Par nom"
+  },
+  "orderRecent": {
+    "message": "Dernier joueur en premier"
+  },
+  "copyDiagnostics": {
+    "message": "Copier le diagnostic"
+  },
+  "diagnosticsCopied": {
+    "message": "Diagnostic copié. Collez-le dans le champ Logs du signalement : il ne contient ni nom, ni jeton, ni mot de passe."
+  },
+  "diagnosticsHelp": {
+    "message": "Ce qu'il contient"
+  },
+  "diagnosticsNotCopied": {
+    "message": "Le diagnostic n'a pas pu être copié. Veuillez réessayer."
+  },
   "version": {
     "message": "Player Switch $VERSION$",
     "placeholders": {

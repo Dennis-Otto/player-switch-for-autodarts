@@ -86,7 +86,19 @@ und das Popup und die Spieler auf der Autodarts-Seite sagen:
 
 **Was es bedeutet:** Etwas ist fehlgeschlagen, womit die Erweiterung nicht gerechnet hat. Unter **Einstellungen** sagt dieselbe Meldung, dass eine Einstellung nicht gespeichert wurde.
 
-**Was du tust:** Versuch es noch einmal, und lade die Autodarts-Seite neu, wenn die Meldung wiederkommt. Bleibt sie, wähle **Problem melden** unten im Popup: Es öffnet das Fehlerformular mit den Versionen der Erweiterung und des Browsers, und mit nichts sonst.
+**Was du tust:** Versuch es noch einmal, und lade die Autodarts-Seite neu, wenn die Meldung wiederkommt. Bleibt sie, öffne **Konten verwalten** im Popup, wähle unten **Diagnose kopieren**, dann daneben **Problem melden**, und füge die Kopie in das Feld *Logs* des Fehlerformulars ein: Sie sagt, was wann fehlgeschlagen ist, ohne Namen, Token oder Passwort ([was sie enthält](#report)).
+
+### Diagnose kopiert {#report}
+
+> Diagnose kopiert. Füge sie in das Feld Logs der Meldung ein: Sie enthält keinen Namen, kein Token und kein Passwort.
+
+**Was es bedeutet:** **Diagnose kopieren**, unten im Popup, solange **Konten verwalten** offen ist, hat in die Zwischenablage gelegt, was die Erweiterung über ihre eigene Arbeit weiß: ihre Version, den Browser und seine Sprache, die Version des gespeicherten Formats, wie viele Konten gespeichert sind und wie jedes steht, mit seiner Nummer und nie mit seinem Namen (spielt, bereit oder neu anmelden, ob es sich ein Passwort merkt, seit wann seine Erneuerung fehlschlägt), wann die Erneuerung zuletzt geklappt hat, welche Sperren des Modus für Verein und Kneipe und welche Einstellungen an sind, und die letzten 50 Ereignisse: jeden Wechsel, Beitritt, jedes Speichern und jede Erneuerung, und jede Anfrage an Autodarts, die fehlgeschlagen ist, mit ihrer Zeit, wie sie ausging, und dem HTTP-Status. Sie enthält keinen Namen, Benutzernamen, kein Passwort, keinen Token, keine Konto-ID und keine Adresse. Die Ereignisse bleiben im Browser auf diesem Computer, und **Alle Konten vergessen** löscht sie mit allem anderen.
+
+**Was du tust:** Wähle **Problem melden**, füge die Kopie in das Feld *Logs* des Fehlerformulars ein, und lies sie durch, bevor du sie abschickst.
+
+> Die Diagnose konnte nicht kopiert werden. Bitte nochmal versuchen.
+
+Der Browser hat die Erweiterung nicht in die Zwischenablage schreiben lassen, etwa weil das Popup unterwegs den Fokus verloren hat. Wähle **Diagnose kopieren** noch einmal. Ein Entwickler sieht die Fehler auch, während sie passieren, in der Konsole des Service Workers: Schalte unter `chrome://extensions` (`edge://extensions` in Edge) den **Entwicklermodus** ein und wähle **Service Worker** bei Player Switch, oder in Firefox **Untersuchen** neben Player Switch unter `about:debugging#/runtime/this-firefox`.
 
 ### Ein Match läuft {#match-running}
 
@@ -390,6 +402,12 @@ Jedes Browserprofil auf jedem Computer behält seine eigenen Konten, und nichts 
 
 Die Erweiterung ist für Google Chrome 140 oder neuer gemacht, unter Windows, macOS, Linux und ChromeOS, und kommt aus [dem Chrome Web Store](https://chromewebstore.google.com/detail/player-switch-for-autodar/gbijblgchbbbkjeibpjaodflfgbgefam?hl=de), der jedes Update von selbst bringt. Browser, die auf Chromium aufbauen, installieren sie ebenso von dort, etwa Chromium auf einem Raspberry Pi, Brave, Opera oder Vivaldi, und Microsoft Edge, sobald unter `edge://extensions` **Erweiterungen aus anderen Stores zulassen** eingeschaltet ist. Firefox 153 oder neuer führt sie auch aus, als temporäres Add-on aus einem Release geladen, denn auf addons.mozilla.org ist sie nicht gelistet: [Welche Browser](index.md#browsers) sagt, wie. Nutze ein normales Fenster eines Browserprofils: Chrome führt in einem Gastfenster keine Erweiterung aus, und Player Switch läuft nicht in Inkognito- oder privaten Fenstern, auch nicht, wenn du Erweiterungen dort erlaubst. Ein solches Fenster hat eine eigene Autodarts-Sitzung, getrennt von der der normalen Fenster, sodass ein Wechsel dort die falsche Sitzung parken würde; öffne Autodarts stattdessen in einem normalen Fenster.
 
+### Viele Spieler an einem Display {#many-players}
+
+Ab neun gespeicherten Konten steht über den Kacheln ein Feld **Spieler finden**, im Popup und in den Spielern auf der Autodarts-Seite. Es findet ein Konto am Namen oder am Benutzernamen, egal ob groß oder klein und mit oder ohne Akzent, so findet *zoe* auch *Zoë*. Auf der Autodarts-Seite tippst du einfach los: Die Buchstaben landen im Feld, die Rücktaste nimmt einen weg, und die Tasten 1 bis 9 wählen dann unter den Kacheln, die zu sehen sind, so ist jeder Spieler mit einer Taste erreichbar. Im Feld spielt Enter die erste Kachel, die zu sehen ist, der Pfeil nach unten führt zu den Kacheln, und Esc leert es.
+
+**Einstellungen** → **Die Spieler** → **Reihenfolge der Kacheln** ordnet die Kacheln **Nach Namen**, dem Namen, den eine Kachel zuerst zeigt, oder **Zuletzt gespielt zuerst**, damit die Stammspieler eines Vereins sich oben finden. Ein Konto hat gespielt, wenn ein Tipp es auf die Seite bringt oder ein Beitritt es in eine Lobby setzt.
+
 ### Welche Version läuft? {#which-version}
 
 Unten in den Spielern auf der Autodarts-Seite, neben dem Hinweis zu den Tasten, und unten im Popup, unter seinen Links, steht, welche Version der Erweiterung auf diesem Display läuft, etwa *Player Switch 1.6.0*. Die Erweiterung liest sie aus sich selbst, also kann sie älter sein als die neueste Version, die der Chrome Web Store und die [Releases](https://github.com/Dennis-Otto/player-switch-for-autodarts/releases) schon zeigen: Chrome sucht nur alle paar Stunden von selbst nach Updates seiner Erweiterungen. Um ein Update gleich zu holen, schalte unter `chrome://extensions` (`edge://extensions` in Edge) den **Entwicklermodus** ein und wähle **Aktualisieren**; öffne dann die Spieler wieder, und sie zeigen die neue Nummer. Eine entpackt installierte Kopie bekommt kein Update von selbst: [Autodarts hat vielleicht geändert, wie die Anmeldung funktioniert](#sign-in-changed) sagt, wie die neue Version hineinkommt. Das temporäre Add-on in Firefox auch nicht: Lade das Zip-Archiv des neuen Releases, wie [Welche Browser](index.md#browsers) es sagt. Was jede Version geändert hat, steht im [Changelog](https://github.com/Dennis-Otto/player-switch-for-autodarts/blob/main/CHANGELOG.md).
@@ -405,4 +423,4 @@ Die [Datenschutzerklärung](privacy.md) zählt alles auf, was die Erweiterung sp
 
 ## Immer noch ein Problem?
 
-**Problem melden** unten im Popup öffnet das [Fehlerformular](https://github.com/Dennis-Otto/player-switch-for-autodarts/issues/new?template=bug_report.yml), mit den Versionen der Erweiterung und des Browsers. Fragen gehören in die [Diskussionen](https://github.com/Dennis-Otto/player-switch-for-autodarts/discussions), und eine Sicherheitslücke meldest du vertraulich, wie [SECURITY.md](https://github.com/Dennis-Otto/player-switch-for-autodarts/blob/main/SECURITY.md) es beschreibt. Das Fehlerformular und die Diskussionen sind auf Englisch.
+**Problem melden** unten im Popup öffnet das [Fehlerformular](https://github.com/Dennis-Otto/player-switch-for-autodarts/issues/new?template=bug_report.yml), mit den Versionen der Erweiterung und des Browsers. **Diagnose kopieren** daneben, in **Konten verwalten**, gibt dem Formular für sein Feld *Logs* mit, [was die Erweiterung](#report) von den letzten Ereignissen notiert hat. Fragen gehören in die [Diskussionen](https://github.com/Dennis-Otto/player-switch-for-autodarts/discussions), und eine Sicherheitslücke meldest du vertraulich, wie [SECURITY.md](https://github.com/Dennis-Otto/player-switch-for-autodarts/blob/main/SECURITY.md) es beschreibt. Das Fehlerformular und die Diskussionen sind auf Englisch.
