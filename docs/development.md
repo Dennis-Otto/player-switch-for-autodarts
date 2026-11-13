@@ -65,9 +65,9 @@ Every line, branch and function of `src/` outside `pages/` runs in a test; the p
 **`scripts/`**, the checks and the pictures of this project:
 
 - `check.sh`: runs every check.
-- `check-project.sh`: runs the ones of this project: every language against English and against the texts that the pages use, the files the manifest names and the scripts that the pages load, the template of a tile in the switcher against the popup's, and last the popup in a browser (`test/harness/a11y.mjs`).
-- `check-help.mjs`: the help, which must quote every message that reports a problem, in English and German, and to which **Help** must lead in every language.
-- `check-extension.mjs`: [what the manifest may ask for](#what-the-extension-may-do), with its self-test `check-extension.test.mjs`.
+- `check-project.sh`: runs the ones of this project: every language against English and against the texts that the pages use, the files the manifest names and the scripts that the pages load, the template of a tile in the switcher against the popup's, what the manifest may ask for (`check-extension.mjs`), the help (`check-help.mjs`), and last the popup in a browser (`test/harness/a11y.mjs`).
+- `check-help.mjs`, run by `check-project.sh`: the help, which must quote every message that reports a problem, in English and German, and to which **Help** must lead in every language.
+- `check-extension.mjs`, run by `check-project.sh`: [what the manifest may ask for](#what-the-extension-may-do), with its self-test `check-extension.test.mjs`.
 - `screenshots.sh`: renders the [pictures](#pictures).
 
 **`scripts/`**, the scripts of the kind *Chrome extension*, which the blueprint keeps:
