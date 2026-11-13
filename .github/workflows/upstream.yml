@@ -5,7 +5,7 @@ name: Upstream
 #
 # - autodarts-contract, every morning: Autodarts still keeps its session under the
 #   key that the extension swaps, signs in at the same service as the same client,
-#   refuses a dead session and a wrong password with 400 or 401, ends a session, and
+#   refuses a dead session and a wrong password with 401, ends a session, and
 #   forwards play.autodarts.io to play.autodarts.com. None of it is a public contract
 #   of Autodarts. scripts/upstream-contract.ts takes the values from src/autodarts.ts,
 #   sends only made-up data, about a dozen requests in all, and its summary names
@@ -13,6 +13,12 @@ name: Upstream
 # - chrome-beta, every morning as well: the end-to-end tests of test/e2e/ in Chrome for
 #   Testing Beta, the next version of Chrome, about four weeks before it reaches the
 #   players. Branded Chrome, Beta too, no longer loads an unpacked extension.
+# - firefox-beta, every morning as well: the tests of test/firefox/ in Firefox Beta,
+#   the next version of Firefox, about four weeks before it reaches the players.
+# - oldest-browsers, every morning as well: the end-to-end tests in Chrome for Testing
+#   140 and the tests in Firefox in Firefox 153 ESR, the oldest versions that the
+#   manifest allows, so that a change that needs a newer browser shows before it
+#   reaches a display that stays on an older one, such as Firefox ESR on a kiosk.
 # - store-listing, every morning as well: the Chrome Web Store shows the short and the
 #   detailed description of each store/listing.<code>.md. The texts reach the store
 #   only by a paste into the Developer Dashboard, whose API can't set them, so
@@ -22,9 +28,9 @@ name: Upstream
 # A failure of a scheduled run opens an issue with the label bot-failure, which the
 # next run that passes closes (bot-health.yml). A pull request that changes this
 # workflow, its scripts or what the extension expects of Autodarts runs every job, so
-# the change is checked against the real Autodarts, the next Chrome and the store
-# before it merges; there a description that differs is a warning, as a pull request
-# can't change the store. None is a required check.
+# the change is checked against the real Autodarts, the next and the oldest browsers
+# and the store before it merges; there a description that differs is a warning, as a
+# pull request can't change the store. None is a required check.
 
 on:
   schedule:
@@ -288,6 +294,279 @@ jobs:
         if: failure() && steps.blocks.outcome != 'failure'
         env:
           CHECK: chrome-beta
+        run: python3 .github/blueprint.py coach explain "$CHECK"
+      # Without sudo and Docker, Harden-Runner removes Docker with apt-get while the
+      # job runs; an early failure would otherwise hang until the timeout.
+      - name: Wait until Harden-Runner has removed Docker
+        if: always()
+        run: |
+          for _ in {1..120}; do
+            pgrep -x 'apt-get|dpkg' >/dev/null || exit 0
+            sleep 1
+          done
+          echo "::warning::Harden-Runner still removes Docker after two minutes; the job may hang until its timeout."
+
+  firefox-beta:
+    name: firefox-beta
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    steps:
+      # GitHub for the checkout, and for Node.js should the runner image lack its
+      # version; npm for the packages; Mozilla's list of its versions, which names the
+      # latest Beta, and its archive for the download. The tests themselves reach no
+      # host but the fake Autodarts on the runner and the services of Firefox.
+      - name: Block every host that the job doesn't need
+        uses: step-security/harden-runner@46b06cea07f9e64621fdf066ba77ac6915163d43 # v2.22.3
+        with:
+          egress-policy: block
+          disable-sudo-and-containers: true
+          allowed-endpoints: >
+            api.github.com:443
+            github.com:443
+            objects.githubusercontent.com:443
+            release-assets.githubusercontent.com:443
+            registry.npmjs.org:443
+            product-details.mozilla.org:443
+            archive.mozilla.org:443
+      - name: Make sure that Harden-Runner blocks
+        id: blocks
+        # Harden-Runner goes on without its agent when the agent can't be downloaded, as
+        # in GitHub's outage of 8 November 2026, or doesn't start: the job would reach
+        # every host. It stops here instead, so that it can run again (decision 0134 of
+        # the blueprint). A later step that runs after a failure skips then, as it would
+        # run without the block; only the wait for the removal of Docker runs anyway.
+        timeout-minutes: 1
+        run: |
+          # The agent writes Initialized into its status once its firewall stands, and
+          # runs as the service agent until the end of the job; one that is there may
+          # still be starting.
+          for _ in {1..30}; do
+            [[ -e /home/agent/agent.status || ! -e /home/agent/agent ]] && break
+            sleep 1
+          done
+          status="$(cat /home/agent/agent.status 2>/dev/null || true)"
+          if [[ ! -d /home/agent/ ]]; then
+            # Harden-Runner returns before it makes the folder of the agent when
+            # StepSecurity says that it is unavailable, or the repository skips it.
+            why="didn't install its agent, as StepSecurity said that it is unavailable or the repository skips it (the log of its step says which),"
+          elif [[ ! -e /home/agent/agent ]]; then
+            why="couldn't download its agent, mostly in an outage of GitHub (https://www.githubstatus.com),"
+          elif [[ "$status" != Initialized ]]; then
+            why="has an agent that didn't start,"
+          elif ! systemctl is-active --quiet agent; then
+            why="has an agent that stopped,"
+          else
+            echo "Harden-Runner blocks every host that the job doesn't name."
+            exit 0
+          fi
+          echo "The status of the agent: ${status:-none}"
+          echo "::error title=Harden-Runner doesn't block::Harden-Runner $why so this job would reach every host, and it stops here instead. That is no problem of the change: run the job again."
+          exit 1
+      - name: Wait until Harden-Runner lets the hosts through
+        # The runner may have asked for an address past Harden-Runner, which then blocks
+        # that address for as long as systemd-resolved keeps it, up to a minute.
+        timeout-minutes: 4
+        env:
+          HOSTS: >
+            api.github.com:443
+            github.com:443
+            objects.githubusercontent.com:443
+            release-assets.githubusercontent.com:443
+            registry.npmjs.org:443
+            product-details.mozilla.org:443
+            archive.mozilla.org:443
+        run: |
+          deadline=$(($(date +%s) + 120))
+          for endpoint in $HOSTS; do
+            host="${endpoint%:*}"
+            # A wildcard names no host to ask.
+            [[ "$host" == '*.'* ]] && continue
+            until curl --silent --head --connect-timeout 3 --max-time 5 --output /dev/null "https://$host/"; do
+              if (($(date +%s) >= deadline)); then
+                echo "::warning::Harden-Runner still blocks $host after two minutes; a step that needs it will fail, and the job can run again."
+                break
+              fi
+              echo "Harden-Runner still blocks $host, waiting 3 s."
+              sleep 3
+            done
+          done
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - name: Install the locked packages
+        run: npm ci --ignore-scripts
+      # @puppeteer/browsers comes with puppeteer-core, which the tests in Firefox drive
+      # the browser with, and downloads Firefox from Mozilla's archive.
+      - name: Download Firefox Beta
+        run: |
+          firefox="$(npx --no -- @puppeteer/browsers install firefox@beta --path "$RUNNER_TEMP/browsers" --format '{{path}}')"
+          echo "E2E_FIREFOX_PATH=$firefox" >> "$GITHUB_ENV"
+          echo "The tests in Firefox run in $("$firefox" --version)." | tee -a "$GITHUB_STEP_SUMMARY"
+      - name: Run the tests in Firefox Beta
+        run: npm run e2e:firefox
+      # The PR coach: what failed, why it matters and how to fix it, in the summary
+      # of the check and as its annotation, from .github/checks.project.toml.
+      - name: Explain the failure
+        if: failure() && steps.blocks.outcome != 'failure'
+        env:
+          CHECK: firefox-beta
+        run: python3 .github/blueprint.py coach explain "$CHECK"
+      # Without sudo and Docker, Harden-Runner removes Docker with apt-get while the
+      # job runs; an early failure would otherwise hang until the timeout.
+      - name: Wait until Harden-Runner has removed Docker
+        if: always()
+        run: |
+          for _ in {1..120}; do
+            pgrep -x 'apt-get|dpkg' >/dev/null || exit 0
+            sleep 1
+          done
+          echo "::warning::Harden-Runner still removes Docker after two minutes; the job may hang until its timeout."
+
+  oldest-browsers:
+    name: oldest-browsers
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    permissions:
+      contents: read
+    env:
+      # The oldest versions that extension/manifest.json allows: minimum_chrome_version
+      # and strict_min_version of Firefox. test/oldest-browsers.test.ts fails when the
+      # manifest names others, so the manifest promises only what this job runs.
+      OLDEST_CHROME: 140.0.7339.207
+      OLDEST_FIREFOX: 153.0esr
+    steps:
+      # GitHub for the checkout, and for Node.js should the runner image lack its
+      # version; npm for the packages; the storage of Chrome for Testing and Mozilla's
+      # archive for the downloads of a fixed version, which need no list of versions.
+      # The tests themselves reach no host but the fake Autodarts on the runner and the
+      # services of Firefox.
+      - name: Block every host that the job doesn't need
+        uses: step-security/harden-runner@46b06cea07f9e64621fdf066ba77ac6915163d43 # v2.22.3
+        with:
+          egress-policy: block
+          disable-sudo-and-containers: true
+          allowed-endpoints: >
+            api.github.com:443
+            github.com:443
+            objects.githubusercontent.com:443
+            release-assets.githubusercontent.com:443
+            registry.npmjs.org:443
+            storage.googleapis.com:443
+            archive.mozilla.org:443
+      - name: Make sure that Harden-Runner blocks
+        id: blocks
+        # Harden-Runner goes on without its agent when the agent can't be downloaded, as
+        # in GitHub's outage of 8 November 2026, or doesn't start: the job would reach
+        # every host. It stops here instead, so that it can run again (decision 0134 of
+        # the blueprint). A later step that runs after a failure skips then, as it would
+        # run without the block; only the wait for the removal of Docker runs anyway.
+        timeout-minutes: 1
+        run: |
+          # The agent writes Initialized into its status once its firewall stands, and
+          # runs as the service agent until the end of the job; one that is there may
+          # still be starting.
+          for _ in {1..30}; do
+            [[ -e /home/agent/agent.status || ! -e /home/agent/agent ]] && break
+            sleep 1
+          done
+          status="$(cat /home/agent/agent.status 2>/dev/null || true)"
+          if [[ ! -d /home/agent/ ]]; then
+            # Harden-Runner returns before it makes the folder of the agent when
+            # StepSecurity says that it is unavailable, or the repository skips it.
+            why="didn't install its agent, as StepSecurity said that it is unavailable or the repository skips it (the log of its step says which),"
+          elif [[ ! -e /home/agent/agent ]]; then
+            why="couldn't download its agent, mostly in an outage of GitHub (https://www.githubstatus.com),"
+          elif [[ "$status" != Initialized ]]; then
+            why="has an agent that didn't start,"
+          elif ! systemctl is-active --quiet agent; then
+            why="has an agent that stopped,"
+          else
+            echo "Harden-Runner blocks every host that the job doesn't name."
+            exit 0
+          fi
+          echo "The status of the agent: ${status:-none}"
+          echo "::error title=Harden-Runner doesn't block::Harden-Runner $why so this job would reach every host, and it stops here instead. That is no problem of the change: run the job again."
+          exit 1
+      - name: Wait until Harden-Runner lets the hosts through
+        # The runner may have asked for an address past Harden-Runner, which then blocks
+        # that address for as long as systemd-resolved keeps it, up to a minute.
+        timeout-minutes: 4
+        env:
+          HOSTS: >
+            api.github.com:443
+            github.com:443
+            objects.githubusercontent.com:443
+            release-assets.githubusercontent.com:443
+            registry.npmjs.org:443
+            storage.googleapis.com:443
+            archive.mozilla.org:443
+        run: |
+          deadline=$(($(date +%s) + 120))
+          for endpoint in $HOSTS; do
+            host="${endpoint%:*}"
+            # A wildcard names no host to ask.
+            [[ "$host" == '*.'* ]] && continue
+            until curl --silent --head --connect-timeout 3 --max-time 5 --output /dev/null "https://$host/"; do
+              if (($(date +%s) >= deadline)); then
+                echo "::warning::Harden-Runner still blocks $host after two minutes; a step that needs it will fail, and the job can run again."
+                break
+              fi
+              echo "Harden-Runner still blocks $host, waiting 3 s."
+              sleep 3
+            done
+          done
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - name: Install the locked packages
+        run: npm ci --ignore-scripts
+      # @puppeteer/browsers comes with puppeteer-core, which the tests in Firefox drive
+      # the browser with, and downloads a fixed version of either browser, which
+      # scripts/chrome-for-testing.sh of the blueprint, made for a channel, can't.
+      - name: Download the oldest Chrome for Testing and Firefox that the manifest allows
+        run: |
+          chrome="$(npx --no -- @puppeteer/browsers install "chrome@$OLDEST_CHROME" --path "$RUNNER_TEMP/browsers" --format '{{path}}')"
+          firefox="$(npx --no -- @puppeteer/browsers install "firefox@esr_$OLDEST_FIREFOX" --path "$RUNNER_TEMP/browsers" --format '{{path}}')"
+          {
+            echo "E2E_CHROME_PATH=$chrome"
+            echo "E2E_FIREFOX_PATH=$firefox"
+          } >> "$GITHUB_ENV"
+          echo "The end-to-end tests run in $("$chrome" --version), the tests in Firefox in $("$firefox" --version)." | tee -a "$GITHUB_STEP_SUMMARY"
+      - name: Run the end-to-end tests in the oldest Chrome
+        id: chrome
+        run: npm run e2e
+      - name: Run the tests in the oldest Firefox
+        # Also after a failure in Chrome, so that the run names each browser that broke.
+        if: ${{ !cancelled() && steps.blocks.outcome != 'failure' && steps.chrome.outcome != 'skipped' }}
+        run: npm run e2e:firefox
+      # Each failed test in Chrome keeps its trace, with every step, request and
+      # snapshot of the page, and its screenshots; the HTML report lists them all.
+      - name: Keep the traces and screenshots of a failed run
+        if: failure() && steps.blocks.outcome != 'failure'
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: oldest-browsers-${{ github.run_attempt }}
+          path: |
+            test/e2e/results/
+            test/e2e/report/
+          if-no-files-found: ignore
+          retention-days: 14
+      # The PR coach: what failed, why it matters and how to fix it, in the summary
+      # of the check and as its annotation, from .github/checks.project.toml.
+      - name: Explain the failure
+        if: failure() && steps.blocks.outcome != 'failure'
+        env:
+          CHECK: oldest-browsers
         run: python3 .github/blueprint.py coach explain "$CHECK"
       # Without sudo and Docker, Harden-Runner removes Docker with apt-get while the
       # job runs; an early failure would otherwise hang until the timeout.

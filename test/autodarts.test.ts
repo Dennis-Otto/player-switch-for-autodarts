@@ -112,11 +112,10 @@ test("every 401 rejects the session, whatever its body says", async () => {
   }
 });
 
-test("a 400 that names a dead session rejects it, in both forms of the sign-in service", async () => {
+test("a 400 that names a dead session rejects it", async () => {
   for (const [body, code] of [
     [{ error: { status: 400, code: "invalid_token" } }, "invalid_token"],
     [{ error: { code: "invalid_credentials" } }, "invalid_credentials"],
-    [{ error: "invalid_grant" }, "invalid_grant"],
   ] as const) {
     const error = await failure(
       refreshSession(answer(jsonResponse(body, 400)), "x"),
@@ -137,6 +136,18 @@ test("a 400 that refuses the request itself keeps the session and is marked as s
     assert.equal(error.requestRefused, true);
     assert.equal(error.code, code);
   }
+});
+
+// The sign-in service of Autodarts no longer sends the flat form of Keycloak, as
+// test/e2e/fake/recorded.ts shows: a 400 in that form refuses the request, which
+// keeps the parked session, instead of ending it on an answer that nobody recorded.
+test("a 400 in the flat form of Keycloak keeps the session", async () => {
+  const error = await failure(
+    refreshSession(answer(jsonResponse({ error: "invalid_grant" }, 400)), "x"),
+  );
+  assert.equal(error.kind, "unreachable");
+  assert.equal(error.requestRefused, true);
+  assert.equal(error.code, "invalid_grant");
 });
 
 test("a 400 with a body that the extension doesn't know keeps the session as well", async () => {
@@ -212,13 +223,10 @@ test("revokeSession tells Autodarts to end the session", async () => {
 
 test("revokeSession counts a session that had ended already as over", async () => {
   for (const status of [400, 401]) {
-    for (const body of [
-      { error: "invalid_grant" },
-      { error: { status, code: "invalid_token" } },
-    ]) {
-      const fetcher = answer(jsonResponse(body, status));
-      assert.equal(await revokeSession(fetcher, "token"), true);
-    }
+    const fetcher = answer(
+      jsonResponse({ error: { status, code: "invalid_token" } }, status),
+    );
+    assert.equal(await revokeSession(fetcher, "token"), true);
   }
   assert.equal(await revokeSession(recorded(LOGOUT_UNKNOWN_TOKEN), "t"), true);
 });
@@ -229,6 +237,7 @@ test("revokeSession doesn't count another refusal as the end of the session", as
       jsonResponse({ error: "invalid_request" }, status),
       jsonResponse({ error: { status, code: "invalid_request" } }, status),
       jsonResponse({ error: "unauthorized_client" }, status),
+      jsonResponse({ error: "invalid_grant" }, status),
       jsonResponse(null, status),
       jsonResponse({}, status),
       new Response("Bad Request", { status }),

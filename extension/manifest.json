@@ -9,7 +9,7 @@
   "browser_specific_settings": {
     "gecko": {
       "id": "player-switch-for-autodarts@dennis-otto.github.io",
-      "strict_min_version": "140.0",
+      "strict_min_version": "153.0",
       "data_collection_permissions": {
         "required": [
           "authenticationInfo"

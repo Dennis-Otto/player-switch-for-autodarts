@@ -17,12 +17,13 @@ Copy [the template](0000-template.md) to the next free number and describe the d
 | [0009](0009-watch-autodarts-and-the-next-chrome-before-the-players-do.md) | Watch Autodarts and the next Chrome before the players do | accepted, extended by 0017 |
 | [0010](0010-sign-in-to-the-store-without-a-stored-secret.md) | Sign in to the Chrome Web Store with GitHub's OIDC token instead of a stored secret | accepted, the workflow replaced by 0014 |
 | [0011](0011-write-every-line-that-ships-in-typescript.md) | Write every line that ships in TypeScript, the service worker and the content script too | accepted |
-| [0012](0012-run-one-package-in-chrome-edge-and-firefox.md) | Run one package in Chrome, Edge and Firefox | accepted, the lint and the check by hand replaced by 0015 |
+| [0012](0012-run-one-package-in-chrome-edge-and-firefox.md) | Run one package in Chrome, Edge and Firefox | accepted, the lint and the check by hand replaced by 0015, the Firefox minimum raised by 0021 |
 | [0013](0013-send-the-store-the-zip-that-the-release-attests.md) | Send the store the zip that the release attests | accepted, the hook replaced by 0014 |
 | [0014](0014-take-the-chrome-extension-kind-of-the-blueprint.md) | Take the Chrome extension kind of the blueprint | accepted |
-| [0015](0015-lint-with-web-ext-and-test-in-a-real-firefox.md) | Lint with web-ext and test the add-on in a real Firefox | accepted |
+| [0015](0015-lint-with-web-ext-and-test-in-a-real-firefox.md) | Lint with web-ext and test the add-on in a real Firefox | accepted, the versions of its tests in 0021 |
 | [0016](0016-join-a-lobby-with-a-parked-session.md) | Join a lobby with a parked session, in the service worker | accepted |
 | [0017](0017-compare-the-texts-of-the-store-every-morning.md) | Compare the texts of the store with store/ every morning | accepted |
 | [0018](0018-let-a-player-protect-and-remove-their-own-account.md) | Let a player protect and remove their own account without the manager | accepted, extended by 0019 |
 | [0019](0019-let-a-player-pin-hold-by-itself.md) | Let a player's PIN hold by itself | accepted |
 | [0020](0020-run-in-no-incognito-or-private-window.md) | Run in no incognito or private window | accepted |
+| [0021](0021-test-the-oldest-and-the-next-browsers-every-morning.md) | Test the oldest browsers that the manifest allows, and the next Firefox, every morning | accepted |

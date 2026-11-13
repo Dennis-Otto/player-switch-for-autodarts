@@ -156,7 +156,7 @@ as `extension/lib/content.js`.
 
 ### In Firefox {#firefox}
 
-Firefox 140 and newer runs the same package ([decision 0012](decisions/0012-run-one-package-in-chrome-edge-and-firefox.md)),
+Firefox 153 and newer runs the same package ([decision 0012](decisions/0012-run-one-package-in-chrome-edge-and-firefox.md)),
 with one difference at the third boundary: Firefox has no
 `storage.local.setAccessLevel`, so it can't keep `chrome.storage.local` from the
 content script. `content.js` still reads nothing from it, and the service worker
@@ -293,7 +293,7 @@ stored data is ready for that:
 | Someone at the display guesses a PIN by hand | Five wrong PINs in a row lock every PIN for a minute, counted in the service worker, not in the popup |
 | A PIN is read out of the storage | The storage holds a salted PBKDF2 hash of 600,000 rounds, never the PIN, and only the service worker and the pages of the extension can read it, [in Firefox](#firefox) the content script as well |
 | A player leaves, and the next games count for their account | The venue mode returns the display to a house account, or signs it out, after a break without input, parking the session of the player; a match that runs counts as input and is never interrupted, and a lobby that waits for players stretches the break to three times its length |
-| An older browser installs the extension and then fails as it runs | The manifest asks for Chrome 140 or newer (`minimum_chrome_version`), the first version in which `chrome.storage.local.setAccessLevel` keeps the accounts from the content script, and Firefox 140 or newer (`strict_min_version`), the first that shows at the install the data that the add-on sends; `scripts/check-extension.mjs` fails on a lower one |
+| An older browser installs the extension and then fails as it runs | The manifest asks for Chrome 140 or newer (`minimum_chrome_version`), the first version in which `chrome.storage.local.setAccessLevel` keeps the accounts from the content script, and Firefox 153 or newer (`strict_min_version`), the oldest ESR that Mozilla supports, which shows at the install the data that the add-on sends; `scripts/check-extension.mjs` fails on a lower one, and the check *oldest-browsers* runs the tests in both minimums every morning, so a change that needs a newer browser shows before a release ([decision 0021](decisions/0021-test-the-oldest-and-the-next-browsers-every-morning.md)) |
 
 ## Residual risks
 

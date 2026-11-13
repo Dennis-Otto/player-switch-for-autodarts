@@ -161,7 +161,7 @@ why = """Firefox runs the same package as Chrome, but differently: the backgroun
 event page instead of a service worker, the pages from `moz-extension://<uuid>/`, and a
 storage that the content script can reach. The tests in Chromium can't show a break
 there, and neither can `web-ext lint`, which reads the package but runs nothing."""
-fix = """Run the tests on your machine with a Firefox 140 or newer: they find it where
+fix = """Run the tests on your machine with a Firefox 153 or newer: they find it where
 Firefox installs itself, or in `E2E_FIREFOX_PATH`. `E2E_HEADED=1` shows the window. A
 step that Firefox didn't get to names what the test waited for; a difference between
 the browsers belongs in the code, with a unit test for both, as
@@ -254,6 +254,61 @@ commands = [
 docs = "docs/development.md#what-autodarts-and-the-next-chrome-change"
 autofix = """A test that fails in the next Chrome needs a person who knows what the
 extension should do there; no command can make it pass."""
+
+[check."firefox-beta"]
+title = "The tests in Firefox Beta"
+problem = """The tests of `test/firefox/` failed in Firefox Beta, the next version of
+Firefox, which reaches the players in about four weeks: the summary of the check names
+the version, and its log names the test and the step that Firefox didn't get to. The
+same tests pass in the Firefox of the runner image in the job `firefox` of the workflow
+E2E, unless that one failed too. A step before the tests fails with `ECONNREFUSED` when
+Harden-Runner blocks a host of the job, such as Mozilla's archive for the download.
+When the step *Make sure that Harden-Runner blocks* stopped the job, Harden-Runner
+had no agent that blocks, mostly because an outage of GitHub kept it from downloading
+it: that is no problem of the change, and the check passes when it runs again."""
+why = """A version of Firefox that breaks the add-on reaches every Firefox by itself, and
+the runner image has it only after the players do. These four weeks are the time to
+fix the add-on, or to report the bug to Mozilla, before a player notices."""
+fix = """Run the tests in the same Beta on your machine and fix what the failing step
+shows; a difference between the browsers belongs in the code, with a unit test for
+both. A change of Firefox that is a bug of Firefox goes to https://bugzilla.mozilla.org
+with the smallest test that shows it:"""
+commands = [
+  "npm ci",
+  "E2E_FIREFOX_PATH=\"$(npx --no -- @puppeteer/browsers install firefox@beta --path \"${TMPDIR:-/tmp}/browsers\" --format '{{path}}')\" npm run e2e:firefox",
+]
+docs = "docs/development.md#what-autodarts-and-the-next-chrome-change"
+autofix = """A test that fails in the next Firefox needs a person who knows what the
+add-on should do there; no command can make it pass."""
+
+[check."oldest-browsers"]
+title = "The tests in the oldest browsers that the manifest allows"
+problem = """The end-to-end tests of `test/e2e/` failed in Chrome for Testing 140, or the
+tests of `test/firefox/` in Firefox 153 ESR: the oldest versions that
+`extension/manifest.json` allows, `minimum_chrome_version` and `strict_min_version`. The
+summary of the check names both versions, the log the browser and the test that failed,
+and the artifact `oldest-browsers-<attempt>` has the trace of a test in Chrome. The
+code now uses something that the oldest browser doesn't have, such as an interface of
+the DOM or of the extensions that came later: the TypeScript compiler builds with the
+types of the newest DOM and finds no such use.
+When the step *Make sure that Harden-Runner blocks* stopped the job, Harden-Runner
+had no agent that blocks, mostly because an outage of GitHub kept it from downloading
+it: that is no problem of the change, and the check passes when it runs again."""
+why = """A display in a kiosk, such as a Raspberry Pi or a thin client, often stays on
+an older Chromium or on Firefox ESR. The manifest lets such a browser install the
+extension, which then fails as it runs, with no word to the player."""
+fix = """Run the tests in the same versions on your machine, the ones that `OLDEST_CHROME`
+and `OLDEST_FIREFOX` of the job name, and either do without the newer interface or
+raise `minimum_chrome_version` or `strict_min_version`, the versions of the job with it
+(`test/oldest-browsers.test.ts` keeps the two equal), the help and the README:"""
+commands = [
+  "npm ci",
+  "E2E_CHROME_PATH=\"$(npx --no -- @puppeteer/browsers install chrome@140.0.7339.207 --path \"${TMPDIR:-/tmp}/browsers\" --format '{{path}}')\" npm run e2e",
+  "E2E_FIREFOX_PATH=\"$(npx --no -- @puppeteer/browsers install firefox@esr_153.0esr --path \"${TMPDIR:-/tmp}/browsers\" --format '{{path}}')\" npm run e2e:firefox",
+]
+docs = "docs/development.md#what-autodarts-and-the-next-chrome-change"
+autofix = """Whether the extension does without an interface or asks for a newer browser
+is a decision of a person; no command can make it."""
 
 [check."store-listing"]
 title = "The descriptions on the Chrome Web Store"
