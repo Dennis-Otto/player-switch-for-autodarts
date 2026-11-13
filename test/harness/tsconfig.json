@@ -1,0 +1,14 @@
+// The type check of the stand-in for Chrome, chrome-stub.js, which npm run typecheck
+// runs after that of tsconfig.json: the stub stays plain JavaScript, which Playwright
+// loads into each page as it is, and its JSDoc takes the types of the requests and of
+// the replies from src/messages.ts. A new kind of request, or a reply that the pages
+// read and the stub leaves out, is then an error of the type check, not a picture or
+// an accessibility walk of a state that the extension no longer shows.
+{
+  "extends": "../../tsconfig.json",
+  "compilerOptions": {
+    "allowJs": true,
+    "checkJs": true
+  },
+  "include": ["chrome-stub.js"]
+}
