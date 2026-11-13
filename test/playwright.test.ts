@@ -84,12 +84,12 @@ suite("Playwright", () => {
       /^image="mcr\.microsoft\.com\/playwright\/python:v(\d+\.\d+\.\d+)-[a-z]+@sha256:[0-9a-f]{64}"$/m,
     );
     const driver = find("test/harness/requirements.in", /^playwright==(\S+)$/m);
-    const locked = find(
+    const lockedDriver = find(
       "test/harness/requirements.txt",
       /^playwright==(\S+) \\$/m,
     );
     assert.deepEqual(
-      { image, driver, locked },
+      { image, driver, locked: lockedDriver },
       { image: playwright, driver: playwright, locked: playwright },
       `Move the image of scripts/screenshots.sh (v${playwright}-noble, with its digest) and playwright== in test/harness/requirements.in to ${playwright}, the version of @playwright/test, then compile requirements.txt again with the command in its header.`,
     );
