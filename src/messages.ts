@@ -110,6 +110,13 @@ export type WorkerRequest =
 /** What the service worker tells or asks the content script of an Autodarts tab. */
 export type PageRequest =
   | { readonly type: "page"; readonly action: "read" }
+  /**
+   * Reads the session to renew it: until the next "write", "clear" or "release", a page
+   * that loads starts without that token, which the renewal spends.
+   */
+  | { readonly type: "page"; readonly action: "take" }
+  /** The token of "take" wasn't renewed: a page that loads keeps it. */
+  | { readonly type: "page"; readonly action: "release" }
   | { readonly type: "page"; readonly action: "write"; readonly token: string }
   | { readonly type: "page"; readonly action: "clear" }
   | { readonly type: "page"; readonly action: "toggleSwitcher" }
@@ -120,7 +127,7 @@ export type PageRequest =
       readonly view: PageButtonView;
     };
 
-/** What the content script answers to "read": the session of the page, or null. */
+/** What the content script answers to "read" and "take": the session of the page, or null. */
 export interface TokenReply {
   readonly token: string | null;
 }

@@ -127,6 +127,7 @@ class FakeBrowser implements TabsPort {
     this.log.push(`${request.action} ${tabId}`);
     switch (request.action) {
       case "read":
+      case "take":
         return { token: this.token };
       case "write":
         this.token = request.token;
@@ -286,6 +287,19 @@ test("a preferred tab takes the request first, and the others reload after a wri
   await createPage(browser, 2).writeToken("new");
   assert.deepEqual(browser.log.slice(0, 2), ["read 2", "write 2"]);
   assert.ok(browser.log.includes("reload 1"));
+});
+
+test("the page takes the session to renew it, and gives it back, at the tab of a read", async () => {
+  const browser = new FakeBrowser("t").add(1).add(2, { active: true });
+  const page = createPage(browser, 1);
+  assert.equal(await page.takeToken(), "t");
+  await page.releaseToken();
+  // Neither changes the session, so no tab reloads.
+  assert.deepEqual(browser.log, ["take 1", "release 1"]);
+  await assert.rejects(
+    createPage(new FakeBrowser("t")).releaseToken(),
+    NoPageError,
+  );
 });
 
 test("a preferred tab that closed leaves the request to the tab in front", async () => {
@@ -690,9 +704,10 @@ test("with two windows, a switch happens on the tab in front and the other tab r
   // Both pages renewed Bob's session, one after the other, and his session still works.
   assert.equal(autodarts.reuses, 0);
   assert.equal(browser.token, autodarts.live.get("b"));
+  // The switch reads the page, then takes Ada's session to keep it, then writes Bob's.
   assert.deepEqual(browser.log, [
     "read 2",
-    "read 2",
+    "take 2",
     "write 2",
     "read 2",
     "read 2",
@@ -719,7 +734,7 @@ test("after an update, a switch with two tabs open reloads only the other tab an
   assert.deepEqual(browser.log.slice(0, 4), [
     "inject 2",
     "read 2",
-    "read 2",
+    "take 2",
     "write 2",
   ]);
   assert.ok(!browser.log.includes("reload 2"));

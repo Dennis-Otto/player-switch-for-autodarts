@@ -41,7 +41,7 @@ On a Raspberry Pi, the command is `chromium --kiosk https://play.autodarts.com`;
 
 - **Close every Chrome window first.** A Chrome that runs already opens a normal window and ignores `--kiosk`.
 - **The profile of the display:** with more than one Chrome profile on the computer, add `--profile-directory="Profile 1"` with the name of its folder, which `chrome://version` shows as the last part of the *Profile path*.
-- **No incognito, no guest:** never add `--incognito` or `--guest`. Chrome runs no extension in a guest window, and the saved accounts belong to the normal profile.
+- **No incognito, no guest:** never add `--incognito` or `--guest`. Chrome runs no extension in a guest window, Player Switch runs in no incognito window, and the saved accounts belong to the normal profile.
 
 ## 4. Start with the computer {#autostart}
 

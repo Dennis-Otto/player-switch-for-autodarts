@@ -24,3 +24,4 @@ Copy [the template](0000-template.md) to the next free number and describe the d
 | [0016](0016-join-a-lobby-with-a-parked-session.md) | Join a lobby with a parked session, in the service worker | accepted |
 | [0017](0017-compare-the-texts-of-the-store-every-morning.md) | Compare the texts of the store with store/ every morning | accepted |
 | [0018](0018-let-a-player-protect-and-remove-their-own-account.md) | Let a player protect and remove their own account without the manager | accepted |
+| [0019](0019-run-in-no-incognito-or-private-window.md) | Run in no incognito or private window | accepted |

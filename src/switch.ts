@@ -27,7 +27,8 @@
  * Removing an account ends its session at Autodarts before the extension forgets it,
  * so that no copy of its token, such as in a backup of the browser profile, keeps
  * working; "Forget all accounts" does so for every account and then deletes what else
- * the extension keeps.
+ * the extension keeps. The session in the page ends with them only when Autodarts
+ * names one of them as its owner, by the rule above.
  *
  * Joining a lobby seats a parked account at the board of the display with the session
  * that the extension keeps for it, while the page stays with the account that plays
@@ -76,6 +77,15 @@ export const ADD_WINDOW_MS = 10 * 60 * 1000;
 /** The session in the page, where the Autodarts app reads and writes it. */
 export interface PagePort {
   readToken(): Promise<string | null>;
+  /**
+   * Reads the session of the page to renew it. Until the next write, clear or
+   * release, a page that loads starts without that token, which the renewal spends:
+   * a page that a retry reloads, or that the person opens after a switch that lost
+   * its page halfway, can't send a spent token a second time.
+   */
+  takeToken(): Promise<string | null>;
+  /** The token of `takeToken` wasn't renewed after all: a page that loads keeps it. */
+  releaseToken(): Promise<void>;
   writeToken(token: string): Promise<void>;
   clearToken(): Promise<void>;
 }
@@ -322,7 +332,7 @@ export function edit(
 export function adoptCurrentSession(deps: Deps): Promise<State> {
   return deps.queue(async () => {
     const state = await deps.store.load();
-    const token = await deps.page.readToken();
+    const token = await deps.page.takeToken();
     if (token === null) {
       return commit(deps, deactivate(state));
     }
@@ -333,7 +343,8 @@ export function adoptCurrentSession(deps: Deps): Promise<State> {
 /**
  * Saves the account of a session in the page and lets it play on. Because reading who
  * it is rotates the token, the fresh token is written straight back. A session that
- * Autodarts turns away leaves the page; `identity` is then null.
+ * Autodarts turns away leaves the page; `identity` is then null. The caller took the
+ * token with `takeToken`; when Autodarts can't be reached, the page gets it back.
  */
 async function claim(
   deps: Deps,
@@ -353,6 +364,7 @@ async function claim(
       await deps.page.clearToken();
       return { state: await commit(deps, deactivate(loaded)), identity: null };
     }
+    await release(deps);
     throw error;
   }
   // The page's token is spent now: keep the fresh one before the page can fail.
@@ -405,7 +417,7 @@ export function adoptNewSignIn(
       return { kind: "waiting", state };
     }
     // A page that is still loading, or on the sign-in form, has no session yet.
-    const token = await deps.page.readToken().catch(() => null);
+    const token = await deps.page.takeToken().catch(() => null);
     if (token === null) {
       return { kind: "waiting", state };
     }
@@ -508,12 +520,13 @@ async function bringOn(deps: Deps, id: string): Promise<SwitchResult> {
  */
 async function keepOutgoing(deps: Deps, state: State): Promise<State | null> {
   const { activeId } = state;
-  const token = activeId === null ? null : await deps.page.readToken();
+  const token = activeId === null ? null : await deps.page.takeToken();
   if (activeId === null || token === null) {
     return state;
   }
   const renewal = await renewOutgoing(deps, token);
   if (renewal.kind === "unreachable") {
+    await release(deps);
     return null;
   }
   if (renewal.kind === "rejected") {
@@ -531,19 +544,29 @@ async function keepOutgoing(deps: Deps, state: State): Promise<State | null> {
 }
 
 /**
- * Renews the session of the page. A token that Autodarts refuses may be one that the
- * page renewed while it was on its way, so it counts as refused only when the page
- * still holds it or holds none.
+ * Renews the session of the page, whose token the caller took with `takeToken`. A
+ * token that Autodarts refuses may be one that the page renewed while it was on its
+ * way, so it counts as refused only when the page still holds it or holds none.
  */
 async function renewOutgoing(deps: Deps, token: string): Promise<Renewal> {
   const result = await attempt(refreshSession(deps.fetcher, token));
   if (result !== null) {
     return result;
   }
-  const current = await deps.page.readToken();
+  const current = await deps.page.takeToken();
   return current === null || current === token
     ? { kind: "rejected" }
     : renewOutgoing(deps, current);
+}
+
+/**
+ * Gives the page back the token that a renewal took and didn't spend, as when Autodarts
+ * couldn't be reached. A page that went away in the meantime fails nothing more: the
+ * renewal failed already, and the next page starts without that token, since nobody can
+ * say whether Autodarts spent it.
+ */
+async function release(deps: Deps): Promise<void> {
+  await deps.page.releaseToken().catch(() => undefined);
 }
 
 /**
@@ -709,6 +732,10 @@ export type Removal =
  * ends a match that runs there. Without a page that answers, it fails before anything
  * changes, so the service worker can open one and try again. The account is forgotten
  * also when Autodarts can't be reached: `ended` then says so.
+ *
+ * The session in the page ends only when Autodarts names the removed account as its
+ * owner: someone may have signed in as another account right in the page since, and
+ * that session stays there, fresh, and plays on (`pageSession`).
  */
 export function removeAccount(
   deps: Deps,
@@ -722,16 +749,22 @@ export function removeAccount(
       return { kind: "removed", state, ended: true };
     }
     const tokens = profile.token === null ? [] : [profile.token];
+    let page: PageSession = { kind: "none" };
     if (state.activeId === id) {
       if (!(await mayLeave())) {
         return { kind: "match", state };
       }
-      tokens.push(...(await leavePage(deps)));
+      page = await pageSession(deps, (owner) => owner === id);
     }
-    const ended = await revokeAll(deps, tokens);
+    const ended = await endSessions(deps, tokens, page);
+    const left = forget(state, id);
     return {
       kind: "removed",
-      state: await commit(deps, forget(state, id)),
+      // The account whose session stays in the page plays on, if it has a tile.
+      state: await commit(
+        deps,
+        page.kind === "theirs" ? activate(left, page.owner) : left,
+      ),
       ended,
     };
   });
@@ -742,7 +775,8 @@ export function removeAccount(
  * one at Autodarts, the one in the page too while an account of the extension plays
  * there, which signs the page out, and then runs `wipe`, which deletes what else the
  * extension keeps. A session in the page that no account keeps stays: it was never the
- * extension's. `mayLeave` and the outcome work as for `removeAccount`.
+ * extension's, also when someone signed in with it while an account of the extension
+ * seemed to play. `mayLeave` and the outcome work as for `removeAccount`.
  */
 export function forgetAll(
   deps: Deps,
@@ -754,13 +788,17 @@ export function forgetAll(
     const tokens = state.profiles.flatMap((profile) =>
       profile.token === null ? [] : [profile.token],
     );
+    let page: PageSession = { kind: "none" };
     if (state.activeId !== null) {
       if (!(await mayLeave())) {
         return { kind: "match", state };
       }
-      tokens.push(...(await leavePage(deps)));
+      page = await pageSession(
+        deps,
+        (owner) => find(state, owner) !== undefined,
+      );
     }
-    const ended = await revokeAll(deps, tokens);
+    const ended = await endSessions(deps, tokens, page);
     // The accounts go first, so that none is left over should the wipe fail.
     const cleared = await commit(deps, EMPTY);
     await wipe();
@@ -768,14 +806,67 @@ export function forgetAll(
   });
 }
 
-/** Signs the page out and gives the session it held, for the caller to end at Autodarts. */
-async function leavePage(deps: Deps): Promise<string[]> {
-  const live = await deps.page.readToken();
+/**
+ * The session of the page, as a removal finds it: one of the accounts that go ("ours",
+ * with its fresh token, for the removal to end), one of somebody else ("theirs"), none
+ * (or one that is over already), or one whose owner nobody could say, since Autodarts
+ * couldn't be reached.
+ */
+type PageSession =
+  | { kind: "ours"; token: string }
+  | { kind: "theirs"; owner: string }
+  | { kind: "none" }
+  | { kind: "unreachable" };
+
+/**
+ * Learns whose the session in the page is, as `keepOutgoing` does: by renewing it, the
+ * only way to ask Autodarts. A session that `ours` doesn't claim gets its fresh token
+ * written straight back, as at `claim`, and stays in the page. While Autodarts can't be
+ * reached, the page keeps its token and stays as it is.
+ */
+async function pageSession(
+  deps: Deps,
+  ours: (owner: string) => boolean,
+): Promise<PageSession> {
+  const live = await deps.page.takeToken();
   if (live === null) {
-    return [];
+    return { kind: "none" };
   }
+  const renewal = await renewOutgoing(deps, live);
+  if (renewal.kind === "unreachable") {
+    await release(deps);
+    return { kind: "unreachable" };
+  }
+  if (renewal.kind === "rejected") {
+    // Over already: Autodarts has nothing more to end, and the page finds out by itself.
+    return { kind: "none" };
+  }
+  const { id } = readIdentity(renewal.session.accessToken);
+  if (ours(id)) {
+    return { kind: "ours", token: renewal.session.refreshToken };
+  }
+  await deps.page.writeToken(renewal.session.refreshToken);
+  return { kind: "theirs", owner: id };
+}
+
+/**
+ * Ends the sessions of a removal at Autodarts, that of the page too when it is one of
+ * them, and only then signs the page out of it: should the page fail and the removal
+ * run again, its session is over already. True when every one is over; false too when
+ * nobody could say whose the session in the page is, which then lasts.
+ */
+async function endSessions(
+  deps: Deps,
+  tokens: string[],
+  page: PageSession,
+): Promise<boolean> {
+  if (page.kind !== "ours") {
+    const ended = await revokeAll(deps, tokens);
+    return ended && page.kind !== "unreachable";
+  }
+  const ended = await revokeAll(deps, [...tokens, page.token]);
   await deps.page.clearToken();
-  return [live];
+  return ended;
 }
 
 /**

@@ -118,6 +118,34 @@ test("Remove account ends the session at Autodarts and forgets the account", asy
   await expectPlayer(page, CAROL);
 });
 
+test("Remove account of the one who seems to play leaves the session of another player in the page", async ({
+  autodarts,
+  display,
+}) => {
+  const page = await display.openAutodarts();
+  const popup = await display.saveAccounts(page, [ALICE, BOB]);
+  // Bob's tile plays. In the page itself, someone signs out and Carol signs in.
+  await page.evaluate(
+    (key) => window.localStorage.removeItem(key),
+    SESSION_KEY,
+  );
+  await page.reload();
+  await display.signIn(page, CAROL);
+
+  await popup.reopen();
+  await popup.manage();
+  await popup.tile(BOB).locator(".remove").click();
+  const dialog = popup.page.locator("dialog.confirm[open]");
+  await dialog.getByRole("button", { name: display.t("remove") }).click();
+  await popup.ready();
+  await popup.expectStatus(display.t("removed", BOB.name));
+  await popup.expectAccounts([ALICE], null);
+  // Carol plays on, signed in as before, and her session goes on at Autodarts.
+  await expectPlayer(page, CAROL);
+  expect(autodarts.count("logout", CAROL)).toBe(0);
+  expect(autodarts.sessionsOf(CAROL)).toBe(1);
+});
+
 test("Remove account of the player on the page asks during a match, then signs the page out", async ({
   autodarts,
   display,

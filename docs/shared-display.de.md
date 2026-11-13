@@ -41,7 +41,7 @@ Auf einem Raspberry Pi heißt der Befehl `chromium --kiosk https://play.autodart
 
 - **Schließe vorher jedes Chrome-Fenster.** Ein Chrome, das schon läuft, öffnet ein normales Fenster und übergeht `--kiosk`.
 - **Das Profil des Displays:** Gibt es auf dem Computer mehr als ein Chrome-Profil, ergänze `--profile-directory="Profile 1"` mit dem Namen seines Ordners, den `chrome://version` als letzten Teil des *Profilpfads* zeigt.
-- **Kein Inkognito, kein Gast:** Ergänze nie `--incognito` oder `--guest`. Chrome führt in einem Gastfenster keine Erweiterung aus, und die gespeicherten Konten gehören zum normalen Profil.
+- **Kein Inkognito, kein Gast:** Ergänze nie `--incognito` oder `--guest`. Chrome führt in einem Gastfenster keine Erweiterung aus, Player Switch läuft in keinem Inkognitofenster, und die gespeicherten Konten gehören zum normalen Profil.
 
 ## 4. Mit dem Computer starten {#autostart}
 

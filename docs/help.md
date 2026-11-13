@@ -194,7 +194,7 @@ The popup says the same, at once and while nobody has to sign in yet, when Autod
 
 > Remove Bob from this display? Their session at Autodarts ends as well. Sign in again to add the account back.
 
-**What it means:** **Remove account** under **Manage accounts** asks this before it deletes the account from the extension, with its saved session and a remembered password. First it signs the account out at Autodarts, so that no copy of the session, such as in a backup of the computer, works any more. When the player plays on the page right now, the page signs out as well; during a match, the extension asks first.
+**What it means:** **Remove account** under **Manage accounts** asks this before it deletes the account from the extension, with its saved session and a remembered password. First it signs the account out at Autodarts, so that no copy of the session, such as in a backup of the computer, works any more. When the player plays on the page right now, the page signs out as well; during a match, the extension asks first. Before that, Autodarts says whose the session in the page is: when someone else signed in right on the page meanwhile, that player stays signed in and plays on.
 
 **What to do:** confirm to remove it. The popup then says "Bob is removed and signed out at Autodarts."
 
@@ -370,7 +370,7 @@ Each browser profile on each computer keeps accounts of its own, and nothing is 
 
 ### Which browsers does it work in?
 
-It is made for Google Chrome 140 or newer, on Windows, macOS, Linux and ChromeOS, and installs from [the Chrome Web Store](https://chromewebstore.google.com/detail/player-switch-for-autodar/gbijblgchbbbkjeibpjaodflfgbgefam), which brings every update on its own. Browsers built on Chromium install it from there as well, such as Chromium on a Raspberry Pi, Brave, Opera or Vivaldi, and Microsoft Edge once **Allow extensions from other stores** under `edge://extensions` is on. Firefox 140 or newer runs it too, loaded from a release as a temporary add-on, since it isn't listed on addons.mozilla.org: [which browsers](index.md#browsers) says how. Use a normal window of a browser profile: Chrome runs no extension in a guest window, and one in an incognito window only when you allow it.
+It is made for Google Chrome 140 or newer, on Windows, macOS, Linux and ChromeOS, and installs from [the Chrome Web Store](https://chromewebstore.google.com/detail/player-switch-for-autodar/gbijblgchbbbkjeibpjaodflfgbgefam), which brings every update on its own. Browsers built on Chromium install it from there as well, such as Chromium on a Raspberry Pi, Brave, Opera or Vivaldi, and Microsoft Edge once **Allow extensions from other stores** under `edge://extensions` is on. Firefox 140 or newer runs it too, loaded from a release as a temporary add-on, since it isn't listed on addons.mozilla.org: [which browsers](index.md#browsers) says how. Use a normal window of a browser profile: Chrome runs no extension in a guest window, and Player Switch doesn't run in incognito or private windows, not even when you allow extensions there. Such a window keeps an Autodarts session of its own, apart from that of the normal windows, so a switch there would park the wrong session; open Autodarts in a normal window instead.
 
 ### Which version runs? {#which-version}
 
