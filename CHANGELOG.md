@@ -6,6 +6,26 @@ the next release, or lists the pull requests when there is none.
 
 ## Unreleased
 
+## [1.7.0](https://github.com/Dennis-Otto/player-switch-for-autodarts/compare/v1.6.0...v1.7.0) (2026-11-13)
+
+
+### Features
+
+* Copy diagnostics for a bug report, and a filter and an order of the tiles for many players ([#268](https://github.com/Dennis-Otto/player-switch-for-autodarts/issues/268)) ([1f70c82](https://github.com/Dennis-Otto/player-switch-for-autodarts/commit/1f70c82711de8f20e80dad5bae0a42609fe5df45))
+* remind to share the board each time an account is saved ([#267](https://github.com/Dennis-Otto/player-switch-for-autodarts/issues/267)) ([d237927](https://github.com/Dennis-Otto/player-switch-for-autodarts/commit/d2379271b1edc98c48649397114405ff7c535fbe))
+* **venue:** let a player protect and remove their own account without the manager ([#261](https://github.com/Dennis-Otto/player-switch-for-autodarts/issues/261)) ([f715a72](https://github.com/Dennis-Otto/player-switch-for-autodarts/commit/f715a7221ba3506e996f78ad0aca53ae1bb55288))
+
+
+### Bug fixes
+
+* a refused sign-in request keeps the parked sessions, and only a dead session ends one ([#254](https://github.com/Dennis-Otto/player-switch-for-autodarts/issues/254)) ([a38a5a4](https://github.com/Dennis-Otto/player-switch-for-autodarts/commit/a38a5a450bc7464d1b6951e29d4cb63287eff0c4))
+* a retry never sends a spent token, and a removal ends only its own session ([#262](https://github.com/Dennis-Otto/player-switch-for-autodarts/issues/262)) ([ee02974](https://github.com/Dennis-Otto/player-switch-for-autodarts/commit/ee02974a02e628679191b8f3d13e046009786e90))
+* keep a session on a refusal that Autodarts doesn't send, and test the oldest and the next browsers ([#266](https://github.com/Dennis-Otto/player-switch-for-autodarts/issues/266)) ([a38c17b](https://github.com/Dennis-Otto/player-switch-for-autodarts/commit/a38c17be91836f723f59079d768c95102204c711))
+* Remember password checks the sign-in, and a sign-in of another account no longer lands under the tile ([#250](https://github.com/Dennis-Otto/player-switch-for-autodarts/issues/250)) ([10552a5](https://github.com/Dennis-Otto/player-switch-for-autodarts/commit/10552a5909eb3e9138288d8938b674a5c9a7ba03))
+* **switch:** a remembered password keeps an account ready after a sign-out on the page ([#252](https://github.com/Dennis-Otto/player-switch-for-autodarts/issues/252)) ([47809db](https://github.com/Dennis-Otto/player-switch-for-autodarts/commit/47809db4bf8d9377096d5463a396fe360158d77f))
+* **venue:** a lobby that waits for players holds the display past the break ([#249](https://github.com/Dennis-Otto/player-switch-for-autodarts/issues/249)) ([8646a5c](https://github.com/Dennis-Otto/player-switch-for-autodarts/commit/8646a5cd7b58c0055591c055b75d71398b923d16))
+* **venue:** a player's PIN holds by itself, and Save account asks during a match ([#263](https://github.com/Dennis-Otto/player-switch-for-autodarts/issues/263)) ([e595479](https://github.com/Dennis-Otto/player-switch-for-autodarts/commit/e5954799d5506006007fb2f0c5c7735ce474005e))
+
 ## [1.6.0](https://github.com/Dennis-Otto/player-switch-for-autodarts/compare/v1.5.2...v1.6.0) (2026-11-09)
 
 ### Features
