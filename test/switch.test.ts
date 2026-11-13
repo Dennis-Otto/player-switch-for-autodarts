@@ -292,14 +292,17 @@ test("signOutForNewAccount keeps the session when the page can't let go", async 
 test("adoptCurrentSession claims the session in the page and keeps it signed in", async () => {
   const store = new FakeStore(EMPTY);
   const page = new FakePage("in-page");
-  const { state, ok } = await adoptCurrentSession(
+  const result = await adoptCurrentSession(
     deps(
       store,
       page,
       router({ refresh: () => Promise.resolve(sessionResponse("a", "fresh")) }),
     ),
   );
-  assert.equal(ok, true);
+  assert.equal(result.ok, true);
+  const { state } = result;
+  // It names the account it saved, for the status line.
+  assert.equal(result.ok && result.identity?.username, "a");
   assert.equal(state.activeId, "a");
   assert.equal(page.token, "fresh");
   assert.equal(find(state, "a")?.token, null);
@@ -307,18 +310,23 @@ test("adoptCurrentSession claims the session in the page and keeps it signed in"
 
 test("adoptCurrentSession does nothing without a session in the page", async () => {
   const store = new FakeStore(setActive(EMPTY, ada));
-  const { state } = await adoptCurrentSession(
+  const result = await adoptCurrentSession(
     deps(store, new FakePage(null), router()),
   );
+  assert.deepEqual([result.ok, result.ok && result.identity], [true, null]);
+  const { state } = result;
   assert.equal(state.activeId, null);
   assert.equal(store.saves, 1);
 });
 
 test("adoptCurrentSession drops a dead session", async () => {
   const page = new FakePage("dead");
-  const { state } = await adoptCurrentSession(
+  const result = await adoptCurrentSession(
     deps(new FakeStore(EMPTY), page, router({ refresh: rejected })),
   );
+  // Nothing was saved, so the status line names no account.
+  assert.deepEqual([result.ok, result.ok && result.identity], [true, null]);
+  const { state } = result;
   assert.equal(state.activeId, null);
   assert.equal(page.clears, 1);
 });

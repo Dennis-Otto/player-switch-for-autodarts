@@ -43,6 +43,14 @@ test("Save account keeps a session that was signed in on the page", async ({
   await popup.expectAccounts([ALICE], ALICE);
   await expect(popup.page.locator("#unsaved")).toBeHidden();
   await expectPlayer(page, ALICE);
+  // The line names the username to share the board with, and links to the help.
+  const status = popup.page.getByRole("status");
+  await expect(status).toContainText(
+    display.t("savedAccount", ALICE.name, ALICE.username),
+  );
+  await expect(
+    status.getByRole("link", { name: display.t("savedAccountHelp") }),
+  ).toHaveAttribute("href", `${display.t("helpUrl")}#board-not-shared`);
 });
 
 test("Save account during a match asks first, as it reloads the page, and spends no token on a no", async ({

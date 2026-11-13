@@ -17,14 +17,27 @@ import type {
   PlayerView,
 } from "./messages.ts";
 
-/** The texts of the extension, as `chrome.i18n.getMessage` gives them. */
-export type Translate = (key: string, substitution?: string) => string;
+/**
+ * The texts of the extension, as `chrome.i18n.getMessage` gives them: a placeholder such
+ * as $NAME$ takes the substitution, or the one of its place in a list.
+ */
+export type Translate = (
+  key: string,
+  substitution?: string | readonly string[],
+) => string;
 
-/** What the status line says: an error in the region that is read out at once. */
+/**
+ * What the status line says: an error in the region that is read out at once. `help`
+ * is a link after the text: the entry of the help that it leads to, and its words.
+ */
 export interface Status {
   text: string;
   error: boolean;
+  help?: { anchor: string; label: string };
 }
+
+/** The entry of the help for a player who sees no board, which `savedAccount` links to. */
+export const BOARD_HELP = "board-not-shared";
 
 /**
  * What to say when a request failed: `signInHint` when the account has to sign in again.
@@ -138,9 +151,15 @@ export function statusAfter(
       error: true,
     };
   }
-  if (typeof reply.saved === "string") {
-    // A new account signed in before the page could tell; it was saved just now.
-    return { text: t("savedAccount", reply.saved), error: false };
+  if (reply.saved !== undefined) {
+    // An account was saved just now. Autodarts shows it a board of someone else only
+    // once the owner shares it with its exact username, which nothing here can check:
+    // the line says so each time, with the entry of the help.
+    return {
+      text: t("savedAccount", [reply.saved.name, reply.saved.username]),
+      error: false,
+      help: { anchor: BOARD_HELP, label: t("savedAccountHelp") },
+    };
   }
   if (typeof reply.ended === "boolean") {
     return { text: removalText(about, reply.ended, t), error: !reply.ended };

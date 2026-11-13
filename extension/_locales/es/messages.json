@@ -69,12 +69,18 @@
     "message": "Inicia sesión en Autodarts con el nuevo jugador. La cuenta se guarda sola."
   },
   "savedAccount": {
-    "message": "La cuenta de $NAME$ está guardada. Un toque en una tarjeta cambia de jugador.",
+    "message": "La cuenta de $NAME$ está guardada. Autodarts le muestra la diana de otra persona en cuanto su propietario la comparte con $USERNAME$.",
     "placeholders": {
       "name": {
         "content": "$1"
+      },
+      "username": {
+        "content": "$2"
       }
     }
+  },
+  "savedAccountHelp": {
+    "message": "¿No aparece la diana?"
   },
   "unsavedText": {
     "message": "Alguien tiene la sesión iniciada en Autodarts y aún no está guardado aquí."

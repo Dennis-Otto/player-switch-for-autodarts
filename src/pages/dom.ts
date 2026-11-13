@@ -7,8 +7,14 @@
  */
 
 /** A text of the extension in its language, as `_locales/` has it. */
-export const t = (key: string, substitution?: string): string =>
-  chrome.i18n.getMessage(key, substitution);
+export const t = (
+  key: string,
+  substitution?: string | readonly string[],
+): string =>
+  chrome.i18n.getMessage(
+    key,
+    typeof substitution === "string" ? substitution : substitution?.slice(),
+  );
 
 /**
  * The element of the page that a selector names; fails when the HTML lacks it, which

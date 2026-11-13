@@ -325,12 +325,13 @@ export function edit(
 }
 
 /**
- * How "Save this account" ended: done, or Autodarts couldn't be reached to read who the
- * session in the page is, which leaves the session in the page and the accounts as they
- * were.
+ * How "Save this account" ended: done, with the account that was saved, or none when
+ * the page held no session that Autodarts took, or Autodarts couldn't be reached to read
+ * who the session in the page is, which leaves the session in the page and the accounts
+ * as they were.
  */
 export type AdoptResult =
-  | { state: State; ok: true; reason?: undefined }
+  | { state: State; ok: true; identity: Identity | null; reason?: undefined }
   | { state: State; ok: false; reason: "unreachable" };
 
 /**
@@ -343,10 +344,14 @@ export function adoptCurrentSession(deps: Deps): Promise<AdoptResult> {
     const state = await deps.store.load();
     const token = await deps.page.takeToken();
     if (token === null) {
-      return { state: await commit(deps, deactivate(state)), ok: true };
+      return {
+        state: await commit(deps, deactivate(state)),
+        ok: true,
+        identity: null,
+      };
     }
     try {
-      return { state: (await claim(deps, state, token)).state, ok: true };
+      return { ...(await claim(deps, state, token)), ok: true };
     } catch (error) {
       // Autodarts can't be reached: it took no token, so the page keeps its session.
       if ((error as AuthError).kind === "unreachable") {

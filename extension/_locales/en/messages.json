@@ -60,8 +60,16 @@
     "message": "Sign in on Autodarts with the new player. The account is saved by itself."
   },
   "savedAccount": {
-    "message": "$NAME$ is saved. A tap on a tile switches players.",
-    "placeholders": { "name": { "content": "$1" } }
+    "message": "$NAME$ is saved. Autodarts shows them a board of someone else once its owner shares it with $USERNAME$.",
+    "description": "Shows each time an account was saved. Autodarts shows a board only to its owner and to the accounts that the owner shares it with, by the exact username, which $USERNAME$ is; the extension can't tell whether that happened. The link savedAccountHelp follows it.",
+    "placeholders": {
+      "name": { "content": "$1" },
+      "username": { "content": "$2" }
+    }
+  },
+  "savedAccountHelp": {
+    "message": "Board missing?",
+    "description": "The link after savedAccount to the entry of the help that explains what a player who sees no board after a switch does."
   },
   "unsavedText": {
     "message": "Someone is signed in on Autodarts who isn't saved here yet."

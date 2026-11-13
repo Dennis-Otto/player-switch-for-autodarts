@@ -16,6 +16,7 @@ const read = (path) =>
 // something ends: each has an entry in the help.
 const explained = [
   "needsSignIn",
+  "savedAccount",
   "badgeTitle",
   "badgeUnsaved",
   "renewed",
@@ -68,7 +69,7 @@ const plain = [
   "updateHintLink",
   "addAccount",
   "addingText",
-  "savedAccount",
+  "savedAccountHelp",
   "removed",
   "protectOwn",
   "protectedOwn",

@@ -19,7 +19,7 @@ Install the extension from [the Chrome Web Store](https://chromewebstore.google.
 
 Each player signs in once: choose **Add account**, and the next sign-in on Autodarts is saved by itself. Save every player before you turn on kiosk mode, while the keyboard and the toolbar are at hand; **Add account** in the players on the Autodarts page works in kiosk mode too.
 
-Then share the board with every saved account. Autodarts shows a board only to the account that owns it and to the accounts that its owner shares it with, so a player whom it isn't shared with sees no board after a switch. The owner signs in on Autodarts, opens **My Boards** and adds each player by their exact username, up to 10 accounts besides their own. In a club or a pub, an Autodarts account of the venue owns the board best, so that the board stays when a member leaves: [After a switch, the board is missing](help.md#board-not-shared) says more.
+Then share the board with every saved account. Autodarts shows a board only to the account that owns it and to the accounts that its owner shares it with, so a player whom it isn't shared with sees no board after a switch. The owner signs in on Autodarts, opens **My Boards** and adds each player by their exact username, up to 10 accounts besides their own. In a club or a pub, an Autodarts account of the venue owns the board best, so that the board stays when a member leaves: [After a switch, the board is missing](help.md#board-not-shared) says more. The message after each saved account names the username to share the board with.
 
 ## 2. Choose how players switch {#how-players-switch}
 

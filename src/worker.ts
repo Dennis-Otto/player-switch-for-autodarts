@@ -36,6 +36,7 @@
  * the account (decision 0018). It returns the display to the house account
  * after a break that the content script measures, never during a match.
  */
+import type { Identity } from "./autodarts.ts";
 import {
   badge,
   nextRunAt,
@@ -351,6 +352,11 @@ function removed(removal: Removal): Outcome {
   return removal.kind === "match"
     ? { ok: false, reason: "match" }
     : { ok: true, ended: removal.ended };
+}
+
+/** What the status line names of an account that was saved just now. */
+function savedOf(identity: Identity): { name: string; username: string } {
+  return { name: identity.name, username: identity.username };
 }
 
 /**
@@ -708,7 +714,7 @@ export function startWorker(api: ChromeApi, platform: Platform): StartedWorker {
           return { ok: true, page: false };
         }
         return picked?.kind === "saved"
-          ? { ok: true, page: true, saved: picked.identity.name }
+          ? { ok: true, page: true, saved: savedOf(picked.identity) }
           : { ok: true, page: true };
       }
       case "switch": {
@@ -774,9 +780,13 @@ export function startWorker(api: ChromeApi, platform: Platform): StartedWorker {
           return { ok: false, reason: "match" };
         }
         const result = await adoptCurrentSession(deps);
-        return result.ok
+        if (!result.ok) {
+          return { ok: false, reason: result.reason, page: true };
+        }
+        // The status line names the account, as after a sign-in that was saved by itself.
+        return result.identity === null
           ? { ok: true, page: true }
-          : { ok: false, reason: result.reason, page: true };
+          : { ok: true, page: true, saved: savedOf(result.identity) };
       }
       case "signout": {
         if (await mustAskFirst(tab, message)) {
