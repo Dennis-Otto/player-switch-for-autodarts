@@ -84,20 +84,23 @@ export function removalText(
 }
 
 /**
- * The question before a request ends the match that runs in the page: a switch, or a
- * removal that signs the player out there.
+ * The question before a request ends the match that runs in the page: a switch, a
+ * removal that signs the player out there, or "Save account", which reloads the page.
  */
 export function matchQuestion(
   action: string,
   t: Translate,
 ): { title: string; text: string; confirm: string; cancel: string } {
-  const signsOut = action === "removeAccount" || action === "forgetAll";
-  return {
-    title: t("matchTitle"),
-    text: signsOut ? t("matchSignOutText") : t("matchText"),
-    confirm: signsOut ? t("matchSignOutConfirm") : t("matchConfirm"),
-    cancel: t("matchCancel"),
-  };
+  let text = t("matchText");
+  let confirm = t("matchConfirm");
+  if (action === "removeAccount" || action === "forgetAll") {
+    text = t("matchSignOutText");
+    confirm = t("matchSignOutConfirm");
+  } else if (action === "adopt") {
+    text = t("matchSaveText");
+    confirm = t("matchSaveConfirm");
+  }
+  return { title: t("matchTitle"), text, confirm, cancel: t("matchCancel") };
 }
 
 /** Whether "Forget all accounts" shows: in "Manage accounts", while an account is saved. */
@@ -218,7 +221,8 @@ export function answered(message: Ask, question: Question, pin = ""): Ask {
 
 /**
  * The texts of the question for a PIN: of the account `name`, or the manager PIN. The
- * PIN of an account before a removal (`action`) says that it removes the account.
+ * PIN of an account before a removal (`action`) says that it removes the account, and
+ * before a new PIN of the account, that it changes the PIN that the account has.
  */
 export function pinQuestion(
   question: { manager: boolean; wrong: boolean },
@@ -231,6 +235,8 @@ export function pinQuestion(
     text = t("managerPinText");
   } else if (action === "removeAccount") {
     text = t("removeOwnPinText");
+  } else if (action === "protect") {
+    text = t("changePinText");
   }
   return {
     title: question.manager ? t("managerPinTitle") : t("pinTitle", name),

@@ -1,6 +1,6 @@
 # Let a player protect and remove their own account without the manager
 
-- Status: accepted
+- Status: accepted, extended by [0019](0019-let-a-player-pin-hold-by-itself.md), with which a PIN that an account has changes only with itself, unless the manager PIN set it
 - Date: 2026-11-12
 
 ## Context

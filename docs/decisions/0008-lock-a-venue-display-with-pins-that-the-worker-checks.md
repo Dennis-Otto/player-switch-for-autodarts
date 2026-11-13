@@ -1,6 +1,6 @@
 # Lock a venue display with PINs that the service worker checks
 
-- Status: accepted, extended by [0018](0018-let-a-player-protect-and-remove-their-own-account.md), with which a player protects and removes their own account without the manager
+- Status: accepted, extended by [0018](0018-let-a-player-protect-and-remove-their-own-account.md), with which a player protects and removes their own account without the manager, and by [0019](0019-let-a-player-pin-hold-by-itself.md), with which a player's PIN changes only with itself, unless the manager PIN set it
 - Date: 2026-10-25
 
 ## Context

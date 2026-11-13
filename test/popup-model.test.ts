@@ -258,6 +258,11 @@ test("the question for a PIN names the account, or asks for the manager PIN, and
     pinQuestion({ manager: false, wrong: false }, "Ada", t, "switch").text,
     "pinText",
   );
+  // A new PIN for an account that has one asks for the PIN that it has.
+  assert.equal(
+    pinQuestion({ manager: false, wrong: false }, "Ada", t, "protect").text,
+    "changePinText",
+  );
 });
 
 test("at a display with a manager PIN, the player who plays protects their account, or removes it once it has a PIN", () => {
@@ -446,7 +451,7 @@ test("a removal says whether Autodarts ended the sessions, and an outage as an e
   });
 });
 
-test("the match question of a removal says that the player signs out", () => {
+test("the match question of a removal says that the player signs out, and of a save that the page reloads", () => {
   assert.deepEqual(matchQuestion("switch", t), {
     title: "matchTitle",
     text: "matchText",
@@ -461,6 +466,12 @@ test("the match question of a removal says that the player signs out", () => {
       cancel: "matchCancel",
     });
   }
+  assert.deepEqual(matchQuestion("adopt", t), {
+    title: "matchTitle",
+    text: "matchSaveText",
+    confirm: "matchSaveConfirm",
+    cancel: "matchCancel",
+  });
 });
 
 test("Forget all accounts shows in Manage accounts while an account is saved", () => {

@@ -120,10 +120,17 @@ test("a PIN given to an account on the page makes the popup ask for it before it
   await popup.ready();
   await expectPlayer(page, ALICE);
 
-  // Without its PIN, the account switches with a tap again.
+  // The PIN goes only with itself, also without a manager PIN (decision 0019): a wrong
+  // one keeps it, the right one takes it away, and the account switches with a tap again.
   await row
     .getByRole("button", { name: `${display.t("removePin")}: ${ALICE.name}` })
     .click();
+  const title = display.t("pinTitle", ALICE.name);
+  await expect(options.pinDialog().locator("p").first()).toHaveText(
+    display.t("changePinText"),
+  );
+  await options.enterPin(title, "0000");
+  await options.enterPin(title, "4711", display.t("pinWrong"));
   await expect(row.locator(".username")).toHaveText(
     `${ALICE.username} · ${display.t("noPin")}`,
   );

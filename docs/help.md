@@ -106,6 +106,14 @@ Removing the player who plays, or **Forget all accounts**, signs the page out, a
 
 **Keep playing** changes nothing here as well; **Sign out anyway** goes on, and the match ends on this display.
 
+**Save account** writes the session back into the page, which reloads it, and asks the same first:
+
+> A match is running
+>
+> Saving the account reloads the page and ends it on this display.
+
+**Keep playing** saves nothing; **Save anyway** saves the account, and the match ends on this display.
+
 ### Join the lobby {#join-lobby}
 
 While the Autodarts tab shows a lobby, the page at `play.autodarts.com/lobby/` and the id of the lobby, the tile of each parked player offers **Join the lobby**, in the popup and in the players on the page. A tap seats that player in the lobby, and the tile then says:
@@ -236,7 +244,7 @@ Under **Settings**, a shortcut says:
 
 **What it means:** the [venue mode](shared-display.md#venue-mode) is on at this display, and the account got a PIN, from the manager on the options page or from its player with [**Protect with a PIN**](shared-display.md#own-account). The extension asks for it before a switch to that account, in the popup and on the Autodarts page alike.
 
-**What to do:** type the PIN on the number pad, or with the keyboard, and choose **OK**. **Cancel** changes nothing. A forgotten PIN can't be read anywhere: the manager removes it, or sets a new one, under **Settings** → **For a club or pub** → **PINs of the players**.
+**What to do:** type the PIN on the number pad, or with the keyboard, and choose **OK**. **Cancel** changes nothing. A forgotten PIN can't be read anywhere: the manager removes it, or sets a new one, under **Settings** → **For a club or pub** → **PINs of the players**, when the manager PIN set it. A PIN that the player set without a manager PIN changes only with itself: the account is then removed under **Manage accounts** and added again ([who changes a player's PIN](shared-display.md#change-a-pin)).
 
 ### Remove my account {#remove-own}
 
@@ -247,6 +255,16 @@ Under **Settings**, a shortcut says:
 **What it means:** at a display with a manager PIN, the player of an account with a PIN chose **Remove my account** below its tile and said yes. The PIN of the account removes it without the manager: the extension signs it out at Autodarts and forgets it, with its PIN, [as the guide shows](shared-display.md#own-account).
 
 **What to do:** type the PIN of the account and choose **OK**. **Cancel** keeps the account. A forgotten PIN can't be read anywhere: the manager removes the account under **Manage accounts**.
+
+### Change a player's PIN {#change-pin}
+
+> PIN of Bob
+>
+> Enter the PIN that this account has now to change or remove it.
+
+**What it means:** someone chose a new PIN for an account that has one, or **Remove PIN**, under **PINs of the players**. A player's PIN changes or goes only with itself, also without a manager PIN, unless the manager PIN set it, as [the guide explains](shared-display.md#change-a-pin).
+
+**What to do:** type the PIN that the account has now and choose **OK**; the new PIN, or none, applies then. **Cancel** keeps the PIN as it is. A wrong PIN counts towards the five that lock every PIN for a minute. A forgotten PIN can't be read anywhere: the account is removed under **Manage accounts** and added again.
 
 ### Wrong PIN {#wrong-pin}
 

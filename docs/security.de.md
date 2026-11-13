@@ -219,6 +219,16 @@ kann.
   keine PIN und wird so auch nicht entfernt. Was bleibt: Wer unter dem Konto eines
   Gastes spielt, das noch keine PIN hat, kann ihm eine geben und es mit dieser PIN
   entfernen und bei Autodarts abmelden.
+- **Die PIN eines Spielers ändert sich nur mit ihr selbst**
+  ([Entscheidung 0019](decisions/0019-let-a-player-pin-hold-by-itself.md), auf Englisch).
+  Sobald ein Konto eine PIN hat, ändert oder löscht der Service Worker sie nur mit
+  dieser PIN, auf der Seite der Einstellungen wie im Popup, auch ohne Manager-PIN, und
+  eine falsche zählt zu den falschen PINs. Die Manager-PIN ersetzt nur die PINs, die
+  gesetzt wurden, während sie das Display schützte, was die Einstellungen des Modus
+  festhalten (`managed`); eine erste Manager-PIN, die an einem Display ohne eine jeder
+  setzen darf, und eine, die nach ihrem Entfernen neu gesetzt wird, beginnen mit
+  keiner. So öffnet an einem Display zu Hause niemand das Konto eines Spielers, indem
+  er zuerst eine Manager-PIN setzt.
 - **Fünf falsche PINs in Folge sperren jede PIN für eine Minute.** Alle PINs des
   Displays teilen sich eine Zahl, und eine richtige PIN setzt sie nicht zurück: Die
   Folge endet erst, wenn eine Minute ohne falsche PIN vergeht. So kann ein Gast die
@@ -297,7 +307,7 @@ die gespeicherten Daten sind darauf vorbereitet:
 | Jemand, der an die Anmeldung beim Chrome Web Store gekommen ist, veröffentlicht ein eigenes Update für alle Nutzer | Die Jobs des Workflows, der ein Release ausliefert, erreichen nur die Hosts, die sie brauchen, und führen neben der Anmeldung kein npm-Paket aus. Sobald die Anmeldung ohne Geheimnis eingerichtet ist, melden sie sich ohne gespeichertes Geheimnis an: Google tauscht das OIDC-Token von GitHub gegen ein Zugriffstoken für 20 Minuten, und nur für einen Lauf von `publish-store.yml` auf `main` dieses Repositorys, sodass kein Geheimnis zum Stehlen bleibt ([Entscheidung 0010](decisions/0010-sign-in-to-the-store-without-a-stored-secret.md)). Google prüft jede Version, bevor sie die Nutzer erreicht |
 | Ein kompromittiertes Paket oder ein kompromittierter Runner ändert, was in den Store kommt, irgendwo zwischen dem Tag und dem Upload | Der Store bekommt nur das Zip des Releases, das der Build des Releases aus dem signierten Tag baut und attestiert. Dieser Build führt `npm ci --ignore-scripts` und `npm run build` in dem Job aus, der das OIDC-Token für die Attestierung hält, darum könnte ein kompromittiertes Paket des Builds eine eigene Datei attestieren; dagegen stehen die Lock-Datei und der Check *dependency-review* jedes Updates ([Entscheidung 0014](decisions/0014-take-the-chrome-extension-kind-of-the-blueprint.md)). Der Workflow des Stores baut nichts und führt kein npm-Paket aus: Er prüft die Herkunft und die Version. Derselbe Commit ergibt mit demselben Build von zlib dasselbe Zip, sodass jeder es aus dem Tag bauen und vergleichen kann ([Entscheidung 0013](decisions/0013-send-the-store-the-zip-that-the-release-attests.md)) |
 | Ein älterer Browser installiert die Erweiterung und scheitert dann im Betrieb | Das Manifest verlangt Chrome 140 oder neuer (`minimum_chrome_version`), die erste Version, in der `chrome.storage.local.setAccessLevel` die Konten vor dem Content-Script verbirgt, und Firefox 140 oder neuer (`strict_min_version`), das erste, das bei der Installation die Daten zeigt, die das Add-on sendet; `scripts/check-extension.mjs` scheitert an einer niedrigeren |
-| Jemand an einem Display im Verein oder in der Kneipe spielt unter dem Konto eines anderen | Im Modus für Verein und Kneipe kann ein Konto nach einer PIN fragen, die der Service Worker prüft, bevor er einen Token dieses Kontos verbraucht |
+| Jemand an einem Display im Verein oder in der Kneipe spielt unter dem Konto eines anderen | Im Modus für Verein und Kneipe kann ein Konto nach einer PIN fragen, die der Service Worker prüft, bevor er einen Token dieses Kontos verbraucht; die PIN ändert oder entfernt sich nur mit ihr selbst, außer die Manager-PIN hat sie gesetzt |
 | Jemand am Display entfernt Konten oder merkt ein Passwort | Im Modus für Verein und Kneipe nimmt der Service Worker keine Änderung unter **Konten verwalten** und keine Änderung des Modus ohne die Manager-PIN an |
 | Jemand am Display rät eine PIN von Hand | Fünf falsche PINs in Folge sperren jede PIN für eine Minute, gezählt im Service Worker, nicht im Popup |
 | Eine PIN wird aus dem Speicher gelesen | Der Speicher hält einen gesalzenen PBKDF2-Hash mit 600.000 Runden, nie die PIN, und nur der Service Worker und die Seiten der Erweiterung können ihn lesen, [in Firefox](#firefox) auch das Content-Skript |

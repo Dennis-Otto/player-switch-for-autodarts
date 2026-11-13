@@ -120,6 +120,9 @@
   "removeOwnPinText": {
     "message": "Introduce el PIN de esta cuenta para eliminarla de esta pantalla."
   },
+  "changePinText": {
+    "message": "Introduce el PIN que tiene ahora esta cuenta para cambiarlo o quitarlo."
+  },
   "removedOffline": {
     "message": "$NAME$ se ha eliminado de esta pantalla. No se puede acceder a Autodarts, así que la sesión allí solo termina cuando caduque.",
     "placeholders": {
@@ -320,6 +323,12 @@
   "matchSignOutConfirm": {
     "message": "Cerrar sesión de todos modos"
   },
+  "matchSaveText": {
+    "message": "Si guardas la cuenta, la página se recarga y termina en esta pantalla."
+  },
+  "matchSaveConfirm": {
+    "message": "Guardar de todos modos"
+  },
   "commandPopup": {
     "message": "Abrir la ventana emergente"
   },
@@ -501,7 +510,7 @@
     "message": "PIN de los jugadores"
   },
   "playerPinsHint": {
-    "message": "Una cuenta con PIN lo pide antes de que alguien cambie a ella, en la ventana emergente y en la página de Autodarts."
+    "message": "Una cuenta con PIN lo pide antes de que alguien cambie a ella, en la ventana emergente y en la página de Autodarts. Su PIN solo se cambia o se quita con ese PIN, salvo que lo haya puesto el PIN de gestión."
   },
   "playerPinsEmpty": {
     "message": "Todavía no hay ninguna cuenta guardada."

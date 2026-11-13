@@ -292,13 +292,14 @@ test("signOutForNewAccount keeps the session when the page can't let go", async 
 test("adoptCurrentSession claims the session in the page and keeps it signed in", async () => {
   const store = new FakeStore(EMPTY);
   const page = new FakePage("in-page");
-  const state = await adoptCurrentSession(
+  const { state, ok } = await adoptCurrentSession(
     deps(
       store,
       page,
       router({ refresh: () => Promise.resolve(sessionResponse("a", "fresh")) }),
     ),
   );
+  assert.equal(ok, true);
   assert.equal(state.activeId, "a");
   assert.equal(page.token, "fresh");
   assert.equal(find(state, "a")?.token, null);
@@ -306,7 +307,7 @@ test("adoptCurrentSession claims the session in the page and keeps it signed in"
 
 test("adoptCurrentSession does nothing without a session in the page", async () => {
   const store = new FakeStore(setActive(EMPTY, ada));
-  const state = await adoptCurrentSession(
+  const { state } = await adoptCurrentSession(
     deps(store, new FakePage(null), router()),
   );
   assert.equal(state.activeId, null);
@@ -315,23 +316,24 @@ test("adoptCurrentSession does nothing without a session in the page", async () 
 
 test("adoptCurrentSession drops a dead session", async () => {
   const page = new FakePage("dead");
-  const state = await adoptCurrentSession(
+  const { state } = await adoptCurrentSession(
     deps(new FakeStore(EMPTY), page, router({ refresh: rejected })),
   );
   assert.equal(state.activeId, null);
   assert.equal(page.clears, 1);
 });
 
-test("adoptCurrentSession passes a temporary problem on", async () => {
-  await assert.rejects(
-    adoptCurrentSession(
-      deps(
-        new FakeStore(EMPTY),
-        new FakePage("x"),
-        router({ refresh: offline }),
-      ),
-    ),
+test("adoptCurrentSession says when Autodarts can't be reached, and changes nothing", async () => {
+  const store = new FakeStore(setActive(EMPTY, ada));
+  const page = new FakePage("x");
+  const result = await adoptCurrentSession(
+    deps(store, page, router({ refresh: offline })),
   );
+  assert.deepEqual([result.ok, result.reason], [false, "unreachable"]);
+  assert.equal(result.state, store.state);
+  assert.equal(store.saves, 0);
+  assert.equal(page.token, "x");
+  assert.equal(page.clears, 0);
 });
 
 test("syncFromPage leaves everything alone while a session is in the page", async () => {

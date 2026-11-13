@@ -5,7 +5,12 @@
  * of the return after a break. `pages/options.ts` draws it; the end-to-end tests check
  * the two together in the real extension.
  */
-import type { VenueAccount, VenueReply, VenueStatus } from "./messages.ts";
+import type {
+  PinKind,
+  VenueAccount,
+  VenueReply,
+  VenueStatus,
+} from "./messages.ts";
 import { CORNERS, type Corner } from "./page.ts";
 import type { Translate } from "./popup-model.ts";
 import { IDLE_MINUTES } from "./venue.ts";
@@ -58,6 +63,37 @@ export function venueReport(
     return t("pinInvalid");
   }
   return "";
+}
+
+/**
+ * The question for the PIN that a request of the venue mode waits for: the manager PIN,
+ * or the PIN that the account `name` has, before that PIN changes or goes (decision
+ * 0019). `field` is where the answer goes when the page sends the request again.
+ */
+export function venuePinQuestion(
+  question: { pin: PinKind; wrong: boolean },
+  name: string,
+  t: Translate,
+): {
+  field: "managerPin" | "currentPin";
+  title: string;
+  text: string;
+  error: string;
+} {
+  const error = question.wrong ? t("pinWrong") : "";
+  return question.pin === "manager"
+    ? {
+        field: "managerPin",
+        title: t("managerPinTitle"),
+        text: t("managerPinText"),
+        error,
+      }
+    : {
+        field: "currentPin",
+        title: t("pinTitle", name),
+        text: t("changePinText"),
+        error,
+      };
 }
 
 /** What the page shows of the manager PIN. */

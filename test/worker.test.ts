@@ -116,6 +116,7 @@ interface Venue {
   ok?: boolean;
   reason?: string;
   pin?: string;
+  wrong?: boolean;
   error?: string;
   status: {
     manager: boolean;
@@ -582,6 +583,39 @@ test("Save account keeps the session of the page, and Add account signs the page
 
   await popup(fake, { action: "stopAdding" });
   assert.equal((await accounts(fake)).addingUntil, null);
+});
+
+test("Save account says when Autodarts can't be reached, and the page keeps its session", async () => {
+  const fake = browser();
+  fake.addTab();
+  fake.pageToken = fake.autodarts.issue("ada");
+  await started(fake);
+  const inPage = fake.pageToken;
+  fake.broken.add("fetch");
+  const reply = await popup(fake, { action: "adopt" });
+  assert.deepEqual(
+    [reply.ok, reply.reason, reply.page],
+    [false, "unreachable", true],
+  );
+  assert.equal(fake.pageToken, inPage);
+  assert.equal((await accounts(fake)).profiles.length, 0);
+  assert.ok(!fake.logs.some((line) => line.includes('"adopt" failed')));
+});
+
+test("Save account during a match asks first, and spends no token before the yes", async () => {
+  const fake = browser();
+  fake.addTab({ url: MATCH });
+  fake.pageToken = fake.autodarts.issue("ada");
+  await started(fake);
+  const before = fake.autodarts.refreshes.length;
+  const asked = await popup(fake, { action: "adopt" });
+  assert.deepEqual([asked.ok, asked.reason], [false, "match"]);
+  assert.equal(fake.autodarts.refreshes.length, before);
+  assert.equal((await accounts(fake)).profiles.length, 0);
+
+  const yes = await popup(fake, { action: "adopt", confirmed: true });
+  assert.equal(yes.ok, true);
+  assert.equal((await accounts(fake)).activeId, "ada");
 });
 
 test("Add account says when Autodarts can't be reached, and the page stays signed in", async () => {
@@ -1211,11 +1245,150 @@ test("a PIN goes only to a saved account, and goes again with null", async () =>
     set.status?.accounts.map((account) => account.pin),
     [false, true],
   );
-  const gone = await venue(fake, { action: "playerPin", id: "bob", pin: null });
+  // The PIN that the account has now goes only with itself (decision 0019).
+  const gone = await venue(fake, {
+    action: "playerPin",
+    id: "bob",
+    pin: null,
+    currentPin: "1234",
+  });
   assert.deepEqual(
     gone.status?.accounts.map((account) => account.pin),
     [false, false],
   );
+});
+
+test("without a manager PIN, a player's PIN changes and goes only with that PIN", async () => {
+  const fake = browser();
+  await twoPlayers(fake);
+  await started(fake);
+  const pins = async () =>
+    (await venue(fake, { action: "status" })).status?.accounts.map(
+      (account) => account.pin,
+    );
+  // A first PIN asks for no other.
+  await venue(fake, { action: "playerPin", id: "bob", pin: "1234" });
+  assert.deepEqual(await pins(), [false, true]);
+
+  for (const pin of ["5678", null]) {
+    const asked = await venue(fake, { action: "playerPin", id: "bob", pin });
+    assert.deepEqual(
+      [asked.ok, asked.reason, asked.pin],
+      [false, "pin", "player"],
+    );
+    const wrong = await venue(fake, {
+      action: "playerPin",
+      id: "bob",
+      pin,
+      currentPin: "0000",
+    });
+    assert.equal(wrong.wrong, true);
+    assert.deepEqual(await pins(), [false, true]);
+  }
+  // Nor does the popup give the account another PIN without the one it has.
+  const protect = await popup(fake, {
+    action: "protect",
+    id: "bob",
+    newPin: "5678",
+  });
+  assert.deepEqual([protect.reason, protect.pin], ["pin", "player"]);
+  // The wrong PINs count towards the lockout, as at a switch: two so far.
+  for (let attempt = 3; attempt < MAX_FAILURES; attempt += 1) {
+    await venue(fake, {
+      action: "playerPin",
+      id: "bob",
+      pin: null,
+      currentPin: "0000",
+    });
+  }
+  const locked = await venue(fake, {
+    action: "playerPin",
+    id: "bob",
+    pin: null,
+    currentPin: "0000",
+  });
+  assert.equal(locked.reason, "locked");
+  fake.clock += 60_000;
+
+  const changed = await popup(fake, {
+    action: "protect",
+    id: "bob",
+    newPin: "5678",
+    pin: "1234",
+  });
+  assert.equal(changed.ok, true);
+  const removed = await venue(fake, {
+    action: "playerPin",
+    id: "bob",
+    pin: null,
+    currentPin: "5678",
+  });
+  assert.equal(removed.ok, true);
+  assert.deepEqual(await pins(), [false, false]);
+});
+
+test("a manager PIN changes the PINs that it set, but no PIN that a player set without one", async () => {
+  const fake = browser();
+  await twoPlayers(fake);
+  await started(fake);
+  await venue(fake, { action: "playerPin", id: "bob", pin: "1234" });
+  // Anyone at the display may set a first manager PIN: it opens no PIN of a player.
+  await venue(fake, { action: "managerPin", pin: "9999" });
+  const asked = await venue(fake, {
+    action: "playerPin",
+    id: "bob",
+    pin: null,
+    managerPin: "9999",
+  });
+  assert.deepEqual([asked.reason, asked.pin], ["pin", "player"]);
+  const viaPopup = await popup(fake, {
+    action: "protect",
+    id: "bob",
+    newPin: "5678",
+    managerPin: "9999",
+  });
+  assert.deepEqual([viaPopup.reason, viaPopup.pin], ["pin", "player"]);
+
+  // Once the manager PIN set it, with the player's yes, the manager changes it alone, as
+  // for a player who forgot it, and a first PIN that it gives is the manager's too.
+  const taken = await venue(fake, {
+    action: "playerPin",
+    id: "bob",
+    pin: "4321",
+    managerPin: "9999",
+    currentPin: "1234",
+  });
+  assert.equal(taken.ok, true);
+  for (const [id, pin] of [
+    ["bob", "2468"],
+    ["ada", "1357"],
+  ] as const) {
+    const reply = await venue(fake, {
+      action: "playerPin",
+      id,
+      pin,
+      managerPin: "9999",
+    });
+    assert.equal(reply.ok, true, id);
+  }
+  const again = await popup(fake, {
+    action: "protect",
+    id: "ada",
+    newPin: "8642",
+    managerPin: "9999",
+  });
+  assert.equal(again.ok, true);
+
+  // Taking the manager PIN away ends that: a manager PIN set after it opens nothing.
+  await venue(fake, { action: "managerPin", pin: null, managerPin: "9999" });
+  await venue(fake, { action: "managerPin", pin: "1111" });
+  const reopened = await venue(fake, {
+    action: "playerPin",
+    id: "bob",
+    pin: null,
+    managerPin: "1111",
+  });
+  assert.deepEqual([reopened.reason, reopened.pin], ["pin", "player"]);
 });
 
 test("a venue request that fails leaves a trace, with the status where it can still be read", async () => {
