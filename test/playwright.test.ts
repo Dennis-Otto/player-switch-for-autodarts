@@ -11,6 +11,15 @@
 // the browser that it starts. So package.json pins playwright-core to the version of
 // @playwright/test, which Renovate moves in one group with it, and the workflow keys its
 // cache on the version of @playwright/test.
+//
+// The pictures of scripts/screenshots.sh are taken by the Chromium of the Playwright
+// image that the script names, which the playwright of test/harness/requirements.txt
+// drives; Playwright supports a driver only with the browser of its own version. The
+// group "Playwright" of .github/renovate.json5 moves the image, that playwright and
+// @playwright/test together, but an image of mcr.microsoft.com has no release date, so
+// it may come a week before the packages, which wait a week after their release: this
+// test then holds the pull request of Renovate until they have joined it, and the
+// pictures and the end-to-end tests keep seeing one Chromium.
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { suite, test } from "node:test";
@@ -25,6 +34,10 @@ const manifest: { devDependencies: Record<string, string> } =
   json("package.json");
 const locked: Record<string, { version?: string }> =
   json("package-lock.json").packages;
+
+/** The first group of a pattern in a file of the repository, or undefined. */
+const find = (path: string, pattern: RegExp): string | undefined =>
+  pattern.exec(readFileSync(fileURLToPath(new URL(path, ROOT)), "utf8"))?.[1];
 
 const FIX =
   'Pin "playwright-core" in package.json to the exact version of "@playwright/test" and run npm install.';
@@ -62,6 +75,23 @@ suite("Playwright", () => {
       copies("playwright-core"),
       { "node_modules/playwright-core": playwright },
       FIX,
+    );
+  });
+
+  test("the Playwright image of scripts/screenshots.sh, the playwright that drives it and @playwright/test are one version", () => {
+    const image = find(
+      "scripts/screenshots.sh",
+      /^image="mcr\.microsoft\.com\/playwright\/python:v(\d+\.\d+\.\d+)-[a-z]+@sha256:[0-9a-f]{64}"$/m,
+    );
+    const driver = find("test/harness/requirements.in", /^playwright==(\S+)$/m);
+    const locked = find(
+      "test/harness/requirements.txt",
+      /^playwright==(\S+) \\$/m,
+    );
+    assert.deepEqual(
+      { image, driver, locked },
+      { image: playwright, driver: playwright, locked: playwright },
+      `Move the image of scripts/screenshots.sh (v${playwright}-noble, with its digest) and playwright== in test/harness/requirements.in to ${playwright}, the version of @playwright/test, then compile requirements.txt again with the command in its header.`,
     );
   });
 
