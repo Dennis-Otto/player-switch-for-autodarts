@@ -99,6 +99,12 @@ At home, everyone at the display may play under any saved account, which is the 
 
 Five wrong PINs in a row lock every PIN of the display for a minute, so that nobody tries them all by hand. The extension keeps no PIN, only a salted hash of it.
 
+### Who changes a player's PIN {#change-a-pin}
+
+A player's PIN holds by itself, also on a display without a manager PIN: once an account has a PIN, a change of it or **Remove PIN** under **PINs of the players** asks for that PIN first, on the number pad, and a wrong one counts towards the five that lock every PIN. A first PIN asks for no other.
+
+The manager PIN changes or clears, by itself, only the PINs that were set while it guarded the display, by the manager or by a guest: so the manager gives a player who forgot their PIN a new one. A manager PIN set later opens none of the PINs that the players set before it, and neither does one set again after the manager PIN was taken away, since anyone at a display without a manager PIN may set one. A player who forgot such a PIN has their account removed under **Manage accounts** and adds it again: the removal signs the account out at Autodarts and opens it to nobody.
+
 ### A player's own account, without the manager {#own-account}
 
 **Add account** stays open to everybody at a display with a manager PIN, so a member or a guest can add their account while the manager isn't there. What protects or removes that account doesn't need the manager either, so nobody leaves a session on the display for anyone to play under:
@@ -106,7 +112,7 @@ Five wrong PINs in a row lock every PIN of the display for a minute, so that nob
 1. **Protect with a PIN,** below the tile of the player who plays, while their account has no PIN: it asks for a PIN of 4 to 8 digits, twice. From then on, the tile shows a lock and asks for the PIN before anyone plays under the account.
 2. **Remove my account,** below the same tile once the account has a PIN: it asks for a yes and that PIN, then signs the account out at Autodarts and removes it from the display, as **Remove account** does. A player whose account is parked switches to it first, with their PIN.
 
-Only an account that was added while the manager PIN was set gets a first PIN this way, while it plays, and never a second one: a PIN that an account has changes only with the manager, under **PINs of the players**. The accounts of the regulars, saved before the manager PIN, never get one from whoever plays under them, who could then remove them; the manager takes on an account added later by setting or clearing its PIN under **PINs of the players**. The house account belongs to the manager: it gets no PIN and no removal this way. A wrong PIN counts towards the five that lock every PIN for a minute.
+Only an account that was added while the manager PIN was set gets a first PIN this way, while it plays, and never a second one: a PIN that an account has changes only under **PINs of the players**, with the manager PIN and, unless the manager PIN set it, that PIN ([who changes a PIN](#change-a-pin)). The accounts of the regulars, saved before the manager PIN, never get one from whoever plays under them, who could then remove them; the manager takes on an account added later by setting or clearing its PIN under **PINs of the players**. The house account belongs to the manager: it gets no PIN and no removal this way. A wrong PIN counts towards the five that lock every PIN for a minute.
 
 A PIN is a lock for the people at the display, not a protection against someone who can use the computer: whoever can open `chrome://extensions` can remove the extension, and a program that reads the profile of the browser can try every 4-digit PIN against its hash. The [security design](security.md#venue-mode) says more.
 

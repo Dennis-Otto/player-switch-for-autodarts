@@ -75,6 +75,13 @@ export interface Venue {
    * first PIN without the manager.
    */
   guests: readonly string[];
+  /**
+   * The accounts whose PIN was set while the manager PIN guarded the display, since that
+   * manager PIN was first set: the manager PIN changes or takes away only these. Every
+   * other PIN, such as one set while no manager PIN was set, changes and goes only with
+   * itself, so that it holds by itself (decision 0019).
+   */
+  managed: readonly string[];
 }
 
 /** The venue mode is off until a person turns it on. */
@@ -84,6 +91,7 @@ export const NO_VENUE: Venue = {
   idleMinutes: null,
   house: null,
   guests: [],
+  managed: [],
 };
 
 /** Whether a value is a PIN: 4 to 8 digits. */
@@ -181,10 +189,8 @@ export function parseVenue(stored: unknown): Venue {
   if (stored === null || typeof stored !== "object") {
     return NO_VENUE;
   }
-  const { manager, players, idleMinutes, house, guests } = stored as Record<
-    string,
-    unknown
-  >;
+  const { manager, players, idleMinutes, house, guests, managed } =
+    stored as Record<string, unknown>;
   const pins: Record<string, PinHash> = {};
   if (players !== null && typeof players === "object") {
     for (const [id, value] of Object.entries(players)) {
@@ -194,27 +200,46 @@ export function parseVenue(stored: unknown): Venue {
       }
     }
   }
+  const guard = parsePinHash(manager);
   return {
-    manager: parsePinHash(manager),
+    manager: guard,
     players: pins,
     idleMinutes:
       typeof idleMinutes === "number" && IDLE_MINUTES.includes(idleMinutes)
         ? idleMinutes
         : null,
     house: typeof house === "string" && house !== "" ? house : null,
-    guests: Array.isArray(guests)
-      ? guests.filter((id: unknown): id is string => typeof id === "string")
-      : [],
+    guests: ids(guests),
+    // Settings of a version before decision 0019 note no such accounts: their manager
+    // PIN changed every PIN, as it still does for the PINs that it set.
+    managed: Array.isArray(managed)
+      ? ids(managed)
+      : guard === null
+        ? []
+        : Object.keys(pins),
   };
+}
+
+/** The ids of accounts that a stored list holds, without what isn't one. */
+function ids(stored: unknown): string[] {
+  return Array.isArray(stored)
+    ? stored.filter((id: unknown): id is string => typeof id === "string")
+    : [];
 }
 
 /**
  * Sets the manager PIN, or takes it away with null. Without a manager PIN, nobody is a
- * guest: the accounts saved until then were saved while anyone could manage them.
+ * guest: the accounts saved until then were saved while anyone could manage them. A
+ * first manager PIN, which anyone at the display may set, and taking it away leave the
+ * manager no PIN of a player to change: only a new manager PIN, which the one before
+ * opened, keeps those that it set (decision 0019).
  */
 export function setManagerPin(venue: Venue, pin: PinHash | null): Venue {
-  return pin === null
-    ? { ...venue, manager: pin, guests: [] }
+  if (pin === null) {
+    return { ...venue, manager: pin, guests: [], managed: [] };
+  }
+  return venue.manager === null
+    ? { ...venue, manager: pin, managed: [] }
     : { ...venue, manager: pin };
 }
 
@@ -239,19 +264,26 @@ export function forgetGuest(venue: Venue, id: string): Venue {
     : venue;
 }
 
-/** Sets the PIN of an account, or takes it away with null. */
+/**
+ * Sets the PIN of an account, or takes it away with null. A PIN set while a manager PIN
+ * guards the display is one that the manager PIN may change later; any other is not.
+ */
 export function setPlayerPin(
   venue: Venue,
   id: string,
   pin: PinHash | null,
 ): Venue {
   const players = { ...venue.players };
+  const managed = venue.managed.filter((other) => other !== id);
   if (pin === null) {
     delete players[id];
   } else {
     players[id] = pin;
+    if (venue.manager !== null) {
+      managed.push(id);
+    }
   }
-  return { ...venue, players };
+  return { ...venue, players, managed };
 }
 
 /**
@@ -323,6 +355,20 @@ export function protectsItself(
  */
 export function ownRemovalPin(venue: Venue, id: string): PinHash | null {
   return venue.manager === null || venue.house === id ? null : pinOf(venue, id);
+}
+
+/**
+ * The PIN that a change of the PIN of the account `id`, or taking it away, asks for
+ * besides the manager PIN (decision 0019): the PIN that the account has, unless the
+ * manager PIN that guards the display now set it (`managed`). Null when the account has
+ * none, since a first PIN asks for no other, or when the manager PIN, which the request
+ * then carries, may change it. So a player PIN holds by itself, also without a manager
+ * PIN, and a manager PIN that someone sets later doesn't open it.
+ */
+export function currentPinFor(venue: Venue, id: string): PinHash | null {
+  return venue.manager !== null && venue.managed.includes(id)
+    ? null
+    : pinOf(venue, id);
 }
 
 /** The time of the last input on the page as the worker keeps it, or null when it has none. */

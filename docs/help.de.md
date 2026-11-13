@@ -106,6 +106,14 @@ Wer den Spieler entfernt, der gerade spielt, oder **Alle Konten vergessen** wäh
 
 **Weiterspielen** ändert auch hier nichts; **Trotzdem abmelden** macht weiter, und das Match endet auf diesem Display.
 
+**Konto speichern** schreibt die Sitzung zurück in die Seite, die dadurch neu lädt, und fragt vorher genauso:
+
+> Ein Match läuft
+>
+> Das Speichern lädt die Seite neu und beendet es auf diesem Display.
+
+**Weiterspielen** speichert nichts; **Trotzdem speichern** speichert das Konto, und das Match endet auf diesem Display.
+
 ### Der Lobby beitreten {#join-lobby}
 
 Solange der Autodarts-Tab eine Lobby zeigt, die Seite unter `play.autodarts.com/lobby/` mit der ID der Lobby, bietet die Kachel jedes geparkten Spielers **Der Lobby beitreten** an, im Popup und in den Spielern auf der Seite. Ein Tipp setzt diesen Spieler in die Lobby, und die Kachel zeigt danach:
@@ -236,7 +244,7 @@ Unter **Einstellungen** steht bei einem Tastenkürzel:
 
 **Was es bedeutet:** Am Display ist der [Modus für Verein und Kneipe](shared-display.md#venue-mode) an, und das Konto hat eine PIN bekommen, vom Manager auf der Seite der Einstellungen oder von seinem Spieler mit [**Mit einer PIN schützen**](shared-display.md#own-account). Die Erweiterung fragt vor einem Wechsel zu diesem Konto nach ihr, im Popup wie auf der Autodarts-Seite.
 
-**Was du tust:** Tippe die PIN auf dem Ziffernblock oder mit der Tastatur ein und wähle **OK**. **Abbrechen** ändert nichts. Eine vergessene PIN steht nirgends: Der Manager entfernt sie oder legt eine neue fest, unter **Einstellungen** → **Für Verein und Kneipe** → **PINs der Spieler**.
+**Was du tust:** Tippe die PIN auf dem Ziffernblock oder mit der Tastatur ein und wähle **OK**. **Abbrechen** ändert nichts. Eine vergessene PIN steht nirgends: Der Manager entfernt sie oder legt eine neue fest, unter **Einstellungen** → **Für Verein und Kneipe** → **PINs der Spieler**, wenn die Manager-PIN sie gesetzt hat. Eine PIN, die der Spieler ohne Manager-PIN gesetzt hat, ändert sich nur mit ihr selbst: Das Konto wird dann unter **Konten verwalten** entfernt und neu hinzugefügt ([wer die PIN eines Spielers ändert](shared-display.md#change-a-pin)).
 
 ### Mein Konto entfernen {#remove-own}
 
@@ -247,6 +255,16 @@ Unter **Einstellungen** steht bei einem Tastenkürzel:
 **Was es bedeutet:** An einem Display mit Manager-PIN hat der Spieler eines Kontos mit PIN unter dessen Kachel **Mein Konto entfernen** gewählt und Ja gesagt. Die PIN des Kontos entfernt es ohne den Manager: Die Erweiterung meldet es bei Autodarts ab und vergisst es, mit seiner PIN, [wie die Anleitung zeigt](shared-display.md#own-account).
 
 **Was du tust:** Tippe die PIN des Kontos ein und wähle **OK**. **Abbrechen** behält das Konto. Eine vergessene PIN steht nirgends: Der Manager entfernt das Konto unter **Konten verwalten**.
+
+### Die PIN eines Spielers ändern {#change-pin}
+
+> PIN von Bob
+>
+> Gib die PIN ein, die dieses Konto jetzt hat, um sie zu ändern oder zu entfernen.
+
+**Was es bedeutet:** Jemand hat unter **PINs der Spieler** eine neue PIN für ein Konto gewählt, das schon eine hat, oder **PIN entfernen**. Die PIN eines Spielers ändert oder entfernt sich nur mit ihr selbst, auch ohne Manager-PIN, außer die Manager-PIN hat sie gesetzt, [wie die Anleitung erklärt](shared-display.md#change-a-pin).
+
+**Was du tust:** Tippe die PIN ein, die das Konto jetzt hat, und wähle **OK**; dann gilt die neue PIN oder keine. **Abbrechen** lässt die PIN, wie sie ist. Eine falsche PIN zählt zu den fünf, die jede PIN für eine Minute sperren. Eine vergessene PIN steht nirgends: Das Konto wird unter **Konten verwalten** entfernt und neu hinzugefügt.
 
 ### Falsche PIN {#wrong-pin}
 

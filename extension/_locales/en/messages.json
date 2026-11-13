@@ -103,6 +103,10 @@
     "message": "Enter the PIN of this account to remove it from this display.",
     "description": "The text of the question for the PIN of an account before its player removes it."
   },
+  "changePinText": {
+    "message": "Enter the PIN that this account has now to change or remove it.",
+    "description": "The text of the question for the PIN that an account has, before that PIN changes or goes."
+  },
   "removedOffline": {
     "message": "$NAME$ is removed from this display. Autodarts can't be reached, so the session there ends only when it expires.",
     "placeholders": { "name": { "content": "$1" } }
@@ -257,6 +261,12 @@
   },
   "matchSignOutConfirm": {
     "message": "Sign out anyway"
+  },
+  "matchSaveText": {
+    "message": "Saving the account reloads the page and ends it on this display."
+  },
+  "matchSaveConfirm": {
+    "message": "Save anyway"
   },
   "commandPopup": {
     "message": "Open the popup"
@@ -448,7 +458,7 @@
     "message": "PINs of the players"
   },
   "playerPinsHint": {
-    "message": "An account with a PIN asks for it before anyone switches to it, in the popup and on the Autodarts page."
+    "message": "An account with a PIN asks for it before anyone switches to it, in the popup and on the Autodarts page. Its PIN changes or goes only with that PIN, unless the manager PIN set it."
   },
   "playerPinsEmpty": {
     "message": "No account is saved yet."

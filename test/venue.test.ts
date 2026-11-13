@@ -5,6 +5,7 @@ import { test } from "node:test";
 import {
   addGuests,
   checkPin,
+  currentPinFor,
   forgetAccount,
   forgetGuest,
   HASH_BYTES,
@@ -156,6 +157,7 @@ test("parseVenue is off for nothing or for a value it doesn't know", () => {
     idleMinutes: null,
     house: null,
     guests: [],
+    managed: [],
   });
 });
 
@@ -168,6 +170,7 @@ test("parseVenue keeps what is valid and drops the rest", async () => {
       idleMinutes: 15,
       house: "a",
       guests: ["a", 5, null, "b"],
+      managed: ["a", 7],
     }),
     {
       manager: pin,
@@ -175,8 +178,20 @@ test("parseVenue keeps what is valid and drops the rest", async () => {
       idleMinutes: 15,
       house: "a",
       guests: ["a", "b"],
+      managed: ["a"],
     },
   );
+  // Settings from before decision 0019: the manager PIN changes each PIN, as it did.
+  assert.deepEqual(
+    parseVenue({ manager: pin, players: { a: pin, b: pin } }).managed,
+    ["a", "b"],
+  );
+  assert.deepEqual(
+    parseVenue({ manager: pin, players: { a: pin }, managed: "a" }).managed,
+    ["a"],
+  );
+  // Without a manager PIN, each PIN changes only with itself.
+  assert.deepEqual(parseVenue({ players: { a: pin } }).managed, []);
   assert.deepEqual(
     parseVenue({
       manager: "1234",
@@ -212,6 +227,39 @@ test("the manager PIN and the PIN of each account are set and taken away", async
   assert.deepEqual(NO_VENUE.players, {}, "the venue before stays as it was");
   assert.deepEqual(setPlayerPin(withA, "a", null).players, {});
   assert.deepEqual(setPlayerPin(withA, "b", null).players, { a: pin });
+});
+
+test("the manager PIN changes only the PINs of the players that it set", async () => {
+  const pin = await hash("1234");
+  // A PIN set without a manager PIN changes only with itself.
+  const own = setPlayerPin(NO_VENUE, "a", pin);
+  assert.deepEqual(own.managed, []);
+  assert.equal(currentPinFor(own, "a"), pin);
+  assert.equal(currentPinFor(own, "b"), null, "a first PIN asks for none");
+  // A manager PIN that someone sets later doesn't open it.
+  const guarded = setManagerPin(own, pin);
+  assert.equal(currentPinFor(guarded, "a"), pin);
+  // A PIN set while the manager PIN guards is one that it may change.
+  const managed = setPlayerPin(setPlayerPin(guarded, "b", pin), "a", pin);
+  assert.deepEqual(managed.managed, ["b", "a"]);
+  assert.equal(currentPinFor(managed, "a"), null);
+  assert.deepEqual(setPlayerPin(managed, "a", pin).managed, ["b", "a"]);
+  assert.deepEqual(setPlayerPin(managed, "a", null).managed, ["b"]);
+  assert.deepEqual(forgetAccount(managed, "b").managed, ["a"]);
+  // A new manager PIN, which the one before opened, keeps them; taking it away and
+  // setting a first one again doesn't.
+  assert.deepEqual(setManagerPin(managed, pin).managed, ["b", "a"]);
+  const cleared = setManagerPin(managed, null);
+  assert.deepEqual(cleared.managed, []);
+  assert.equal(currentPinFor(cleared, "a"), pin);
+  assert.equal(currentPinFor(setManagerPin(cleared, pin), "a"), pin);
+  // Without a manager PIN, a PIN set after it went changes only with itself as well.
+  assert.deepEqual(setPlayerPin(cleared, "c", pin).managed, []);
+  assert.equal(
+    currentPinFor({ ...managed, manager: null }, "a"),
+    pin,
+    "without a manager PIN, no PIN is the manager's",
+  );
 });
 
 test("setIdle takes the breaks on offer and turns the return off for any other", () => {

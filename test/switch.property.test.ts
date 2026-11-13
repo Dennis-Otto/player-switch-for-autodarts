@@ -18,7 +18,7 @@ import { test } from "node:test";
 
 import fc from "fast-check";
 
-import { AuthError, type Fetch } from "../src/autodarts.ts";
+import type { Fetch } from "../src/autodarts.ts";
 import { createQueue, type Queue } from "../src/queue.ts";
 import {
   find,
@@ -31,6 +31,7 @@ import {
 } from "../src/state.ts";
 import {
   ADD_WINDOW_MS,
+  type AdoptResult,
   adoptCurrentSession,
   adoptNewSignIn,
   type Deps,
@@ -397,7 +398,7 @@ function happen(w: World, step: Event): void {
   }
 }
 
-type Result = SwitchResult | PickUp | Removal | Error | undefined;
+type Result = SwitchResult | AdoptResult | PickUp | Removal | Error | undefined;
 
 /** Runs an action of the extension; the error it threw, if any, is the result. */
 async function run(w: World, step: Action): Promise<Result> {
@@ -408,8 +409,7 @@ async function run(w: World, step: Action): Promise<Result> {
       case "switch":
         return await switchTo(deps, step.id);
       case "adopt":
-        await adoptCurrentSession(deps);
-        return undefined;
+        return await adoptCurrentSession(deps);
       case "signOut":
         return await signOutForNewAccount(deps);
       case "sync":
@@ -567,6 +567,30 @@ function snapshot(w: World): Before {
   };
 }
 
+/**
+ * What "Save this account" promises: the account of the page is saved and plays on, and
+ * a dead session leaves the page; or, while Autodarts can't be reached, it says so and
+ * changes nothing, and the page keeps its session.
+ */
+function assertAdopted(w: World, before: Before, result: AdoptResult): void {
+  const { autodarts, page } = w;
+  const after = w.store.state;
+  if (!result.ok) {
+    assert.equal(result.reason, "unreachable");
+    assert.notEqual(autodarts.outage, "none");
+    assert.deepEqual(after, before.state);
+    assert.equal(page.token, before.page, "the page keeps its session");
+    return;
+  }
+  assert.equal(after.activeId, before.playing);
+  assert.equal(
+    autodarts.holder(page.token),
+    before.playing,
+    "the page stays signed in",
+  );
+  assert.ok(before.playing !== null || page.token === null);
+}
+
 /** What an action of the extension promises, whatever it ended in. */
 function assertKept(
   w: World,
@@ -576,14 +600,10 @@ function assertKept(
 ): void {
   const { autodarts, page } = w;
   const after = w.store.state;
-  // An action fails only because the page is gone, or, while adopting the
-  // page's session, because Autodarts can't be reached.
+  // An action fails only because the page is gone.
   if (result instanceof Error) {
     assert.ok(
-      result instanceof NoPage ||
-        (extension.kind === "adopt" &&
-          result instanceof AuthError &&
-          result.kind === "unreachable"),
+      result instanceof NoPage,
       `unexpected ${result.name}: ${result.message}`,
     );
   }
@@ -636,15 +656,8 @@ function assertKept(
       assert.ok(usable(w).has(id), `${id} lost its session`);
     }
   }
-  if (result === undefined && extension.kind === "adopt") {
-    // The account of the page is saved and plays on, and a dead session leaves the page.
-    assert.equal(after.activeId, before.playing);
-    assert.equal(
-      autodarts.holder(page.token),
-      before.playing,
-      "the page stays signed in",
-    );
-    assert.ok(before.playing !== null || page.token === null);
+  if (extension.kind === "adopt" && !(result instanceof Error)) {
+    assertAdopted(w, before, result as AdoptResult);
   }
   if (extension.kind === "remove" && !(result instanceof Error)) {
     assertRemoved(w, extension.id, before, result as Removal);
