@@ -58,9 +58,11 @@ Option 2.
 
 ## Consequences
 
-- The docs name Firefox 140 and newer as supported, not as a preview. The tests run in
-  the newest Firefox of the runner image; Firefox 140 ESR, the oldest that the manifest
-  allows, 153 ESR and 159 passed them when they were written.
+- The docs name Firefox as supported, not as a preview. The tests run in the newest
+  Firefox of the runner image with every change, and every morning in Firefox Beta and
+  in Firefox 153 ESR, the oldest that the manifest allows, since
+  [decision 0021](0021-test-the-oldest-and-the-next-browsers-every-morning.md), which
+  raised the minimum from 140 when Mozilla ended 140 ESR.
 - The tests in Firefox can't read the console of the background or the storage of the
   add-on, and can't look into the switcher's frame, until BiDi reaches extension
   pages. What only those show stays with the Chromium tests and the unit tests.

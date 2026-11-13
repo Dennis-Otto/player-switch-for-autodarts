@@ -638,8 +638,8 @@ test("an answer of the game service for a made-up token fails the check", async 
 test("the end of a session has to answer at its address", async () => {
   const cases: [Answer | Error, boolean, string][] = [
     [() => json(200, { success: true }), true, "answered 200"],
-    [() => json(401, { error: "invalid_grant" }), true, "answered 401"],
-    [() => json(400, { error: "invalid_grant" }), true, "answered 400"],
+    [() => json(401, { error: "invalid_grant" }), false, "answered 401"],
+    [() => json(400, { error: "invalid_grant" }), false, "answered 400"],
     [recorded(REFRESH_DEAD_TOKEN), true, "answered 401"],
     [() => json(400, { error: "invalid_request" }), false, "answered 400"],
     [recorded(REFRESH_WITHOUT_TOKEN), false, "answered 400"],

@@ -35,10 +35,18 @@ const status = fc.oneof(
 );
 const WITHOUT_BODY = new Set([204, 205, 304]);
 
-/** The codes of a refusal: those of a dead session, of a refused request, or any text. */
-const DEAD = ["invalid_token", "invalid_credentials", "invalid_grant"];
+/**
+ * The codes of a refusal: those of a dead session, of a refused request, with the flat
+ * `invalid_grant` of Keycloak, which no longer ends a session, or any text.
+ */
+const DEAD = ["invalid_token", "invalid_credentials"];
 const refusalCode = fc.oneof(
-  fc.constantFrom(...DEAD, "invalid_request", "unauthorized_client"),
+  fc.constantFrom(
+    ...DEAD,
+    "invalid_request",
+    "unauthorized_client",
+    "invalid_grant",
+  ),
   text,
 );
 

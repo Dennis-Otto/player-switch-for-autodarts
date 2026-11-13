@@ -79,21 +79,23 @@ export const WRONG_PASSWORD_CODE = "invalid_credentials";
 
 /**
  * The codes with which the sign-in service turns a session or a password away for
- * good: those two, and `invalid_grant`, which it sent for both in the form of
- * Keycloak. Any other code, such as `invalid_request` for a request without its
- * field, refuses the request, not the session. The answers of the real service are
- * recorded in `test/e2e/fake/recorded.ts`.
+ * good, as the answers of the real service recorded in `test/e2e/fake/recorded.ts`
+ * show them. Any other code, such as `invalid_request` for a request without its
+ * field, refuses the request, not the session. So does `invalid_grant` of the flat
+ * form of Keycloak, which no recorded answer shows any more: a session ends only on
+ * an answer that the service is known to send, and the daily contract check of
+ * `scripts/upstream-contract.ts` turns red on any other.
  */
 export const DEAD_SESSION_CODES: ReadonlySet<string> = new Set([
   DEAD_TOKEN_CODE,
   WRONG_PASSWORD_CODE,
-  "invalid_grant",
 ]);
 
 /**
  * The code of a refusal of the sign-in service: `error.code` of the JSON that it
- * answers today (`{"error":{"code":"invalid_token"}}`), or `error` itself in the form
- * of Keycloak (`{"error":"invalid_grant"}`). Null for a body without either.
+ * answers (`{"error":{"code":"invalid_token"}}`), or `error` itself in a flat body
+ * such as Keycloak's (`{"error":"invalid_grant"}`), which `AuthError.code` reports
+ * but no longer ends a session. Null for a body without either.
  */
 async function refusalCode(response: Response): Promise<string | null> {
   const body: unknown = await response.json().catch(() => null);

@@ -2,6 +2,12 @@
 import { type Fetch, GAME_BASE, readIdentity } from "../src/autodarts.ts";
 import { EMPTY, type State } from "../src/state.ts";
 import type { PagePort, Store } from "../src/switch.ts";
+import {
+  LOGIN_WRONG_PASSWORD,
+  LOGOUT_UNKNOWN_TOKEN,
+  REFRESH_DEAD_TOKEN,
+  type Recorded,
+} from "./e2e/fake/recorded.ts";
 
 function base64url(text: string): string {
   return Buffer.from(text, "utf8").toString("base64url");
@@ -23,6 +29,14 @@ export function jsonResponse(body: unknown, status = 200): Response {
     status,
     headers: { "content-type": "application/json" },
   });
+}
+
+/**
+ * An answer that the real sign-in service sent, as test/e2e/fake/recorded.ts keeps it,
+ * so that the fakes of the unit tests refuse as the service does.
+ */
+export function recordedResponse({ status, body }: Recorded): Response {
+  return jsonResponse(body, status);
 }
 
 /** A session answer, with a readable access token for the given account. */
@@ -296,8 +310,8 @@ export class FakeAutodarts {
 
   /**
    * The sign-in with a password: a session of the account whose username and password
-   * it takes, which becomes the one that works for that account, or 401 as for a wrong
-   * password.
+   * it takes, which becomes the one that works for that account, or the recorded
+   * refusal of a wrong password.
    */
   private async login(init: RequestInit): Promise<Response> {
     const { username, password } = JSON.parse(String(init.body)) as {
@@ -309,7 +323,7 @@ export class FakeAutodarts {
     const account = this.passwords.get(username);
     return account?.password === password
       ? sessionResponse(account.id, this.issue(account.id))
-      : jsonResponse({ error: "invalid_grant" }, 401);
+      : recordedResponse(LOGIN_WRONG_PASSWORD);
   }
 
   readonly fetch: Fetch = async (url, init) => {
@@ -344,6 +358,8 @@ export class FakeAutodarts {
       this.reuses += 1;
       this.live.delete(victim);
     }
-    return jsonResponse({ error: "invalid_grant" }, 400);
+    // A token that the service doesn't know, spent or never issued: the recorded
+    // refusal of a dead session, and the end of a session that it doesn't know.
+    return recordedResponse(logout ? LOGOUT_UNKNOWN_TOKEN : REFRESH_DEAD_TOKEN);
   };
 }

@@ -5,7 +5,7 @@ config:
 ---
 flowchart TB
     accTitle: How the upstream checks work
-    accDescr: The workflow Upstream runs three checks of what the extension relies on but doesn't control. Every morning, autodarts-contract takes the expected values from src/autodarts.ts and src/page.ts and asks the real Autodarts with made-up data only, about a dozen requests: it looks for the key of the session, the sign-in service, the client and the scripts of the routes of a match and of a lobby in the code of play.autodarts.com, its page first and then script by script until it has found all five, follows the forward of play.autodarts.io, sends a made-up token, a made-up account and the end of a made-up session to the sign-in service, and a made-up token to a made-up lobby and its seats at the game service, through the functions of the extension. Every morning as well, chrome-beta downloads Chrome for Testing Beta, the next version of Chrome, and runs the end-to-end tests in it against the fake Autodarts. Every morning as well, store-listing reads the public page of the Chrome Web Store in each language of store/ and compares its short and detailed description with the file. When one fails, its summary names what changed and where the code relies on it, and the bot-health bot opens an issue with the label bot-failure, which the next run that passes closes.
+    accDescr: The workflow Upstream runs five checks of what the extension relies on but doesn't control, and of the browsers that it runs in. Every morning, autodarts-contract takes the expected values from src/autodarts.ts and src/page.ts and asks the real Autodarts with made-up data only, about a dozen requests: it looks for the key of the session, the sign-in service, the client and the scripts of the routes of a match and of a lobby in the code of play.autodarts.com, its page first and then script by script until it has found all five, follows the forward of play.autodarts.io, sends a made-up token, a made-up account and the end of a made-up session to the sign-in service, and a made-up token to a made-up lobby and its seats at the game service, through the functions of the extension. Every morning as well, chrome-beta downloads Chrome for Testing Beta, the next version of Chrome, and runs the end-to-end tests in it against the fake Autodarts. Every morning as well, firefox-beta downloads Firefox Beta, the next version of Firefox, from the archive of Mozilla and runs the tests of test/firefox/ in it. Every morning as well, oldest-browsers downloads Chrome for Testing 140 and Firefox 153 ESR, the oldest versions that the manifest allows, and runs the end-to-end tests and the tests in Firefox in them. Every morning as well, store-listing reads the public page of the Chrome Web Store in each language of store/ and compares its short and detailed description with the file. When one fails, its summary names what changed and where the code relies on it, and the bot-health bot opens an issue with the label bot-failure, which the next run that passes closes.
 
     workflow["The workflow Upstream<br>also for a pull request that changes it,<br>src/autodarts.ts or src/page.ts"]
 
@@ -29,6 +29,20 @@ flowchart TB
         download --> tests
     end
 
+    subgraph firefoxbeta ["firefox-beta, every morning"]
+        direction TB
+        nextfirefox["@puppeteer/browsers<br>Firefox Beta from the archive of Mozilla,<br>about four weeks ahead of the players"]
+        firefoxtests["The tests of test/firefox/<br>in Firefox Beta, against the fake Autodarts"]
+        nextfirefox --> firefoxtests
+    end
+
+    subgraph oldest ["oldest-browsers, every morning"]
+        direction TB
+        oldbrowsers["@puppeteer/browsers<br>Chrome for Testing 140 and Firefox 153 ESR,<br>the oldest that the manifest allows"]
+        oldtests["The end-to-end tests in Chrome 140<br>and the tests in Firefox in 153 ESR"]
+        oldbrowsers --> oldtests
+    end
+
     subgraph listing ["store-listing, every morning"]
         direction TB
         store["chromewebstore.google.com<br>the public page of the item<br>in each language of store/"]
@@ -38,11 +52,15 @@ flowchart TB
 
     workflow --> values
     workflow --> download
+    workflow --> nextfirefox
+    workflow --> oldbrowsers
     workflow --> store
 
     report["The summary of the check<br>what changed and every place<br>of the code or file that it concerns"]
     game --> report
     tests --> report
+    firefoxtests --> report
+    oldtests --> report
     texts --> report
 
     issue["bot-health opens an issue<br>with the label bot-failure;<br>the next run that passes closes it"]

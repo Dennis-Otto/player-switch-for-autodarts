@@ -46,7 +46,17 @@ import {
   switchTo,
   syncFromPage,
 } from "../src/switch.ts";
-import { jsonResponse, type PageFailure, sessionResponse } from "./helpers.ts";
+import {
+  LOGIN_WRONG_PASSWORD,
+  LOGOUT_UNKNOWN_TOKEN,
+  REFRESH_DEAD_TOKEN,
+} from "./e2e/fake/recorded.ts";
+import {
+  jsonResponse,
+  type PageFailure,
+  recordedResponse,
+  sessionResponse,
+} from "./helpers.ts";
 import "./properties.ts";
 
 /** The accounts of the evening; each signs in with its id as username. */
@@ -106,7 +116,7 @@ class FakeAutodarts {
       this.renewed.push(token);
       const account = this.holder(token);
       if (account === null) {
-        return Promise.resolve(jsonResponse({ error: "invalid_grant" }, 400));
+        return Promise.resolve(recordedResponse(REFRESH_DEAD_TOKEN));
       }
       this.spend(token);
       return Promise.resolve(sessionResponse(account, this.issue(account)));
@@ -114,15 +124,16 @@ class FakeAutodarts {
     if (url.endsWith("/login")) {
       const account = body.username as string;
       if (this.passwords.get(account) !== body.password) {
-        return Promise.resolve(jsonResponse({ error: "invalid_grant" }, 401));
+        return Promise.resolve(recordedResponse(LOGIN_WRONG_PASSWORD));
       }
       return Promise.resolve(sessionResponse(account, this.issue(account)));
     }
     if (url.endsWith("/logout")) {
-      // The sign-out ends the session of its token, and only that one.
+      // The sign-out ends the session of its token, and only that one, and answers
+      // a token that it doesn't know as the real service does.
       const token = body.refresh_token as string;
       if (this.holder(token) === null) {
-        return Promise.resolve(jsonResponse({ error: "invalid_grant" }, 400));
+        return Promise.resolve(recordedResponse(LOGOUT_UNKNOWN_TOKEN));
       }
       this.spend(token);
       return Promise.resolve(new Response(null, { status: 204 }));

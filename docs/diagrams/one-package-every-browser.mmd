@@ -5,12 +5,12 @@ config:
 ---
 flowchart TB
     accTitle: One package for Chrome, Edge and Firefox
-    accDescr: The release builds one zip from extension/, with one manifest.json. Chrome 140 and newer, and Edge 140 and newer, run background.js as the service worker that background.service_worker names, and ignore the keys of Firefox. Firefox 140 and newer runs the same background.js from background.scripts, under the id of browser_specific_settings.gecko, and lists on the add-on's page in about:addons that it sends authentication data to Autodarts. scripts/check-extension.mjs checks that both keys name background.js and that the data matches store/permissions.json, and web-ext lint, the lint of addons.mozilla.org, finds no error in the package. The end-to-end tests run it in Playwright's Chromium and in the Firefox of the runner on every change.
+    accDescr: The release builds one zip from extension/, with one manifest.json. Chrome 140 and newer, and Edge 140 and newer, run background.js as the service worker that background.service_worker names, and ignore the keys of Firefox. Firefox 153 and newer runs the same background.js from background.scripts, under the id of browser_specific_settings.gecko, and lists on the add-on's page in about:addons that it sends authentication data to Autodarts. scripts/check-extension.mjs checks that both keys name background.js and that the data matches store/permissions.json, and web-ext lint, the lint of addons.mozilla.org, finds no error in the package. The end-to-end tests run it in Playwright's Chromium and in the Firefox of the runner on every change.
 
     checks["scripts/check-extension.mjs and web-ext lint<br>in scripts/check.sh"]
     zip["One zip from extension/<br>with one manifest.json"]
     chrome["Chrome 140 and newer<br>and Edge 140 and newer"]
-    firefox["Firefox 140 and newer"]
+    firefox["Firefox 153 and newer"]
     worker["background.js as the service worker,<br>from background.service_worker"]
     page["The same background.js as an event page,<br>from background.scripts"]
     gecko["The id of the add-on and the data that it sends,<br>from browser_specific_settings.gecko"]
