@@ -8,7 +8,7 @@
 # https://squidfunk.github.io/mkdocs-material/
 INHERIT: .github/mkdocs-blueprint.yml
 site_name: "Player Switch for Autodarts"
-site_description: "Chrome extension for a shared Autodarts display: everyone plays under their own account and a tap on a tile switches players. Sessions are parked and kept fresh, so nobody signs in again."
+site_description: "Browser extension for Chrome, Edge and Firefox, for a shared Autodarts display: everyone plays under their own account and a tap on a tile switches players. Sessions are parked and kept fresh, so nobody signs in again."
 # The website of the owner itself lives at the root of its address.
 site_url: https://dennis-otto.github.io/player-switch-for-autodarts/
 repo_url: https://github.com/Dennis-Otto/player-switch-for-autodarts

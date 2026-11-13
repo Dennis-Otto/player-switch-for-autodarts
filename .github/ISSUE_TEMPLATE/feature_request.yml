@@ -18,6 +18,15 @@ body:
     attributes:
       label: Area
       options:
+        - Switching players
+        - Adding an account
+        - The switcher on the Autodarts page
+        - Join the lobby
+        - Venue mode for a club or pub
+        - Remembered password
+        - Install or update
+        - Firefox or Edge
+        - Website or documentation
         - Other
   - type: textarea
     id: proposal

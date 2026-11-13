@@ -208,9 +208,12 @@ kann.
   eigenen zufälligen Salz von 16 Bytes, gemacht mit WebCrypto. Eine Prüfung vergleicht
   die Hashes in einer Zeit, die nicht verrät, wie viele Bytes übereinstimmen.
 - **Der Service Worker prüft jede PIN,** bei jedem Wechsel zu einem Konto mit PIN und
-  bei jeder Änderung unter **Konten verwalten** oder auf der Seite der Einstellungen,
-  so kommen weder das Popup noch der Umschalter auf der Autodarts-Seite daran vorbei.
-  Das Content-Skript kann die Hashes weder lesen noch diese Anfragen senden.
+  bei jeder Änderung unter **Konten verwalten** oder des Modus für Verein und Kneipe
+  auf der Seite der Einstellungen, so kommen weder das Popup noch der Umschalter auf der
+  Autodarts-Seite daran vorbei. Das Content-Skript kann die Hashes weder lesen noch
+  diese Anfragen senden. Die Einstellungen des Knopfs auf der Autodarts-Seite, ob er
+  sich zeigt, seine Ecke und die Reihenfolge der Kacheln, ändern kein Konto und
+  schützen nichts, darum speichert die Seite der Einstellungen sie selbst.
 - **Ein Spieler kümmert sich ohne den Manager um sein eigenes Konto**
   ([Entscheidung 0018](decisions/0018-let-a-player-protect-and-remove-their-own-account.md), auf Englisch).
   Der Service Worker gibt eine erste PIN ohne die Manager-PIN nur dem Konto eines
