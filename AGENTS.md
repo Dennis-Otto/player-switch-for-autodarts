@@ -1,6 +1,6 @@
 # Instructions for coding agents
 
-Player Switch for Autodarts: Chrome extension for a shared Autodarts display: everyone plays under their own account and a tap on a tile switches players. Sessions are parked and kept fresh, so nobody signs in again; an optional remembered password signs an account back in by itself. Everything stays on the computer.
+Player Switch for Autodarts: Browser extension for Chrome, Edge and Firefox, for a shared Autodarts display: everyone plays under their own account and a tap on a tile switches players. Sessions are parked and kept fresh, so nobody signs in again; an optional remembered password signs an account back in by itself. Everything stays on the computer.
 
 These are the rules for coding agents, such as Claude Code, Codex, GitHub Copilot and Cursor, that change this repository; people find the same rules in [CONTRIBUTING.md](CONTRIBUTING.md). The blueprint keeps this file current, so change it in the blueprint, not here. The notes of this project, such as where its parts are, are in [.github/agents.project.md](.github/agents.project.md): read them as well.
 

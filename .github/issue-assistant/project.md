@@ -1,4 +1,4 @@
-Player Switch for Autodarts: A Chrome extension that switches between Autodarts accounts on a shared touch display with one tap, without signing in again.
+Player Switch for Autodarts: A browser extension for Chrome, Edge and Firefox that switches between Autodarts accounts on a shared touch display with one tap, without signing in again.
 
 Where things are:
 

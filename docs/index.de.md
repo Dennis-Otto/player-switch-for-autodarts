@@ -1,4 +1,5 @@
 ---
+description: "Browser-Erweiterung für Chrome, Edge und Firefox für ein gemeinsames Autodarts-Display: Jede Person spielt unter ihrem eigenen Konto, und ein Tipp auf eine Kachel wechselt den Spieler. Die Sitzungen werden geparkt und frisch gehalten, so meldet sich niemand neu an."
 hide:
   - navigation
   - toc
