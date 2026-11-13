@@ -185,4 +185,8 @@ A copy loaded this way gets no update by itself, so a display does better with t
 - It asks only for access to the Autodarts sites, its own storage, a timer for the renewal and the right to run its own script in the Autodarts tabs after an update, or in a tab where it stopped answering. It can't read the address or title of your other tabs, or your browsing history.
 - What comes in the next twelve months, and what won't, is in the [roadmap](roadmap.md).
 
+## Also for your board {#homedarts}
+
+[**HomeDarts for Autodarts**](https://dennis-otto.github.io/homedarts-for-autodarts/), by the same author, brings your Autodarts board into Home Assistant: every dart live and local from the Board Manager in your network, scoreboards for any screen, statistics, and automations such as lights that follow the game. Each works without the other: Player Switch needs no Home Assistant, and HomeDarts needs no browser extension.
+
 Not affiliated with Autodarts.

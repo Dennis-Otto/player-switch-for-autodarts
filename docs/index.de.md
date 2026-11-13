@@ -185,4 +185,8 @@ Eine so geladene Kopie aktualisiert sich nicht von selbst, darum ist ein Display
 - Sie fragt nur nach dem Zugriff auf die Autodarts-Seiten, auf ihren eigenen Speicher, auf einen Timer für die Erneuerung und auf das Recht, nach einem Update oder in einem Tab, in dem es nicht mehr antwortet, ihr eigenes Skript in den Autodarts-Tabs auszuführen. Adresse und Titel deiner anderen Tabs und deinen Browserverlauf kann sie nicht lesen.
 - Was in den nächsten zwölf Monaten kommt und was nicht, steht in der [Roadmap](roadmap.md).
 
+## Auch für dein Board {#homedarts}
+
+[**HomeDarts for Autodarts**](https://dennis-otto.github.io/homedarts-for-autodarts/de/), vom selben Autor, bringt dein Autodarts-Board in Home Assistant: jeden Dart live und lokal vom Board Manager in deinem Netzwerk, Scoreboards für jeden Bildschirm, Statistiken und Automationen, etwa Licht, das dem Spiel folgt. Beide kommen ohne einander aus: Player Switch braucht kein Home Assistant, und HomeDarts braucht keine Browser-Erweiterung.
+
 Nicht mit Autodarts verbunden.
