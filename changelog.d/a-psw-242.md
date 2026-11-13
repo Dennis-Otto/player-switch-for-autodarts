@@ -1,3 +1,0 @@
-### Bug fixes
-
-- A change of the sign-in at Autodarts no longer signs every saved player out. Until now, any refusal of a renewal ended the parked session, also one that only meant that Autodarts can't read the request, as when it asks for something new; every player then had to sign in again by hand, even after the update of the extension. Now only the answer for a dead session or a wrong password ends one. Any other refusal keeps every parked session, **Manage accounts** shows since when the renewal fails, and the popup suggests an update of Player Switch at once, so the sessions renew again as soon as the new version runs.
