@@ -60,6 +60,13 @@ nav:
   - Roadmap: roadmap.md
   - Decisions: decisions/README.md
 
+# The icon of the extension in the header and in the tab of the browser, in place of
+# the book of the Material theme. The other settings of the theme come from
+# .github/mkdocs-blueprint.yml, which MkDocs merges with these.
+theme:
+  logo: images/icon.png
+  favicon: images/icon.png
+
 # The styles of this website alone, beside those of the blueprint.
 extra_css:
   - stylesheets/project.css
