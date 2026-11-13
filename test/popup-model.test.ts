@@ -4,6 +4,7 @@ import { test } from "node:test";
 import type { PlayersView, PlayerView } from "../src/messages.ts";
 import {
   answered,
+  BOARD_HELP,
   keptManagerPin,
   matchQuestion,
   mustUnlock,
@@ -15,13 +16,17 @@ import {
   showsEmpty,
   showsForgetAll,
   statusAfter,
+  type Translate,
   tileOf,
   toggled,
 } from "../src/popup-model.ts";
 
 /** The texts of the extension as their keys, with the substitution after a colon. */
-const t = (key: string, substitution?: string) =>
-  substitution === undefined ? key : `${key}: ${substitution}`;
+/** The key of a text, and what fills its placeholders, in their order. */
+const t: Translate = (key, substitution) =>
+  substitution === undefined
+    ? key
+    : `${key}: ${[substitution].flat().join(", ")}`;
 
 const HOUR = 60 * 60 * 1000;
 const NOW = Date.UTC(2026, 9, 25, 12);
@@ -94,9 +99,19 @@ test("the status line names each problem, and says nothing once a request went t
     ),
     { text: "pinLocked", error: true },
   );
+  // A saved account: the line names its username, which the owner of the board shares
+  // the board with, and links to the help for a player who sees no board.
   assert.deepEqual(
-    statusAfter({ ok: true, page: true, saved: "Ada", view }, null, t),
-    { text: "savedAccount: Ada", error: false },
+    statusAfter(
+      { ok: true, page: true, saved: { name: "Ada", username: "ada.l" }, view },
+      null,
+      t,
+    ),
+    {
+      text: "savedAccount: Ada, ada.l",
+      error: false,
+      help: { anchor: BOARD_HELP, label: "savedAccountHelp" },
+    },
   );
   assert.deepEqual(statusAfter({ ok: true, view }, null, t), {
     text: "",

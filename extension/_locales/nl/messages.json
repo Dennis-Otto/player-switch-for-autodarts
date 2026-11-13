@@ -69,12 +69,18 @@
     "message": "Log op Autodarts in met de nieuwe speler. Het account wordt vanzelf opgeslagen."
   },
   "savedAccount": {
-    "message": "$NAME$ is opgeslagen. Een tik op een tegel wisselt van speler.",
+    "message": "$NAME$ is opgeslagen. Autodarts toont het bord van iemand anders zodra de eigenaar het deelt met $USERNAME$.",
     "placeholders": {
       "name": {
         "content": "$1"
+      },
+      "username": {
+        "content": "$2"
       }
     }
+  },
+  "savedAccountHelp": {
+    "message": "Geen bord te zien?"
   },
   "unsavedText": {
     "message": "Er is iemand op Autodarts ingelogd die hier nog niet is opgeslagen."

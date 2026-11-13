@@ -62,7 +62,7 @@ After the install, a welcome page opens with four steps:
 1. **Pin the icon.** Chrome puts a new extension behind the puzzle piece next to the address bar: click it, then the pin next to Player Switch for Autodarts. Edge and Firefox have the same puzzle piece: in Edge, click the eye instead of the pin, in Firefox the gear and then **Pin to Toolbar**.
 2. **Sign in the first player** on [play.autodarts.com](https://play.autodarts.com). The account is saved by itself, and the icon shows ✓ for a moment.
 3. **Add the next players:** in the popup, or in the players on the Autodarts page, choose **Add account** and sign in as the next person. That account is saved by itself too, without opening the popup again.
-4. **Share the board.** Autodarts shows a board only to its owner and to the accounts that it is shared with, so the owner of the board shares it with every saved account: on Autodarts under **My Boards**, by the exact username, up to 10 other accounts. Otherwise a player sees no board after a switch, as [the help](help.md#board-not-shared) explains.
+4. **Share the board.** Autodarts shows a board only to its owner and to the accounts that it is shared with, so the owner of the board shares it with every saved account: on Autodarts under **My Boards**, by the exact username, up to 10 other accounts. Otherwise a player sees no board after a switch, as [the help](help.md#board-not-shared) explains. Each time the extension saves an account, its message names the username to share the board with.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="images/diagrams/adding-a-player.dark.svg">

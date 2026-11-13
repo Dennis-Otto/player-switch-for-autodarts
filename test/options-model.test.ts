@@ -12,10 +12,14 @@ import {
   venuePinQuestion,
   venueReport,
 } from "../src/options-model.ts";
+import type { Translate } from "../src/popup-model.ts";
 import { IDLE_MINUTES } from "../src/venue.ts";
 
-const t = (key: string, substitution?: string) =>
-  substitution === undefined ? key : `${key}: ${substitution}`;
+/** The key of a text, and what fills its placeholders, in their order. */
+const t: Translate = (key, substitution) =>
+  substitution === undefined
+    ? key
+    : `${key}: ${[substitution].flat().join(", ")}`;
 
 const STATUS: VenueStatus = {
   manager: false,

@@ -30,6 +30,7 @@ import {
   pinQuestion,
   questionOf,
   rememberRefused,
+  type Status,
   showsEmpty,
   showsForgetAll,
   statusAfter,
@@ -38,6 +39,7 @@ import {
 } from "../popup-model.ts";
 import { choosePin, confirmDialog, pinDialog } from "./dialogs.ts";
 import { find, t, translate } from "./dom.ts";
+import { helpHref } from "./support.ts";
 
 // The language of the texts that show, so that names and times read the same: the
 // browser may run in a language the extension has no texts for.
@@ -189,10 +191,25 @@ export function mountPlayers({
   // The lobby that the page shows, with the accounts seated there, or null.
   let lobby: PlayersView["lobby"] = null;
 
-  /** Shows a message, an error in the region that is read out at once; "" clears both. */
-  function showStatus(text: string, isError = false): void {
+  /**
+   * Shows a message, an error in the region that is read out at once; "" clears both.
+   * A link to the help follows it when `help` names an entry, in a tab of its own.
+   */
+  function showStatus(
+    text: string,
+    isError = false,
+    help?: Status["help"],
+  ): void {
     statusBar.textContent = isError ? "" : text;
     problemBar.textContent = isError ? text : "";
+    if (help !== undefined) {
+      const link = document.createElement("a");
+      link.href = helpHref(help.anchor);
+      link.target = "_blank";
+      link.rel = "noopener noreferrer";
+      link.textContent = help.label;
+      (isError ? problemBar : statusBar).append(" ", link);
+    }
   }
 
   /**
@@ -292,7 +309,7 @@ export function mountPlayers({
       action: message.action,
       name: nameOf(message),
     });
-    showStatus(status.text, status.error);
+    showStatus(status.text, status.error, status.help);
     if (reply === undefined) {
       return reply;
     }

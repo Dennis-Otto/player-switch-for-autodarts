@@ -57,8 +57,14 @@
     "message": "Melde dich auf Autodarts mit dem neuen Spieler an. Das Konto wird von selbst gespeichert."
   },
   "savedAccount": {
-    "message": "$NAME$ ist gespeichert. Ein Tipp auf eine Kachel wechselt den Spieler.",
-    "placeholders": { "name": { "content": "$1" } }
+    "message": "$NAME$ ist gespeichert. Ein fremdes Board zeigt Autodarts erst, wenn sein Besitzer es mit $USERNAME$ teilt.",
+    "placeholders": {
+      "name": { "content": "$1" },
+      "username": { "content": "$2" }
+    }
+  },
+  "savedAccountHelp": {
+    "message": "Board fehlt?"
   },
   "unsavedText": {
     "message": "Auf Autodarts ist jemand angemeldet, der hier noch nicht gespeichert ist."

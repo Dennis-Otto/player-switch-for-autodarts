@@ -594,6 +594,15 @@ footer .link:hover {
   text-decoration: underline;
 }
 
+/* The link to the help after a message, in the color of its text, which keeps the
+   contrast of 4.5:1 on either background; underlined, as a link within a sentence. */
+#status a,
+#problem a {
+  color: inherit;
+  font-weight: 600;
+  text-decoration: underline;
+}
+
 /* The version of Player Switch that runs, quiet on a line of its own below the links,
    in the muted gray of a hint. */
 footer #version {

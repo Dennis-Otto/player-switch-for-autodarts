@@ -69,12 +69,18 @@
     "message": "Connectez-vous sur Autodarts avec le nouveau joueur. Le compte est enregistré automatiquement."
   },
   "savedAccount": {
-    "message": "Le compte de $NAME$ est enregistré. Une pression sur une vignette change de joueur.",
+    "message": "Le compte de $NAME$ est enregistré. Autodarts lui montre la cible d'une autre personne dès que son propriétaire la partage avec $USERNAME$.",
     "placeholders": {
       "name": {
         "content": "$1"
+      },
+      "username": {
+        "content": "$2"
       }
     }
+  },
+  "savedAccountHelp": {
+    "message": "La cible manque ?"
   },
   "unsavedText": {
     "message": "Quelqu'un est connecté sur Autodarts sans être encore enregistré ici."

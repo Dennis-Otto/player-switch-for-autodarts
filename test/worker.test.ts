@@ -104,7 +104,7 @@ interface Reply {
   wrong?: boolean;
   retryIn?: number;
   page?: boolean;
-  saved?: string;
+  saved?: { name: string; username: string };
   joined?: string;
   kept?: boolean;
   error?: string;
@@ -456,7 +456,7 @@ test("the view of the popup saves a new account that signed in while one is bein
   await started(fake);
   fake.pageToken = fake.autodarts.issue("bob");
   const saved = await popup(fake, { action: "view" });
-  assert.equal(saved.saved, "bob");
+  assert.deepEqual(saved.saved, { name: "bob", username: "bob" });
   assert.equal(saved.page, true);
 
   fake.pageToken = null;
@@ -571,7 +571,9 @@ test("Save account keeps the session of the page, and Add account signs the page
   fake.addTab();
   fake.pageToken = fake.autodarts.issue("ada");
   await started(fake);
-  await popup(fake, { action: "adopt" });
+  // The status line names the account it saved, as after a sign-in saved by itself.
+  const saved = await popup(fake, { action: "adopt" });
+  assert.deepEqual(saved.saved, { name: "ada", username: "ada" });
   assert.equal((await accounts(fake)).activeId, "ada");
 
   const out = await popup(fake, { action: "signout" });
@@ -583,6 +585,15 @@ test("Save account keeps the session of the page, and Add account signs the page
 
   await popup(fake, { action: "stopAdding" });
   assert.equal((await accounts(fake)).addingUntil, null);
+});
+
+test("Save account names no account when the page holds no session", async () => {
+  const fake = browser();
+  fake.addTab();
+  await started(fake);
+  const reply = await popup(fake, { action: "adopt" });
+  assert.deepEqual([reply.ok, reply.saved], [true, undefined]);
+  assert.equal((await accounts(fake)).profiles.length, 0);
 });
 
 test("Save account says when Autodarts can't be reached, and the page keeps its session", async () => {
@@ -598,6 +609,7 @@ test("Save account says when Autodarts can't be reached, and the page keeps its 
     [false, "unreachable", true],
   );
   assert.equal(fake.pageToken, inPage);
+  assert.equal(reply.saved, undefined);
   assert.equal((await accounts(fake)).profiles.length, 0);
   assert.ok(!fake.logs.some((line) => line.includes('"adopt" failed')));
 });

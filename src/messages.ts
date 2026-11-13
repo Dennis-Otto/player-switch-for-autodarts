@@ -206,8 +206,11 @@ export type Outcome =
   | {
       readonly ok: true;
       readonly page?: boolean;
-      /** The name of a new account that was saved just now. */
-      readonly saved?: string;
+      /**
+       * An account that was saved just now: its name, and the username that the owner
+       * of the board shares the board with in Autodarts.
+       */
+      readonly saved?: { readonly name: string; readonly username: string };
       /** After a removal: whether Autodarts ended the sessions, or couldn't be reached. */
       readonly ended?: boolean;
       /** After a join: the name of the account that sits in the lobby now. */

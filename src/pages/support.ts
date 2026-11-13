@@ -9,6 +9,11 @@ interface BrandedNavigator extends Navigator {
   };
 }
 
+/** The address of the help in the language of the extension, at the entry `anchor`. */
+export function helpHref(anchor?: string): string {
+  return anchor === undefined ? t("helpUrl") : `${t("helpUrl")}#${anchor}`;
+}
+
 /**
  * Points each link marked data-link="help" at the help page in the language of the
  * extension, at the entry that its data-anchor names, if any, and each one marked
@@ -24,9 +29,7 @@ export function linkSupport(root: ParentNode): void {
   for (const link of root.querySelectorAll<HTMLAnchorElement>(
     "[data-link=help]",
   )) {
-    const anchor = link.dataset.anchor;
-    link.href =
-      anchor === undefined ? t("helpUrl") : `${t("helpUrl")}#${anchor}`;
+    link.href = helpHref(link.dataset.anchor);
   }
   for (const link of root.querySelectorAll<HTMLAnchorElement>(
     "[data-link=report]",
