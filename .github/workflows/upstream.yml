@@ -27,7 +27,8 @@ name: Upstream
 #
 # A failure of a scheduled run opens an issue with the label bot-failure, which the
 # next run that passes closes (bot-health.yml). A pull request that changes this
-# workflow, its scripts or what the extension expects of Autodarts runs every job, so
+# workflow, its scripts, what the extension expects of Autodarts or the minimum
+# browser versions of extension/manifest.json runs every job, so
 # the change is checked against the real Autodarts, the next and the oldest browsers
 # and the store before it merges; there a description that differs is a warning, as a
 # pull request can't change the store. None is a required check.
@@ -41,6 +42,7 @@ on:
   pull_request:
     paths:
       - .github/workflows/upstream.yml
+      - extension/manifest.json
       - scripts/upstream-contract.ts
       - scripts/chrome-for-testing.sh
       - scripts/store-listing.ts
@@ -273,7 +275,7 @@ jobs:
         run: |
           chrome="$(bash scripts/chrome-for-testing.sh Beta "$RUNNER_TEMP/chrome-for-testing")"
           echo "E2E_CHROME_PATH=$chrome" >> "$GITHUB_ENV"
-          echo "The end-to-end tests run in $("$chrome" --version)." | tee -a "$GITHUB_STEP_SUMMARY"
+          echo "The end-to-end tests run in $("$chrome" --version | sed 's/[[:space:]]*$//')." | tee -a "$GITHUB_STEP_SUMMARY"
       - name: Run the end-to-end tests in Chrome Beta
         run: npm run e2e
       # Each failed test keeps its trace, with every step, request and snapshot of
@@ -541,7 +543,7 @@ jobs:
             echo "E2E_CHROME_PATH=$chrome"
             echo "E2E_FIREFOX_PATH=$firefox"
           } >> "$GITHUB_ENV"
-          echo "The end-to-end tests run in $("$chrome" --version), the tests in Firefox in $("$firefox" --version)." | tee -a "$GITHUB_STEP_SUMMARY"
+          echo "The end-to-end tests run in $("$chrome" --version | sed 's/[[:space:]]*$//'), the tests in Firefox in $("$firefox" --version)." | tee -a "$GITHUB_STEP_SUMMARY"
       - name: Run the end-to-end tests in the oldest Chrome
         id: chrome
         run: npm run e2e
