@@ -205,6 +205,15 @@ someone who can use the computer.
   PIN or taken on by the manager, gets no PIN and so no removal from whoever plays
   under it. What remains: whoever plays under a guest's account that is still without
   a PIN can give it one, and with that PIN remove it and sign it out at Autodarts.
+- **A player's PIN changes only with itself**
+  ([decision 0019](decisions/0019-let-a-player-pin-hold-by-itself.md)). Once an account
+  has a PIN, the service worker changes or clears it only with that PIN, from the
+  options page and from the popup alike, also without a manager PIN, and a wrong one
+  counts towards the wrong PINs. The manager PIN replaces only the PINs that were set
+  while it guarded the display, which the venue settings note (`managed`); a first
+  manager PIN, which anyone at a display without one may set, and one set again after it
+  was taken away start with none. So nobody at a home display opens the account of a
+  player by setting a manager PIN first.
 - **Five wrong PINs in a row lock every PIN for a minute.** All PINs of the display
   share one count, and a right PIN doesn't clear it: the row ends only when a minute
   passes without a wrong PIN. So a guest can't reset the count between guesses by
@@ -279,7 +288,7 @@ stored data is ready for that:
 | A change adds a permission or a host, and after the update Chrome disables the extension on a kiosk display until someone accepts the new warning | `scripts/check-extension.mjs` fails `scripts/check.sh` unless `store/permissions.json` allows the permission with its reason and both store listings justify it. It also refuses `externally_connectable`, optional permissions, a content script in the world of the page and a content security policy that runs scripts from elsewhere |
 | Someone who got hold of the sign-in of the Chrome Web Store publishes an update of their own to every user | The jobs of the workflow that delivers a release reach only the hosts that they need and run no npm package beside the sign-in. Once the sign-in without a secret is set up, they need no stored secret: Google trades the OIDC token of GitHub for an access token of 20 minutes, and only for a run of `publish-store.yml` on `main` of this repository, so no secret is left to steal ([decision 0010](decisions/0010-sign-in-to-the-store-without-a-stored-secret.md)). Google reviews every version before it reaches the users |
 | A compromised package or runner changes what reaches the store, somewhere between the tag and the upload | The store gets only the zip of the release, which the build of the release makes from the signed tag and attests. That build runs `npm ci --ignore-scripts` and `npm run build` in the job that holds the OIDC token for the attestation, so a compromised package of the build could attest a file of its own; what stands against that is the lock file and the check *dependency-review* of each update ([decision 0014](decisions/0014-take-the-chrome-extension-kind-of-the-blueprint.md)). The workflow of the store builds nothing and runs no package of npm: it checks the provenance and the version. With the same build of zlib, the same commit makes the same zip, so anybody can build it from the tag and compare it ([decision 0013](decisions/0013-send-the-store-the-zip-that-the-release-attests.md)) |
-| Someone at a club or pub display plays under another player's account | In the venue mode, an account can ask for a PIN, which the service worker checks before it spends a token of that account |
+| Someone at a club or pub display plays under another player's account | In the venue mode, an account can ask for a PIN, which the service worker checks before it spends a token of that account; the PIN changes or goes only with itself, unless the manager PIN set it |
 | Someone at the display removes accounts or remembers a password | In the venue mode, the service worker takes no change under **Manage accounts** and no change of the venue mode without the manager PIN |
 | Someone at the display guesses a PIN by hand | Five wrong PINs in a row lock every PIN for a minute, counted in the service worker, not in the popup |
 | A PIN is read out of the storage | The storage holds a salted PBKDF2 hash of 600,000 rounds, never the PIN, and only the service worker and the pages of the extension can read it, [in Firefox](#firefox) the content script as well |

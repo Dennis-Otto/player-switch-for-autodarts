@@ -40,6 +40,7 @@ const explained = [
   "matchTitle",
   "matchText",
   "matchSignOutText",
+  "matchSaveText",
   "shortcutNotSet",
   "renewalFailing",
   "unknownFormat",
@@ -51,6 +52,7 @@ const explained = [
   "optionsLocked",
   "pinMismatch",
   "removeOwnPinText",
+  "changePinText",
 ];
 
 // Names, labels, buttons, titles and the texts of the welcome page, which the help
@@ -100,6 +102,7 @@ const plain = [
   "switchButtonPlaying",
   "matchConfirm",
   "matchSignOutConfirm",
+  "matchSaveConfirm",
   "matchCancel",
   "commandPopup",
   "commandToggle",

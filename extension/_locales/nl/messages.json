@@ -120,6 +120,9 @@
   "removeOwnPinText": {
     "message": "Voer de pincode van dit account in om het van dit scherm te verwijderen."
   },
+  "changePinText": {
+    "message": "Voer de pincode in die dit account nu heeft om hem te wijzigen of te verwijderen."
+  },
   "removedOffline": {
     "message": "$NAME$ is van dit scherm verwijderd. Autodarts is niet bereikbaar, dus de sessie daar eindigt pas wanneer die verloopt.",
     "placeholders": {
@@ -320,6 +323,12 @@
   "matchSignOutConfirm": {
     "message": "Toch afmelden"
   },
+  "matchSaveText": {
+    "message": "Het opslaan van het account laadt de pagina opnieuw en beëindigt de wedstrijd op dit scherm."
+  },
+  "matchSaveConfirm": {
+    "message": "Toch opslaan"
+  },
   "commandPopup": {
     "message": "De pop-up openen"
   },
@@ -501,7 +510,7 @@
     "message": "Pincodes van de spelers"
   },
   "playerPinsHint": {
-    "message": "Een account met een pincode vraagt erom voordat iemand ernaar overschakelt, in de pop-up en op de Autodarts-pagina."
+    "message": "Een account met een pincode vraagt erom voordat iemand ernaar overschakelt, in de pop-up en op de Autodarts-pagina. Die pincode wijzigt of verdwijnt alleen met die pincode, tenzij de beheerderspincode hem heeft ingesteld."
   },
   "playerPinsEmpty": {
     "message": "Er is nog geen account opgeslagen."

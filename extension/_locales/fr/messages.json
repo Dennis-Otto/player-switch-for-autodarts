@@ -120,6 +120,9 @@
   "removeOwnPinText": {
     "message": "Saisissez le PIN de ce compte pour le supprimer de cet écran."
   },
+  "changePinText": {
+    "message": "Saisissez le PIN actuel de ce compte pour le changer ou le supprimer."
+  },
   "removedOffline": {
     "message": "$NAME$ est supprimé de cet écran. Autodarts est injoignable, la session n'y prendra donc fin qu'à son expiration.",
     "placeholders": {
@@ -320,6 +323,12 @@
   "matchSignOutConfirm": {
     "message": "Déconnecter quand même"
   },
+  "matchSaveText": {
+    "message": "Enregistrer le compte recharge la page et y met fin sur cet écran."
+  },
+  "matchSaveConfirm": {
+    "message": "Enregistrer quand même"
+  },
   "commandPopup": {
     "message": "Ouvrir la fenêtre pop-up"
   },
@@ -501,7 +510,7 @@
     "message": "PIN des joueurs"
   },
   "playerPinsHint": {
-    "message": "Un compte avec un PIN le demande avant que quelqu'un passe à ce compte, dans la fenêtre contextuelle et sur la page Autodarts."
+    "message": "Un compte avec un PIN le demande avant que quelqu'un passe à ce compte, dans la fenêtre contextuelle et sur la page Autodarts. Son PIN ne se change ou ne se supprime qu'avec ce PIN, sauf si le PIN du gérant l'a défini."
   },
   "playerPinsEmpty": {
     "message": "Aucun compte n'est encore enregistré."

@@ -99,6 +99,12 @@ Zu Hause darf jeder am Display unter jedem gespeicherten Konto spielen, genau da
 
 Fünf falsche PINs in Folge sperren jede PIN des Displays für eine Minute, damit niemand sie alle von Hand durchprobiert. Die Erweiterung speichert keine PIN, nur einen gesalzenen Hash davon.
 
+### Wer die PIN eines Spielers ändert {#change-a-pin}
+
+Die PIN eines Spielers hält für sich allein, auch auf einem Display ohne Manager-PIN: Sobald ein Konto eine PIN hat, fragt eine Änderung oder **PIN entfernen** unter **PINs der Spieler** zuerst nach dieser PIN, auf dem Ziffernblock, und eine falsche zählt zu den fünf, die jede PIN sperren. Eine erste PIN fragt nach keiner anderen.
+
+Die Manager-PIN ändert oder löscht allein nur die PINs, die gesetzt wurden, während sie das Display schützte, vom Manager oder von einem Gast: So gibt der Manager einem Spieler, der seine PIN vergessen hat, eine neue. Eine später gesetzte Manager-PIN öffnet keine der PINs, die die Spieler vor ihr gesetzt haben, und eine, die nach dem Entfernen der Manager-PIN neu gesetzt wird, auch nicht, denn auf einem Display ohne Manager-PIN darf jeder eine setzen. Wer eine solche PIN vergessen hat, lässt sein Konto unter **Konten verwalten** entfernen und fügt es neu hinzu: Das Entfernen meldet das Konto bei Autodarts ab und öffnet es niemandem.
+
 ### Das eigene Konto eines Spielers, ohne den Manager {#own-account}
 
 **Konto hinzufügen** steht an einem Display mit Manager-PIN allen offen, so kann ein Mitglied oder ein Gast sein Konto hinzufügen, während der Manager nicht da ist. Was dieses Konto schützt oder entfernt, braucht den Manager auch nicht, damit niemand eine Sitzung auf dem Display zurücklässt, unter der jeder spielen kann:
@@ -106,7 +112,7 @@ Fünf falsche PINs in Folge sperren jede PIN des Displays für eine Minute, dami
 1. **Mit einer PIN schützen,** unter der Kachel des Spielers, der gerade spielt, solange sein Konto keine PIN hat: Es fragt zweimal nach einer PIN mit 4 bis 8 Ziffern. Von da an zeigt die Kachel ein Schloss und fragt nach der PIN, bevor jemand unter dem Konto spielt.
 2. **Mein Konto entfernen,** unter derselben Kachel, sobald das Konto eine PIN hat: Es fragt nach einem Ja und dieser PIN, meldet das Konto dann bei Autodarts ab und entfernt es vom Display, wie **Konto entfernen** es tut. Ein Spieler, dessen Konto geparkt ist, wechselt zuerst mit seiner PIN zu ihm.
 
-Nur ein Konto, das hinzugefügt wurde, während die Manager-PIN gesetzt war, bekommt so eine erste PIN, während es spielt, und nie eine zweite: Eine PIN, die ein Konto hat, ändert nur der Manager, unter **PINs der Spieler**. Die Konten der Stammspieler, gespeichert vor der Manager-PIN, bekommen nie eine von dem, der gerade unter ihnen spielt und sie dann entfernen könnte; ein später hinzugefügtes Konto übernimmt der Manager, indem er unter **PINs der Spieler** seine PIN setzt oder löscht. Das Hauskonto gehört dem Manager: Es bekommt so keine PIN und wird so nicht entfernt. Eine falsche PIN zählt zu den fünf, die jede PIN für eine Minute sperren.
+Nur ein Konto, das hinzugefügt wurde, während die Manager-PIN gesetzt war, bekommt so eine erste PIN, während es spielt, und nie eine zweite: Eine PIN, die ein Konto hat, ändert sich nur unter **PINs der Spieler**, mit der Manager-PIN und, wenn nicht die Manager-PIN sie gesetzt hat, mit dieser PIN ([wer eine PIN ändert](#change-a-pin)). Die Konten der Stammspieler, gespeichert vor der Manager-PIN, bekommen nie eine von dem, der gerade unter ihnen spielt und sie dann entfernen könnte; ein später hinzugefügtes Konto übernimmt der Manager, indem er unter **PINs der Spieler** seine PIN setzt oder löscht. Das Hauskonto gehört dem Manager: Es bekommt so keine PIN und wird so nicht entfernt. Eine falsche PIN zählt zu den fünf, die jede PIN für eine Minute sperren.
 
 Eine PIN ist eine Sperre für die Leute am Display, kein Schutz vor jemandem, der den Computer benutzen kann: Wer `chrome://extensions` öffnen kann, kann die Erweiterung entfernen, und ein Programm, das das Profil des Browsers liest, kann jede 4-stellige PIN gegen ihren Hash probieren. Das [Sicherheitsdesign](security.md#venue-mode) sagt mehr dazu.
 

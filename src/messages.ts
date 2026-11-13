@@ -16,11 +16,14 @@ import type { ProfileView, View } from "./state.ts";
 /**
  * What a request carries besides its action once the person answered a question of the
  * worker: the manager PIN that opened "Manage accounts" or the options page, the PIN of
- * the account, and the yes to end the match that runs in the page.
+ * the account, and the yes to end the match that runs in the page. The options page,
+ * whose request for a new PIN of an account names that PIN `pin`, sends the PIN that
+ * the account has as `currentPin`.
  */
 export interface Answers {
   readonly managerPin?: string;
   readonly pin?: string;
+  readonly currentPin?: string;
   readonly confirmed?: boolean;
 }
 
@@ -35,7 +38,10 @@ export type PlayersAction =
    * board of the display, while the page stays with the account that plays there.
    */
   | { readonly action: "join"; readonly id: string }
-  /** Saves the session on the page as an account. */
+  /**
+   * Saves the session on the page as an account, which reloads the page: during a match,
+   * only with the person's yes.
+   */
   | { readonly action: "adopt" }
   /** Signs the page out for a new account, which is saved as it signs in. */
   | { readonly action: "signout" }
@@ -59,7 +65,8 @@ export type PlayersAction =
   /**
    * Gives an account the PIN `newPin`. While a manager PIN is set, it needs that PIN,
    * except for the account that plays on the page and has no PIN yet, whose player
-   * protects it themselves.
+   * protects it themselves. An account that has a PIN already needs that PIN (`pin`)
+   * as well, unless the manager PIN set it.
    */
   | {
       readonly action: "protect";
@@ -80,7 +87,10 @@ export type VenueAction =
   | { readonly action: "unlock" }
   /** A new manager PIN, or null to take it away. */
   | { readonly action: "managerPin"; readonly pin: string | null }
-  /** A new PIN of an account, or null to take it away. */
+  /**
+   * A new PIN of an account, or null to take it away. A PIN that the account has goes
+   * only with that PIN (`currentPin`), unless the manager PIN set it.
+   */
   | {
       readonly action: "playerPin";
       readonly id: string;
@@ -94,7 +104,7 @@ export type VenueAction =
     };
 
 export type VenueRequest = { readonly type: "venue" } & VenueAction &
-  Pick<Answers, "managerPin">;
+  Pick<Answers, "managerPin" | "currentPin">;
 
 /** Every request that the service worker takes. */
 export type WorkerRequest =
@@ -359,7 +369,8 @@ export function readRequest(message: unknown): WorkerRequest | null {
         : null;
     case "venue":
       return fits(VENUE_FIELDS, fields) &&
-        optional(fields, "managerPin", isString)
+        optional(fields, "managerPin", isString) &&
+        optional(fields, "currentPin", isString)
         ? (message as VenueRequest)
         : null;
     case "button":

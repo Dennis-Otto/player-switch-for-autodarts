@@ -9,6 +9,7 @@ import {
   idleRequest,
   managerView,
   playerRowView,
+  venuePinQuestion,
   venueReport,
 } from "../src/options-model.ts";
 import { IDLE_MINUTES } from "../src/venue.ts";
@@ -33,6 +34,27 @@ test("the corners lie as on the screen: the top ones first", () => {
     { value: "bottom-left", text: "cornerBottomLeft" },
     { value: "bottom-right", text: "cornerBottomRight" },
   ]);
+});
+
+test("the page asks for the manager PIN, or for the PIN that an account has before it changes", () => {
+  assert.deepEqual(
+    venuePinQuestion({ pin: "manager", wrong: true }, "Ada", t),
+    {
+      field: "managerPin",
+      title: "managerPinTitle",
+      text: "managerPinText",
+      error: "pinWrong",
+    },
+  );
+  assert.deepEqual(
+    venuePinQuestion({ pin: "player", wrong: false }, "Ada", t),
+    {
+      field: "currentPin",
+      title: "pinTitle: Ada",
+      text: "changePinText",
+      error: "",
+    },
+  );
 });
 
 test("the page says how a request of the venue mode went", () => {

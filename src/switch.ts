@@ -315,18 +315,35 @@ export function edit(
 }
 
 /**
+ * How "Save this account" ended: done, or Autodarts couldn't be reached to read who the
+ * session in the page is, which leaves the session in the page and the accounts as they
+ * were.
+ */
+export type AdoptResult =
+  | { state: State; ok: true; reason?: undefined }
+  | { state: State; ok: false; reason: "unreachable" };
+
+/**
  * Claims the session currently signed in on the page as an account of the
  * extension. Because reading who it is rotates the token, the fresh token is
  * written straight back, so the page stays signed in.
  */
-export function adoptCurrentSession(deps: Deps): Promise<State> {
-  return deps.queue(async () => {
+export function adoptCurrentSession(deps: Deps): Promise<AdoptResult> {
+  return deps.queue(async (): Promise<AdoptResult> => {
     const state = await deps.store.load();
     const token = await deps.page.readToken();
     if (token === null) {
-      return commit(deps, deactivate(state));
+      return { state: await commit(deps, deactivate(state)), ok: true };
     }
-    return (await claim(deps, state, token)).state;
+    try {
+      return { state: (await claim(deps, state, token)).state, ok: true };
+    } catch (error) {
+      // Autodarts can't be reached: it took no token, so the page keeps its session.
+      if ((error as AuthError).kind === "unreachable") {
+        return { state, ok: false, reason: "unreachable" };
+      }
+      throw error;
+    }
   });
 }
 

@@ -45,6 +45,38 @@ test("Save account keeps a session that was signed in on the page", async ({
   await expectPlayer(page, ALICE);
 });
 
+test("Save account during a match asks first, as it reloads the page, and spends no token on a no", async ({
+  autodarts,
+  display,
+}) => {
+  const popup = await display.popup();
+  await popup.page.locator("#stop-adding").click();
+  await popup.ready();
+  const page = await display.openAutodarts();
+  await display.signIn(page, ALICE);
+  await page.goto("https://play.autodarts.com/matches/0f6d4c2e");
+  await expectPlayer(page, ALICE);
+  await popup.reopen();
+  const renewals = autodarts.count("refresh", ALICE);
+
+  const dialog = popup.page.locator("dialog.confirm");
+  await popup.page.locator("#adopt").click();
+  await expect(dialog).toContainText(display.t("matchTitle"));
+  await expect(dialog).toContainText(display.t("matchSaveText"));
+  await dialog.getByRole("button", { name: display.t("matchCancel") }).click();
+  await popup.ready();
+  await popup.expectAccounts([], null);
+  expect(autodarts.count("refresh", ALICE)).toBe(renewals);
+
+  await popup.page.locator("#adopt").click();
+  await dialog
+    .getByRole("button", { name: display.t("matchSaveConfirm") })
+    .click();
+  await popup.ready();
+  await popup.expectAccounts([ALICE], ALICE);
+  await expectPlayer(page, ALICE);
+});
+
 test("Add account signs the page out, parks the player and saves the next sign-in", async ({
   autodarts,
   display,

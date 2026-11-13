@@ -123,6 +123,7 @@ import {
   ACTIVITY_KEY,
   addGuests,
   checkPin,
+  currentPinFor,
   forgetAccount,
   forgetGuest,
   hashPin,
@@ -596,8 +597,9 @@ export function startWorker(api: ChromeApi, platform: Platform): StartedWorker {
   }
 
   /**
-   * A switch, or the sign-out for a new account, reloads the page, and every other
-   * Autodarts tab with it, and so ends a match that runs in any of them. Before it
+   * A switch, the sign-out for a new account, or "Save account", which writes the fresh
+   * token back, reloads the page, and every other Autodarts tab with it, and so ends a
+   * match that runs in any of them. Before it
    * spends a token, it asks the person, through the popup or the switcher, unless the
    * request carries their yes.
    */
@@ -666,9 +668,19 @@ export function startWorker(api: ChromeApi, platform: Platform): StartedWorker {
       own === null
         ? await guard(venue.manager, message.managerPin)
         : await guard(own, message.pin);
-    return check.kind === "ok"
-      ? null
-      : refusal(check, own === null ? "manager" : "player");
+    if (check.kind !== "ok") {
+      return refusal(check, own === null ? "manager" : "player");
+    }
+    // A PIN that the account has changes only with itself, unless the manager PIN set it
+    // (decision 0019).
+    if (message.action === "protect") {
+      const current = await guard(
+        currentPinFor(venue, message.id),
+        message.pin,
+      );
+      return current.kind === "ok" ? null : refusal(current, "player");
+    }
+    return null;
   }
 
   async function runAction(
@@ -755,9 +767,17 @@ export function startWorker(api: ChromeApi, platform: Platform): StartedWorker {
           ? { ok: false, reason: result.reason, page: true }
           : { ok: false, reason: result.reason };
       }
-      case "adopt":
-        await adoptCurrentSession(deps);
-        return { ok: true, page: true };
+      case "adopt": {
+        // Saving writes the fresh token into the page, which reloads every Autodarts tab
+        // and so ends a match, as a switch does: it asks first in the same way.
+        if (await mustAskFirst(tab, message)) {
+          return { ok: false, reason: "match" };
+        }
+        const result = await adoptCurrentSession(deps);
+        return result.ok
+          ? { ok: true, page: true }
+          : { ok: false, reason: result.reason, page: true };
+      }
       case "signout": {
         if (await mustAskFirst(tab, message)) {
           return { ok: false, reason: "match" };
@@ -939,7 +959,8 @@ export function startWorker(api: ChromeApi, platform: Platform): StartedWorker {
 
   /**
    * The requests of the options page for the venue mode. Each one other than "status"
-   * needs the manager PIN while one is set, also the one that changes it.
+   * needs the manager PIN while one is set, also the one that changes it. A change of a
+   * PIN that an account has needs that PIN as well, unless the manager PIN set it.
    */
   async function runVenue(message: VenueRequest): Promise<VenueOutcome> {
     if (message.action !== "status") {
@@ -962,6 +983,15 @@ export function startWorker(api: ChromeApi, platform: Platform): StartedWorker {
       }
       case "playerPin": {
         const { id } = message;
+        // A PIN that the account has changes only with itself, unless the manager PIN
+        // set it (decision 0019): a player PIN holds without a manager PIN, too.
+        const current = await guard(
+          currentPinFor(await loadVenue(), id),
+          message.currentPin,
+        );
+        if (current.kind !== "ok") {
+          return refusal(current, "player");
+        }
         const pin = await newPin(message.pin);
         const { profiles } = await readView(anyPage());
         // Only a saved account gets a PIN.

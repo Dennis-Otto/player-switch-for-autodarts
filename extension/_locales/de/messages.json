@@ -96,6 +96,9 @@
   "removeOwnPinText": {
     "message": "Gib die PIN dieses Kontos ein, um es von diesem Display zu entfernen."
   },
+  "changePinText": {
+    "message": "Gib die PIN ein, die dieses Konto jetzt hat, um sie zu ändern oder zu entfernen."
+  },
   "removedOffline": {
     "message": "$NAME$ ist von diesem Display entfernt. Autodarts ist nicht erreichbar, daher endet die Sitzung dort erst, wenn sie abläuft.",
     "placeholders": { "name": { "content": "$1" } }
@@ -246,6 +249,12 @@
   },
   "matchSignOutConfirm": {
     "message": "Trotzdem abmelden"
+  },
+  "matchSaveText": {
+    "message": "Das Speichern lädt die Seite neu und beendet es auf diesem Display."
+  },
+  "matchSaveConfirm": {
+    "message": "Trotzdem speichern"
   },
   "commandPopup": {
     "message": "Popup öffnen"
@@ -427,7 +436,7 @@
     "message": "PINs der Spieler"
   },
   "playerPinsHint": {
-    "message": "Ein Konto mit PIN fragt nach ihr, bevor jemand zu ihm wechselt, im Popup und auf der Autodarts-Seite."
+    "message": "Ein Konto mit PIN fragt nach ihr, bevor jemand zu ihm wechselt, im Popup und auf der Autodarts-Seite. Seine PIN ändert oder entfernt nur, wer sie kennt, außer die Manager-PIN hat sie gesetzt."
   },
   "playerPinsEmpty": {
     "message": "Noch kein Konto gespeichert."

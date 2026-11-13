@@ -25,6 +25,7 @@ import {
   idleRequest,
   managerView,
   playerRowView,
+  venuePinQuestion,
   venueReport,
 } from "../options-model.ts";
 import { openShortcuts, parseSettings, SETTINGS_KEY } from "../page.ts";
@@ -117,11 +118,13 @@ const worked = (reply: VenueReply | undefined): boolean =>
 
 /**
  * Sends a request of the venue mode with the manager PIN that opened the page, asks
- * for that PIN when the worker needs it, as after it changed in another window, and
- * shows the venue mode as the worker answers.
+ * for that PIN when the worker needs it, as after it changed in another window, or for
+ * the PIN that the account `name` has before that PIN changes or goes, and shows the
+ * venue mode as the worker answers.
  */
 async function venueRequest(
   action: VenueAction,
+  name = "",
 ): Promise<VenueReply | undefined> {
   let request: VenueRequest =
     managerPin === null
@@ -134,15 +137,12 @@ async function venueRequest(
     !reply.ok &&
     reply.reason === "pin"
   ) {
-    const pin = await pinDialog({
-      title: t("managerPinTitle"),
-      text: t("managerPinText"),
-      error: reply.wrong ? t("pinWrong") : "",
-    });
+    const { field, ...question } = venuePinQuestion(reply, name, t);
+    const pin = await pinDialog(question);
     if (pin === null) {
       break;
     }
-    request = { ...request, managerPin: pin };
+    request = { ...request, [field]: pin };
     reply = await askVenue(request);
   }
   if (worked(reply) && typeof request.managerPin === "string") {
@@ -188,7 +188,10 @@ function playerRow(account: VenueAccount): HTMLLIElement {
   change.addEventListener("click", async () => {
     const pin = await choosePin(t("newPinFor", account.name));
     if (pin !== null) {
-      await venueRequest({ action: "playerPin", id: account.id, pin });
+      await venueRequest(
+        { action: "playerPin", id: account.id, pin },
+        account.name,
+      );
     }
   });
   item.append(names, change);
@@ -201,7 +204,10 @@ function playerRow(account: VenueAccount): HTMLLIElement {
     remove.textContent = t("removePin");
     remove.setAttribute("aria-label", `${t("removePin")}: ${account.name}`);
     remove.addEventListener("click", () =>
-      venueRequest({ action: "playerPin", id: account.id, pin: null }),
+      venueRequest(
+        { action: "playerPin", id: account.id, pin: null },
+        account.name,
+      ),
     );
     item.append(remove);
   }
