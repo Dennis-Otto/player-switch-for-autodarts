@@ -1,3 +1,4 @@
+// @ts-check
 // A stand-in for the chrome API of the extension, so that the real popup.html and
 // switcher.html run outside of Chrome, with the code of lib/ as they
 // ship: for the pictures of scripts/screenshots.sh, and for any test that wants the
@@ -25,12 +26,37 @@
 // once no request waits either. harness.refuse(reply) answers the next request with
 // `reply` and the view as it is, as the worker refuses one, such as
 // { ok: false, reason: "unreachable" }, and test/harness/a11y.mjs shows its error so.
+//
+// The requests and the replies have the types of src/messages.ts, which the worker
+// and the pages share, and npm run typecheck checks this file against them
+// (test/harness/tsconfig.json): a new kind of request without an answer here, or a
+// reply without a field that the pages read, fails the type check.
+
+/**
+ * @typedef {import("../../src/messages.ts").WorkerRequest} WorkerRequest
+ * @typedef {import("../../src/messages.ts").PlayersRequest} PlayersRequest
+ * @typedef {import("../../src/messages.ts").PlayersReply} PlayersReply
+ * @typedef {import("../../src/messages.ts").PlayersView} PlayersView
+ * @typedef {import("../../src/messages.ts").PlayerView} PlayerView
+ * @typedef {import("../../src/messages.ts").VenueRequest} VenueRequest
+ * @typedef {import("../../src/messages.ts").VenueReply} VenueReply
+ * @typedef {import("../../src/messages.ts").Outcome} Outcome
+ */
+/**
+ * A made-up account as the stub keeps it: how long ago its renewal ran and since when
+ * it fails, which view() turns into the times of the worker.
+ * @typedef {Omit<PlayerView, "active" | "renewedAt" | "renewalFailingSince"> & {
+ *   renewedAgo: number | null;
+ *   failingAgo: number | null;
+ * }} DemoAccount
+ */
+/** @typedef {{ message: string; placeholders?: Record<string, { content: string }> }} Entry */
 
 (() => {
   const setup = new URLSearchParams(location.search);
   // The languages of extension/_locales; any other one shows English, as in Chrome.
   const LANGUAGES = ["en", "de", "nl", "fr", "es"];
-  const asked = setup.get("lang");
+  const asked = setup.get("lang") ?? "en";
   const language = LANGUAGES.includes(asked) ? asked : "en";
   const count = Math.min(
     4,
@@ -42,6 +68,7 @@
   const guarded = setup.get("manager") === "1";
   // Whether the Autodarts page shows a lobby, and who joined it from here.
   const lobby = setup.get("lobby") === "1";
+  /** @type {string[]} */
   const seated = [];
   // Whether the last account has a name too long for one line of its tile.
   const long = setup.get("long") === "1";
@@ -76,7 +103,11 @@
   const RENEWED = [null, 2 * 60 * MINUTE, 25 * MINUTE, 5 * 60 * MINUTE];
   const REMEMBERS = [false, true, false, false];
 
-  /** A generated picture: soft shapes in three colours, the same for every run. */
+  /**
+   * A generated picture: soft shapes in three colours, the same for every run.
+   * @param {readonly string[] | null} colors
+   * @returns {string | null}
+   */
   function picture(colors) {
     if (colors === null) {
       return null;
@@ -94,29 +125,35 @@
     return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
   }
 
+  /** @type {DemoAccount[]} */
   const accounts = PEOPLE.slice(0, count).map((person, index) => ({
     id: `demo-${person.username}`,
     name: person.name,
     username: person.username,
     picture: picture(person.colors),
     needsSignIn: trouble && index === 1,
-    remembersPassword: REMEMBERS[index],
-    renewedAgo: RENEWED[index],
+    remembersPassword: REMEMBERS[index] === true,
+    renewedAgo: RENEWED[index] ?? null,
     failingAgo: trouble && index === 2 ? 3 * 60 * MINUTE : null,
     pin: pinned && index === 1,
   }));
-  if (long && count > 1) {
+  const last = accounts.at(-1);
+  if (long && count > 1 && last !== undefined) {
     // Made up as well; its id stays, so that a driver finds the tile as without it.
-    Object.assign(accounts[count - 1], {
+    Object.assign(last, {
       name: "Maximiliane Alexandra von Hohenstein-Lichtenberg",
       username: "maximiliane.vonhohensteinlichtenberg@example.com",
     });
   }
-  let activeId = accounts[0].id;
+  /** @type {string | null} */
+  let activeId = accounts[0]?.id ?? null;
   // True after "Add account", until the next sign-in or "Cancel".
   let adding = false;
 
-  /** The view of worker.ts: the active account renews in the page, not here. */
+  /**
+   * The view of worker.ts: the active account renews in the page, not here.
+   * @returns {PlayersView}
+   */
   function view() {
     const now = Date.now();
     const active = accounts.find((account) => account.id === activeId);
@@ -149,33 +186,65 @@
     };
   }
 
-  /** What the service worker does for each request of pages/players.ts. */
-  function answer({ action, id, username }) {
+  /**
+   * The made-up account of an id that a page sends, which it took from the view.
+   * @param {string} id
+   * @returns {DemoAccount}
+   */
+  function demo(id) {
     const account = accounts.find((candidate) => candidate.id === id);
-    switch (action) {
-      case "switch":
+    if (account === undefined) {
+      throw new Error(`The stand-in for Chrome has no account ${id}.`);
+    }
+    return account;
+  }
+
+  /**
+   * The end of a switch over every kind of request: the type check fails here once
+   * src/messages.ts has a request that the stub doesn't answer yet.
+   * @param {never} request
+   * @returns {never}
+   */
+  function unknownRequest(request) {
+    throw new Error(
+      `The stand-in for Chrome doesn't answer ${JSON.stringify(request)}: answer it as worker.ts does.`,
+    );
+  }
+
+  /**
+   * What the service worker does for each request of pages/players.ts.
+   * @param {PlayersRequest} request
+   * @returns {PlayersReply}
+   */
+  function answer(request) {
+    switch (request.action) {
+      case "switch": {
+        const account = demo(request.id);
         activeId = account.id;
         account.renewedAgo = null;
         break;
-      case "join":
+      }
+      case "join": {
         // Autodarts seats the player in the lobby, or keeps the seat of one who sits
         // there already, as at "Join again"; the page stays as it is.
+        const account = demo(request.id);
         if (seated.includes(account.id)) {
           return { ok: true, joined: account.name, kept: true, view: view() };
         }
         seated.push(account.id);
         return { ok: true, joined: account.name, view: view() };
+      }
       case "remember":
-        account.remembersPassword = username !== "";
+        demo(request.id).remembersPassword = request.username !== "";
         break;
       case "forgetPassword":
-        account.remembersPassword = false;
+        demo(request.id).remembersPassword = false;
         break;
       case "protect":
-        account.pin = true;
+        demo(request.id).pin = true;
         break;
       case "removeAccount":
-        accounts.splice(accounts.indexOf(account), 1);
+        accounts.splice(accounts.indexOf(demo(request.id)), 1);
         // Autodarts ended the session of the account as well.
         return { ok: true, ended: true, view: view() };
       case "forgetAll":
@@ -188,14 +257,24 @@
       case "stopAdding":
         adding = false;
         break;
-      default:
-        // "view", "adopt" and "close" change nothing here.
+      case "view":
+      case "adopt":
+      case "openPage":
+      case "unlock":
+        // These change nothing here: the page saves no new account, opens no tab, and
+        // "Manage accounts" opens, as the worker does without a manager PIN.
         break;
+      default:
+        return unknownRequest(request);
     }
     return { ok: true, view: view() };
   }
 
-  /** A JSON file of the extension, read at once, as Chrome hands out its own. */
+  /**
+   * A JSON file of the extension, read at once, as Chrome hands out its own.
+   * @param {string} path
+   * @returns {Record<string, unknown>}
+   */
   function extensionFile(path) {
     const request = new XMLHttpRequest();
     request.open("GET", chrome.runtime.getURL(path), false);
@@ -204,13 +283,20 @@
   }
 
   // The texts of the extension, read once from its _locales, as Chrome does.
+  /** @type {Record<string, Entry> | null} */
   let messages = null;
   function catalog() {
-    messages ??= extensionFile(`_locales/${language}/messages.json`);
+    messages ??= /** @type {Record<string, Entry>} */ (
+      extensionFile(`_locales/${language}/messages.json`)
+    );
     return messages;
   }
 
-  /** chrome.i18n.getMessage: $NAME$ is the placeholder, its content $1 the value. */
+  /**
+   * chrome.i18n.getMessage: $NAME$ is the placeholder, its content $1 the value.
+   * @param {string} key
+   * @param {string | string[]} [substitutions]
+   */
   function getMessage(key, substitutions) {
     const entry = catalog()[key];
     if (entry === undefined) {
@@ -219,11 +305,12 @@
     const values =
       substitutions === undefined ? [] : [substitutions].flat().map(String);
     const placeholders = new Map(
-      Object.entries(entry.placeholders ?? {}).map(([name, { content }]) => [
-        name.toLowerCase(),
-        content,
-      ]),
+      Object.entries(entry.placeholders ?? {}).map(
+        ([name, { content }]) =>
+          /** @type {const} */ ([name.toLowerCase(), content]),
+      ),
     );
+    /** @param {string} content */
     const fill = (content) =>
       content.replace(/\$([1-9])/g, (_, index) => values[index - 1] ?? "");
     return entry.message
@@ -234,23 +321,39 @@
       .replaceAll("$$", "$");
   }
 
+  /** @type {PromiseWithResolvers<void> | null} */
   let gate = null;
   let pending = 0;
+  /** @type {Exclude<Outcome, { ok: true }> | null} */
   let refusal = null;
 
   // The venue mode as the options page sees it: which PINs are set, never a hash.
+  /** @type {{ manager: boolean; idleMinutes: number | null; house: string | null }} */
   const venue = { manager: guarded, idleMinutes: null, house: null };
 
-  /** What the service worker answers to a request of the venue mode from pages/options.ts. */
-  function answerVenue({ action, id, pin, minutes, house }) {
-    const account = accounts.find((candidate) => candidate.id === id);
-    if (action === "managerPin") {
-      venue.manager = pin !== null;
-    } else if (action === "playerPin") {
-      account.pin = pin !== null;
-    } else if (action === "idle") {
-      venue.idleMinutes = minutes;
-      venue.house = house;
+  /**
+   * What the service worker answers to a request of the venue mode from pages/options.ts.
+   * @param {VenueRequest} request
+   * @returns {VenueReply}
+   */
+  function answerVenue(request) {
+    switch (request.action) {
+      case "managerPin":
+        venue.manager = request.pin !== null;
+        break;
+      case "playerPin":
+        demo(request.id).pin = request.pin !== null;
+        break;
+      case "idle":
+        venue.idleMinutes = request.minutes;
+        venue.house = request.house;
+        break;
+      case "status":
+      case "unlock":
+        // The page reads the status; without a manager PIN, it opens at once.
+        break;
+      default:
+        return unknownRequest(request);
     }
     return {
       ok: true,
@@ -266,30 +369,59 @@
     };
   }
 
-  async function sendMessage(message) {
-    pending += 1;
-    try {
-      if (message.type === "venue") {
-        return answerVenue(message);
-      }
-      if (gate !== null && message.action !== "view") {
+  /**
+   * A request of pages/players.ts, which harness.hold() keeps waiting and
+   * harness.refuse() answers, unless it only asks for the view.
+   * @param {PlayersRequest} request
+   * @returns {Promise<PlayersReply>}
+   */
+  async function answerPlayers(request) {
+    if (request.action !== "view") {
+      if (gate !== null) {
         await gate.promise;
       }
-      if (refusal !== null && message.action !== "view") {
+      if (refusal !== null) {
         const reply = refusal;
         refusal = null;
         return { ...reply, view: view() };
       }
-      return answer(message);
+    }
+    return answer(request);
+  }
+
+  /**
+   * chrome.runtime.sendMessage: the reply of the service worker to a request of a page.
+   * @param {WorkerRequest} message
+   * @returns {Promise<PlayersReply | VenueReply | undefined>}
+   */
+  async function sendMessage(message) {
+    pending += 1;
+    try {
+      switch (message.type) {
+        case "popup":
+          return await answerPlayers(message);
+        case "venue":
+          return answerVenue(message);
+        // The worker answers neither the switcher, which asks to close, nor an input
+        // that the content script saw; only the content script asks for its button,
+        // and no page of the stage is one.
+        case "switcher":
+        case "activity":
+        case "button":
+          return undefined;
+        default:
+          return unknownRequest(message);
+      }
     } finally {
       pending -= 1;
     }
   }
 
+  /** @returns {Promise<void>} */
   const frame = () =>
     new Promise((resolve) => requestAnimationFrame(() => resolve()));
 
-  window.harness = {
+  const harness = {
     hold() {
       gate = Promise.withResolvers();
     },
@@ -297,6 +429,7 @@
       gate?.resolve();
       gate = null;
     },
+    /** @param {Exclude<Outcome, { ok: true }>} reply */
     refuse(reply) {
       refusal = reply;
     },
@@ -323,13 +456,15 @@
       await frame();
     },
   };
+  Object.assign(window, { harness });
 
   const noListeners = { addListener() {}, removeListener() {} };
-  globalThis.chrome = {
+  const chrome = {
     i18n: { getMessage, getUILanguage: () => language },
     runtime: {
       sendMessage,
       openOptionsPage: async () => {},
+      /** @param {string} path */
       getURL: (path) =>
         new URL(path, new URL("/extension/", location.href)).href,
       getManifest: () => ({
@@ -351,4 +486,5 @@
     },
     tabs: { create: async () => {} },
   };
+  Object.assign(globalThis, { chrome });
 })();

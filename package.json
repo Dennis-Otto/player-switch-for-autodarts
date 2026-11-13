@@ -19,7 +19,7 @@
   },
   "scripts": {
     "build": "tsc --project tsconfig.build.json",
-    "typecheck": "tsc --project tsconfig.json",
+    "typecheck": "tsc --project tsconfig.json && tsc --project test/harness/tsconfig.json",
     "package": "bash scripts/package-extension.sh",
     "e2e": "tsc --project tsconfig.build.json && playwright test",
     "e2e:firefox": "tsc --project tsconfig.build.json && node --test --test-reporter=spec \"test/firefox/*.spec.ts\"",
