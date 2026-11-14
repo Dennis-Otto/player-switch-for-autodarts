@@ -11,7 +11,7 @@ after a switch, although the switch worked, and that is the most common surprise
 new display. Since 1.7.0 the message after each saved account reminds the owner to
 share the board, but for every account, the owner and the accounts that see the board
 already included: nothing says for which account the sharing is still missing (#235,
-#278).
+# 278).
 
 The page **My Boards** of Autodarts Play asks `GET https://api.autodarts.com/bs/v0/boards`
 with the access token of the account, the same JWT that the extension holds for each
