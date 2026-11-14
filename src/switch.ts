@@ -33,13 +33,22 @@
  * Joining a lobby seats a parked account at the board of the display with the session
  * that the extension keeps for it, while the page stays with the account that plays
  * there (decision 0016).
+ *
+ * Each time an account is saved and each time its session is renewed, the extension asks
+ * the board service with the access token that it holds then anyway, after the turn, and
+ * keeps whom the boards of that account are shared with (decision 0023). No other
+ * operation waits for that answer, and nothing depends on it: a request that fails, or
+ * that gets no answer within BOARD_TIMEOUT_MS, changes nothing but the chip "No board
+ * shared", which then doesn't show.
  */
 import {
   type AuthError,
+  type Board,
   type Fetch,
   type Identity,
   type Join,
   joinLobby,
+  readBoards,
   readIdentity,
   refreshSession,
   revokeSession,
@@ -59,6 +68,7 @@ import {
   forget,
   isAdding,
   loseSession,
+  noteBoards,
   type Profile,
   park,
   played,
@@ -120,6 +130,60 @@ type Renewal =
 async function commit(deps: Deps, state: State): Promise<State> {
   await deps.store.save(state);
   return state;
+}
+
+/** An account whose session a turn just renewed or made, with the access token of it. */
+interface Renewed {
+  id: string;
+  accessToken: string;
+}
+
+/**
+ * Runs an operation in the queue, which notes in `renewed` each account whose session it
+ * renewed, and then reads the boards of each with its access token, after the turn, so
+ * that no other operation waits for the board service; the answer to a tap waits for it
+ * at most BOARD_TIMEOUT_MS. Answers with the operation's outcome and the accounts as they
+ * are after that.
+ */
+async function withBoards<T extends { state: State }>(
+  deps: Deps,
+  operation: (renewed: Renewed[]) => Promise<T>,
+): Promise<T> {
+  const renewed: Renewed[] = [];
+  const result = await deps.queue(() => operation(renewed));
+  let { state } = result;
+  for (const { id, accessToken } of renewed) {
+    state = await learnBoards(deps, id, accessToken, state);
+  }
+  return state === result.state ? result : { ...result, state };
+}
+
+/**
+ * Asks the board service which boards the account sees, with an access token of it, and
+ * keeps the answer in a turn of its own. A request that fails, or an answer of another
+ * shape, leaves the account with no known boards, so no tile shows a chip on a guess; and
+ * since nothing else depends on it, not even a store that fails here fails the operation
+ * that renewed the session: it answers with `state`, the accounts as that operation left
+ * them.
+ */
+async function learnBoards(
+  deps: Deps,
+  id: string,
+  accessToken: string,
+  state: State,
+): Promise<State> {
+  const boards: Board[] | null = await readBoards(
+    deps.fetcher,
+    accessToken,
+    id,
+  ).catch(() => null);
+  return deps
+    .queue(async () => {
+      const loaded = await deps.store.load();
+      const next = noteBoards(loaded, id, boards);
+      return next === loaded ? loaded : commit(deps, next);
+    })
+    .catch(() => state);
 }
 
 /** Turns a sign-in request into a renewal outcome. Only AuthError is ever thrown here. */
@@ -231,7 +295,7 @@ export function rememberPassword(
   id: string,
   credentials: Credentials,
 ): Promise<Remembering> {
-  return deps.queue(async () => {
+  return withBoards(deps, async (renewed): Promise<Remembering> => {
     const state = await deps.store.load();
     const profile = find(state, id);
     if (profile === undefined) {
@@ -272,6 +336,7 @@ export function rememberPassword(
       deps,
       park(remembered, identity, session.refreshToken, deps.now()),
     );
+    renewed.push({ id, accessToken: session.accessToken });
     if (profile.token !== null) {
       await revokeSession(deps.fetcher, profile.token);
     }
@@ -341,7 +406,7 @@ export type AdoptResult =
  * written straight back, so the page stays signed in.
  */
 export function adoptCurrentSession(deps: Deps): Promise<AdoptResult> {
-  return deps.queue(async (): Promise<AdoptResult> => {
+  return withBoards(deps, async (renewed): Promise<AdoptResult> => {
     const state = await deps.store.load();
     const token = await deps.page.takeToken();
     if (token === null) {
@@ -352,7 +417,7 @@ export function adoptCurrentSession(deps: Deps): Promise<AdoptResult> {
       };
     }
     try {
-      return { ...(await claim(deps, state, token)), ok: true };
+      return { ...(await claim(deps, state, token, renewed)), ok: true };
     } catch (error) {
       // Autodarts can't be reached: it took no token, so the page keeps its session.
       if ((error as AuthError).kind === "unreachable") {
@@ -373,6 +438,7 @@ async function claim(
   deps: Deps,
   loaded: State,
   token: string,
+  renewed: Renewed[],
 ): Promise<{ state: State; identity: Identity | null }> {
   let session: Session;
   try {
@@ -396,6 +462,7 @@ async function claim(
     deps,
     park(loaded, identity, session.refreshToken, deps.now()),
   );
+  renewed.push({ id: identity.id, accessToken: session.accessToken });
   await deps.page.writeToken(session.refreshToken);
   return {
     state: await commit(deps, activate(state, identity.id, deps.now())),
@@ -428,7 +495,7 @@ export function adoptNewSignIn(
   deps: Deps,
   ready: () => Promise<boolean> = () => Promise.resolve(true),
 ): Promise<PickUp> {
-  return deps.queue(async (): Promise<PickUp> => {
+  return withBoards(deps, async (renewed): Promise<PickUp> => {
     const state = await deps.store.load();
     if (!isAdding(state, deps.now())) {
       return {
@@ -448,7 +515,7 @@ export function adoptNewSignIn(
       return { kind: "waiting", state };
     }
     try {
-      const claimed = await claim(deps, state, token);
+      const claimed = await claim(deps, state, token, renewed);
       return claimed.identity === null
         ? { kind: "waiting", state: claimed.state }
         : { kind: "saved", state: claimed.state, identity: claimed.identity };
@@ -490,10 +557,14 @@ export type SwitchResult =
  * token.
  */
 export function switchTo(deps: Deps, id: string): Promise<SwitchResult> {
-  return deps.queue(() => bringOn(deps, id));
+  return withBoards(deps, (renewed) => bringOn(deps, id, renewed));
 }
 
-async function bringOn(deps: Deps, id: string): Promise<SwitchResult> {
+async function bringOn(
+  deps: Deps,
+  id: string,
+  renewed: Renewed[],
+): Promise<SwitchResult> {
   let state = await deps.store.load();
   const target = find(state, id);
   if (target === undefined || state.activeId === id) {
@@ -518,7 +589,8 @@ async function bringOn(deps: Deps, id: string): Promise<SwitchResult> {
     deps,
     park(state, identity, renewal.session.refreshToken, deps.now()),
   );
-  const kept = await keepOutgoing(deps, state);
+  renewed.push({ id: identity.id, accessToken: renewal.session.accessToken });
+  const kept = await keepOutgoing(deps, state, renewed);
   if (kept === null) {
     return { state, ok: false, reason: "unreachable" };
   }
@@ -547,7 +619,11 @@ async function bringOn(deps: Deps, id: string): Promise<SwitchResult> {
  * Answers with the accounts, of which none plays when a session was there to keep, or
  * with null when Autodarts can't be reached: then nothing changed and the page stays.
  */
-async function keepOutgoing(deps: Deps, state: State): Promise<State | null> {
+async function keepOutgoing(
+  deps: Deps,
+  state: State,
+  renewed: Renewed[],
+): Promise<State | null> {
   const { activeId } = state;
   const token = activeId === null ? null : await deps.page.takeToken();
   if (activeId === null || token === null) {
@@ -564,11 +640,13 @@ async function keepOutgoing(deps: Deps, state: State): Promise<State | null> {
   // The page's token is spent now: keep the fresh one before the page can fail.
   const identity = readIdentity(renewal.session.accessToken);
   const left = identity.id === activeId ? state : loseSession(state, activeId);
+  if (find(left, identity.id) === undefined) {
+    return commit(deps, left);
+  }
+  renewed.push({ id: identity.id, accessToken: renewal.session.accessToken });
   return commit(
     deps,
-    find(left, identity.id) === undefined
-      ? left
-      : park(left, identity, renewal.session.refreshToken, deps.now()),
+    park(left, identity, renewal.session.refreshToken, deps.now()),
   );
 }
 
@@ -605,7 +683,7 @@ async function release(deps: Deps): Promise<void> {
  * say whose the session in the page is, the page stays as it is.
  */
 export function signOutForNewAccount(deps: Deps): Promise<SwitchResult> {
-  return deps.queue(() => signOut(deps, true));
+  return withBoards(deps, (renewed) => signOut(deps, true, renewed));
 }
 
 /**
@@ -617,13 +695,17 @@ export function signOutForNewAccount(deps: Deps): Promise<SwitchResult> {
  * page stays as it is, and the next look tries again.
  */
 export function leaveDisplay(deps: Deps): Promise<SwitchResult> {
-  return deps.queue(() => signOut(deps, false));
+  return withBoards(deps, (renewed) => signOut(deps, false, renewed));
 }
 
-async function signOut(deps: Deps, waitForNew: boolean): Promise<SwitchResult> {
+async function signOut(
+  deps: Deps,
+  waitForNew: boolean,
+  renewed: Renewed[],
+): Promise<SwitchResult> {
   const state = await deps.store.load();
   // Keep the session before the page lets go of it.
-  const kept = await keepOutgoing(deps, state);
+  const kept = await keepOutgoing(deps, state, renewed);
   if (kept === null) {
     return { state, ok: false, reason: "unreachable" };
   }
@@ -681,20 +763,22 @@ export async function joinLobbyAs(
   if (!("session" in turn)) {
     return turn;
   }
-  const player = readIdentity(turn.session.accessToken);
+  const { accessToken } = turn.session;
+  const player = readIdentity(accessToken);
   let join: Join;
   try {
     join = await joinLobby(
       deps.fetcher,
-      turn.session.accessToken,
+      accessToken,
       lobbyId,
       player,
       turn.state.activeId,
     );
   } catch (error) {
-    // joinLobby throws nothing but AuthError.
+    // joinLobby throws nothing but AuthError. The boards are read after the join, which
+    // waits for nothing else.
     return {
-      state: turn.state,
+      state: await learnBoards(deps, id, accessToken, turn.state),
       ok: false,
       reason:
         (error as AuthError).kind === "rejected" ? "refused" : "unreachable",
@@ -707,7 +791,7 @@ export async function joinLobbyAs(
     commit(deps, played(await deps.store.load(), id, deps.now())),
   );
   return {
-    state,
+    state: await learnBoards(deps, id, accessToken, state),
     ok: true,
     seated: player,
     kept: join === "seated",
@@ -948,7 +1032,9 @@ export async function refreshParked(deps: Deps): Promise<RefreshRun> {
     requestRefused: 0,
   };
   for (const { id } of renewable(run.state)) {
-    const { state, outcome } = await deps.queue(() => refreshOne(deps, id));
+    const { state, outcome } = await withBoards(deps, (renewed) =>
+      refreshOne(deps, id, renewed),
+    );
     run.state = state;
     if (outcome === "requestRefused") {
       run.unreachable += 1;
@@ -963,6 +1049,7 @@ export async function refreshParked(deps: Deps): Promise<RefreshRun> {
 async function refreshOne(
   deps: Deps,
   id: string,
+  renewed: Renewed[],
 ): Promise<{ state: State; outcome: Outcome }> {
   const state = await deps.store.load();
   // A switch may have run since the list was made: renew only what still waits for it.
@@ -972,6 +1059,7 @@ async function refreshOne(
   }
   const renewal = await renew(deps, profile);
   if (renewal.kind === "ok") {
+    renewed.push({ id, accessToken: renewal.session.accessToken });
     return {
       state: await commit(
         deps,

@@ -8,12 +8,12 @@
   },
   "host_permissions": {
     "https://play.autodarts.com/*": "The Autodarts page: content.js reads and writes the session there, shows the button of the switcher, and the worker finds the Autodarts tabs by their address with it.",
-    "https://api.autodarts.com/*": "The sign-in service and the game service of Autodarts: renewing a session, signing in with a remembered password, ending a session, and seating a saved player in the lobby that the display shows (decision 0016)."
+    "https://api.autodarts.com/*": "The sign-in service, the game service and the board service of Autodarts: renewing a session, signing in with a remembered password, ending a session, seating a saved player in the lobby that the display shows (decision 0016), and reading whom the boards of a saved account are shared with (decision 0023)."
   },
   "web_accessible_resources": {
     "switcher.html": "The switcher that the button lays over the Autodarts page, a page of the extension in a frame, so the scripts of the page can't read the accounts out of it."
   },
   "data_collection_permissions": {
-    "authenticationInfo": "The session tokens of the saved accounts, and a remembered username with its password, go to the sign-in service of Autodarts, api.autodarts.com, to renew a session, to sign in again and to end a session; a fresh access token of a saved account goes to the game service on the same host, with the username and the id of that account, to seat the player in the lobby that the display shows. They go nowhere else: not to the developer, not to anyone else, and the extension sends no usage data, no error reports and no other data."
+    "authenticationInfo": "The session tokens of the saved accounts, and a remembered username with its password, go to the sign-in service of Autodarts, api.autodarts.com, to renew a session, to sign in again and to end a session; a fresh access token of a saved account goes to the game service on the same host, with the username and the id of that account, to seat the player in the lobby that the display shows; and the access token of each renewal goes to the board service on the same host, to read whom the boards of that account are shared with. They go nowhere else: not to the developer, not to anyone else, and the extension sends no usage data, no error reports and no other data."
   }
 }

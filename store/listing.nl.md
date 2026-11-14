@@ -81,10 +81,10 @@ Niet verbonden aan Autodarts.
   zodat een wissel werkt in het tabblad vooraan en de andere opnieuw laden. Het
   adres en de titel van andere tabbladen kan de extensie niet lezen.
 • Hosttoegang tot `https://api.autodarts.com/*` — om in te loggen, een sessie te vernieuwen en
-  te beëindigen, en om een opgeslagen speler toe te voegen aan de lobby op het scherm,
-  dezelfde verzoeken als de website van Autodarts. De extensie
-  maakt met geen enkele andere server verbinding, en haar content security policy
-  dwingt dat af.
+  te beëindigen, om een opgeslagen speler toe te voegen aan de lobby op het scherm en
+  om te lezen met wie de borden van een opgeslagen account gedeeld zijn, dezelfde
+  verzoeken als de website van Autodarts. De extensie maakt met geen enkele andere
+  server verbinding, en haar content security policy dwingt dat af.
 
 ## Startpagina en support
 

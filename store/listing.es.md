@@ -83,10 +83,10 @@ Sin relación con Autodarts.
   demás se recarguen. La extensión no puede leer la dirección ni el título de
   otras pestañas.
 • Acceso al host `https://api.autodarts.com/*` — para iniciar sesión, renovar una sesión y
-  cerrarla, y para añadir a un jugador guardado al lobby que muestra la pantalla, las
-  mismas peticiones que hace la web de Autodarts. La extensión no se
-  conecta a ningún otro servidor, y su política de seguridad de contenido lo
-  impone.
+  cerrarla, para añadir a un jugador guardado al lobby que muestra la pantalla y para
+  leer con quién están compartidas las dianas de una cuenta guardada, las mismas
+  peticiones que hace la web de Autodarts. La extensión no se conecta a ningún otro
+  servidor, y su política de seguridad de contenido lo impone.
 
 ## Página principal y asistencia
 

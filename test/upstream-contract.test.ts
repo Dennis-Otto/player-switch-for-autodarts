@@ -7,6 +7,7 @@ import { test } from "node:test";
 import { fileURLToPath } from "node:url";
 import {
   CONTRACT,
+  checkBoards,
   checkForward,
   checkLobby,
   checkLogin,
@@ -28,6 +29,7 @@ import {
 } from "../scripts/upstream-contract.ts";
 import {
   AUTH_BASE,
+  BOARD_BASE,
   CLIENT_ID,
   type Fetch,
   GAME_BASE,
@@ -120,6 +122,8 @@ const ANSWERS: Record<string, Answer> = {
   // The answers of 2026-11-08 to the made-up lobby, for a token that is no JWT.
   [`${GAME_BASE}/lobbies/${MADE_UP.lobby}`]: () => UNAUTHORIZED(),
   [`${GAME_BASE}/lobbies/${MADE_UP.lobby}/players`]: () => UNAUTHORIZED(),
+  // The board service refused the made-up token with 401 on 2026-11-14 as well.
+  [`${BOARD_BASE}/boards`]: () => UNAUTHORIZED(),
 };
 
 interface FakeAutodarts {
@@ -184,11 +188,11 @@ test("Autodarts as it is passes every check, with a handful of requests and made
     assert.match(report, /Autodarts works the way the extension relies on\./);
     assert.match(
       report,
-      /10 requests reached Autodarts, with made-up data only/,
+      /11 requests reached Autodarts, with made-up data only/,
     );
     assert.doesNotMatch(report, /\*\*changed\*\*/);
   });
-  assert.equal(lines.length, 11);
+  assert.equal(lines.length, 12);
   assert.ok(lines.every((line) => !line.startsWith("::error")));
   // The page names the routes, and the search stops at the script that has the rest;
   // the page has three more.
@@ -203,6 +207,7 @@ test("Autodarts as it is passes every check, with a handful of requests and made
     `POST ${AUTH_BASE}/logout`,
     `GET ${GAME_BASE}/lobbies/${MADE_UP.lobby}`,
     `POST ${GAME_BASE}/lobbies/${MADE_UP.lobby}/players`,
+    `GET ${BOARD_BASE}/boards`,
   ]);
   // Only made-up data reaches Autodarts, through the functions of the extension.
   assert.deepEqual(fake.bodies.get("/auth/v1/refresh"), {
@@ -618,6 +623,31 @@ test("the lobby and a seat in it have to ask a made-up token for a real one with
       assert.equal(finding.found, found);
     }
   }
+});
+
+test("the boards of an account have to ask a made-up token for a real one with 401", async () => {
+  const cases: [Answer | Error, boolean, string][] = [
+    [UNAUTHORIZED, true, "refused with 401"],
+    [
+      () => text("404 page not found", 404),
+      false,
+      'answered 404: the address may be gone, and no tile can say "No board shared" then',
+    ],
+    [() => json(403, {}), false, "answered 403, where a made-up token got 401"],
+    [new Error("reset"), false, "no answer: Autodarts could not be reached"],
+    [() => json(200, []), false, "an answer, for a made-up token"],
+  ];
+  for (const [answer, ok, found] of cases) {
+    const fake = autodarts({ [`${BOARD_BASE}/boards`]: answer });
+    const finding = await checkBoards(requestsOf(fake), CONTRACT);
+    assert.equal(finding.ok, ok, found);
+    assert.equal(finding.found, found);
+    assert.equal(finding.what, "The boards of an account");
+  }
+  // The check sends that one request and nothing else.
+  const fake = autodarts();
+  await checkBoards(requestsOf(fake), CONTRACT);
+  assert.deepEqual(fake.requests, [`GET ${BOARD_BASE}/boards`]);
 });
 
 test("an answer of the game service for a made-up token fails the check", async () => {

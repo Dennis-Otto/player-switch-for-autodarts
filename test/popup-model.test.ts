@@ -46,6 +46,7 @@ const ada: PlayerView = {
   renewedAt: null,
   renewalFailingSince: null,
   lastPlayedAt: null,
+  unshared: false,
   pin: false,
 };
 
@@ -375,6 +376,7 @@ test("a tile shows the key of the first nine, the chip of the player and the hea
     chip: null,
     join: null,
     own: null,
+    unshared: null,
     renewed: null,
     failing: null,
     toggle: "rememberPassword",
@@ -586,4 +588,17 @@ test("the keys of the tiles count among the tiles that show, so a filter brings 
   assert.equal(keys(many)[11], null);
   // With "12" in the field, it is the only tile, and key 1 picks it.
   assert.deepEqual(keys(filterTiles(many, "12")), ["1"]);
+});
+
+test("a tile says No board shared only for an account that the answers of Autodarts prove sees none", () => {
+  const options = { numbered: false, now: NOW, language: "en", t };
+  assert.equal(tileOf(ada, 0, options).unshared, null);
+  assert.deepEqual(tileOf({ ...ada, unshared: true }, 0, options).unshared, {
+    text: "boardNotShared",
+    label: "boardNotSharedAs: Ada",
+  });
+  // Beside every other chip, such as of the player who plays, which it doesn't replace.
+  const playing = tileOf({ ...ada, active: true, unshared: true }, 0, options);
+  assert.equal(playing.chip?.kind, "playing");
+  assert.notEqual(playing.unshared, null);
 });

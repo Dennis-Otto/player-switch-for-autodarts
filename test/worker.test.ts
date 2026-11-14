@@ -315,6 +315,17 @@ test("Autodarts gets at most 20 seconds for a request", async () => {
   assert.equal(REQUEST_TIMEOUT_MS, 20_000);
 });
 
+test("a request with a shorter limit of its own, as that of the boards, ends at the sooner one", async () => {
+  const { limitOf } = await import("../src/worker.ts");
+  assert.equal(limitOf(undefined).aborted, false);
+  assert.equal(limitOf(null).aborted, false);
+  const own = new AbortController();
+  const limit = limitOf(own.signal);
+  assert.equal(limit.aborted, false);
+  own.abort();
+  assert.equal(limit.aborted, true);
+});
+
 test("the install waits for the first account, opens the welcome page and gives the open Autodarts tabs the content script", async () => {
   const fake = browser();
   await started(fake);
@@ -2294,12 +2305,14 @@ test("Copy diagnostics answers how the accounts stand and the last events, behin
         needsSignIn: false,
         remembersPassword: false,
         renewalFailingSince: null,
+        unshared: false,
       },
       {
         playing: false,
         needsSignIn: true,
         remembersPassword: true,
         renewalFailingSince: null,
+        unshared: false,
       },
     ],
     renewal: {

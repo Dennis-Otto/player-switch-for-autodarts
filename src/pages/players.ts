@@ -510,6 +510,16 @@ export function mountPlayers({
       chip.hidden = false;
     }
 
+    // "No board shared" shows only where the answers of Autodarts prove that no saved
+    // account shares a board with this one, and leads to the help on sharing one.
+    const missing = find<HTMLAnchorElement>(".unshared", node);
+    missing.hidden = view.unshared === null;
+    if (view.unshared !== null) {
+      missing.href = helpHref("board-not-shared");
+      missing.textContent = view.unshared.text;
+      missing.setAttribute("aria-label", view.unshared.label);
+    }
+
     // "Join the lobby" seats the player in the lobby that the page shows, and the page
     // plays on with the player who plays there; "Join again", below a tile that says
     // "In the lobby", seats a player whom the host took out since. Its name says whose

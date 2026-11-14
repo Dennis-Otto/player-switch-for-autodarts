@@ -356,6 +356,13 @@ export interface Tile {
    * for every other tile.
    */
   own: { text: string; label: string; kind: "protect" | "remove" } | null;
+  /**
+   * The chip "No board shared" below the tile of an account that, by the answers of the
+   * board service, sees no board of a saved account (`unshared` of `state.ts`), as a link
+   * to the help on sharing a board; `label` is its name for a screen reader, with the
+   * name of the account. Null for every other tile, also when nothing is known.
+   */
+  unshared: { text: string; label: string } | null;
   /** In "Manage accounts": when the renewal of the parked session last worked. */
   renewed: string | null;
   /** In "Manage accounts": since when the renewal fails, while the extension keeps trying. */
@@ -432,6 +439,12 @@ export function tileOf(
     chip,
     join,
     own: ownOf(profile, options.venue, t),
+    unshared: profile.unshared
+      ? {
+          text: t("boardNotShared"),
+          label: t("boardNotSharedAs", profile.name),
+        }
+      : null,
     renewed:
       profile.renewedAt === null
         ? null

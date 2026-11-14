@@ -44,6 +44,12 @@ would find the tokens and passwords there only encrypted
   after a break is on, also the time of the last tap, click or key on the Autodarts
   page: never where or what it was. The browser forgets that time, and the count of
   wrong PINs, as it closes.
+- **Whom the boards of each saved account are shared with,** as Autodarts last
+  answered for that account: the id of each board that it owns or that is shared
+  with it, the id of its owner and the ids of the accounts that the owner shares it
+  with. Never the name of a board, its address or the name of another account. It
+  is there only for the hint **No board shared** on a tile, and it goes with the
+  account.
 - **Who joined which lobby from this display,** while the browser runs: the ids of
   the last few lobbies and of the saved accounts that the extension seated in each,
   so that their tiles say "In the lobby". No token and no name; the browser forgets
@@ -62,8 +68,9 @@ would find the tokens and passwords there only encrypted
 
 The extension talks to Autodarts (`api.autodarts.com` and
 `play.autodarts.com`), over HTTPS, to sign in, renew a session, move the session
-between accounts and seat a saved player in the lobby that the display shows — the
-same requests the Autodarts website itself makes. The popup
+between accounts, seat a saved player in the lobby that the display shows and read
+whom the boards of a saved account are shared with — the same requests the Autodarts
+website itself makes. The popup
 and the switcher also show each player's picture from the address Autodarts gives
 for it, as the Autodarts website does. The extension opens no other connection,
 contacts no analytics or tracking service, and the developer receives no data from it.
@@ -76,7 +83,12 @@ whose password you remember, which go to the sign-in service of Autodarts as
 described here, and nowhere else. When a saved player joins the lobby on the display,
 a fresh access token of that account goes to the game service of Autodarts on the
 same host, with the username and the id of the account, which Autodarts knows
-already. The developer declares the same data to the Chrome Web Store, as
+already. Each time an account is saved or its session renewed, the access token of
+that renewal goes to the board service of Autodarts on the same host, which answers
+with the boards of that account, as for the page **My Boards** of the Autodarts
+website.
+
+The developer declares the same data to the Chrome Web Store, as
 *Authentication information* in the privacy practices of the extension, and certifies
 there that it is not sold, not used for anything but switching the players and not
 used for credit or lending; the store shows this under *Privacy* on the page of the

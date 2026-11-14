@@ -82,6 +82,13 @@
   "savedAccountHelp": {
     "message": "La cible manque ?"
   },
+  "boardNotShared": {
+    "message": "Aucune cible partagée"
+  },
+  "boardNotSharedAs": {
+    "message": "Aucune cible partagée avec $NAME$ : ouvrir l'aide",
+    "placeholders": { "name": { "content": "$1" } }
+  },
   "unsavedText": {
     "message": "Quelqu'un est connecté sur Autodarts sans être encore enregistré ici."
   },

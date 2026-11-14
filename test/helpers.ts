@@ -1,5 +1,11 @@
 /** Shared fakes for the tests: no browser, no network, a clock that stands still. */
-import { type Fetch, GAME_BASE, readIdentity } from "../src/autodarts.ts";
+import {
+  BOARD_BASE,
+  type Board,
+  type Fetch,
+  GAME_BASE,
+  readIdentity,
+} from "../src/autodarts.ts";
 import { EMPTY, type State } from "../src/state.ts";
 import type { PagePort, Store } from "../src/switch.ts";
 import {
@@ -153,10 +159,23 @@ export class FakeStore implements Store {
 }
 
 /** The requests that `router` tells apart, by the end of their URL. */
-export type Route = "refresh" | "login" | "logout" | "lobby" | "seat";
+export type Route =
+  | "refresh"
+  | "login"
+  | "logout"
+  | "lobby"
+  | "seat"
+  | "boards";
 
-/** The route of a request to Autodarts: the sign-in service, a lobby, or a seat in one. */
+/**
+ * The route of a request to Autodarts: the sign-in service, a lobby, a seat in one, or
+ * the boards of an account. A test without a handler for the boards fails that request,
+ * as an unexpected one, which the extension takes as a request that failed.
+ */
 function routeOf(url: string): Route {
+  if (url.startsWith(`${BOARD_BASE}/`)) {
+    return "boards";
+  }
   if (url.startsWith(`${GAME_BASE}/lobbies/`)) {
     return url.endsWith("/players") ? "seat" : "lobby";
   }
@@ -164,6 +183,25 @@ function routeOf(url: string): Route {
     return "refresh";
   }
   return url.endsWith("/login") ? "login" : "logout";
+}
+
+/** The answer of the board service for the boards of a test, in the shape that Autodarts sends. */
+export function boardsResponse(boards: readonly Board[]): Response {
+  const user = (id: string, isOwner: boolean) => ({
+    user: { id, name: `name-of-${id}`, avatarUrl: "", country: "" },
+    isOwner,
+  });
+  return jsonResponse(
+    boards.map((board) => ({
+      id: board.id,
+      name: `Board of ${board.owner}`,
+      ip: "192.0.2.1",
+      permissions: [
+        user(board.owner, true),
+        ...board.shared.map((id) => user(id, false)),
+      ],
+    })),
+  );
 }
 
 /** A fetch that answers by the request's URL and body, built from handlers. */
@@ -230,6 +268,14 @@ export class FakeAutodarts {
       boards: Map<string, string>;
     }
   >();
+  /**
+   * The boards of its board service: the owner of each and the accounts it is shared
+   * with. It answers each account with those that name it, as the real one answers the
+   * owner of a board; none at first.
+   */
+  readonly boards: Board[] = [];
+  /** The accounts whose access token asked for their boards, in order. */
+  readonly boardReads: string[] = [];
   /** The seats that it was asked for, in order: the lobby, the account of the token, the body. */
   readonly seats: { lobby: string; bearer: string; body: unknown }[] = [];
   private opened = 0;
@@ -326,7 +372,29 @@ export class FakeAutodarts {
       : recordedResponse(LOGIN_WRONG_PASSWORD);
   }
 
+  /** The board service: the boards that name the account of the access token, or 401 without one. */
+  private boardService(init: RequestInit): Response {
+    const token = (
+      new Headers(init.headers).get("Authorization") ?? ""
+    ).replace(/^Bearer /, "");
+    let bearer: string;
+    try {
+      bearer = readIdentity(token).id;
+    } catch {
+      return jsonResponse({ error: "unauthorized" }, 401);
+    }
+    this.boardReads.push(bearer);
+    return boardsResponse(
+      this.boards.filter(
+        (board) => board.owner === bearer || board.shared.includes(bearer),
+      ),
+    );
+  }
+
   readonly fetch: Fetch = async (url, init) => {
+    if (url.startsWith(`${BOARD_BASE}/`)) {
+      return this.boardService(init);
+    }
     if (url.startsWith(`${GAME_BASE}/`)) {
       return this.game(url, init);
     }

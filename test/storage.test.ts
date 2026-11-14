@@ -230,6 +230,7 @@ test("accounts whose key is gone have to sign in again, and nothing fails", asyn
         renewalFailedAt: null,
         credentials: null,
         lastPlayedAt: null,
+        boards: null,
       },
       // Bob plays on: the page keeps his session. Only his password is forgotten.
       {
@@ -240,6 +241,7 @@ test("accounts whose key is gone have to sign in again, and nothing fails", asyn
         renewalFailedAt: null,
         credentials: null,
         lastPlayedAt: null,
+        boards: null,
       },
     ],
     activeId: "b",

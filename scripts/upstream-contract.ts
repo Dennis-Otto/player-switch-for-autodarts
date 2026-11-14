@@ -2,12 +2,14 @@
 // which Autodarts Play keeps its session, the sign-in service and the client that it
 // signs in as, the addresses of a match and of a lobby in the page, the answer to a
 // dead session and to a wrong password, the end of a session, the lobby of a board and
-// a seat in it, and the forwarding of play.autodarts.io. None of it is a public contract of Autodarts, so this is how a
-// change shows up before a player notices it.
+// a seat in it, the boards of an account, and the forwarding of play.autodarts.io. None
+// of it is a public contract of Autodarts, so this is how a change shows up before a
+// player notices it.
 // .github/workflows/upstream.yml runs this file every day; test/upstream-contract.test.ts
 // tests it. No dependencies: the values come from src/autodarts.ts and src/page.ts,
-// and the requests to the sign-in service and the game service go through the functions of the
-// extension itself, so neither can drift apart from what the extension does.
+// and the requests to the sign-in service, the game service and the board service go
+// through the functions of the extension itself, so none can drift apart from what the
+// extension does.
 //
 //   node scripts/upstream-contract.ts
 //
@@ -22,11 +24,13 @@ import { fileURLToPath } from "node:url";
 import {
   AUTH_BASE,
   AuthError,
+  BOARD_BASE,
   CLIENT_ID,
   DEAD_TOKEN_CODE,
   type Fetch,
   GAME_BASE,
   PLAY_ORIGIN,
+  readBoards,
   readLobby,
   refreshSession,
   revokeSession,
@@ -83,6 +87,7 @@ export interface Contract {
   readonly authBase: string;
   readonly clientId: string;
   readonly gameBase: string;
+  readonly boardBase: string;
   /** The first part of the address of a match that runs, `/matches/<id>`. */
   readonly matchRoute: string;
   /** The first part of the address of a lobby, `/lobby/<id>`. */
@@ -96,6 +101,7 @@ export const CONTRACT: Contract = {
   authBase: AUTH_BASE,
   clientId: CLIENT_ID,
   gameBase: GAME_BASE,
+  boardBase: BOARD_BASE,
   matchRoute: MATCH_ROUTE,
   lobbyRoute: LOBBY_ROUTE,
 };
@@ -156,6 +162,14 @@ export const placesOf = (contract: Contract) => {
     seat: [
       { file: "src/autodarts.ts", text: "/players" },
       { file: "test/e2e/fake/autodarts.ts", text: "/players" },
+    ],
+    boards: [
+      { file: "src/autodarts.ts", text: contract.boardBase },
+      { file: "src/autodarts.ts", text: "/boards" },
+      {
+        file: "test/e2e/fake/server.ts",
+        text: `"${new URL(contract.boardBase).pathname}/"`,
+      },
     ],
   } satisfies Record<string, readonly Place[]>;
 };
@@ -543,13 +557,15 @@ export const checkLogout = async (
 };
 
 /**
- * What a request to the game service with a made-up token found: ok only for 401, the
- * answer that asks for a real token, which shows that the address is still there and
- * still takes the access token of a player.
+ * What a request to the game service or the board service with a made-up token found:
+ * ok only for 401, the answer that asks for a real token, which shows that the address is
+ * still there and still takes the access token of a player. `gone` says what a player
+ * misses when the address is gone.
  */
 const unauthorized = async (
   requests: Requests,
   call: () => Promise<unknown>,
+  gone = "a player can't join a lobby then",
 ): Promise<{ found: string; ok: boolean }> => {
   try {
     await call();
@@ -563,7 +579,7 @@ const unauthorized = async (
     if (status === undefined) {
       found = `no answer: ${reason(error)}`;
     } else if (GONE.includes(status)) {
-      found = `answered ${status}: the address may be gone, and a player can't join a lobby then`;
+      found = `answered ${status}: the address may be gone, and ${gone}`;
     } else {
       found = `answered ${status}, where a made-up token got 401`;
     }
@@ -597,6 +613,25 @@ export const checkSeat = async (
   places: placesOf(contract).seat,
 });
 
+/**
+ * Reads the boards with a made-up token, as the extension does after each renewal of a
+ * session: Autodarts must ask for a real token. The extension takes from the answer only
+ * whom a board is shared with, for the chip "No board shared" (decision 0023).
+ */
+export const checkBoards = async (
+  requests: Requests,
+  contract: Contract,
+): Promise<Finding> => ({
+  what: "The boards of an account",
+  expected: `${contract.boardBase}/boards refuses a made-up token with 401`,
+  ...(await unauthorized(
+    requests,
+    () => readBoards(requests.fetch, MADE_UP.token, NOBODY),
+    'no tile can say "No board shared" then',
+  )),
+  places: placesOf(contract).boards,
+});
+
 /** Every check, one after another, so that Autodarts gets one request at a time. */
 export const checkAll = async (
   requests: Requests,
@@ -609,6 +644,7 @@ export const checkAll = async (
   await checkLogout(requests, contract),
   await checkLobby(requests, contract),
   await checkSeat(requests, contract),
+  await checkBoards(requests, contract),
 ];
 
 const cell = (text: string): string => text.replaceAll("|", "\\|");

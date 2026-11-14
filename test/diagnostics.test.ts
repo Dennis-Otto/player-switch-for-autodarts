@@ -1,7 +1,12 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 
-import { AUTH_BASE, AuthError, GAME_BASE } from "../src/autodarts.ts";
+import {
+  AUTH_BASE,
+  AuthError,
+  BOARD_BASE,
+  GAME_BASE,
+} from "../src/autodarts.ts";
 import {
   appended,
   createJournal,
@@ -91,6 +96,13 @@ test("parseEvents keeps only events of known kinds and words, and nothing else o
       counts: { renewed: 2, rejected: -1, unreachable: 0, requestRefused: 0 },
     },
     { ...event(12), counts: "many" },
+    {
+      ...event(13),
+      action: "request",
+      outcome: "http",
+      status: 500,
+      service: "boards",
+    },
   ];
   assert.deepEqual(parseEvents(stored), [
     event(1),
@@ -110,6 +122,13 @@ test("parseEvents keeps only events of known kinds and words, and nothing else o
     },
     { ...event(11), action: "renewal" },
     event(12),
+    {
+      at: 13,
+      action: "request",
+      outcome: "http",
+      status: 500,
+      service: "boards",
+    },
   ]);
   for (const value of [undefined, null, {}, "[]", 3]) {
     assert.deepEqual(parseEvents(value), []);
@@ -122,6 +141,7 @@ test("parseEvents keeps only events of known kinds and words, and nothing else o
 test("an event names the service of a request, never its address", () => {
   assert.equal(serviceOf(`${AUTH_BASE}/token`), "signIn");
   assert.equal(serviceOf(`${GAME_BASE}/lobbies/1234/players`), "game");
+  assert.equal(serviceOf(`${BOARD_BASE}/boards`), "boards");
   assert.equal(serviceOf("https://example.org/"), "other");
   assert.equal(serviceOf(AUTH_BASE), "other");
 });
@@ -270,18 +290,21 @@ const DIAGNOSTICS: Diagnostics = {
       needsSignIn: false,
       remembersPassword: false,
       renewalFailingSince: null,
+      unshared: false,
     },
     {
       playing: false,
       needsSignIn: false,
       remembersPassword: true,
       renewalFailingSince: AT,
+      unshared: false,
     },
     {
       playing: false,
       needsSignIn: true,
       remembersPassword: false,
       renewalFailingSince: null,
+      unshared: true,
     },
   ],
   renewal: {
@@ -334,7 +357,7 @@ test("the copy for the report says how everything stands, in a block of text", (
       "Accounts: 3",
       "  1: playing",
       "  2: ready, password remembered, renewal failing since 2026-11-13T09:30:15Z",
-      "  3: sign in again",
+      "  3: sign in again, no board shared",
       "Last renewal answered: 2026-11-13T09:30:15Z, last attempt: never",
       "Sign-in changed: no, request refused: yes",
       "Venue mode: manager PIN, 2 player PINs, return after 30 minutes to the house account",

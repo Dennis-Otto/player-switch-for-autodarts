@@ -71,10 +71,11 @@ Not affiliated with Autodarts.
   out of it, to show the button there, and to find the open Autodarts tabs, so a
   switch takes effect in the one in front and the others reload. The extension can't
   read the address or title of any other tab.
-• Host access to `https://api.autodarts.com/*` — to sign in, renew a session and end it, and
-  to seat a saved player in the lobby that the display shows, the same requests the
-  Autodarts website makes. The extension connects to no other
-  server, and its content security policy enforces that.
+• Host access to `https://api.autodarts.com/*` — to sign in, renew a session and end it,
+  to seat a saved player in the lobby that the display shows, and to read whom the
+  boards of a saved account are shared with, the same requests the Autodarts website
+  makes. The extension connects to no other server, and its content security policy
+  enforces that.
 
 ## Homepage and support URLs
 

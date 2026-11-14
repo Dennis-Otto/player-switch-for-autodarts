@@ -9,7 +9,7 @@
  * session and no password in plain text: each is sealed by `vault.ts`, and this file
  * only says where the sealed values go.
  */
-import type { Identity } from "./autodarts.ts";
+import type { Board, Identity } from "./autodarts.ts";
 import type { TileOrder } from "./page.ts";
 
 /** A username and password a person asked the extension to keep for an account. */
@@ -41,6 +41,14 @@ export interface Profile extends Identity {
    * tiles may show the account that played last first.
    */
   lastPlayedAt: number | null;
+  /**
+   * The boards that the board service of Autodarts named for the account in its last
+   * answer, each by its id, its owner and the accounts it is shared with (ids only, see
+   * `Board`), or null while the extension knows nothing of them: before the first answer,
+   * and after a request that failed or an answer of another shape. Only what `unshared`
+   * needs, and nothing that the extension relies on for anything else.
+   */
+  boards: readonly Board[] | null;
 }
 
 export interface State {
@@ -66,6 +74,8 @@ export interface ProfileView extends Identity {
   renewalFailingSince: number | null;
   /** When the account last came on to play, or null. */
   lastPlayedAt: number | null;
+  /** The answers of the board service prove that no board of a saved account is shared with it (`unshared`). */
+  unshared: boolean;
 }
 
 export interface View {
@@ -283,7 +293,35 @@ function parseProfile(entry: unknown): Profile | null {
     credentials: parseCredentials(value.credentials),
     // Stored since 1.7.0: an account of an earlier version has played at no known time.
     lastPlayedAt: time(value.lastPlayedAt),
+    // Stored since 1.8.0: of an account of an earlier version, nothing is known yet.
+    boards: parseBoardList(value.boards),
   };
+}
+
+/** A list of boards as it was stored, or null for anything else, which then counts as unknown. */
+function parseBoardList(value: unknown): Board[] | null {
+  if (!Array.isArray(value)) {
+    return null;
+  }
+  const boards: Board[] = [];
+  for (const entry of value) {
+    if (typeof entry !== "object" || entry === null) {
+      return null;
+    }
+    const { id, owner, shared } = entry as Record<string, unknown>;
+    if (
+      typeof id !== "string" ||
+      id === "" ||
+      typeof owner !== "string" ||
+      owner === "" ||
+      !Array.isArray(shared) ||
+      !shared.every((user) => typeof user === "string" && user !== "")
+    ) {
+      return null;
+    }
+    boards.push({ id, owner, shared: shared as string[] });
+  }
+  return boards;
 }
 
 /** A time in milliseconds as it was stored, or null for anything else. */
@@ -363,6 +401,7 @@ function merge(state: State, identity: Identity): Profile {
     renewalFailedAt: existing?.renewalFailedAt ?? null,
     credentials: existing?.credentials ?? null,
     lastPlayedAt: existing?.lastPlayedAt ?? null,
+    boards: existing?.boards ?? null,
   };
 }
 
@@ -576,6 +615,55 @@ export function forgetCredentials(state: State, id: string): State {
   };
 }
 
+/**
+ * Keeps what the board service answered for the account, or null when its request failed
+ * or the answer had another shape: the extension then knows nothing of its boards, and no
+ * tile says on a guess that a board is missing. The same accounts when nothing changed.
+ */
+export function noteBoards(
+  state: State,
+  id: string,
+  boards: readonly Board[] | null,
+): State {
+  const profile = find(state, id);
+  if (
+    profile === undefined ||
+    JSON.stringify(profile.boards) === JSON.stringify(boards)
+  ) {
+    return state;
+  }
+  return { ...state, profiles: write(state, { ...profile, boards }) };
+}
+
+/**
+ * The saved accounts that see no board of a saved account, as far as the answers of the
+ * board service prove it (#278): a saved account owns a board, by its own answer, and the
+ * account's own answer names no board, neither one that it owns nor one shared with it,
+ * and no board that a saved account owns names it among those it is shared with.
+ *
+ * Only an answer for the owner of a board is known to name every account that the board
+ * is shared with, so nothing counts where no saved account owns a board by its own
+ * answer, and an account of which nothing is known gets no chip either: the display can't
+ * know then, and a chip on a guess would be worse than none.
+ */
+export function unshared(state: State): Set<string> {
+  const owned = state.profiles.flatMap(
+    (profile) =>
+      profile.boards?.filter((board) => board.owner === profile.id) ?? [],
+  );
+  const reached = new Set(owned.flatMap((board) => board.shared));
+  return new Set(
+    owned.length === 0
+      ? []
+      : state.profiles
+          .filter(
+            (profile) =>
+              profile.boards?.length === 0 && !reached.has(profile.id),
+          )
+          .map((profile) => profile.id),
+  );
+}
+
 /** The accounts whose parked session the extension renews by itself. */
 export function parked(state: State): Profile[] {
   return state.profiles.filter(
@@ -604,6 +692,7 @@ export function toView(
 ): View {
   const parkedIds = new Set(parked(state).map((profile) => profile.id));
   const renewing = new Set(renewable(state).map((profile) => profile.id));
+  const missing = unshared(state);
   return {
     profiles: state.profiles.map((profile) => ({
       id: profile.id,
@@ -620,6 +709,7 @@ export function toView(
         ? profile.renewalFailedAt
         : null,
       lastPlayedAt: profile.lastPlayedAt,
+      unshared: missing.has(profile.id),
     })),
     unsaved: pageHasSession && state.activeId === null,
     adding: isAdding(state, now),

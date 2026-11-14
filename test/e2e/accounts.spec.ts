@@ -53,6 +53,45 @@ test("Save account keeps a session that was signed in on the page", async ({
   ).toHaveAttribute("href", `${display.t("helpUrl")}#board-not-shared`);
 });
 
+test("A tile says No board shared once the answer of the owner proves it, and not after the owner shares the board", async ({
+  autodarts,
+  display,
+}) => {
+  // Alice owns the board of the display and shares it with Carol, not with Bob.
+  autodarts.shareBoard(ALICE, CAROL);
+  const page = await display.openAutodarts();
+  const popup = await display.saveAccounts(page, [ALICE, BOB, CAROL]);
+  // The boards are read after the turn that saved an account, so the popup may come first.
+  await expect
+    .poll(async () => {
+      await popup.reopen();
+      return popup.tile(BOB).locator(".unshared").isVisible();
+    })
+    .toBe(true);
+  const missing = popup.tile(BOB).getByRole("link", {
+    name: display.t("boardNotSharedAs", BOB.name),
+  });
+  await expect(missing).toHaveText(display.t("boardNotShared"));
+  await expect(missing).toHaveAttribute(
+    "href",
+    `${display.t("helpUrl")}#board-not-shared`,
+  );
+  await expect(missing).toHaveAttribute("target", "_blank");
+  await expect(popup.tile(ALICE).locator(".unshared")).toBeHidden();
+  await expect(popup.tile(CAROL).locator(".unshared")).toBeHidden();
+
+  // Alice shares it with Bob as well: the next answer for her takes his chip away.
+  autodarts.shareBoard(ALICE, CAROL, BOB);
+  await popup.tap(ALICE);
+  await expectPlayer(page, ALICE);
+  await expect
+    .poll(async () => {
+      await popup.reopen();
+      return popup.tile(BOB).locator(".unshared").isVisible();
+    })
+    .toBe(false);
+});
+
 test("Save account during a match asks first, as it reloads the page, and spends no token on a no", async ({
   autodarts,
   display,

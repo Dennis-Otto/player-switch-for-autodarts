@@ -82,6 +82,13 @@
   "savedAccountHelp": {
     "message": "¿No aparece la diana?"
   },
+  "boardNotShared": {
+    "message": "Ninguna diana compartida"
+  },
+  "boardNotSharedAs": {
+    "message": "Ninguna diana compartida con $NAME$: abrir la ayuda",
+    "placeholders": { "name": { "content": "$1" } }
+  },
   "unsavedText": {
     "message": "Alguien tiene la sesión iniciada en Autodarts y aún no está guardado aquí."
   },

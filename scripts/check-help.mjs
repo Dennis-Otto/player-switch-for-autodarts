@@ -17,6 +17,7 @@ const read = (path) =>
 const explained = [
   "needsSignIn",
   "savedAccount",
+  "boardNotShared",
   "badgeTitle",
   "badgeUnsaved",
   "renewed",
@@ -72,6 +73,7 @@ const plain = [
   "addAccount",
   "addingText",
   "savedAccountHelp",
+  "boardNotSharedAs",
   "removed",
   "protectOwn",
   "protectedOwn",

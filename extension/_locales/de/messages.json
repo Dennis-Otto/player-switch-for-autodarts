@@ -66,6 +66,13 @@
   "savedAccountHelp": {
     "message": "Board fehlt?"
   },
+  "boardNotShared": {
+    "message": "Kein Board geteilt"
+  },
+  "boardNotSharedAs": {
+    "message": "Kein Board geteilt mit $NAME$: Hilfe öffnen",
+    "placeholders": { "name": { "content": "$1" } }
+  },
   "unsavedText": {
     "message": "Auf Autodarts ist jemand angemeldet, der hier noch nicht gespeichert ist."
   },

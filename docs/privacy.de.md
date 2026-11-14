@@ -47,6 +47,12 @@ es aber könnte und die Tokens und Passwörter dort nur verschlüsselt fände
   nach einer Pause an ist, auch die Zeit des letzten Tippens, Klicks oder Tastendrucks
   auf der Autodarts-Seite: nie wo oder was es war. Der Browser vergisst diese Zeit,
   und die Zahl der falschen PINs, wenn er schließt.
+- **Mit wem die Boards jedes gespeicherten Kontos geteilt sind,** wie Autodarts
+  zuletzt für dieses Konto geantwortet hat: die ID jedes Boards, das ihm gehört oder
+  mit ihm geteilt ist, die ID seines Besitzers und die IDs der Konten, mit denen der
+  Besitzer es teilt. Nie der Name eines Boards, seine Adresse oder der Name eines
+  anderen Kontos. Es ist nur für den Hinweis **Kein Board geteilt** auf einer Kachel
+  da und geht mit dem Konto.
 - **Wer von diesem Display aus welcher Lobby beigetreten ist,** solange der Browser
   läuft: die IDs der letzten Lobbys und der gespeicherten Konten, die die Erweiterung
   in jede gesetzt hat, damit ihre Kacheln „In der Lobby“ zeigen. Kein Token und kein
@@ -66,9 +72,9 @@ es aber könnte und die Tokens und Passwörter dort nur verschlüsselt fände
 
 Die Erweiterung spricht nur mit Autodarts (`api.autodarts.com` und
 `play.autodarts.com`), über HTTPS, um anzumelden, eine Sitzung zu erneuern, die
-Sitzung zwischen Konten zu verschieben und einen gespeicherten Spieler in die Lobby zu
-setzen, die der Bildschirm zeigt — dieselben Anfragen, die die Autodarts-Website selbst
-stellt. Das Popup und der Umschalter zeigen auch das Bild jedes Spielers von der
+Sitzung zwischen Konten zu verschieben, einen gespeicherten Spieler in die Lobby zu
+setzen, die der Bildschirm zeigt, und zu lesen, mit wem die Boards eines gespeicherten
+Kontos geteilt sind — dieselben Anfragen, die die Autodarts-Website selbst stellt. Das Popup und der Umschalter zeigen auch das Bild jedes Spielers von der
 Adresse, die Autodarts dafür angibt, wie die Autodarts-Website. Sie öffnet keine
 andere Verbindung, spricht mit keinem Dienst für Statistiken oder Tracking, und der
 Entwickler bekommt keine Daten von ihr. Ihre Content Security Policy lässt sie nur mit
@@ -80,8 +86,12 @@ dessen Passwort du dir merken lässt, Benutzername und Passwort, die wie hier
 beschrieben an den Anmeldedienst von Autodarts gehen, und nirgendwohin sonst. Tritt
 ein gespeicherter Spieler der Lobby auf dem Bildschirm bei, geht ein frischer
 Zugangstoken dieses Kontos an den Spieldienst von Autodarts auf demselben Host, mit
-dem Benutzernamen und der ID des Kontos, die Autodarts ohnehin kennt. Der Entwickler
-gibt dieselben Daten im Chrome Web Store an, in den Datenschutzpraktiken der
+dem Benutzernamen und der ID des Kontos, die Autodarts ohnehin kennt. Jedes Mal, wenn
+ein Konto gespeichert oder seine Sitzung erneuert wird, geht der Zugangstoken dieser
+Erneuerung an den Board-Dienst von Autodarts auf demselben Host, der mit den Boards
+dieses Kontos antwortet, wie für die Seite **My Boards** der Autodarts-Website.
+
+Der Entwickler gibt dieselben Daten im Chrome Web Store an, in den Datenschutzpraktiken der
 Erweiterung als Authentifizierungsdaten (*Authentication information*), und
 bestätigt dort, dass sie nicht verkauft, für nichts als das Umschalten der Spieler
 und nicht für Kredit- oder Bonitätszwecke verwendet werden; der Store zeigt das auf
