@@ -605,6 +605,7 @@ test("the popup sees no session and no password of any account", () => {
           "remembersPassword",
           "renewalFailingSince",
           "renewedAt",
+          "unshared",
           "username",
         ]);
         assert.equal(shown.id, profile?.id);

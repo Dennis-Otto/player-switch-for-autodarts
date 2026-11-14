@@ -362,6 +362,45 @@ body.popup:not(:has(:focus-visible)) .key {
   color: var(--accent);
 }
 
+/* "No board shared", below the tile of an account that no saved account shares a
+   board with, by what Autodarts answers for the owner: a link to the help on sharing,
+   in the tint of a warning, and as large a target as the rows below it. It stays while
+   the accounts are managed, when someone looks after them. */
+.unshared {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 44px;
+  padding: 8px 14px;
+  border-top: 1px solid var(--line);
+  background: var(--warn-soft);
+  color: var(--warn);
+  font-size: 13px;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.unshared::after {
+  content: "?";
+  display: inline-grid;
+  place-items: center;
+  width: 18px;
+  height: 18px;
+  border: 1.5px solid currentcolor;
+  border-radius: 50%;
+  font-size: 11px;
+  line-height: 1;
+}
+
+.unshared:hover {
+  text-decoration: underline;
+}
+
+.unshared:focus-visible {
+  outline-offset: -3px;
+}
+
 /* "Join the lobby", below the tile of a parked player on a page with a lobby, and the
    own action of the player who plays at a venue display, "Protect with a PIN" or
    "Remove my account": a row of its own across the card, a target as large as a finger
@@ -782,7 +821,8 @@ dialog.pin .form-actions {
   }
 
   .chip,
-  .pin-mark {
+  .pin-mark,
+  .unshared {
     border: 1px solid CanvasText;
   }
 

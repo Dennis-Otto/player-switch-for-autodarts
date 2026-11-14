@@ -28,3 +28,4 @@ Copy [the template](0000-template.md) to the next free number and describe the d
 | [0020](0020-run-in-no-incognito-or-private-window.md) | Run in no incognito or private window | accepted |
 | [0021](0021-test-the-oldest-and-the-next-browsers-every-morning.md) | Test the oldest browsers that the manifest allows, and the next Firefox, every morning | accepted |
 | [0022](0022-keep-a-ring-of-events-without-personal-data-for-reports.md) | Keep a ring of events without personal data for bug reports | accepted |
+| [0023](0023-say-that-a-board-isnt-shared-only-where-the-owner-proves-it.md) | Say that a board isn't shared only where the answer of its owner proves it | accepted |

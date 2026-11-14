@@ -1,7 +1,7 @@
 /**
  * What the extension knows of Autodarts Play: where it runs, where it keeps its
- * session, the sign-in service that renews, creates and ends a session, and the game
- * service whose lobbies a parked player can join (decision 0016).
+ * session, the sign-in service that renews, creates and ends a session, the game service
+ * of the lobbies that a parked player joins (decision 0016), and the board service (0023).
  *
  * Everything here takes its `fetch` as an argument, so the logic runs in a test
  * without a browser and the extension passes the real `fetch`.
@@ -331,12 +331,16 @@ async function askGame(
 const lobbyPath = (lobbyId: string): string =>
   `/lobbies/${encodeURIComponent(lobbyId)}`;
 
+/** A field of an object from an answer, or undefined when the value is no object. */
+function fieldOf(value: unknown, key: string): unknown {
+  return typeof value === "object" && value !== null
+    ? (value as Record<string, unknown>)[key]
+    : undefined;
+}
+
 /** A text field of an object from an answer, or null when it is missing or empty. */
 function textOf(value: unknown, key: string): string | null {
-  if (typeof value !== "object" || value === null) {
-    return null;
-  }
-  const field: unknown = (value as Record<string, unknown>)[key];
+  const field = fieldOf(value, key);
   return typeof field === "string" && field !== "" ? field : null;
 }
 
@@ -434,4 +438,112 @@ export async function joinLobby(
     boardId: lobby.board,
   });
   return "joined";
+}
+
+/**
+ * The board service of Autodarts, which Autodarts Play asks for **My Boards**. It is no
+ * official interface either: the daily contract check watches it, and when it proves
+ * unstable, the chip that rests on it goes again (#235).
+ */
+export const BOARD_BASE = "https://api.autodarts.com/bs/v0";
+
+/**
+ * How long the board service gets for an answer. The answer to a tap waits for it, since
+ * the boards are read right after the session that the tap renewed, so a service that
+ * hangs holds the switcher open for at most this long instead of the 20 seconds that a
+ * sign-in gets; the boards are then unknown, and no tile shows a chip.
+ */
+export const BOARD_TIMEOUT_MS = 5_000;
+
+/**
+ * A board as the extension keeps it: its id, the account that owns it and the accounts
+ * that its owner shares it with, by the ids that Autodarts gives them, which are the
+ * `sub` of their access tokens. Nothing else of the answer: no name of the board, no
+ * address and no name of any account.
+ */
+export interface Board {
+  readonly id: string;
+  readonly owner: string;
+  readonly shared: readonly string[];
+}
+
+/** The board of one entry of the answer of the board service, or null when it has another shape. */
+function boardOf(entry: unknown): Board | null {
+  const id = textOf(entry, "id");
+  const permissions = fieldOf(entry, "permissions");
+  if (id === null || !Array.isArray(permissions)) {
+    return null;
+  }
+  const owners: string[] = [];
+  const shared: string[] = [];
+  for (const permission of permissions) {
+    const user = textOf(fieldOf(permission, "user"), "id");
+    const isOwner = fieldOf(permission, "isOwner");
+    if (user === null || typeof isOwner !== "boolean") {
+      return null;
+    }
+    (isOwner ? owners : shared).push(user);
+  }
+  const [owner] = owners;
+  // A board has exactly one owner; an answer that names none or two is no answer the
+  // extension knows, and a guess from it could say a board is missing that is not.
+  if (owner === undefined || owners.length > 1) {
+    return null;
+  }
+  return { id, owner, shared };
+}
+
+/**
+ * Reads the boards of an answer of the board service, for the account `account` whose
+ * access token asked: each board whose `permissions` name that account, as its owner or
+ * as one that the board is shared with. The answer for the owner of a board names every
+ * account that the board is shared with, which was seen at Autodarts; what an account
+ * that owns no board gets was not, so its answer counts only for what it names.
+ *
+ * An answer of another shape than the one seen, such as one that is no list, a board
+ * without an id or a permission without its account, throws: the extension then knows
+ * nothing of the boards of that account, and never guesses.
+ */
+export function parseBoards(data: unknown, account: string): Board[] {
+  if (!Array.isArray(data)) {
+    throw new AuthError("unreachable", "Autodarts answered without boards");
+  }
+  const boards: Board[] = [];
+  for (const entry of data) {
+    const board = boardOf(entry);
+    if (board === null) {
+      throw new AuthError("unreachable", "Autodarts answered an unknown board");
+    }
+    if (board.owner === account || board.shared.includes(account)) {
+      boards.push(board);
+    }
+  }
+  return boards;
+}
+
+/**
+ * Reads the boards that the account of an access token sees, with the request that the
+ * page `/boards` of Autodarts Play sends (`GET /bs/v0/boards` with the token). Throws an
+ * AuthError when Autodarts can't be reached, refuses the request or answers another
+ * shape (see `parseBoards`).
+ */
+export async function readBoards(
+  fetcher: Fetch,
+  accessToken: string,
+  account: string,
+): Promise<Board[]> {
+  let response: Response;
+  try {
+    response = await fetcher(`${BOARD_BASE}/boards`, {
+      method: "GET",
+      headers: { Authorization: `Bearer ${accessToken}` },
+      signal: AbortSignal.timeout(BOARD_TIMEOUT_MS),
+    });
+  } catch {
+    throw new AuthError("unreachable", "Autodarts could not be reached");
+  }
+  if (!response.ok) {
+    throw new AuthError("unreachable", `Autodarts answered ${response.status}`);
+  }
+  return parseBoards(await response.json().catch(() => null), account);
 }

@@ -16,7 +16,8 @@
 // lobby     1 shows a lobby on the Autodarts page, which the parked players join (none)
 // long      1 gives the last account a long name and a long user name (none)
 // trouble   1 has the second account sign in again and the renewal of the third one
-//           fail, as the worker reports them (none)
+//           fail, and no saved account share a board with the third one, as the
+//           worker reports them (none)
 //
 // The accounts are made up and their pictures generated: no real people. The answers
 // are those of the service worker, worker.ts, for the requests that pages/players.ts
@@ -148,6 +149,7 @@
     failingAgo: trouble && index === 2 ? 3 * 60 * MINUTE : null,
     pin: pinned && index === 1,
     lastPlayedAt: null,
+    unshared: trouble && index === 2,
   }));
   const last = accounts.at(-1);
   if (long && count > 1 && last !== undefined) {
@@ -280,6 +282,7 @@
               needsSignIn: account.needsSignIn,
               remembersPassword: account.remembersPassword,
               renewalFailingSince: null,
+              unshared: account.unshared,
             })),
             renewal: {
               lastRefreshAt: null,

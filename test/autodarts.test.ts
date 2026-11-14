@@ -3,11 +3,15 @@ import { test } from "node:test";
 
 import {
   AuthError,
+  BOARD_BASE,
+  BOARD_TIMEOUT_MS,
   type Fetch,
   GAME_BASE,
   type Identity,
   joinLobby,
+  parseBoards,
   parseLobby,
+  readBoards,
   readIdentity,
   readLobby,
   refreshSession,
@@ -16,6 +20,7 @@ import {
   signIn,
 } from "../src/autodarts.ts";
 import {
+  BOARDS_OF_AN_OWNER,
   LOGIN_WITHOUT_PASSWORD,
   LOGIN_WRONG_PASSWORD,
   LOGOUT_UNKNOWN_TOKEN,
@@ -609,5 +614,102 @@ test("joinLobby reports a seat that Autodarts refuses", async () => {
   assert.equal(
     await kindOf(joinLobby(fetcher, "access", LOBBY, bob)),
     "rejected",
+  );
+});
+
+const FIRST_BOARD = "8d6b1d0e-0000-4000-8000-000000000001";
+const SECOND_BOARD = "8d6b1d0e-0000-4000-8000-000000000002";
+
+test("parseBoards keeps of the recorded answer of an owner the ids alone", () => {
+  assert.deepEqual(parseBoards(BOARDS_OF_AN_OWNER.body, "made-up-owner"), [
+    { id: FIRST_BOARD, owner: "made-up-owner", shared: ["made-up-friend"] },
+    { id: SECOND_BOARD, owner: "made-up-owner", shared: [] },
+  ]);
+  // No name of a board, no address and no name of an account is kept.
+  assert.doesNotMatch(
+    JSON.stringify(parseBoards(BOARDS_OF_AN_OWNER.body, "made-up-owner")),
+    /made\.up|192\.0\.2|Made-up/,
+  );
+});
+
+test("parseBoards keeps for an account only the boards that name it", () => {
+  assert.deepEqual(parseBoards(BOARDS_OF_AN_OWNER.body, "made-up-friend"), [
+    { id: FIRST_BOARD, owner: "made-up-owner", shared: ["made-up-friend"] },
+  ]);
+  assert.deepEqual(parseBoards(BOARDS_OF_AN_OWNER.body, "stranger"), []);
+  assert.deepEqual(parseBoards([], "made-up-owner"), []);
+});
+
+test("parseBoards throws on an answer of another shape, so nothing is guessed from it", () => {
+  const owner = { user: { id: "o" }, isOwner: true };
+  const shapes: unknown[] = [
+    null,
+    { boards: [] },
+    [null],
+    ["board"],
+    [{ permissions: [owner] }],
+    [{ id: "", permissions: [owner] }],
+    [{ id: "b" }],
+    [{ id: "b", permissions: {} }],
+    [{ id: "b", permissions: [null] }],
+    [{ id: "b", permissions: [{ isOwner: true }] }],
+    [{ id: "b", permissions: [{ user: {}, isOwner: true }] }],
+    [{ id: "b", permissions: [{ user: { id: 7 }, isOwner: true }] }],
+    [{ id: "b", permissions: [{ user: { id: "o" } }] }],
+    [{ id: "b", permissions: [{ user: { id: "o" }, isOwner: "yes" }] }],
+    // A board with no owner, or with two, is no answer that the extension knows.
+    [{ id: "b", permissions: [] }],
+    [{ id: "b", permissions: [{ user: { id: "o" }, isOwner: false }] }],
+    [{ id: "b", permissions: [owner, { user: { id: "p" }, isOwner: true }] }],
+  ];
+  for (const shape of shapes) {
+    assert.throws(
+      () => parseBoards(shape, "o"),
+      (error) => error instanceof AuthError && error.kind === "unreachable",
+      JSON.stringify(shape),
+    );
+  }
+});
+
+test("readBoards asks the board service as the page My Boards does, with the access token", async () => {
+  let sent: { url: string; init: RequestInit } | undefined;
+  const fetcher: Fetch = (url, init) => {
+    sent = { url, init };
+    return Promise.resolve(jsonResponse(BOARDS_OF_AN_OWNER.body));
+  };
+  const boards = await readBoards(fetcher, "access-of-ada", "made-up-owner");
+  assert.equal(boards.length, 2);
+  assert.equal(sent?.url, `${BOARD_BASE}/boards`);
+  assert.equal(sent?.url, "https://api.autodarts.com/bs/v0/boards");
+  assert.equal(sent?.init.method, "GET");
+  assert.deepEqual(sent?.init.headers, {
+    Authorization: "Bearer access-of-ada",
+  });
+  assert.equal(sent?.init.body, undefined);
+  // A board service that hangs holds the answer to a tap for 5 seconds at most.
+  assert.ok(sent?.init.signal instanceof AbortSignal);
+  assert.equal(BOARD_TIMEOUT_MS, 5_000);
+});
+
+test("readBoards fails when Autodarts can't be reached, refuses or answers no JSON", async () => {
+  assert.equal(
+    await kindOf(readBoards(throwing, "access", "o")),
+    "unreachable",
+  );
+  for (const status of [401, 404, 500]) {
+    assert.equal(
+      await kindOf(readBoards(answer(jsonResponse({}, status)), "access", "o")),
+      "unreachable",
+    );
+  }
+  assert.equal(
+    await kindOf(
+      readBoards(
+        answer(new Response("<html>", { status: 200 })),
+        "access",
+        "o",
+      ),
+    ),
+    "unreachable",
   );
 });

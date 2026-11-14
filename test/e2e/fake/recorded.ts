@@ -69,3 +69,79 @@ export const LOGOUT_UNKNOWN_TOKEN: Recorded = {
   status: 200,
   body: { success: true },
 };
+
+/**
+ * The shape of the answer of the board service, at https://api.autodarts.com/bs/v0, to
+ * `GET /boards` with the access token of the owner of two boards, one of them shared with
+ * one other account, as Autodarts Play asks it for **My Boards**. It was looked at on
+ * 2026-11-14 in a browser, for its address, status and keys only: every value here is
+ * made up, and so are the accounts. One of the two boards had no `variant`.
+ * `permissions[].user.id` is the `sub` of the access token of that account.
+ */
+export const BOARDS_OF_AN_OWNER: Recorded = {
+  status: 200,
+  body: [
+    {
+      id: "8d6b1d0e-0000-4000-8000-000000000001",
+      name: "Made-up board",
+      virtualNumberRing: false,
+      permissions: [
+        {
+          user: {
+            id: "made-up-owner",
+            name: "made.up.owner",
+            avatarUrl: "",
+            country: "",
+          },
+          isOwner: true,
+        },
+        {
+          user: {
+            id: "made-up-friend",
+            name: "made.up.friend",
+            avatarUrl: "",
+            country: "",
+          },
+          isOwner: false,
+        },
+      ],
+      ip: "192.0.2.10",
+      matchId: "",
+      state: {},
+      version: "0.0.0",
+      os: "linux",
+      arch: "arm64",
+      variant: "made-up",
+      type: "made-up",
+      detections: 0,
+      corrections: 0,
+      accuracy: 0,
+    },
+    {
+      id: "8d6b1d0e-0000-4000-8000-000000000002",
+      name: "Made-up second board",
+      virtualNumberRing: false,
+      permissions: [
+        {
+          user: {
+            id: "made-up-owner",
+            name: "made.up.owner",
+            avatarUrl: "",
+            country: "",
+          },
+          isOwner: true,
+        },
+      ],
+      ip: "192.0.2.11",
+      matchId: "",
+      state: {},
+      version: "0.0.0",
+      os: "linux",
+      arch: "arm64",
+      type: "made-up",
+      detections: 0,
+      corrections: 0,
+      accuracy: 0,
+    },
+  ],
+};

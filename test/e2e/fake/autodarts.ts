@@ -20,7 +20,13 @@
  * opens and seats a player in one as the real one does for the page `/join/<lobby>`:
  * only with the access token of that player, and only at the board of the host.
  *
- * It knows no browser and no network: `answer` and `answerGame` take a request and give
+ * Its board service, at https://api.autodarts.com/bs/v0, answers `GET /boards` as the
+ * real one answers the owner of a board (`BOARDS_OF_AN_OWNER` of recorded.ts): with each
+ * board that names the account of the access token, by its owner and the accounts that
+ * the owner shares it with. A test shares a board with `shareBoard`; there is none at
+ * first.
+ *
+ * It knows no browser and no network: `answer`, `answerGame` and `answerBoards` take a request and give
  * the status and the body of the answer, which the fake HTTPS server of server.ts sends
  * back to the browser.
  */
@@ -77,6 +83,13 @@ interface Session {
   token: string;
 }
 
+/** A board of the board service: its id, its owner and the accounts it is shared with. */
+interface Board {
+  readonly id: string;
+  readonly owner: Account;
+  shared: Account[];
+}
+
 /** A lobby of the game service: its host, the board where the host plays, and who sits in it. */
 interface Lobby {
   readonly host: Account;
@@ -118,6 +131,7 @@ export class FakeAutodarts {
   private readonly live = new Map<string, Session>();
   private readonly spent = new Map<string, Session>();
   private readonly lobbies = new Map<string, Lobby>();
+  private readonly boards: Board[] = [];
   private issued = 0;
 
   constructor(accounts: readonly Account[] = [ALICE, BOB, CAROL]) {
@@ -189,6 +203,66 @@ export class FakeAutodarts {
     }
     lobby.seated.push(account.id);
     return { status: 201, body: { userId: account.id, boardId: lobby.board } };
+  }
+
+  /**
+   * Answers a request to `/bs/v0/<path>`: `GET boards` with the boards that name the
+   * account of the access token, in the shape of the real answer with made-up values
+   * besides the ids; without a token that it issued, 401, and 404 for any other path.
+   */
+  answerBoards(
+    method: string,
+    path: string,
+    authorization: string | undefined,
+  ): Answer {
+    const account = this.accounts.find(
+      (candidate) => authorization === `Bearer ${accessTokenOf(candidate)}`,
+    );
+    this.sent.push({ path: "boards", account: account?.id ?? null });
+    if (account === undefined) {
+      return { status: 401, body: { error: "unauthorized" } };
+    }
+    if (method !== "GET" || path !== "boards") {
+      return { status: 404, body: { error: "not_found" } };
+    }
+    const permission = (user: Account, isOwner: boolean) => ({
+      user: { id: user.id, name: user.username, avatarUrl: "", country: "" },
+      isOwner,
+    });
+    return {
+      status: 200,
+      body: this.boards
+        .filter(
+          (board) => board.owner === account || board.shared.includes(account),
+        )
+        .map((board) => ({
+          id: board.id,
+          name: `Board of ${board.owner.name}`,
+          permissions: [
+            permission(board.owner, true),
+            ...board.shared.map((user) => permission(user, false)),
+          ],
+          ip: "192.0.2.1",
+          state: {},
+        })),
+    };
+  }
+
+  /**
+   * Gives an account a board of its own, shared with `shared`, or shares the board that
+   * it has with them instead, as the owner does under My Boards of Autodarts Play.
+   */
+  shareBoard(owner: Account, ...shared: Account[]): void {
+    const board = this.boards.find((candidate) => candidate.owner === owner);
+    if (board === undefined) {
+      this.boards.push({
+        id: `8d6b1d0e-0000-4000-8000-${String(this.boards.length + 1).padStart(12, "0")}`,
+        owner,
+        shared,
+      });
+    } else {
+      board.shared = shared;
+    }
   }
 
   /** Opens a lobby whose host plays at a board of its own, and answers with its id. */

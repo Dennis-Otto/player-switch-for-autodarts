@@ -82,6 +82,13 @@
   "savedAccountHelp": {
     "message": "Geen bord te zien?"
   },
+  "boardNotShared": {
+    "message": "Geen bord gedeeld"
+  },
+  "boardNotSharedAs": {
+    "message": "Geen bord gedeeld met $NAME$: hulp openen",
+    "placeholders": { "name": { "content": "$1" } }
+  },
   "unsavedText": {
     "message": "Er is iemand op Autodarts ingelogd die hier nog niet is opgeslagen."
   },

@@ -355,6 +355,15 @@ export const PICK_UP_DELAYS_MS: readonly number[] = [0, 1000, 2000, 4000, 8000];
  */
 export const REQUEST_TIMEOUT_MS = 20_000;
 
+/**
+ * The signal that ends a request to Autodarts after REQUEST_TIMEOUT_MS, or sooner when
+ * the request brings a shorter limit of its own, as the one of the boards does.
+ */
+export function limitOf(own: AbortSignal | null | undefined): AbortSignal {
+  const limit = AbortSignal.timeout(REQUEST_TIMEOUT_MS);
+  return own ? AbortSignal.any([own, limit]) : limit;
+}
+
 /** A storage area that the browser can empty, as "Forget all accounts" does. */
 export interface ClearableArea {
   clear(): Promise<void>;
@@ -539,7 +548,7 @@ export function startWorker(api: ChromeApi, platform: Platform): StartedWorker {
       try {
         const response = await platform.fetch(url, {
           ...init,
-          signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
+          signal: limitOf(init.signal),
         });
         if (!response.ok) {
           void journal.note({
@@ -720,6 +729,7 @@ export function startWorker(api: ChromeApi, platform: Platform): StartedWorker {
           needsSignIn: profile.needsSignIn,
           remembersPassword: profile.remembersPassword,
           renewalFailingSince: profile.renewalFailingSince,
+          unshared: profile.unshared,
         }),
       );
     } catch (error) {

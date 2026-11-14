@@ -61,7 +61,7 @@
   },
   "savedAccount": {
     "message": "$NAME$ is saved. Autodarts shows them a board of someone else once its owner shares it with $USERNAME$.",
-    "description": "Shows each time an account was saved. Autodarts shows a board only to its owner and to the accounts that the owner shares it with, by the exact username, which $USERNAME$ is; the extension can't tell whether that happened. The link savedAccountHelp follows it.",
+    "description": "Shows each time an account was saved. Autodarts shows a board only to its owner and to the accounts that the owner shares it with, by the exact username, which $USERNAME$ is. It comes for every account, shared or not; only the chip boardNotShared tells, where the owner's answer proves it. The link savedAccountHelp follows it.",
     "placeholders": {
       "name": { "content": "$1" },
       "username": { "content": "$2" }
@@ -70,6 +70,15 @@
   "savedAccountHelp": {
     "message": "Board missing?",
     "description": "The link after savedAccount to the entry of the help that explains what a player who sees no board after a switch does."
+  },
+  "boardNotShared": {
+    "message": "No board shared",
+    "description": "The chip below the tile of a saved account to which no saved account shares a board, by what Autodarts answers for the owner of a board; the extension shows it only when that is certain. It links to the entry of the help on sharing a board. Keep it short: it sits below a tile."
+  },
+  "boardNotSharedAs": {
+    "message": "No board shared with $NAME$: open the help",
+    "description": "The name of the chip boardNotShared for a screen reader, with the player to whom no board is shared. Start it with the words of boardNotShared.",
+    "placeholders": { "name": { "content": "$1" } }
   },
   "unsavedText": {
     "message": "Someone is signed in on Autodarts who isn't saved here yet."

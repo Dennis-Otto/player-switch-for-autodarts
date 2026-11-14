@@ -12,7 +12,7 @@
  * service worker and the pages of the extension read, and "Forget all accounts"
  * deletes it with everything else.
  */
-import { AUTH_BASE, AuthError, GAME_BASE } from "./autodarts.ts";
+import { AUTH_BASE, AuthError, BOARD_BASE, GAME_BASE } from "./autodarts.ts";
 import type { RunCounts } from "./health.ts";
 import type { Failure, Outcome, PlayersAction } from "./messages.ts";
 import type { PageSettings } from "./page.ts";
@@ -61,7 +61,7 @@ export interface DiagnosticEvent {
 }
 
 /** The services of Autodarts that the extension talks to, as an event names them. */
-export type Service = "signIn" | "game" | "other";
+export type Service = "signIn" | "game" | "boards" | "other";
 
 /** An event before the ring gives it its time. */
 export type Note = Omit<DiagnosticEvent, "at">;
@@ -117,7 +117,12 @@ function parseEvent(value: unknown): DiagnosticEvent | null {
     outcome,
     status: isCount(status) && status >= 100 && status <= 599 ? status : null,
   };
-  if (service === "signIn" || service === "game" || service === "other") {
+  if (
+    service === "signIn" ||
+    service === "game" ||
+    service === "boards" ||
+    service === "other"
+  ) {
     event.service = service;
   }
   const parsed = parseCounts(counts);
@@ -153,6 +158,9 @@ export function appended(
 export function serviceOf(url: string): Service {
   if (url.startsWith(`${AUTH_BASE}/`)) {
     return "signIn";
+  }
+  if (url.startsWith(`${BOARD_BASE}/`)) {
+    return "boards";
   }
   return url.startsWith(`${GAME_BASE}/`) ? "game" : "other";
 }
@@ -277,6 +285,8 @@ export interface AccountDiagnosis {
   readonly remembersPassword: boolean;
   /** Since when the renewal of its session fails, or null. */
   readonly renewalFailingSince: number | null;
+  /** The answers of Autodarts prove that no saved account shares a board with it. */
+  readonly unshared: boolean;
 }
 
 /** What the service worker answers to "Copy diagnostics". */
@@ -334,6 +344,9 @@ function standing(account: AccountDiagnosis): string {
   }
   if (account.renewalFailingSince !== null) {
     words.push(`renewal failing since ${when(account.renewalFailingSince)}`);
+  }
+  if (account.unshared) {
+    words.push("no board shared");
   }
   return words.join(", ");
 }

@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 
-import type { Identity } from "../src/autodarts.ts";
+import type { Board, Identity } from "../src/autodarts.ts";
 import {
   activate,
   byName,
@@ -15,6 +15,7 @@ import {
   inOrder,
   isAdding,
   loseSession,
+  noteBoards,
   PLAIN_VERSION,
   park,
   parked,
@@ -33,6 +34,7 @@ import {
   stopAdding,
   toStored,
   toView,
+  unshared,
 } from "../src/state.ts";
 
 const ada: Identity = {
@@ -80,6 +82,7 @@ test("readStored takes the accounts of a release before the version without losi
         ...profile,
         renewalFailedAt: null,
         lastPlayedAt: null,
+        boards: null,
       })),
       activeId: "a",
       addingUntil: null,
@@ -489,6 +492,7 @@ test("toView hides the session and shows what the popup needs", () => {
       renewedAt: null,
       renewalFailingSince: null,
       lastPlayedAt: null,
+      unshared: false,
     },
   ]);
   assert.equal(view.unsaved, false);
@@ -706,5 +710,137 @@ test("inOrder puts the tiles by name, or the account that played last first", ()
   assert.deepEqual(
     profiles.map((profile) => profile.id),
     ["a", "b", "c", "d", "e"],
+  );
+});
+
+/** Ada, Bob, Cy and Dee are saved; Bob plays. Nothing is known of any board yet. */
+function fourSaved(): State {
+  let state = EMPTY;
+  for (const identity of [ada, cy, dee]) {
+    state = park(state, identity, `t-${identity.id}`, 0);
+  }
+  return setActive(state, bob);
+}
+
+const board = (id: string, owner: string, ...shared: string[]): Board => ({
+  id,
+  owner,
+  shared,
+});
+
+test("a saved account that no saved owner shares a board with is unshared, only once that is proven", () => {
+  let state = fourSaved();
+  // Nothing is known: no account is unshared.
+  assert.deepEqual([...unshared(state)], []);
+  // Bob's own answer names no board: he owns none, but no saved account is known to own one.
+  state = noteBoards(state, "b", []);
+  assert.deepEqual([...unshared(state)], []);
+  // Ada owns the board of the display and shares it with Cy.
+  state = noteBoards(state, "a", [board("home", "a", "c")]);
+  assert.deepEqual([...unshared(state)], ["b"]);
+  // Cy's own answer names the board that Ada shares with her; Dee's nothing.
+  state = noteBoards(state, "c", [board("home", "a", "c")]);
+  state = noteBoards(state, "d", []);
+  assert.deepEqual([...unshared(state)].sort(), ["b", "d"]);
+  // The view says so, beside everything else of the account.
+  assert.deepEqual(
+    toView(state, false, 0).profiles.map((profile) => [
+      profile.id,
+      profile.unshared,
+    ]),
+    [
+      ["a", false],
+      ["b", true],
+      ["c", false],
+      ["d", true],
+    ],
+  );
+  // Ada shares it with Bob as well: his chip goes with her next answer.
+  state = noteBoards(state, "a", [board("home", "a", "c", "b")]);
+  assert.deepEqual([...unshared(state)], ["d"]);
+});
+
+test("an account gets no chip on a guess: unknown, an owner itself, or with a board of its own answer", () => {
+  let state = noteBoards(fourSaved(), "a", [board("home", "a")]);
+  // Of Bob nothing is known, so he gets no chip, even though Ada shares her board with nobody.
+  assert.deepEqual([...unshared(state)], []);
+  // Cy owns a board of her own, and Dee sees one that someone without a tile shares with her.
+  state = noteBoards(state, "c", [board("club", "c")]);
+  state = noteBoards(state, "d", [board("away", "stranger", "d")]);
+  assert.deepEqual([...unshared(state)], []);
+  // The board of an account that isn't the owner by its own answer proves nothing.
+  state = noteBoards(fourSaved(), "b", []);
+  state = noteBoards(state, "d", [board("away", "stranger", "d")]);
+  assert.deepEqual([...unshared(state)], []);
+  // A request that failed for the only known owner takes every chip away.
+  state = noteBoards(fourSaved(), "a", [board("home", "a")]);
+  state = noteBoards(state, "b", []);
+  assert.deepEqual([...unshared(state)], ["b"]);
+  state = noteBoards(state, "a", null);
+  assert.deepEqual([...unshared(state)], []);
+  assert.equal(find(state, "a")?.boards, null);
+});
+
+test("noteBoards changes nothing for an account it doesn't know or an answer that says the same", () => {
+  const state = noteBoards(fourSaved(), "a", [board("home", "a", "c")]);
+  assert.equal(noteBoards(state, "nobody", []), state);
+  assert.equal(noteBoards(state, "a", [board("home", "a", "c")]), state);
+  assert.equal(noteBoards(fourSaved(), "a", null).profiles.length, 4);
+  // A renewal, a switch and a new sign-in keep what is known of the boards.
+  let kept = park(state, ada, "t-a2", 1);
+  kept = activate(kept, "a", 2);
+  kept = setActive(deactivate(kept), ada);
+  assert.deepEqual(find(kept, "a")?.boards, [board("home", "a", "c")]);
+  // Removing the account forgets them with it.
+  assert.equal(find(forget(state, "a"), "a"), undefined);
+});
+
+test("the boards are stored with the account as ids, and anything else reads as unknown", () => {
+  const state = noteBoards(fourSaved(), "a", [board("home", "a", "c")]);
+  const stored = JSON.parse(JSON.stringify(state)) as {
+    profiles: Record<string, unknown>[];
+  };
+  assert.deepEqual(find(parseState(stored), "a")?.boards, [
+    board("home", "a", "c"),
+  ]);
+  assert.deepEqual(find(parseState(stored), "b")?.boards, null);
+  // Stored by a release before the boards, or by hand: unknown, never a guess.
+  const odd: unknown[] = [
+    undefined,
+    "home",
+    {},
+    [null],
+    ["home"],
+    [{ owner: "a", shared: [] }],
+    [{ id: "", owner: "a", shared: [] }],
+    [{ id: "home", shared: [] }],
+    [{ id: "home", owner: "", shared: [] }],
+    [{ id: "home", owner: "a" }],
+    [{ id: "home", owner: "a", shared: [""] }],
+    [{ id: "home", owner: "a", shared: [7] }],
+  ];
+  for (const value of odd) {
+    const profiles = stored.profiles.map((profile) => ({
+      ...profile,
+      boards: value,
+    }));
+    assert.equal(
+      find(parseState({ ...stored, profiles }), "a")?.boards,
+      null,
+      JSON.stringify(value),
+    );
+  }
+  assert.deepEqual(
+    find(
+      parseState({
+        ...stored,
+        profiles: stored.profiles.map((profile) => ({
+          ...profile,
+          boards: [],
+        })),
+      }),
+      "a",
+    )?.boards,
+    [],
   );
 });

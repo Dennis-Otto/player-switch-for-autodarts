@@ -12,6 +12,7 @@ import {
   type State,
   setActive,
   startAdding,
+  unshared,
 } from "../src/state.ts";
 import {
   ADD_WINDOW_MS,
@@ -41,6 +42,7 @@ import {
   type Recorded,
 } from "./e2e/fake/recorded.ts";
 import {
+  boardsResponse,
   counting,
   FakeAutodarts,
   FakePage,
@@ -518,11 +520,12 @@ test("adoptNewSignIn saves only the first new sign-in", async () => {
     (await adoptNewSignIn(deps(store, page, fetcher))).kind,
     "saved",
   );
+  const calls = fetcher.calls;
   // Someone else signs in later on, while Ada is saved: that session stays unsaved.
   page.token = "someone-else";
   const later = await adoptNewSignIn(deps(store, page, fetcher));
   assert.equal(later.kind, "idle");
-  assert.equal(fetcher.calls, 1);
+  assert.equal(fetcher.calls, calls);
   assert.equal(page.token, "someone-else");
 });
 
@@ -953,7 +956,9 @@ test("a session that the page renewed while Autodarts was asked about it is the 
   const result = await signOutForNewAccount(
     deps(store, page, (url, init) => {
       // The page got there first: Autodarts turns the old token away.
-      page.token = "pa-2";
+      if (url.endsWith("/refresh")) {
+        page.token = "pa-2";
+      }
       return answers(url, init);
     }),
   );
@@ -2217,4 +2222,197 @@ test("rememberPassword for an account that is gone signs in nowhere", async () =
   assert.ok(result.ok);
   assert.equal(fetcher.calls, 0);
   assert.equal(store.saves, 0);
+});
+
+/** Ada plays on the page; Bob and Cy are parked. Ada owns the board of the display and shares it with Cy. */
+function adaSharesWithCy() {
+  const autodarts = new FakeAutodarts();
+  autodarts.boards.push({ id: "home", owner: "a", shared: ["c"] });
+  let state = setActive(EMPTY, ada);
+  state = park(state, bob, autodarts.issue("b"), 0);
+  state = park(state, cy, autodarts.issue("c"), 0);
+  const store = new FakeStore(state);
+  const page = new FakePage(autodarts.issue("a"));
+  return { autodarts, store, page, board: deps(store, page, autodarts.fetch) };
+}
+
+test("a switch reads the boards of both accounts it renewed, and the chip goes with the next answer that names the account", async () => {
+  const { autodarts, store, board } = adaSharesWithCy();
+  const result = await switchTo(board, "b");
+  assert.ok(result.ok);
+  // Bob comes on, and Ada's session leaves the page: each one's own token asks.
+  assert.deepEqual(autodarts.boardReads.sort(), ["a", "b"]);
+  assert.deepEqual(find(store.state, "a")?.boards, [
+    { id: "home", owner: "a", shared: ["c"] },
+  ]);
+  assert.deepEqual(find(store.state, "b")?.boards, []);
+  // Nothing is known of Cy yet, so only Bob is proven to see no board.
+  assert.deepEqual([...unshared(store.state)], ["b"]);
+  assert.deepEqual(result.state, store.state);
+  // Ada shares the board with Bob too, and the next renewal of her session says so.
+  autodarts.boards[0] = { id: "home", owner: "a", shared: ["c", "b"] };
+  const run = await refreshParked(board);
+  assert.equal(run.renewed, 2);
+  assert.deepEqual(find(store.state, "c")?.boards, [
+    { id: "home", owner: "a", shared: ["c", "b"] },
+  ]);
+  assert.deepEqual([...unshared(store.state)], []);
+  assert.deepEqual(run.state, store.state);
+});
+
+test("a switch asks the board service for both accounts at once, so a slow one holds the answer only once", {
+  timeout: 5_000,
+}, async () => {
+  const { autodarts, store, page } = adaSharesWithCy();
+  let asked = 0;
+  let answer: () => void = () => undefined;
+  const gate = new Promise<void>((resolve) => {
+    answer = resolve;
+  });
+  const fetcher: typeof autodarts.fetch = async (url, init) => {
+    if (String(url).includes("/bs/v0/boards")) {
+      asked += 1;
+      if (asked === 2) {
+        answer();
+      }
+      await gate;
+    }
+    return autodarts.fetch(url, init);
+  };
+  // With one read after the other, the first would wait for the gate, and the second,
+  // which opens it, would never be asked: the switch would not answer.
+  const result = await switchTo(deps(store, page, fetcher), "b");
+  assert.ok(result.ok);
+  assert.equal(asked, 2);
+  assert.deepEqual(find(store.state, "b")?.boards, []);
+});
+
+test("a board service that fails or answers another shape leaves the boards unknown and the switch as it was", async () => {
+  for (const boards of [
+    () => Promise.resolve(jsonResponse({ error: "gone" }, 404)),
+    () => Promise.resolve(jsonResponse({ boards: [] })),
+    () => Promise.reject(new TypeError("Failed to fetch")),
+  ]) {
+    const store = new FakeStore(park(park(EMPTY, ada, "ta", 0), bob, "tb", 0));
+    store.state = {
+      ...store.state,
+      profiles: store.state.profiles.map((profile) => ({
+        ...profile,
+        boards: [{ id: "home", owner: "a", shared: [] }],
+      })),
+    };
+    const page = new FakePage(null);
+    const result = await switchTo(
+      deps(
+        store,
+        page,
+        router({
+          refresh: () => Promise.resolve(sessionResponse("b", "fb")),
+          boards,
+        }),
+      ),
+      "b",
+    );
+    assert.ok(result.ok);
+    assert.equal(page.token, "fb");
+    assert.equal(store.state.activeId, "b");
+    // What was known of Bob's boards is gone; Ada's, not asked, stays.
+    assert.equal(find(store.state, "b")?.boards, null);
+    assert.deepEqual(find(store.state, "a")?.boards, [
+      { id: "home", owner: "a", shared: [] },
+    ]);
+  }
+});
+
+test("a store that fails to keep the boards fails no switch", async () => {
+  class NoBoards extends FakeStore {
+    override save(state: State): Promise<void> {
+      return state.profiles.some((profile) => profile.boards !== null)
+        ? Promise.reject(new Error("the disk is full"))
+        : super.save(state);
+    }
+  }
+  const store = new NoBoards(park(EMPTY, bob, "tb", 0));
+  const page = new FakePage(null);
+  const result = await switchTo(
+    deps(
+      store,
+      page,
+      router({
+        refresh: () => Promise.resolve(sessionResponse("b", "fb")),
+        boards: () => Promise.resolve(boardsResponse([])),
+      }),
+    ),
+    "b",
+  );
+  assert.ok(result.ok);
+  assert.equal(page.token, "fb");
+  assert.equal(result.state.activeId, "b");
+  assert.equal(find(result.state, "b")?.boards, null);
+});
+
+test("saving an account reads its boards, by a tap and by itself after Add account", async () => {
+  const autodarts = new FakeAutodarts();
+  autodarts.boards.push({ id: "home", owner: "a", shared: [] });
+  const store = new FakeStore(startAdding(EMPTY, 2000));
+  const page = new FakePage(autodarts.issue("a"));
+  const board = deps(store, page, autodarts.fetch);
+  const saved = await adoptNewSignIn(board);
+  assert.equal(saved.kind, "saved");
+  assert.deepEqual(find(saved.state, "a")?.boards, [
+    { id: "home", owner: "a", shared: [] },
+  ]);
+  page.token = autodarts.issue("b");
+  const adopted = await adoptCurrentSession(board);
+  assert.ok(adopted.ok);
+  assert.deepEqual(find(adopted.state, "b")?.boards, []);
+  assert.deepEqual(autodarts.boardReads, ["a", "b"]);
+  // Bob is saved after Ada, who owns a board and shares it with nobody.
+  assert.deepEqual([...unshared(store.state)], ["b"]);
+});
+
+test("a join reads the boards of the player it seated, also when the lobby refuses the seat", async () => {
+  const { autodarts, store, lobby, board } = lobbyOfAda();
+  autodarts.boards.push({ id: "board-of-a", owner: "a", shared: ["b"] });
+  const joined = await joinLobbyAs(board, "b", lobby);
+  assert.ok(joined.ok);
+  assert.deepEqual(find(joined.state, "b")?.boards, [
+    { id: "board-of-a", owner: "a", shared: ["b"] },
+  ]);
+  assert.deepEqual(autodarts.boardReads, ["b"]);
+  // The lobby is gone now: the seat fails, and the boards are read all the same.
+  autodarts.lobbies.delete(lobby);
+  autodarts.boards[0] = { id: "board-of-a", owner: "a", shared: [] };
+  const refused = await joinLobbyAs(board, "b", lobby);
+  assert.equal(refused.ok, false);
+  assert.deepEqual(find(store.state, "b")?.boards, []);
+  assert.deepEqual(autodarts.boardReads, ["b", "b"]);
+});
+
+test("a remembered password reads the boards with the session that it keeps, not with one that ends", async () => {
+  const autodarts = new FakeAutodarts();
+  autodarts.passwords.set("ada", { id: "a", password: "pw" });
+  autodarts.passwords.set("bob", { id: "b", password: "pw" });
+  const store = new FakeStore(
+    park(setActive(EMPTY, bob), ada, autodarts.issue("a"), 0),
+  );
+  const board = deps(
+    store,
+    new FakePage(autodarts.issue("b")),
+    autodarts.fetch,
+  );
+  const parked = await rememberPassword(board, "a", {
+    username: "ada",
+    password: "pw",
+  });
+  assert.ok(parked.ok);
+  assert.deepEqual(find(parked.state, "a")?.boards, []);
+  // Bob plays: the session of the check ends at once, and no board is asked with it.
+  const playing = await rememberPassword(board, "b", {
+    username: "bob",
+    password: "pw",
+  });
+  assert.ok(playing.ok);
+  assert.deepEqual(autodarts.boardReads, ["a"]);
+  assert.equal(find(store.state, "b")?.boards, null);
 });

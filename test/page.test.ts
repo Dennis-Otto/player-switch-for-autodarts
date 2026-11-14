@@ -29,6 +29,7 @@ const ada: Profile = {
   renewalFailedAt: null,
   credentials: { username: "ada", password: "secret" },
   lastPlayedAt: null,
+  boards: null,
 };
 const bob: Profile = {
   ...ada,

@@ -47,6 +47,12 @@ es aber könnte und die Tokens und Passwörter dort nur verschlüsselt fände
   nach einer Pause an ist, auch die Zeit des letzten Tippens, Klicks oder Tastendrucks
   auf der Autodarts-Seite: nie wo oder was es war. Der Browser vergisst diese Zeit,
   und die Zahl der falschen PINs, wenn er schließt.
+- **Mit wem die Boards jedes gespeicherten Kontos geteilt sind,** wie Autodarts
+  zuletzt für dieses Konto geantwortet hat: die ID jedes Boards, das ihm gehört oder
+  mit ihm geteilt ist, die ID seines Besitzers und die IDs der Konten, mit denen der
+  Besitzer es teilt. Nie der Name eines Boards, seine Adresse oder der Name eines
+  anderen Kontos. Es ist nur für den Hinweis **Kein Board geteilt** auf einer Kachel
+  da und geht mit dem Konto.
 - **Wer von diesem Display aus welcher Lobby beigetreten ist,** solange der Browser
   läuft: die IDs der letzten Lobbys und der gespeicherten Konten, die die Erweiterung
   in jede gesetzt hat, damit ihre Kacheln „In der Lobby“ zeigen. Kein Token und kein
@@ -66,9 +72,9 @@ es aber könnte und die Tokens und Passwörter dort nur verschlüsselt fände
 
 Die Erweiterung spricht nur mit Autodarts (`api.autodarts.com` und
 `play.autodarts.com`), über HTTPS, um anzumelden, eine Sitzung zu erneuern, die
-Sitzung zwischen Konten zu verschieben und einen gespeicherten Spieler in die Lobby zu
-setzen, die der Bildschirm zeigt — dieselben Anfragen, die die Autodarts-Website selbst
-stellt. Das Popup und der Umschalter zeigen auch das Bild jedes Spielers von der
+Sitzung zwischen Konten zu verschieben, einen gespeicherten Spieler in die Lobby zu
+setzen, die der Bildschirm zeigt, und zu lesen, mit wem die Boards eines gespeicherten
+Kontos geteilt sind — dieselben Anfragen, die die Autodarts-Website selbst stellt. Das Popup und der Umschalter zeigen auch das Bild jedes Spielers von der
 Adresse, die Autodarts dafür angibt, wie die Autodarts-Website. Sie öffnet keine
 andere Verbindung, spricht mit keinem Dienst für Statistiken oder Tracking, und der
 Entwickler bekommt keine Daten von ihr. Ihre Content Security Policy lässt sie nur mit
@@ -80,8 +86,12 @@ dessen Passwort du dir merken lässt, Benutzername und Passwort, die wie hier
 beschrieben an den Anmeldedienst von Autodarts gehen, und nirgendwohin sonst. Tritt
 ein gespeicherter Spieler der Lobby auf dem Bildschirm bei, geht ein frischer
 Zugangstoken dieses Kontos an den Spieldienst von Autodarts auf demselben Host, mit
-dem Benutzernamen und der ID des Kontos, die Autodarts ohnehin kennt. Der Entwickler
-gibt dieselben Daten im Chrome Web Store an, in den Datenschutzpraktiken der
+dem Benutzernamen und der ID des Kontos, die Autodarts ohnehin kennt. Jedes Mal, wenn
+ein Konto gespeichert oder seine Sitzung erneuert wird, geht der Zugangstoken dieser
+Erneuerung an den Board-Dienst von Autodarts auf demselben Host, der mit den Boards
+dieses Kontos antwortet, wie für die Seite **My Boards** der Autodarts-Website.
+
+Der Entwickler gibt dieselben Daten im Chrome Web Store an, in den Datenschutzpraktiken der
 Erweiterung als Authentifizierungsdaten (*Authentication information*), und
 bestätigt dort, dass sie nicht verkauft, für nichts als das Umschalten der Spieler
 und nicht für Kredit- oder Bonitätszwecke verwendet werden; der Store zeigt das auf
@@ -89,7 +99,7 @@ der Seite der Erweiterung unter *Datenschutz*.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="images/diagrams/data-flow.de.dark.svg">
-  <img src="images/diagrams/data-flow.de.svg" alt="Wohin die Daten gehen: Alles bleibt im Browser auf diesem Computer. Das Popup und der Umschalter fragen den Service Worker, der in chrome.storage.local einen Token pro Konto behält, ein Passwort nur, wenn eines gemerkt ist, die Einstellungen des Knopfs und die Reihenfolge der Kacheln, wann jedes Konto zuletzt gespielt hat, die letzten 50 Ereignisse der Erweiterung ohne einen Namen oder ein Geheimnis, die Zeit der letzten Erneuerung, ob Autodarts dabei jedes Konto abgewiesen hat, und bis wann ein neues Konto hinzugefügt wird. Er bringt eine Sitzung in die Autodarts-Seite und liest die ausgehende nur über content.js aus ihr, das einzige Skript, das die Sitzung im localStorage der Seite liest oder schreibt. Um einen Token zu erneuern, mit einem Passwort anzumelden, eine Sitzung zu beenden oder einen gespeicherten Spieler in die Lobby auf dem Bildschirm zu setzen, mit einem frischen Token, dem Benutzernamen und der Konto-ID dieses Spielers, spricht er über HTTPS mit api.autodarts.com, demselben Dienst, den die Autodarts-Seite selbst nutzt. Das Popup und der Umschalter zeigen das Bild jedes Spielers von der Adresse, die Autodarts dafür angibt. Sonst geht nichts irgendwohin: kein Server des Entwicklers, keine Statistiken; Hilfe und Problem melden öffnen nur eine Seite in einem neuen Tab.">
+  <img src="images/diagrams/data-flow.de.svg" alt="Wohin die Daten gehen: Alles bleibt im Browser auf diesem Computer. Das Popup und der Umschalter fragen den Service Worker, der in chrome.storage.local einen Token pro Konto behält, ein Passwort nur, wenn eines gemerkt ist, die Einstellungen des Knopfs und die Reihenfolge der Kacheln, wann jedes Konto zuletzt gespielt hat, die letzten 50 Ereignisse der Erweiterung ohne einen Namen oder ein Geheimnis, die Zeit der letzten Erneuerung, ob Autodarts dabei jedes Konto abgewiesen hat, bis wann ein neues Konto hinzugefügt wird, und die IDs der Boards, die jedes Konto sieht, und der Konten, mit denen sie geteilt sind, nie ihre Namen. Er bringt eine Sitzung in die Autodarts-Seite und liest die ausgehende nur über content.js aus ihr, das einzige Skript, das die Sitzung im localStorage der Seite liest oder schreibt. Um einen Token zu erneuern, mit einem Passwort anzumelden, eine Sitzung zu beenden, die Boards eines Kontos zu lesen oder einen gespeicherten Spieler in die Lobby auf dem Bildschirm zu setzen, mit einem frischen Token, dem Benutzernamen und der Konto-ID dieses Spielers, spricht er über HTTPS mit api.autodarts.com, demselben Dienst, den die Autodarts-Seite selbst nutzt. Das Popup und der Umschalter zeigen das Bild jedes Spielers von der Adresse, die Autodarts dafür angibt. Sonst geht nichts irgendwohin: kein Server des Entwicklers, keine Statistiken; Hilfe und Problem melden öffnen nur eine Seite in einem neuen Tab.">
 </picture>
 
 „Hilfe“ und „Problem melden“ im Popup und auf der Willkommensseite und der Link
