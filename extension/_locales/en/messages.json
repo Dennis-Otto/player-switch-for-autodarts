@@ -61,7 +61,7 @@
   },
   "savedAccount": {
     "message": "$NAME$ is saved. Autodarts shows them a board of someone else once its owner shares it with $USERNAME$.",
-    "description": "Shows each time an account was saved. Autodarts shows a board only to its owner and to the accounts that the owner shares it with, by the exact username, which $USERNAME$ is; the extension can't tell whether that happened. The link savedAccountHelp follows it.",
+    "description": "Shows each time an account was saved. Autodarts shows a board only to its owner and to the accounts that the owner shares it with, by the exact username, which $USERNAME$ is. It comes for every account, shared or not; only the chip boardNotShared tells, where the owner's answer proves it. The link savedAccountHelp follows it.",
     "placeholders": {
       "name": { "content": "$1" },
       "username": { "content": "$2" }

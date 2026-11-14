@@ -2260,6 +2260,33 @@ test("a switch reads the boards of both accounts it renewed, and the chip goes w
   assert.deepEqual(run.state, store.state);
 });
 
+test("a switch asks the board service for both accounts at once, so a slow one holds the answer only once", {
+  timeout: 5_000,
+}, async () => {
+  const { autodarts, store, page } = adaSharesWithCy();
+  let asked = 0;
+  let answer: () => void = () => undefined;
+  const gate = new Promise<void>((resolve) => {
+    answer = resolve;
+  });
+  const fetcher: typeof autodarts.fetch = async (url, init) => {
+    if (String(url).includes("/bs/v0/boards")) {
+      asked += 1;
+      if (asked === 2) {
+        answer();
+      }
+      await gate;
+    }
+    return autodarts.fetch(url, init);
+  };
+  // With one read after the other, the first would wait for the gate, and the second,
+  // which opens it, would never be asked: the switch would not answer.
+  const result = await switchTo(deps(store, page, fetcher), "b");
+  assert.ok(result.ok);
+  assert.equal(asked, 2);
+  assert.deepEqual(find(store.state, "b")?.boards, []);
+});
+
 test("a board service that fails or answers another shape leaves the boards unknown and the switch as it was", async () => {
   for (const boards of [
     () => Promise.resolve(jsonResponse({ error: "gone" }, 404)),

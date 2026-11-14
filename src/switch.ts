@@ -140,10 +140,10 @@ interface Renewed {
 
 /**
  * Runs an operation in the queue, which notes in `renewed` each account whose session it
- * renewed, and then reads the boards of each with its access token, after the turn, so
- * that no other operation waits for the board service; the answer to a tap waits for it
- * at most BOARD_TIMEOUT_MS. Answers with the operation's outcome and the accounts as they
- * are after that.
+ * renewed, and then reads the boards of all of them at once with their access tokens,
+ * after the turn, so that no other operation waits for the board service; the answer to a
+ * tap waits for it at most BOARD_TIMEOUT_MS, also when a switch renewed two accounts.
+ * Answers with the operation's outcome and the accounts as they are after that.
  */
 async function withBoards<T extends { state: State }>(
   deps: Deps,
@@ -151,32 +151,49 @@ async function withBoards<T extends { state: State }>(
 ): Promise<T> {
   const renewed: Renewed[] = [];
   const result = await deps.queue(() => operation(renewed));
+  const reads = renewed.map(({ id, accessToken }) => ({
+    id,
+    boards: askBoards(deps, id, accessToken),
+  }));
   let { state } = result;
-  for (const { id, accessToken } of renewed) {
-    state = await learnBoards(deps, id, accessToken, state);
+  for (const { id, boards } of reads) {
+    state = await keepBoards(deps, id, await boards, state);
   }
   return state === result.state ? result : { ...result, state };
 }
 
-/**
- * Asks the board service which boards the account sees, with an access token of it, and
- * keeps the answer in a turn of its own. A request that fails, or an answer of another
- * shape, leaves the account with no known boards, so no tile shows a chip on a guess; and
- * since nothing else depends on it, not even a store that fails here fails the operation
- * that renewed the session: it answers with `state`, the accounts as that operation left
- * them.
- */
+/** The boards that the account sees, asked with an access token of it, or `null` on a failure. */
+function askBoards(
+  deps: Deps,
+  id: string,
+  accessToken: string,
+): Promise<Board[] | null> {
+  return readBoards(deps.fetcher, accessToken, id).catch(() => null);
+}
+
+/** Asks the board service for the boards of one account and keeps the answer. */
 async function learnBoards(
   deps: Deps,
   id: string,
   accessToken: string,
   state: State,
 ): Promise<State> {
-  const boards: Board[] | null = await readBoards(
-    deps.fetcher,
-    accessToken,
-    id,
-  ).catch(() => null);
+  return keepBoards(deps, id, await askBoards(deps, id, accessToken), state);
+}
+
+/**
+ * Keeps what the board service answered for the account, in a turn of its own. A request
+ * that failed, or an answer of another shape, is `null` and leaves the account with no
+ * known boards, so no tile shows a chip on a guess; and since nothing else depends on it,
+ * not even a store that fails here fails the operation that renewed the session: it
+ * answers with `state`, the accounts as that operation left them.
+ */
+async function keepBoards(
+  deps: Deps,
+  id: string,
+  boards: Board[] | null,
+  state: State,
+): Promise<State> {
   return deps
     .queue(async () => {
       const loaded = await deps.store.load();
