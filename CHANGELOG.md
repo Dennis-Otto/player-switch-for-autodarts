@@ -6,6 +6,12 @@ the next release, or lists the pull requests when there is none.
 
 ## Unreleased
 
+## [1.8.0](https://github.com/Dennis-Otto/player-switch-for-autodarts/compare/v1.7.0...v1.8.0) (2026-11-15)
+
+### Features
+
+- A tile says **No board shared** for a saved player whom no board of the display is shared with, the player who would see no board after a switch, with a link to the help on sharing one. Once the owner of the board is saved on the display too, the extension asks Autodarts, each time it saves an account or renews its session, which boards that account sees, as the page **My Boards** of Autodarts does, and keeps only the ids of the boards and of the accounts they are shared with, never the name of a board, its address or the name of another account. The chip shows only where Autodarts' answer for the owner proves it: while the owner isn't saved, or Autodarts doesn't answer, no tile shows it, and saving and switching work as before. It goes away with the next answer that names the player. The update asks for no new permission.
+
 ## [1.7.0](https://github.com/Dennis-Otto/player-switch-for-autodarts/compare/v1.6.0...v1.7.0) (2026-11-13)
 
 ### Features
