@@ -4,8 +4,9 @@
 
 [links]
 # Hosts that links in the assistant's comments may lead to, besides this repository and
-# the hosts of config.toml.
-hosts = []
+# the hosts of config.toml. The extension works on play.autodarts.io, whose maker is
+# at autodarts.io: the pages that a helpful answer about a board or a lobby points to.
+hosts = ["autodarts.io", "play.autodarts.io"]
 
 [transparency]
 # Files besides those of config.toml that tell reporters which AI reads their issue; the
