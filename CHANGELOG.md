@@ -6,6 +6,13 @@ the next release, or lists the pull requests when there is none.
 
 ## Unreleased
 
+## [1.8.0](https://github.com/Dennis-Otto/player-switch-for-autodarts/compare/v1.7.0...v1.8.0) (2026-11-15)
+
+
+### Features
+
+* a tile says No board shared where the owner's answer proves it ([#279](https://github.com/Dennis-Otto/player-switch-for-autodarts/issues/279)) ([f3a07bd](https://github.com/Dennis-Otto/player-switch-for-autodarts/commit/f3a07bd4c52166d04ca1c0fda1e9a0929cd22492))
+
 ## [1.7.0](https://github.com/Dennis-Otto/player-switch-for-autodarts/compare/v1.6.0...v1.7.0) (2026-11-13)
 
 ### Features
