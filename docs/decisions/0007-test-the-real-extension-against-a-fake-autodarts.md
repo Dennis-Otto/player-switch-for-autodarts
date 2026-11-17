@@ -54,5 +54,8 @@ where Playwright's Chromium doesn't start.
 - The fake has to follow Autodarts: a change of its sign-in that breaks the
   extension in real life passes the tests until the fake learns it, as with the
   fakes of the unit tests.
-- Renovate updates `@playwright/test` with the image of the pictures, in one pull
-  request, and the CI downloads the browser of a new version once.
+- Renovate updates `@playwright/test` with `playwright-core` in its group
+  *Playwright*, and the image of the pictures with the `playwright` that drives it
+  in its group *Playwright for Python*: Playwright for Python has releases of its
+  own, so one group of all four met at no version. The CI downloads the browser of
+  a new version once.
