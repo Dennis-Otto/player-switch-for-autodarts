@@ -9,13 +9,23 @@
     {
       // The Playwright image of scripts/screenshots.sh and the playwright of
       // test/harness/requirements.txt, which drives the browser of that image, move
-      // together in one pull request, so that the driver never meets another browser;
+      // together in one pull request, so that the driver never meets another browser.
+      // The image has no release date and comes at once, the package a week after its
+      // release: test/playwright.test.ts holds the pull request until it has joined.
+      matchDatasources: ["docker", "pypi"],
+      matchPackageNames: ["mcr.microsoft.com/playwright/python", "playwright"],
+      groupName: "Playwright for Python",
+    },
+    {
       // @playwright/test of the end-to-end tests and playwright-core of the
-      // accessibility test move with them, so that the pictures and the tests see the
-      // same version of Chromium. package.json pins playwright-core to the version of
-      // @playwright/test, so that npm keeps one copy of playwright-core and lock file
-      // maintenance can't split them (test/playwright.test.ts).
-      matchPackageNames: ["mcr.microsoft.com/playwright/python", "playwright", "@playwright/test", "playwright-core"],
+      // accessibility test move together, apart from the image: Playwright for Python
+      // has releases of its own, such as 1.65.2, which Node never had, so a group of
+      // all four met at no version and held every update. package.json pins
+      // playwright-core to the version of @playwright/test, so that npm keeps one copy
+      // of playwright-core and lock file maintenance can't split them
+      // (test/playwright.test.ts).
+      matchDatasources: ["npm"],
+      matchPackageNames: ["@playwright/test", "playwright-core"],
       groupName: "Playwright",
     },
   ],

@@ -15,11 +15,18 @@
 // The pictures of scripts/screenshots.sh are taken by the Chromium of the Playwright
 // image that the script names, which the playwright of test/harness/requirements.txt
 // drives; Playwright supports a driver only with the browser of its own version. The
-// group "Playwright" of .github/renovate.json5 moves the image, that playwright and
-// @playwright/test together, but an image of mcr.microsoft.com has no release date, so
-// it may come a week before the packages, which wait a week after their release: this
-// test then holds the pull request of Renovate until they have joined it, and the
-// pictures and the end-to-end tests keep seeing one Chromium.
+// group "Playwright for Python" of .github/renovate.json5 moves the image and that
+// playwright together, but an image of mcr.microsoft.com has no release date, so it may
+// come a week before the package, which waits a week after its release: this test then
+// holds the pull request of Renovate until the package has joined it.
+//
+// The image and @playwright/test move apart, in groups of their own. Playwright for
+// Python has releases of its own: 1.65.2 came for Python alone, @playwright/test has
+// none, so the image, which takes the newest version at once, and @playwright/test met
+// at no version, and a test that asked for one held every update of Playwright for good.
+// One version would not even mean one Chromium: each release of Python bundles a driver
+// built from a commit of Playwright, and a patch release may bring another Chromium
+// (1.65.1 did).
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { suite, test } from "node:test";
@@ -38,6 +45,19 @@ const locked: Record<string, { version?: string }> =
 /** The first group of a pattern in a file of the repository, or undefined. */
 const find = (path: string, pattern: RegExp): string | undefined =>
   pattern.exec(readFileSync(fileURLToPath(new URL(path, ROOT)), "utf8"))?.[1];
+
+/** The group of each package that a rule of .github/renovate.json5 names, by its name. */
+const groups = (): Record<string, string> =>
+  Object.fromEntries(
+    [
+      ...readFileSync(
+        fileURLToPath(new URL(".github/renovate.json5", ROOT)),
+        "utf8",
+      ).matchAll(/matchPackageNames: \[([^\]]*)\],\s+groupName: "([^"]+)"/g),
+    ].flatMap(([, names = "", group]) =>
+      [...names.matchAll(/"([^"]+)"/g)].map(([, name]) => [name, group]),
+    ),
+  );
 
 const FIX =
   'Pin "playwright-core" in package.json to the exact version of "@playwright/test" and run npm install.';
@@ -78,7 +98,7 @@ suite("Playwright", () => {
     );
   });
 
-  test("the Playwright image of scripts/screenshots.sh, the playwright that drives it and @playwright/test are one version", () => {
+  test("the Playwright image of scripts/screenshots.sh and the playwright that drives it are one version", () => {
     const image = find(
       "scripts/screenshots.sh",
       /^image="mcr\.microsoft\.com\/playwright\/python:v(\d+\.\d+\.\d+)-[a-z]+@sha256:[0-9a-f]{64}"$/m,
@@ -88,10 +108,29 @@ suite("Playwright", () => {
       "test/harness/requirements.txt",
       /^playwright==(\S+) \\$/m,
     );
+    assert.match(image ?? "", /^\d+\.\d+\.\d+$/);
     assert.deepEqual(
-      { image, driver, locked: lockedDriver },
-      { image: playwright, driver: playwright, locked: playwright },
-      `Move the image of scripts/screenshots.sh (v${playwright}-noble, with its digest) and playwright== in test/harness/requirements.in to ${playwright}, the version of @playwright/test, then compile requirements.txt again with the command in its header.`,
+      { driver, locked: lockedDriver },
+      { driver: image, locked: image },
+      `Move playwright== in test/harness/requirements.in to ${image}, the version of the image of scripts/screenshots.sh, then compile requirements.txt again with the command in its header.`,
+    );
+  });
+
+  test("Renovate moves the image with the playwright that drives it, apart from @playwright/test", () => {
+    const group = groups();
+    assert.deepEqual(
+      {
+        image: group["mcr.microsoft.com/playwright/python"],
+        driver: group["playwright"],
+        test: group["@playwright/test"],
+        core: group["playwright-core"],
+      },
+      {
+        image: "Playwright for Python",
+        driver: "Playwright for Python",
+        test: "Playwright",
+        core: "Playwright",
+      },
     );
   });
 
