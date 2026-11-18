@@ -13,7 +13,7 @@
 [![CI](https://github.com/Dennis-Otto/player-switch-for-autodarts/actions/workflows/ci.yml/badge.svg)](https://github.com/Dennis-Otto/player-switch-for-autodarts/actions/workflows/ci.yml)
 [![Coverage 100 %](https://img.shields.io/badge/coverage-100%25-brightgreen.svg)](https://github.com/Dennis-Otto/player-switch-for-autodarts/blob/main/CONTRIBUTING.md#tests)
 [![CodeQL](https://github.com/Dennis-Otto/player-switch-for-autodarts/actions/workflows/codeql.yml/badge.svg)](https://github.com/Dennis-Otto/player-switch-for-autodarts/actions/workflows/codeql.yml)
-[![Secret scan](https://github.com/Dennis-Otto/player-switch-for-autodarts/actions/workflows/secret-scan.yml/badge.svg)](https://github.com/Dennis-Otto/player-switch-for-autodarts/actions/workflows/secret-scan.yml)
+[![Quick checks: secret scan and dependency review](https://github.com/Dennis-Otto/player-switch-for-autodarts/actions/workflows/quick-checks.yml/badge.svg)](https://github.com/Dennis-Otto/player-switch-for-autodarts/actions/workflows/quick-checks.yml)
 [![SBOM](https://github.com/Dennis-Otto/player-switch-for-autodarts/actions/workflows/sbom.yml/badge.svg)](https://github.com/Dennis-Otto/player-switch-for-autodarts/actions/workflows/sbom.yml)
 [![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/Dennis-Otto/player-switch-for-autodarts/badge)](https://scorecard.dev/viewer/?uri=github.com/Dennis-Otto/player-switch-for-autodarts)
 [![OpenSSF Best Practices](https://www.bestpractices.dev/projects/15866/badge)](https://www.bestpractices.dev/projects/15866)
