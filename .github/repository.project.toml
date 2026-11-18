@@ -9,6 +9,13 @@
 [branch]
 required_checks = ["e2e"]
 
+# The maintainer decided on 2026-11-18 that the releases go once a day by themselves:
+# the release bot merges the release pull request in its daily run once its checks
+# pass, and the release goes on to the Chrome Web Store, whose review may still wait.
+# For a release at once, start the workflow Release by hand (CONTRIBUTING.md).
+[variables]
+RELEASE_MERGE = "daily"
+
 # An environment of this project and the secrets it needs:
 # [environments.deploy]
 # secrets = ["DEPLOY_TOKEN"]
