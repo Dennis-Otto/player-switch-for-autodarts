@@ -68,7 +68,7 @@ gh attestation verify ./*.zip --repo Dennis-Otto/player-switch-for-autodarts --s
 
 Every asset of a release carries this provenance, those that the project builds itself with `scripts/release-assets.sh`, such as the zip of a browser extension, too.
 
-The Chrome Web Store gets exactly this zip: the workflow *Chrome Web Store* downloads it from the release, checks its provenance as above and only then uploads it, signed in to Google without a stored secret, as [docs/releases.md](docs/releases.md) describes.
+The Chrome Web Store gets exactly this zip: the workflow *Chrome Web Store* downloads it from the release, checks its provenance as above and only then uploads it, signed in to Google without a stored secret, as [docs/releases.md](docs/releases.md) describes. The Chrome Web Store signs every package that it delivers, and Chrome checks that signature when it installs or updates the extension from the store.
 
 Every release describes what it ships in an SBOM, as SPDX in `player-switch-for-autodarts.spdx.json` and as CycloneDX in `player-switch-for-autodarts.cdx.json`: the package that you install, with every component inside it, under the name `player-switch-for-autodarts` and the version of the release. A scanner such as [Grype](https://github.com/anchore/grype) checks it against the advisories it knows. When the project accepts an advisory in `osv-scanner.toml`, with its reason, the release carries the OpenVEX document `player-switch-for-autodarts.openvex.json` too, which tells the scanner that the advisory doesn't affect the release; without that document, leave out `--vex`:
 
