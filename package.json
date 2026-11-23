@@ -44,5 +44,8 @@
     "addons-linter": {
       "minimatch": "^11.0.3"
     }
+  },
+  "dependencies": {
+    "minimatch": "^11.0.9"
   }
 }
