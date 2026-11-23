@@ -45,7 +45,7 @@ npm run --silent build
 # The browser and the Python of Playwright, at the version of playwright in
 # test/harness/requirements.in: Renovate moves both in its group Playwright for Python,
 # and test/playwright.test.ts fails while they differ.
-image="mcr.microsoft.com/playwright/python:v1.64.1-noble@sha256:330d401ae23c905896a0c26c66c36fc971b621519e7b11b435a8328d7bf6e031"
+image="mcr.microsoft.com/playwright/python:v1.65.2-noble@sha256:38dd67fc654b56b3cba611e4c8eb71cd33750e1cd29eea2a5dc00b484817a75f"
 # Git Bash on Windows: keep the container's paths and mount the Windows path.
 export MSYS_NO_PATHCONV=1
 root="$(pwd -W 2>/dev/null || pwd)"
